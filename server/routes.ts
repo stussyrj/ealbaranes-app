@@ -10,7 +10,6 @@ import {
   geocodeRequestSchema,
   routeRequestSchema,
   calculateQuoteRequestSchema,
-  insertPricingRuleSchema,
   insertVehicleTypeSchema,
 } from "@shared/schema";
 
@@ -19,56 +18,6 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  app.get("/api/pricing-rules", async (req, res) => {
-    try {
-      const rules = await storage.getPricingRules();
-      res.json(rules);
-    } catch (error) {
-      console.error("Error fetching pricing rules:", error);
-      res.status(500).json({ error: "Error al obtener las reglas de precios" });
-    }
-  });
-
-  app.post("/api/pricing-rules", async (req, res) => {
-    try {
-      const data = insertPricingRuleSchema.parse(req.body);
-      const rule = await storage.createPricingRule(data);
-      res.status(201).json(rule);
-    } catch (error) {
-      console.error("Error creating pricing rule:", error);
-      res.status(400).json({ error: "Error al crear la regla de precios" });
-    }
-  });
-
-  app.put("/api/pricing-rules/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-      const rule = await storage.updatePricingRule(id, updates);
-      if (!rule) {
-        return res.status(404).json({ error: "Regla no encontrada" });
-      }
-      res.json(rule);
-    } catch (error) {
-      console.error("Error updating pricing rule:", error);
-      res.status(400).json({ error: "Error al actualizar la regla de precios" });
-    }
-  });
-
-  app.delete("/api/pricing-rules/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const deleted = await storage.deletePricingRule(id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Regla no encontrada" });
-      }
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting pricing rule:", error);
-      res.status(500).json({ error: "Error al eliminar la regla de precios" });
-    }
-  });
-
   app.get("/api/vehicle-types", async (req, res) => {
     try {
       const types = await storage.getVehicleTypes();
@@ -151,68 +100,17 @@ export async function registerRoutes(
       
       const distance = routeInfo.route.km;
       const duration = routeInfo.route.durationMin;
-      const destinationCountry = routeInfo.destination.country || data.destinationCountry;
-      
-      const pricingRules = await storage.getPricingRules();
-      
-      let applicableRule = pricingRules.find((rule) => {
-        if (!rule.isActive) return false;
-        
-        if (destinationCountry === "Portugal" || destinationCountry === "PT") {
-          return rule.country === "Portugal";
-        }
-        if (destinationCountry === "Francia" || destinationCountry === "France" || destinationCountry === "FR") {
-          return rule.country === "Francia";
-        }
-        
-        return rule.country === "España" && distance >= rule.minKm && distance < rule.maxKm;
-      });
-      
-      if (!applicableRule) {
-        applicableRule = pricingRules.find((rule) => rule.zone === 4 && rule.isActive);
-      }
-      
-      if (!applicableRule) {
-        return res.status(400).json({ error: "No se encontró una zona de precios aplicable" });
-      }
       
       const vehicleType = await storage.getVehicleType(data.vehicleTypeId);
       if (!vehicleType) {
         return res.status(400).json({ error: "Tipo de vehículo no encontrado" });
       }
       
-      const basePrice = applicableRule.basePrice;
-      const distanceCost = distance * applicableRule.pricePerKm;
-      const subtotalBeforeTolls = basePrice + distanceCost;
-      const tollCost = applicableRule.tollSurcharge > 0 
-        ? subtotalBeforeTolls * (applicableRule.tollSurcharge / 100) 
-        : 0;
+      const basePrice = vehicleType.basePrice;
+      const distanceCost = distance * vehicleType.pricePerKm;
+      const subtotal = basePrice + distanceCost;
       
-      const vehicleMultiplier = vehicleType.priceMultiplier;
-      const vehicleAdjustedCost = (subtotalBeforeTolls + tollCost) * vehicleMultiplier;
-      
-      const extras = data.extras || {};
-      const extrasList: { name: string; cost: number }[] = [];
-      
-      if (extras.urgente) {
-        extrasList.push({ name: "Envío Urgente (+25%)", cost: vehicleAdjustedCost * 0.25 });
-      }
-      if (extras.cargaFragil) {
-        extrasList.push({ name: "Carga Frágil (+10%)", cost: vehicleAdjustedCost * 0.10 });
-      }
-      if (extras.seguroExtra) {
-        extrasList.push({ name: "Seguro Extra", cost: 35 });
-      }
-      
-      const extrasCost = extrasList.reduce((sum, e) => sum + e.cost, 0);
-      let totalPrice = vehicleAdjustedCost + extrasCost;
-      
-      const minimumPrice = applicableRule.minPrice * vehicleMultiplier;
-      if (totalPrice < minimumPrice) {
-        totalPrice = minimumPrice;
-      }
-      
-      totalPrice = Math.round(totalPrice * 100) / 100;
+      const totalPrice = Math.max(vehicleType.minimumPrice, subtotal);
       
       const quote = await storage.createQuote({
         origin: data.origin,
@@ -223,15 +121,9 @@ export async function registerRoutes(
         duration,
         vehicleTypeId: vehicleType.id,
         vehicleTypeName: vehicleType.name,
-        pricingRuleId: applicableRule.id,
-        zoneName: applicableRule.name,
         basePrice,
         distanceCost,
-        tollCost,
-        vehicleMultiplier,
-        extras: JSON.stringify(extrasList),
-        extrasCost,
-        totalPrice,
+        totalPrice: Math.round(totalPrice * 100) / 100,
         status: "pending",
       });
       
@@ -250,30 +142,17 @@ export async function registerRoutes(
           },
           distance,
           duration,
-          zone: {
-            id: applicableRule.id,
-            zone: applicableRule.zone,
-            name: applicableRule.name,
-            country: applicableRule.country,
-          },
           vehicle: {
             id: vehicleType.id,
             name: vehicleType.name,
             capacity: vehicleType.capacity,
-            multiplier: vehicleMultiplier,
           },
           pricing: {
             basePrice,
+            pricePerKm: vehicleType.pricePerKm,
             distanceCost,
-            pricePerKm: applicableRule.pricePerKm,
-            tollSurcharge: applicableRule.tollSurcharge,
-            tollCost,
-            vehicleMultiplier,
-            subtotal: vehicleAdjustedCost,
-            extras: extrasList,
-            extrasCost,
-            minimumPrice,
-            totalPrice,
+            minimumPrice: vehicleType.minimumPrice,
+            totalPrice: Math.round(totalPrice * 100) / 100,
           },
         },
       });

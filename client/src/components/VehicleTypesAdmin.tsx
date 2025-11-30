@@ -78,7 +78,9 @@ export function VehicleTypesAdmin() {
       name: editingVehicle.name,
       description: editingVehicle.description,
       capacity: editingVehicle.capacity,
-      priceMultiplier: editingVehicle.priceMultiplier,
+      pricePerKm: editingVehicle.pricePerKm,
+      basePrice: editingVehicle.basePrice,
+      minimumPrice: editingVehicle.minimumPrice,
       isActive: editingVehicle.isActive,
     };
     
@@ -99,7 +101,9 @@ export function VehicleTypesAdmin() {
       name: "",
       description: "",
       capacity: "",
-      priceMultiplier: 1.0,
+      pricePerKm: 0.5,
+      basePrice: 5,
+      minimumPrice: 5,
       isActive: true,
     });
     setIsDialogOpen(true);
@@ -136,7 +140,7 @@ export function VehicleTypesAdmin() {
                 Tipos de Vehículo
               </CardTitle>
               <CardDescription>
-                Gestiona los tipos de vehículo disponibles y sus multiplicadores de precio
+                Gestiona los tipos de vehículo: tarifa base, precio por km y mínimo
               </CardDescription>
             </div>
             <Button onClick={openNewVehicle} data-testid="button-add-vehicle">
@@ -151,9 +155,10 @@ export function VehicleTypesAdmin() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Vehículo</TableHead>
-                  <TableHead>Descripción</TableHead>
                   <TableHead>Capacidad</TableHead>
-                  <TableHead className="text-right">Multiplicador</TableHead>
+                  <TableHead className="text-right">Dirección</TableHead>
+                  <TableHead className="text-right">€/Km</TableHead>
+                  <TableHead className="text-right">Mínimo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -162,14 +167,17 @@ export function VehicleTypesAdmin() {
                 {vehicles?.map((vehicle) => (
                   <TableRow key={vehicle.id} data-testid={`row-vehicle-${vehicle.id}`}>
                     <TableCell className="font-medium">{vehicle.name}</TableCell>
-                    <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                      {vehicle.description}
-                    </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{vehicle.capacity}</Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      ×{vehicle.priceMultiplier.toFixed(2)}
+                      {vehicle.basePrice.toFixed(2)}€
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {vehicle.pricePerKm.toFixed(2)}€
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {vehicle.minimumPrice.toFixed(2)}€
                     </TableCell>
                     <TableCell>
                       <Switch
@@ -216,7 +224,7 @@ export function VehicleTypesAdmin() {
               {editingVehicle?.id && !editingVehicle.id.startsWith("new-") ? "Editar Vehículo" : "Nuevo Tipo de Vehículo"}
             </DialogTitle>
             <DialogDescription>
-              Configure las características y precio del tipo de vehículo
+              Configure las características y tarifas del tipo de vehículo
             </DialogDescription>
           </DialogHeader>
           {editingVehicle && (
@@ -226,7 +234,7 @@ export function VehicleTypesAdmin() {
                 <Input
                   value={editingVehicle.name}
                   onChange={(e) => setEditingVehicle({ ...editingVehicle, name: e.target.value })}
-                  placeholder="Ej: Camión Frigorífico"
+                  placeholder="Ej: Servicio Moto"
                 />
               </div>
               <div className="space-y-2">
@@ -238,22 +246,43 @@ export function VehicleTypesAdmin() {
                   rows={2}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Capacidad</Label>
+                <Input
+                  value={editingVehicle.capacity || ""}
+                  onChange={(e) => setEditingVehicle({ ...editingVehicle, capacity: e.target.value })}
+                  placeholder="Ej: Hasta 5 kg, 40x30x40 cm"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
-                  <Label>Capacidad</Label>
+                  <Label>Dirección (€)</Label>
                   <Input
-                    value={editingVehicle.capacity || ""}
-                    onChange={(e) => setEditingVehicle({ ...editingVehicle, capacity: e.target.value })}
-                    placeholder="Ej: Hasta 5t / 30m³"
+                    type="number"
+                    step="0.01"
+                    value={editingVehicle.basePrice}
+                    onChange={(e) => setEditingVehicle({ ...editingVehicle, basePrice: parseFloat(e.target.value) || 0 })}
+                    placeholder="5.15"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Multiplicador de Precio</Label>
+                  <Label>Precio/Km (€)</Label>
                   <Input
                     type="number"
-                    step="0.05"
-                    value={editingVehicle.priceMultiplier}
-                    onChange={(e) => setEditingVehicle({ ...editingVehicle, priceMultiplier: parseFloat(e.target.value) || 1 })}
+                    step="0.01"
+                    value={editingVehicle.pricePerKm}
+                    onChange={(e) => setEditingVehicle({ ...editingVehicle, pricePerKm: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.54"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mínimo (€)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editingVehicle.minimumPrice}
+                    onChange={(e) => setEditingVehicle({ ...editingVehicle, minimumPrice: parseFloat(e.target.value) || 0 })}
+                    placeholder="7.50"
                   />
                 </div>
               </div>

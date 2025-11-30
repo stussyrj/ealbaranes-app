@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,28 +26,15 @@ interface QuoteBreakdown {
   };
   distance: number;
   duration: number;
-  zone: {
-    id: string;
-    zone: number;
-    name: string;
-    country: string;
-  };
   vehicle: {
     id: string;
     name: string;
     capacity: string;
-    multiplier: number;
   };
   pricing: {
     basePrice: number;
     distanceCost: number;
     pricePerKm: number;
-    tollSurcharge: number;
-    tollCost: number;
-    vehicleMultiplier: number;
-    subtotal: number;
-    extras: { name: string; cost: number }[];
-    extrasCost: number;
     minimumPrice: number;
     totalPrice: number;
   };
@@ -63,13 +49,7 @@ export function QuoteCalculatorAdvanced() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
-  const [destinationCountry, setDestinationCountry] = useState("España");
   const [result, setResult] = useState<QuoteBreakdown | null>(null);
-  const [extras, setExtras] = useState({
-    urgente: false,
-    cargaFragil: false,
-    seguroExtra: false,
-  });
 
   const { data: vehicleTypes, isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
     queryKey: ["/api/vehicle-types"],
@@ -80,8 +60,6 @@ export function QuoteCalculatorAdvanced() {
       origin: string;
       destination: string;
       vehicleTypeId: string;
-      destinationCountry: string;
-      extras: typeof extras;
     }) => {
       const response = await apiRequest("POST", "/api/calculate-quote", data);
       return response.json() as Promise<QuoteResponse>;
@@ -97,8 +75,6 @@ export function QuoteCalculatorAdvanced() {
       origin,
       destination,
       vehicleTypeId,
-      destinationCountry,
-      extras,
     });
   };
 
@@ -113,7 +89,6 @@ export function QuoteCalculatorAdvanced() {
     setOrigin("");
     setDestination("");
     setVehicleTypeId("");
-    setExtras({ urgente: false, cargaFragil: false, seguroExtra: false });
     calculateMutation.reset();
   };
 
@@ -146,7 +121,7 @@ export function QuoteCalculatorAdvanced() {
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600" />
                 <Input
                   id="origin"
-                  placeholder="Ej: Calle Mayor 1, Madrid, España"
+                  placeholder="Ej: Calle Mayor 1, Madrid"
                   value={origin}
                   onChange={(e) => setOrigin(e.target.value)}
                   className="pl-10"
@@ -160,7 +135,7 @@ export function QuoteCalculatorAdvanced() {
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-600" />
                 <Input
                   id="destination"
-                  placeholder="Ej: Avenida Diagonal 100, Barcelona, España"
+                  placeholder="Ej: Avenida Diagonal 100, Barcelona"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   className="pl-10"
@@ -170,82 +145,28 @@ export function QuoteCalculatorAdvanced() {
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>País de Destino (referencia)</Label>
-              <Select value={destinationCountry} onValueChange={setDestinationCountry}>
-                <SelectTrigger data-testid="select-country">
-                  <SelectValue />
+          <div className="space-y-2">
+            <Label>Tipo de Vehículo</Label>
+            {isLoadingVehicles ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <Select value={vehicleTypeId} onValueChange={setVehicleTypeId}>
+                <SelectTrigger data-testid="select-vehicle-type">
+                  <Truck className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Selecciona un vehículo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="España">España</SelectItem>
-                  <SelectItem value="Portugal">Portugal</SelectItem>
-                  <SelectItem value="Francia">Francia</SelectItem>
+                  {vehicleTypes?.map((v) => (
+                    <SelectItem key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
+                      <div className="flex flex-col">
+                        <span>{v.name}</span>
+                        <span className="text-xs text-muted-foreground">{v.capacity}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de Vehículo</Label>
-              {isLoadingVehicles ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select value={vehicleTypeId} onValueChange={setVehicleTypeId}>
-                  <SelectTrigger data-testid="select-vehicle-type">
-                    <Truck className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="Selecciona un vehículo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vehicleTypes?.map((v) => (
-                      <SelectItem key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
-                        <div className="flex flex-col">
-                          <span>{v.name}</span>
-                          <span className="text-xs text-muted-foreground">{v.capacity}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Extras Opcionales</Label>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="urgente"
-                  checked={extras.urgente}
-                  onCheckedChange={(checked) => setExtras({ ...extras, urgente: !!checked })}
-                  data-testid="checkbox-urgente"
-                />
-                <label htmlFor="urgente" className="text-sm cursor-pointer">
-                  Envío Urgente (+25%)
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="cargaFragil"
-                  checked={extras.cargaFragil}
-                  onCheckedChange={(checked) => setExtras({ ...extras, cargaFragil: !!checked })}
-                  data-testid="checkbox-fragil"
-                />
-                <label htmlFor="cargaFragil" className="text-sm cursor-pointer">
-                  Carga Frágil (+10%)
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="seguroExtra"
-                  checked={extras.seguroExtra}
-                  onCheckedChange={(checked) => setExtras({ ...extras, seguroExtra: !!checked })}
-                  data-testid="checkbox-seguro"
-                />
-                <label htmlFor="seguroExtra" className="text-sm cursor-pointer">
-                  Seguro Extra (+35€)
-                </label>
-              </div>
-            </div>
+            )}
           </div>
 
           <Button
@@ -273,15 +194,10 @@ export function QuoteCalculatorAdvanced() {
       {result && (
         <Card className="border-primary/50">
           <CardHeader className="bg-primary/5">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Receipt className="h-5 w-5" />
-                Presupuesto Generado
-              </CardTitle>
-              <Badge variant="secondary" className="text-sm">
-                Zona {result.zone.zone}: {result.zone.name}
-              </Badge>
-            </div>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Receipt className="h-5 w-5" />
+              Presupuesto Generado
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid gap-6 lg:grid-cols-2">
@@ -305,7 +221,7 @@ export function QuoteCalculatorAdvanced() {
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Distancia</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
-                      {result.distance} km
+                      {result.distance.toFixed(1)} km
                     </p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">
@@ -331,50 +247,22 @@ export function QuoteCalculatorAdvanced() {
                       <Info className="h-4 w-4 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Precio calculado según la zona y tipo de vehículo</p>
+                      <p>Precio = max(Salida Mínima, Dirección + (Km × Precio/Km))</p>
                     </TooltipContent>
                   </Tooltip>
                 </h4>
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tarifa base ({result.zone.name})</span>
+                    <span className="text-muted-foreground">Dirección (tarifa base)</span>
                     <span className="font-mono">{result.pricing.basePrice.toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Distancia ({result.distance}km × {result.pricing.pricePerKm.toFixed(2)}€)
+                      Distancia ({result.distance.toFixed(1)} km × {result.pricing.pricePerKm.toFixed(2)}€/km)
                     </span>
                     <span className="font-mono">{result.pricing.distanceCost.toFixed(2)}€</span>
                   </div>
-                  {result.pricing.tollCost > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Peajes (+{result.pricing.tollSurcharge}%)
-                      </span>
-                      <span className="font-mono">{result.pricing.tollCost.toFixed(2)}€</span>
-                    </div>
-                  )}
-                  {result.pricing.vehicleMultiplier !== 1 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Multiplicador vehículo (×{result.pricing.vehicleMultiplier.toFixed(2)})
-                      </span>
-                      <span className="font-mono text-muted-foreground">aplicado</span>
-                    </div>
-                  )}
-                  
-                  {result.pricing.extras.length > 0 && (
-                    <>
-                      <div className="border-t my-2" />
-                      {result.pricing.extras.map((extra, i) => (
-                        <div key={i} className="flex justify-between">
-                          <span className="text-muted-foreground">{extra.name}</span>
-                          <span className="font-mono">{extra.cost.toFixed(2)}€</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
                   
                   <div className="border-t pt-3 mt-3">
                     <div className="flex justify-between items-center">
@@ -384,7 +272,7 @@ export function QuoteCalculatorAdvanced() {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Precio mínimo: {result.pricing.minimumPrice.toFixed(2)}€
+                      Mínimo: {result.pricing.minimumPrice.toFixed(2)}€
                     </p>
                   </div>
                 </div>
