@@ -30,60 +30,99 @@ export default function DashboardPage() {
   };
 
   const confirmedQuotes = quotes.filter((q) => q.status === "confirmed");
+  const approvedQuotes = quotes.filter((q) => q.status === "approved");
+  const rejectedQuotes = quotes.filter((q) => q.status === "rejected");
   const totalDistance = quotes.reduce((sum, q) => sum + (q.distance || 0), 0);
   const avgDistance = quotes.length > 0 ? (totalDistance / quotes.length).toFixed(1) : "0";
-  const totalRevenue = confirmedQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
+  const totalRevenue = approvedQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
+
+  const renderQuoteCard = (quote: any, showActions = false) => (
+    <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900">
+      <div className="grid grid-cols-2 gap-4 mb-3">
+        <div>
+          <p className="text-sm text-muted-foreground">Origen</p>
+          <p className="font-medium text-sm">{quote.origin}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Destino</p>
+          <p className="font-medium text-sm">{quote.destination}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Vehículo</p>
+          <p className="font-medium text-sm">{quote.vehicleTypeName}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Precio</p>
+          <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
+        </div>
+      </div>
+      {quote.phoneNumber && (
+        <div className="border-t pt-3 mb-3">
+          <p className="text-sm"><span className="text-muted-foreground">Teléfono: </span><a href={`tel:${quote.phoneNumber}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quote.phoneNumber}</a></p>
+        </div>
+      )}
+      {showActions && (
+        <div className="flex gap-2">
+          <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white text-sm" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
+          <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white text-sm" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
+          <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-sm" data-testid={`button-call-${quote.id}`}>Llamar</Button>
+        </div>
+      )}
+      {quote.status === "approved" && (
+        <div className="mt-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm p-2 rounded text-center font-medium">Aprobada</div>
+      )}
+      {quote.status === "rejected" && (
+        <div className="mt-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm p-2 rounded text-center font-medium">Rechazada</div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6 p-6">
       <h1 className="text-3xl font-semibold">Dashboard</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Total" icon={Calculator} />
-        <StatCard title="Confirmados" value={confirmedQuotes.length.toString()} subtitle="Solicitudes" icon={TrendingUp} />
+        <StatCard title="Confirmados" value={confirmedQuotes.length.toString()} subtitle="Por revisar" icon={TrendingUp} />
         <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
-        <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Confirmados" icon={Truck} />
+        <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Aprobados" icon={Truck} />
       </div>
 
       {confirmedQuotes.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Solicitudes Confirmadas</CardTitle>
+            <CardTitle>Solicitudes Pendientes de Revisión</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {confirmedQuotes.map((quote) => (
-                <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900">
-                  <div className="grid grid-cols-2 gap-4 mb-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Origen</p>
-                      <p className="font-medium text-sm">{quote.origin}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Destino</p>
-                      <p className="font-medium text-sm">{quote.destination}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Vehículo</p>
-                      <p className="font-medium text-sm">{quote.vehicleTypeName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Precio</p>
-                      <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
-                    </div>
-                  </div>
-                  {quote.phoneNumber && (
-                    <div className="border-t pt-3 mb-3">
-                      <p className="text-sm"><span className="text-muted-foreground">Teléfono: </span><a href={`tel:${quote.phoneNumber}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quote.phoneNumber}</a></p>
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white text-sm" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
-                    <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white text-sm" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
-                    <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-sm" data-testid={`button-call-${quote.id}`}>Llamar</Button>
-                  </div>
-                </div>
-              ))}
+              {confirmedQuotes.map((quote) => renderQuoteCard(quote, true))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(approvedQuotes.length > 0 || rejectedQuotes.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Historial de Solicitudes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {approvedQuotes.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-green-600 dark:text-green-400 mb-3">Aprobadas ({approvedQuotes.length})</h3>
+                <div className="space-y-3">
+                  {approvedQuotes.map((quote) => renderQuoteCard(quote, false))}
+                </div>
+              </div>
+            )}
+            {rejectedQuotes.length > 0 && (
+              <div>
+                {approvedQuotes.length > 0 && <div className="border-t my-4"></div>}
+                <h3 className="font-semibold text-red-600 dark:text-red-400 mb-3">Rechazadas ({rejectedQuotes.length})</h3>
+                <div className="space-y-3">
+                  {rejectedQuotes.map((quote) => renderQuoteCard(quote, false))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
