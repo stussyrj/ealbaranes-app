@@ -1,8 +1,6 @@
 import { Calculator, TrendingUp, MapPin, Truck } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
-import { QuoteCalculatorAdvanced } from "@/components/QuoteCalculatorAdvanced";
 
-// todo: remove mock functionality - replace with actual stats from API
 const mockStats = {
   totalQuotes: 156,
   monthlyRevenue: 24350,
@@ -48,8 +46,6 @@ export default function DashboardPage() {
           icon={Truck}
         />
       </div>
-
-      <QuoteCalculatorAdvanced />
     </div>
   );
 }
