@@ -21,6 +21,8 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Architecture: Role-based access control (admin vs customer)
 - Admin name: Daniel (email: daniel@directtransports.com)
 - App name: DirectTransports
+- Pricing model: Price per km + minimum price (no base/direction charges)
+- Urgency option: 25% surcharge available in calculator
 
 ## System Architecture
 
@@ -45,10 +47,10 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 **Admin Area** (Protected):
 - `/` - Dashboard (0 values - pre-launch)
 - `/admin/pricing` - Manage pricing rules
-- `/admin/vehicles` - Manage vehicle types
+- `/admin/vehicles` - Manage vehicle types with on/off toggle
 
 **Customer Area** (Protected):
-- `/` - Quote calculator
+- `/` - Quote calculator with urgency option (+25%)
 - `/history` - Quote history
 - `/contact` - Contact information
 
@@ -98,20 +100,22 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Authentication and authorization
 - `role` field for admin/customer distinction
 
-**Pricing Rules Table**:
+**Pricing Rules Table** (Future):
 - Zone-based pricing configuration
-- Fields: zone number, country, distance range (min/max km), base price, price per km, toll surcharge, minimum price
+- Fields: zone number, country, distance range (min/max km), price per km, toll surcharge, minimum price
 - Supports multiple countries (España, Portugal, Francia)
 - `isActive` flag for soft deletion
 
 **Vehicle Types Table**:
 - Vehicle configurations with capacity information
-- `priceMultiplier` adjusts base pricing per vehicle
-- Current types: Moto (1.0x), Furgoneta (1.0x), Furgón (1.0x), Carrozado (1.0x)
+- Fields: name, description, capacity, pricePerKm, minimumPrice, isActive
+- No basePrice field - pricing is purely distance-based
+- Current types: Moto, Furgoneta, Furgón, Carrozado
+- Soft delete via `isActive` flag (toggle on/off without data loss)
 
 **Quotes Table**:
 - Historical quote storage
-- Fields: origin/destination addresses, coordinates, distance, duration, pricing breakdown, selected zone/vehicle, final price
+- Fields: origin/destination addresses, coordinates, distance, duration, pricing breakdown, selected vehicle, final price, isUrgent
 - Status tracking (pending, accepted, rejected)
 - User association for history viewing
 
@@ -119,6 +123,7 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Pricing rules are configurable rather than hardcoded
 - Storing full quote details enables auditing and analytics
 - Soft deletion via `isActive` preserves historical data
+- Urgency flag tracks if 25% surcharge was applied
 
 ### Authentication Strategy
 
@@ -141,18 +146,18 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 
 1. **Geocoding**: Convert origin/destination addresses to coordinates via OpenRouteService
 2. **Route Calculation**: Get actual driving distance and duration
-3. **Zone Selection**: Match distance + destination country to pricing rule
+3. **Vehicle Selection**: Operator selects from active vehicles only
 4. **Price Calculation**:
-   - Base price from zone
    - Distance cost = distance × price per km
-   - Toll surcharge = (base + distance cost) × toll percentage
-   - Vehicle adjustment = total × vehicle multiplier
+   - Base amount = max(minimumPrice, distance cost)
+   - If urgent: base amount × 1.25 (25% surcharge)
    - Apply minimum price threshold
 
 **Design Rationale**:
 - Using actual routing API eliminates "as the crow flies" distance errors
-- Zone-based pricing supports different rates for local vs. international transport
-- Vehicle multiplier keeps base pricing simple while accommodating different vehicle sizes
+- No base/direction charges - purely distance-based pricing
+- Urgency surcharge allows customers to request expedited delivery
+- Vehicle-specific minimum ensures profitability for all vehicle types
 
 ### API Integration
 
@@ -245,31 +250,35 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - `esbuild` - Production server bundling
 - `drizzle-kit` - Database migration tool
 
-## Recent Changes (v2.1 - Branding & Stability)
+## Recent Changes (v2.2 - Pricing & Urgency Updates)
 
-### 2025-11-30 Final Updates
+### 2025-11-30 Pricing Model Refactor
+
+**Removed**:
+- `basePrice` field from vehicle types table
+- "Dirección" column from admin vehicle management table
+- Base pricing UI from vehicle configuration dialog
 
 **Added**:
-- Role switching button in sidebar with page reload for stability
-- localStorage persistence for user role and data
-- Simplified customer pages to avoid HMR conflicts
+- Urgency option in quote calculator (+25% surcharge)
+- `isUrgent` field in quotes table
+- Urgency indicator in quote breakdown display
+- Method to show urgency surcharge calculation
 
 **Modified**:
-- App name changed from "TransQuote" to "DirectTransports"
-- Admin user name changed from "Carlos Admin" to "Daniel"
-- Admin email changed to "daniel@directtransports.com"
-- AppSidebar fully functional with both admin and customer views
-- QuotePage, HistoryPage, ContactPage simplified for stability
-- AuthContext now persists user data in localStorage
+- Quote calculation: now uses only (distance × pricePerKm) vs minimumPrice
+- Vehicle types table: shows only €/Km and Mínimo columns
+- Quote results display: shows distance breakdown and urgency status
+- Admin vehicle form: reduced to pricePerKm and minimumPrice only
 
 **Fixed**:
-- Vite HMR conflicts when switching between admin/customer roles
-- Customer pages now load without errors
-- Navigation works smoothly between all pages
-- Dark/light theme toggle fully functional
+- Removed confusing base/direction pricing
+- Aligned pricing model with actual business operations
+- Simplified calculation logic for clarity
 
 **Rationale for Changes**:
-- Simplified component architecture avoids Vite Hot Module Replacement conflicts
-- localStorage persistence ensures role is maintained across page reloads
-- Complete separation of admin and customer UI eliminates route conflicts
-- Page reload on role switch ensures clean state initialization
+- Client operates on distance-based pricing only
+- Base pricing was unnecessary overhead
+- Urgency feature provides flexibility for premium deliveries
+- Cleaner UI reduces admin configuration burden
+

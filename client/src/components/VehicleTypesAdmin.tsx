@@ -68,7 +68,6 @@ export function VehicleTypesAdmin() {
       description: editingVehicle.description,
       capacity: editingVehicle.capacity,
       pricePerKm: editingVehicle.pricePerKm,
-      basePrice: editingVehicle.basePrice,
       minimumPrice: editingVehicle.minimumPrice,
       isActive: editingVehicle.isActive,
     };
@@ -91,7 +90,6 @@ export function VehicleTypesAdmin() {
       description: "",
       capacity: "",
       pricePerKm: 0.5,
-      basePrice: 5,
       minimumPrice: 5,
       isActive: true,
     });
@@ -145,7 +143,6 @@ export function VehicleTypesAdmin() {
                 <TableRow>
                   <TableHead>Vehículo</TableHead>
                   <TableHead>Capacidad</TableHead>
-                  <TableHead className="text-right">Dirección</TableHead>
                   <TableHead className="text-right">€/Km</TableHead>
                   <TableHead className="text-right">Mínimo</TableHead>
                   <TableHead>Estado</TableHead>
@@ -158,9 +155,6 @@ export function VehicleTypesAdmin() {
                     <TableCell className="font-medium">{vehicle.name}</TableCell>
                     <TableCell>
                       <Badge variant={vehicle.isActive ? "secondary" : "outline"}>{vehicle.capacity}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {vehicle.basePrice.toFixed(2)}€
                     </TableCell>
                     <TableCell className="text-right font-mono">
                       {vehicle.pricePerKm.toFixed(2)}€
@@ -238,17 +232,7 @@ export function VehicleTypesAdmin() {
                   placeholder="Ej: Hasta 5 kg, 40x30x40 cm"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label>Dirección (€)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={editingVehicle.basePrice}
-                    onChange={(e) => setEditingVehicle({ ...editingVehicle, basePrice: parseFloat(e.target.value) || 0 })}
-                    placeholder="5.15"
-                  />
-                </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Precio/Km (€)</Label>
                   <Input

@@ -24,7 +24,6 @@ export const vehicleTypes = pgTable("vehicle_types", {
   description: text("description"),
   capacity: text("capacity"),
   pricePerKm: real("price_per_km").notNull(),
-  basePrice: real("base_price").notNull(),
   minimumPrice: real("minimum_price").notNull(),
   isActive: boolean("is_active").default(true),
 });
@@ -47,9 +46,9 @@ export const quotes = pgTable("quotes", {
   duration: integer("duration"),
   vehicleTypeId: varchar("vehicle_type_id"),
   vehicleTypeName: text("vehicle_type_name"),
-  basePrice: real("base_price").notNull(),
   distanceCost: real("distance_cost").notNull(),
   totalPrice: real("total_price").notNull(),
+  isUrgent: boolean("is_urgent").default(false),
   status: text("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -81,6 +80,7 @@ export const calculateQuoteRequestSchema = z.object({
   origin: z.string().min(1),
   destination: z.string().min(1),
   vehicleTypeId: z.string().min(1),
+  isUrgent: z.boolean().optional(),
 });
 
 export type GeocodeRequest = z.infer<typeof geocodeRequestSchema>;

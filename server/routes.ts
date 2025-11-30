@@ -116,11 +116,13 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Tipo de vehículo no encontrado" });
       }
       
-      const basePrice = vehicleType.basePrice;
       const distanceCost = distance * vehicleType.pricePerKm;
-      const subtotal = basePrice + distanceCost;
+      let totalPrice = Math.max(vehicleType.minimumPrice, distanceCost);
       
-      const totalPrice = Math.max(vehicleType.minimumPrice, subtotal);
+      // Apply urgency surcharge (25%)
+      if (data.isUrgent) {
+        totalPrice = totalPrice * 1.25;
+      }
       
       const quote = await storage.createQuote({
         origin: data.origin,
@@ -131,9 +133,9 @@ export async function registerRoutes(
         duration,
         vehicleTypeId: vehicleType.id,
         vehicleTypeName: vehicleType.name,
-        basePrice,
         distanceCost,
         totalPrice: Math.round(totalPrice * 100) / 100,
+        isUrgent: data.isUrgent ?? false,
         status: "pending",
       });
       
@@ -158,10 +160,10 @@ export async function registerRoutes(
             capacity: vehicleType.capacity,
           },
           pricing: {
-            basePrice,
             pricePerKm: vehicleType.pricePerKm,
             distanceCost,
             minimumPrice: vehicleType.minimumPrice,
+            isUrgent: data.isUrgent ?? false,
             totalPrice: Math.round(totalPrice * 100) / 100,
           },
         },

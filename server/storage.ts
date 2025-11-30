@@ -33,7 +33,6 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 5 kg, 40x30x40 cm",
     capacity: "5 kg",
     pricePerKm: 0.54,
-    basePrice: 3.70,
     minimumPrice: 3.70,
     isActive: true 
   },
@@ -43,7 +42,6 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 200 kg, 1 palé",
     capacity: "200 kg",
     pricePerKm: 0.55,
-    basePrice: 5.15,
     minimumPrice: 7.50,
     isActive: true 
   },
@@ -53,7 +51,6 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 1.400 kg, 5 palés",
     capacity: "1.400 kg",
     pricePerKm: 0.65,
-    basePrice: 6.00,
     minimumPrice: 9.00,
     isActive: true 
   },
@@ -63,7 +60,6 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 1.000 kg, 8 palés",
     capacity: "1.000 kg",
     pricePerKm: 0.75,
-    basePrice: 7.00,
     minimumPrice: 10.00,
     isActive: true 
   },
@@ -119,7 +115,6 @@ export class MemStorage implements IStorage {
       description: vehicle.description ?? null,
       capacity: vehicle.capacity ?? null,
       pricePerKm: vehicle.pricePerKm,
-      basePrice: vehicle.basePrice,
       minimumPrice: vehicle.minimumPrice,
       isActive: vehicle.isActive ?? true,
     };
@@ -168,9 +163,9 @@ export class MemStorage implements IStorage {
       duration: quote.duration ?? null,
       vehicleTypeId: quote.vehicleTypeId ?? null,
       vehicleTypeName: quote.vehicleTypeName ?? null,
-      basePrice: quote.basePrice,
       distanceCost: quote.distanceCost,
       totalPrice: quote.totalPrice,
+      isUrgent: quote.isUrgent ?? false,
       status: quote.status ?? "pending",
       createdAt: new Date(),
     };

@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function QuotePage() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleId, setVehicleId] = useState("");
+  const [isUrgent, setIsUrgent] = useState(false);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ export default function QuotePage() {
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin, destination, vehicleTypeId: vehicleId }),
+      body: JSON.stringify({ origin, destination, vehicleTypeId: vehicleId, isUrgent }),
       credentials: "include",
     });
     const data = await res.json();
@@ -75,6 +77,16 @@ export default function QuotePage() {
               ))}
             </select>
           </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="urgent"
+              checked={isUrgent}
+              onCheckedChange={(checked) => setIsUrgent(checked === true)}
+            />
+            <Label htmlFor="urgent" className="cursor-pointer text-sm">
+              Urgencia (+25%)
+            </Label>
+          </div>
           <Button onClick={handleCalculate} className="w-full">
             Calcular
           </Button>
@@ -107,14 +119,24 @@ export default function QuotePage() {
             </div>
             <div className="border-t pt-3 space-y-1">
               <div className="flex justify-between">
-                <span>Tarifa:</span>
-                <span>{(result.pricing?.basePrice || 0).toFixed(2)}€</span>
+                <span>Distancia (€/km):</span>
+                <span>{(result.pricing?.pricePerKm || 0).toFixed(2)}€ × {(result.distance || 0).toFixed(1)} km</span>
               </div>
               <div className="flex justify-between">
-                <span>Distancia:</span>
+                <span>Costo de distancia:</span>
                 <span>{(result.pricing?.distanceCost || 0).toFixed(2)}€</span>
               </div>
-              <div className="flex justify-between font-bold text-lg">
+              <div className="flex justify-between">
+                <span>Mínimo aplicable:</span>
+                <span>{(result.pricing?.minimumPrice || 0).toFixed(2)}€</span>
+              </div>
+              {result.pricing?.isUrgent && (
+                <div className="flex justify-between text-orange-600 dark:text-orange-400">
+                  <span>Urgencia (+25%):</span>
+                  <span className="font-medium">Aplicado</span>
+                </div>
+              )}
+              <div className="border-t pt-2 flex justify-between font-bold text-lg">
                 <span>Total:</span>
                 <span>{(result.pricing?.totalPrice || 0).toFixed(2)}€</span>
               </div>
@@ -126,6 +148,7 @@ export default function QuotePage() {
                 setOrigin("");
                 setDestination("");
                 setVehicleId("");
+                setIsUrgent(false);
               }}
               className="w-full"
             >
