@@ -7,6 +7,7 @@ import {
   Truck as TruckIcon,
   Phone,
   LayoutDashboard,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -21,6 +22,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
 const adminNavItems = [
@@ -37,7 +39,7 @@ const customerNavItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   if (!user) {
     return null;
@@ -48,6 +50,17 @@ export function AppSidebar() {
   const username = user.username || "Usuario";
   const email = user.email || "";
   const initials = String(username || "U").slice(0, 2).toUpperCase();
+
+  const switchRole = () => {
+    if (user) {
+      setUser({
+        ...user,
+        role: isAdmin ? "customer" : "admin",
+        username: isAdmin ? "Cliente Demo" : "Carlos Admin",
+        email: isAdmin ? "cliente@demo.com" : "carlos@transporte.com",
+      });
+    }
+  };
 
   return (
     <Sidebar>
@@ -89,7 +102,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 space-y-3">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
@@ -103,6 +116,16 @@ export function AppSidebar() {
             </p>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={switchRole}
+          className="w-full justify-start"
+          data-testid="button-switch-role"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Cambiar a {isAdmin ? "Cliente" : "Admin"}
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
