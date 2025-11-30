@@ -11,43 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
 import type { VehicleType } from "@shared/schema";
 
-interface QuoteBreakdown {
-  origin: {
-    address: string;
-    coords: { lat: number; lng: number };
-    label: string;
-  };
-  destination: {
-    address: string;
-    coords: { lat: number; lng: number };
-    label: string;
-  };
-  distance: number;
-  duration: number;
-  vehicle: {
-    id: string;
-    name: string;
-    capacity: string;
-  };
-  pricing: {
-    basePrice: number;
-    distanceCost: number;
-    pricePerKm: number;
-    minimumPrice: number;
-    totalPrice: number;
-  };
-}
-
-interface QuoteResponse {
-  quote: object;
-  breakdown: QuoteBreakdown;
-}
-
 export function QuoteCalculatorAdvanced() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
-  const [result, setResult] = useState<QuoteBreakdown | null>(null);
+  const [result, setResult] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const { data: vehicleTypes, isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
     queryKey: ["/api/vehicle-types"],
@@ -60,10 +29,16 @@ export function QuoteCalculatorAdvanced() {
       vehicleTypeId: string;
     }) => {
       const response = await apiRequest("POST", "/api/calculate-quote", data);
-      return response.json() as Promise<QuoteResponse>;
+      const json = await response.json();
+      return json;
     },
     onSuccess: (data) => {
-      setResult(data.breakdown);
+      setResult(data?.breakdown || null);
+      setErrorMsg("");
+    },
+    onError: (error: any) => {
+      setErrorMsg(error?.message || "Error al calcular el presupuesto");
+      setResult(null);
     },
   });
 
@@ -77,6 +52,7 @@ export function QuoteCalculatorAdvanced() {
   };
 
   const formatDuration = (minutes: number) => {
+    if (!minutes) return "—";
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
     return `${hours}h ${mins}min`;
@@ -87,6 +63,7 @@ export function QuoteCalculatorAdvanced() {
     setOrigin("");
     setDestination("");
     setVehicleTypeId("");
+    setErrorMsg("");
     calculateMutation.reset();
   };
 
@@ -105,12 +82,10 @@ export function QuoteCalculatorAdvanced() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {calculateMutation.isError && (
+          {errorMsg && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {(calculateMutation.error as Error)?.message || "Error al calcular el presupuesto. Verifica las direcciones e intenta de nuevo."}
-              </AlertDescription>
+              <AlertDescription>{errorMsg}</AlertDescription>
             </Alert>
           )}
 
@@ -150,22 +125,20 @@ export function QuoteCalculatorAdvanced() {
             {isLoadingVehicles ? (
               <Skeleton className="h-10 w-full" />
             ) : (
-              <>
-                <select
-                  id="vehicle"
-                  value={vehicleTypeId}
-                  onChange={(e) => setVehicleTypeId(e.target.value)}
-                  className="w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  data-testid="select-vehicle-type"
-                >
-                  <option value="">Selecciona un vehículo</option>
-                  {vehicleTypes?.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name}
-                    </option>
-                  ))}
-                </select>
-              </>
+              <select
+                id="vehicle"
+                value={vehicleTypeId}
+                onChange={(e) => setVehicleTypeId(e.target.value)}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                data-testid="select-vehicle-type"
+              >
+                <option value="">Selecciona un vehículo</option>
+                {vehicleTypes?.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
             )}
             {selectedVehicle && (
               <p className="text-sm text-muted-foreground">Capacidad: {selectedVehicle.capacity}</p>
@@ -182,7 +155,7 @@ export function QuoteCalculatorAdvanced() {
             {calculateMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Calculando ruta con OpenRouteService...
+                Calculando...
               </>
             ) : (
               <>
@@ -213,9 +186,13 @@ export function QuoteCalculatorAdvanced() {
                       <div className="w-0.5 h-8 bg-border" />
                       <div className="w-3 h-3 rounded-full bg-red-500" />
                     </div>
-                    <div className="space-y-2">
-                      <p className="font-medium" data-testid="text-origin">{result.origin.label}</p>
-                      <p className="font-medium" data-testid="text-destination">{result.destination.label}</p>
+                    <div className="space-y-2 min-w-0">
+                      <p className="font-medium truncate" data-testid="text-origin">
+                        {result?.origin?.label || result?.origin?.address || "—"}
+                      </p>
+                      <p className="font-medium truncate" data-testid="text-destination">
+                        {result?.destination?.label || result?.destination?.address || "—"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -224,21 +201,21 @@ export function QuoteCalculatorAdvanced() {
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Distancia</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
-                      {result.distance.toFixed(1)} km
+                      {result?.distance ? Number(result.distance).toFixed(1) : "—"} km
                     </p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Duración Est.</p>
+                    <p className="text-sm text-muted-foreground">Duración</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-duration">
-                      {formatDuration(result.duration)}
+                      {formatDuration(result?.duration)}
                     </p>
                   </div>
                 </div>
                 
                 <div>
                   <p className="text-sm text-muted-foreground">Vehículo</p>
-                  <p className="font-medium">{result.vehicle.name}</p>
-                  <p className="text-sm text-muted-foreground">{result.vehicle.capacity}</p>
+                  <p className="font-medium">{result?.vehicle?.name || "—"}</p>
+                  <p className="text-sm text-muted-foreground">{result?.vehicle?.capacity || "—"}</p>
                 </div>
               </div>
 
@@ -250,32 +227,32 @@ export function QuoteCalculatorAdvanced() {
                       <Info className="h-4 w-4 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Precio = max(Salida Mínima, Dirección + (Km × Precio/Km))</p>
+                      <p>Precio = max(Mínimo, Dirección + (km × €/km))</p>
                     </TooltipContent>
                   </Tooltip>
                 </h4>
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dirección (tarifa base)</span>
-                    <span className="font-mono">{result.pricing.basePrice.toFixed(2)}€</span>
+                    <span className="text-muted-foreground">Dirección</span>
+                    <span className="font-mono">{result?.pricing?.basePrice?.toFixed(2) || "—"}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Distancia ({result.distance.toFixed(1)} km × {result.pricing.pricePerKm.toFixed(2)}€/km)
+                      Distancia ({result?.distance?.toFixed(1) || "—"} km × {result?.pricing?.pricePerKm?.toFixed(2) || "—"}€/km)
                     </span>
-                    <span className="font-mono">{result.pricing.distanceCost.toFixed(2)}€</span>
+                    <span className="font-mono">{result?.pricing?.distanceCost?.toFixed(2) || "—"}€</span>
                   </div>
                   
                   <div className="border-t pt-3 mt-3">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-base">Total</span>
+                      <span className="font-semibold">Total</span>
                       <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
-                        {result.pricing.totalPrice.toFixed(2)}€
+                        {result?.pricing?.totalPrice?.toFixed(2) || "—"}€
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Mínimo: {result.pricing.minimumPrice.toFixed(2)}€
+                      Mínimo: {result?.pricing?.minimumPrice?.toFixed(2) || "—"}€
                     </p>
                   </div>
                 </div>
