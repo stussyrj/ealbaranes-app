@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { MapPin, Calculator, Loader2, Info, Receipt, AlertCircle } from "lucide-react";
+import { MapPin, Calculator, Loader2, Receipt, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { VehicleType } from "@shared/schema";
@@ -12,69 +11,43 @@ import type { VehicleType } from "@shared/schema";
 export function QuoteCalculatorAdvanced() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const [vehicleTypeId, setVehicleTypeId] = useState("");
-  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
-  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
-  const [resultData, setResultData] = useState<any>(null);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [vehicleId, setVehicleId] = useState("");
+  const [vehicles, setVehicles] = useState<VehicleType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+  const [calculating, setCalculating] = useState(false);
 
   useEffect(() => {
-    const loadVehicles = async () => {
-      try {
-        const response = await fetch("/api/vehicle-types", { credentials: "include" });
-        if (response.ok) {
-          const data = await response.json();
-          setVehicleTypes(Array.isArray(data) ? data : []);
-        }
-      } catch (e) {
-        console.error("Error loading vehicles:", e);
-      } finally {
-        setIsLoadingVehicles(false);
-      }
-    };
-    loadVehicles();
+    fetch("/api/vehicle-types", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setVehicles(Array.isArray(data) ? data : []))
+      .catch(() => setVehicles([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleCalculate = async () => {
-    if (!origin.trim() || !destination.trim() || !vehicleTypeId) return;
-    
-    setIsLoading(true);
-    setErrorMsg("");
-    setResultData(null);
+  const calculate = async () => {
+    if (!origin || !destination || !vehicleId) return;
+    setCalculating(true);
+    setError("");
+    setResult(null);
 
     try {
-      const response = await fetch("/api/calculate-quote", {
+      const res = await fetch("/api/calculate-quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          origin: origin.trim(),
-          destination: destination.trim(),
-          vehicleTypeId,
-        }),
+        body: JSON.stringify({ origin, destination, vehicleTypeId: vehicleId }),
         credentials: "include",
       });
 
-      if (!response.ok) {
-        throw new Error("Error al calcular el presupuesto");
-      }
-
-      const data = await response.json();
-      if (data && data.breakdown) {
-        setResultData(data.breakdown);
-      }
+      if (!res.ok) throw new Error("Error en el cálculo");
+      const data = await res.json();
+      setResult(data.breakdown || null);
     } catch (e: any) {
-      setErrorMsg(e.message || "Error al calcular el presupuesto");
+      setError(e.message || "Error al calcular");
     } finally {
-      setIsLoading(false);
+      setCalculating(false);
     }
-  };
-
-  const handleReset = () => {
-    setResultData(null);
-    setOrigin("");
-    setDestination("");
-    setVehicleTypeId("");
   };
 
   return (
@@ -82,66 +55,58 @@ export function QuoteCalculatorAdvanced() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-primary" />
+            <Calculator className="h-5 w-5" />
             Calculadora de Presupuesto
           </CardTitle>
           <CardDescription>
-            Introduce origen, destino y tipo de vehículo para calcular el presupuesto automáticamente
+            Calcula el precio automáticamente con origen, destino y vehículo
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {errorMsg && (
+        <CardContent className="space-y-4">
+          {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{errorMsg}</AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="origin">Dirección de Origen</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600" />
-                <Input
-                  id="origin"
-                  placeholder="Ej: Calle Mayor 1, Madrid"
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-origin"
-                />
-              </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="origin">Origen</Label>
+              <Input
+                id="origin"
+                placeholder="Ej: Madrid"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                data-testid="input-origin"
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="destination">Dirección de Destino</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-600" />
-                <Input
-                  id="destination"
-                  placeholder="Ej: Avenida Diagonal 100, Barcelona"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-destination"
-                />
-              </div>
+            <div>
+              <Label htmlFor="destination">Destino</Label>
+              <Input
+                id="destination"
+                placeholder="Ej: Barcelona"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                data-testid="input-destination"
+              />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="vehicle">Tipo de Vehículo</Label>
-            {isLoadingVehicles ? (
+          <div>
+            <Label htmlFor="vehicle">Vehículo</Label>
+            {loading ? (
               <Skeleton className="h-10 w-full" />
             ) : (
               <select
                 id="vehicle"
-                value={vehicleTypeId}
-                onChange={(e) => setVehicleTypeId(e.target.value)}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
                 data-testid="select-vehicle-type"
               >
                 <option value="">Selecciona un vehículo</option>
-                {vehicleTypes.map((v) => (
+                {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
                   </option>
@@ -151,13 +116,12 @@ export function QuoteCalculatorAdvanced() {
           </div>
 
           <Button
-            onClick={handleCalculate}
-            disabled={!origin || !destination || !vehicleTypeId || isLoading}
+            onClick={calculate}
+            disabled={!origin || !destination || !vehicleId || calculating}
             className="w-full"
-            size="lg"
             data-testid="button-calculate-quote"
           >
-            {isLoading ? (
+            {calculating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Calculando...
@@ -165,116 +129,77 @@ export function QuoteCalculatorAdvanced() {
             ) : (
               <>
                 <Calculator className="mr-2 h-4 w-4" />
-                Calcular Presupuesto
+                Calcular
               </>
             )}
           </Button>
         </CardContent>
       </Card>
 
-      {resultData && (
-        <Card className="border-primary/50">
-          <CardHeader className="bg-primary/5">
-            <CardTitle className="flex items-center gap-2 text-xl">
+      {result && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <Receipt className="h-5 w-5" />
-              Presupuesto Generado
+              Presupuesto
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Ruta</p>
-                  <div className="flex items-start gap-2 mt-1">
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <div className="w-0.5 h-8 bg-border" />
-                      <div className="w-3 h-3 rounded-full bg-red-500" />
-                    </div>
-                    <div className="space-y-2 min-w-0">
-                      <p className="font-medium truncate" data-testid="text-origin">
-                        {resultData?.origin?.label || "Origen"}
-                      </p>
-                      <p className="font-medium truncate" data-testid="text-destination">
-                        {resultData?.destination?.label || "Destino"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Distancia</p>
-                    <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
-                      {Number(resultData?.distance || 0).toFixed(1)} km
-                    </p>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Duración</p>
-                    <p className="text-2xl font-semibold font-mono" data-testid="text-duration">
-                      {resultData?.duration ? `${Math.floor(resultData.duration / 60)}h ${Math.round(resultData.duration % 60)}min` : "—"}
-                    </p>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground">Vehículo</p>
-                  <p className="font-medium">{resultData?.vehicle?.name || "—"}</p>
-                  <p className="text-sm text-muted-foreground">{resultData?.vehicle?.capacity || ""}</p>
-                </div>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Origen</p>
+                <p className="font-medium" data-testid="text-origin">
+                  {result.origin?.label || "—"}
+                </p>
               </div>
-
-              <div className="space-y-4 p-4 bg-card border rounded-lg">
-                <h4 className="font-semibold flex items-center gap-2">
-                  Desglose de Precio
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Precio = max(Mínimo, Dirección + (km × €/km))</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </h4>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dirección</span>
-                    <span className="font-mono">{Number(resultData?.pricing?.basePrice || 0).toFixed(2)}€</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Distancia ({Number(resultData?.distance || 0).toFixed(1)} km × {Number(resultData?.pricing?.pricePerKm || 0).toFixed(2)}€/km)
-                    </span>
-                    <span className="font-mono">{Number(resultData?.pricing?.distanceCost || 0).toFixed(2)}€</span>
-                  </div>
-                  
-                  <div className="border-t pt-3 mt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Total</span>
-                      <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
-                        {Number(resultData?.pricing?.totalPrice || 0).toFixed(2)}€
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Mínimo: {Number(resultData?.pricing?.minimumPrice || 0).toFixed(2)}€
-                    </p>
-                  </div>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Destino</p>
+                <p className="font-medium" data-testid="text-destination">
+                  {result.destination?.label || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Distancia</p>
+                <p className="text-lg font-semibold" data-testid="text-distance">
+                  {(result.distance || 0).toFixed(1)} km
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Vehículo</p>
+                <p className="font-medium">{result.vehicle?.name || "—"}</p>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6 flex-wrap">
-              <Button data-testid="button-save-quote">
-                Guardar Presupuesto
-              </Button>
-              <Button variant="outline" data-testid="button-print-quote">
-                Imprimir / PDF
-              </Button>
-              <Button variant="outline" onClick={handleReset} data-testid="button-new-quote">
-                Nuevo Cálculo
-              </Button>
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between">
+                <span>Tarifa: </span>
+                <span>{(result.pricing?.basePrice || 0).toFixed(2)}€</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Distancia: </span>
+                <span>{(result.pricing?.distanceCost || 0).toFixed(2)}€</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <span>Total: </span>
+                <span data-testid="text-total-price">
+                  {(result.pricing?.totalPrice || 0).toFixed(2)}€
+                </span>
+              </div>
             </div>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setResult(null);
+                setOrigin("");
+                setDestination("");
+                setVehicleId("");
+              }}
+              className="w-full"
+              data-testid="button-new-quote"
+            >
+              Nuevo Cálculo
+            </Button>
           </CardContent>
         </Card>
       )}

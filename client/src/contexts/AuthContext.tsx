@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 interface User {
   id: string;
@@ -26,21 +26,15 @@ const DEFAULT_USER: User = {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(DEFAULT_USER);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user] = useState<User | null>(DEFAULT_USER);
+  const [isLoading] = useState(false);
 
   const login = () => {
     // todo: remove mock functionality - implement actual login
-    setUser({
-      id: "1",
-      username: "Carlos Admin",
-      email: "carlos@transporte.com",
-      isAdmin: true,
-    });
   };
 
   const logout = () => {
-    setUser(null);
+    // todo: remove mock functionality - implement actual logout
   };
 
   return (
@@ -52,8 +46,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  if (!context) {
+    return {
+      user: DEFAULT_USER,
+      isLoading: false,
+      login: () => {},
+      logout: () => {},
+    };
   }
   return context;
 }
