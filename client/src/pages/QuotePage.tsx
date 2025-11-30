@@ -44,11 +44,25 @@ export default function QuotePage() {
     const now = new Date();
     const minimumTime = new Date(now.getTime() + 30 * 60000);
     
+    // Convertir a minutos desde medianoche para comparación correcta (incluyendo cambio de día)
     const [hours, minutes] = time.split(":").map(Number);
-    const selectedTime = new Date();
-    selectedTime.setHours(hours, minutes, 0, 0);
+    const selectedMinutes = hours * 60 + minutes;
+    const minimumMinutes = minimumTime.getHours() * 60 + minimumTime.getMinutes();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
     
-    if (selectedTime < minimumTime) {
+    // Si el mínimo está en el futuro hoy, el usuario debe seleccionar un tiempo en el futuro
+    let isValid = false;
+    
+    if (minimumMinutes > nowMinutes) {
+      // El mínimo es hoy (después de la hora actual)
+      isValid = selectedMinutes >= minimumMinutes;
+    } else {
+      // El mínimo es mañana (pasó medianoche), entonces cualquier hora que el usuario seleccione es válida si es >= mínimo
+      // O si selecciona una hora "anterior" que será interpretada como mañana
+      isValid = selectedMinutes >= minimumMinutes || selectedMinutes <= 1440;
+    }
+    
+    if (!isValid) {
       const minHours = String(minimumTime.getHours()).padStart(2, "0");
       const minMinutes = String(minimumTime.getMinutes()).padStart(2, "0");
       toast({
