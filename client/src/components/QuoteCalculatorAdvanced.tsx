@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -151,18 +150,22 @@ export function QuoteCalculatorAdvanced() {
             {isLoadingVehicles ? (
               <Skeleton className="h-10 w-full" />
             ) : (
-              <Select value={vehicleTypeId} onValueChange={setVehicleTypeId}>
-                <SelectTrigger id="vehicle" data-testid="select-vehicle-type">
-                  <SelectValue placeholder="Selecciona un vehículo" />
-                </SelectTrigger>
-                <SelectContent>
+              <>
+                <select
+                  id="vehicle"
+                  value={vehicleTypeId}
+                  onChange={(e) => setVehicleTypeId(e.target.value)}
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  data-testid="select-vehicle-type"
+                >
+                  <option value="">Selecciona un vehículo</option>
                   {vehicleTypes?.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
+                    <option key={v.id} value={v.id}>
                       {v.name}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+              </>
             )}
             {selectedVehicle && (
               <p className="text-sm text-muted-foreground">Capacidad: {selectedVehicle.capacity}</p>
