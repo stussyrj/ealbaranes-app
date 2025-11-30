@@ -256,27 +256,27 @@ export default function QuotePage() {
               </div>
             )}
             <div className="border-t pt-3 space-y-1">
-              <div className="flex justify-between">
-                <span>Distancia (€/km):</span>
-                <span>{(result.pricing?.pricePerKm || 0).toFixed(2)}€ × {(result.distance || 0).toFixed(1)} km</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tarifa (€/km):</span>
+                <span className="font-mono">{(result.pricing?.pricePerKm || 0).toFixed(2)}€ × {(result.distance || 0).toFixed(1)} km</span>
               </div>
-              <div className="flex justify-between">
-                <span>Costo de distancia:</span>
-                <span>{(result.pricing?.distanceCost || 0).toFixed(2)}€</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Importe por distancia:</span>
+                <span className="font-mono">{(result.pricing?.distanceCost || 0).toFixed(2)}€</span>
               </div>
-              <div className="flex justify-between">
-                <span>Mínimo aplicable:</span>
-                <span>{(result.pricing?.minimumPrice || 0).toFixed(2)}€</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tarifa mínima:</span>
+                <span className="font-mono">{(result.pricing?.minimumPrice || 0).toFixed(2)}€</span>
               </div>
               {result.pricing?.isUrgent && (
-                <div className="flex justify-between text-orange-600 dark:text-orange-400">
-                  <span>Urgencia (+25%):</span>
+                <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
+                  <span>Recargo urgencia (+25%):</span>
                   <span className="font-medium">Aplicado</span>
                 </div>
               )}
-              <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                <span>Total:</span>
-                <span>{(result.pricing?.totalPrice || 0).toFixed(2)}€</span>
+              <div className="border-t pt-3 flex justify-between">
+                <span className="font-semibold">Precio total a pagar:</span>
+                <span className="font-bold text-lg font-mono text-primary">{(result.pricing?.totalPrice || 0).toFixed(2)}€</span>
               </div>
             </div>
             <Button
