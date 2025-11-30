@@ -140,7 +140,7 @@ export default function QuotePage() {
           <div>
             <Label>Horario de Recogida</Label>
             <div className="text-xs text-muted-foreground mb-2">
-              Mínimo: {minTime} (30 minutos de anticipación)
+              Mínimo: {minTime} (necesitamos 30 minutos para llegar al origen)
             </div>
             <Input
               type="time"
