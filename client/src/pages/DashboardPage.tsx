@@ -102,11 +102,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 p-6">
       <h1 className="text-3xl font-semibold">Dashboard</h1>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Total" icon={Calculator} />
-        <StatCard title="En revisión" value={confirmedQuotes.length.toString()} subtitle="Pendientes" icon={TrendingUp} />
-        <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Aprobados" icon={Truck} />
+        <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
+        <StatCard title="En revisión" value={confirmedQuotes.length.toString()} subtitle="Pendientes" icon={TrendingUp} />
+        <StatCard title="Aprobados" value={approvedQuotes.length.toString()} subtitle="Confirmados" icon={Calculator} />
+        <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Totales" icon={Calculator} />
       </div>
 
       {(confirmedQuotes.length > 0 || pendingQuotes.length > 0) && (
