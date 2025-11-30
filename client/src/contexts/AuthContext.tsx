@@ -5,7 +5,6 @@ interface User {
   username: string;
   email?: string;
   isAdmin: boolean;
-  profileImage?: string;
 }
 
 interface AuthContextType {
@@ -15,30 +14,27 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 const DEFAULT_USER: User = {
   id: "1",
   username: "Carlos Admin",
   email: "carlos@transporte.com",
   isAdmin: true,
-  profileImage: undefined,
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user] = useState<User | null>(DEFAULT_USER);
-  const [isLoading] = useState(false);
-
-  const login = () => {
-    // todo: remove mock functionality - implement actual login
-  };
-
-  const logout = () => {
-    // todo: remove mock functionality - implement actual logout
-  };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading: false,
+        login: () => {},
+        logout: () => {},
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
