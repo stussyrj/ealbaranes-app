@@ -61,11 +61,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={String(item?.title || "")}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
-                    data-testid={`nav-${item.title.toLowerCase().replace(/\s/g, "-")}`}
+                    data-testid={`nav-${String(item?.title || "").toLowerCase().replace(/\s/g, "-")}`}
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
@@ -84,11 +84,11 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={String(item?.title || "")}>
                     <SidebarMenuButton
                       asChild
                       isActive={location === item.url}
-                      data-testid={`nav-admin-${item.title.toLowerCase().replace(/\s/g, "-")}`}
+                      data-testid={`nav-admin-${String(item?.title || "").toLowerCase().replace(/\s/g, "-")}`}
                     >
                       <Link href={item.url}>
                         <item.icon className="h-4 w-4" />

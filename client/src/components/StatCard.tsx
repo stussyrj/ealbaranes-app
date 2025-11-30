@@ -19,7 +19,7 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend }: StatCard
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-semibold font-mono" data-testid={`stat-${title.toLowerCase().replace(/\s/g, "-")}`}>
+            <p className="text-2xl font-semibold font-mono" data-testid={`stat-${String(title || "").toLowerCase().replace(/\s/g, "-")}`}>
               {value}
             </p>
             {subtitle && (

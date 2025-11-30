@@ -39,9 +39,9 @@ export function QuoteHistory() {
   const filteredQuotes = quotes?.filter((quote) => {
     const matchesSearch =
       search === "" ||
-      quote.origin.toLowerCase().includes(search.toLowerCase()) ||
-      quote.destination.toLowerCase().includes(search.toLowerCase()) ||
-      quote.vehicleTypeName?.toLowerCase().includes(search.toLowerCase());
+      String(quote?.origin || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(quote?.destination || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(quote?.vehicleTypeName || "").toLowerCase().includes(search.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
     
