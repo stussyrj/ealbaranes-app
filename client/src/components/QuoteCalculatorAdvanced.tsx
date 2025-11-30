@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiRequest } from "@/lib/queryClient";
 import type { VehicleType } from "@shared/schema";
 
 export function QuoteCalculatorAdvanced() {
@@ -17,45 +16,69 @@ export function QuoteCalculatorAdvanced() {
   const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [result, setResult] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const { data: vehicleTypes, isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
     queryKey: ["/api/vehicle-types"],
+    queryFn: async () => {
+      const response = await fetch("/api/vehicle-types", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to load vehicle types");
+      return response.json();
+    },
   });
 
-  const calculateMutation = useMutation({
-    mutationFn: async (data: {
-      origin: string;
-      destination: string;
-      vehicleTypeId: string;
-    }) => {
-      const response = await apiRequest("POST", "/api/calculate-quote", data);
-      const json = await response.json();
-      return json;
-    },
-    onSuccess: (data) => {
-      setResult(data?.breakdown || null);
+  const calculateQuote = async () => {
+    if (!origin || !destination || !vehicleTypeId) return;
+    
+    try {
+      setIsLoading(true);
       setErrorMsg("");
-    },
-    onError: (error: any) => {
+      setResult(null);
+
+      const response = await fetch("/api/calculate-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origin,
+          destination,
+          vehicleTypeId,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Error al calcular el presupuesto");
+      }
+
+      const data = await response.json();
+      
+      if (data?.breakdown) {
+        setResult(data.breakdown);
+      } else {
+        throw new Error("Respuesta inválida del servidor");
+      }
+    } catch (error: any) {
+      console.error("Error al calcular presupuesto:", error);
       setErrorMsg(error?.message || "Error al calcular el presupuesto");
       setResult(null);
-    },
-  });
-
-  const calculateQuote = () => {
-    if (!origin || !destination || !vehicleTypeId) return;
-    calculateMutation.mutate({
-      origin,
-      destination,
-      vehicleTypeId,
-    });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const formatDuration = (minutes: number) => {
-    if (!minutes) return "—";
+  const formatDuration = (minutes: any) => {
+    if (!minutes || typeof minutes !== "number") return "—";
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
     return `${hours}h ${mins}min`;
+  };
+
+  const safeNumber = (val: any) => {
+    const num = Number(val);
+    return isNaN(num) ? 0 : num;
   };
 
   const resetForm = () => {
@@ -64,7 +87,6 @@ export function QuoteCalculatorAdvanced() {
     setDestination("");
     setVehicleTypeId("");
     setErrorMsg("");
-    calculateMutation.reset();
   };
 
   const selectedVehicle = vehicleTypes?.find(v => v.id === vehicleTypeId);
@@ -147,12 +169,12 @@ export function QuoteCalculatorAdvanced() {
 
           <Button
             onClick={calculateQuote}
-            disabled={!origin || !destination || !vehicleTypeId || calculateMutation.isPending}
+            disabled={!origin || !destination || !vehicleTypeId || isLoading}
             className="w-full"
             size="lg"
             data-testid="button-calculate-quote"
           >
-            {calculateMutation.isPending ? (
+            {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Calculando...
@@ -188,10 +210,10 @@ export function QuoteCalculatorAdvanced() {
                     </div>
                     <div className="space-y-2 min-w-0">
                       <p className="font-medium truncate" data-testid="text-origin">
-                        {result?.origin?.label || result?.origin?.address || "—"}
+                        {result?.origin?.label || "—"}
                       </p>
                       <p className="font-medium truncate" data-testid="text-destination">
-                        {result?.destination?.label || result?.destination?.address || "—"}
+                        {result?.destination?.label || "—"}
                       </p>
                     </div>
                   </div>
@@ -201,7 +223,7 @@ export function QuoteCalculatorAdvanced() {
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Distancia</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
-                      {result?.distance ? Number(result.distance).toFixed(1) : "—"} km
+                      {safeNumber(result?.distance).toFixed(1)} km
                     </p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">
@@ -235,24 +257,24 @@ export function QuoteCalculatorAdvanced() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dirección</span>
-                    <span className="font-mono">{result?.pricing?.basePrice?.toFixed(2) || "—"}€</span>
+                    <span className="font-mono">{safeNumber(result?.pricing?.basePrice).toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Distancia ({result?.distance?.toFixed(1) || "—"} km × {result?.pricing?.pricePerKm?.toFixed(2) || "—"}€/km)
+                      Distancia ({safeNumber(result?.distance).toFixed(1)} km × {safeNumber(result?.pricing?.pricePerKm).toFixed(2)}€/km)
                     </span>
-                    <span className="font-mono">{result?.pricing?.distanceCost?.toFixed(2) || "—"}€</span>
+                    <span className="font-mono">{safeNumber(result?.pricing?.distanceCost).toFixed(2)}€</span>
                   </div>
                   
                   <div className="border-t pt-3 mt-3">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total</span>
                       <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
-                        {result?.pricing?.totalPrice?.toFixed(2) || "—"}€
+                        {safeNumber(result?.pricing?.totalPrice).toFixed(2)}€
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Mínimo: {result?.pricing?.minimumPrice?.toFixed(2) || "—"}€
+                      Mínimo: {safeNumber(result?.pricing?.minimumPrice).toFixed(2)}€
                     </p>
                   </div>
                 </div>
