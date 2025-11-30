@@ -87,6 +87,7 @@ export const calculateQuoteRequestSchema = z.object({
   isUrgent: z.boolean().optional(),
   pickupTime: z.string().optional(),
   observations: z.string().optional(),
+  phoneNumber: z.string().optional(),
 });
 
 export type GeocodeRequest = z.infer<typeof geocodeRequestSchema>;

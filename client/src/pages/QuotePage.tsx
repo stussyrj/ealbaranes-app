@@ -16,6 +16,7 @@ export default function QuotePage() {
   const [pickupTime, setPickupTime] = useState("");
   const [pickupTimeError, setPickupTimeError] = useState("");
   const [observations, setObservations] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -81,7 +82,7 @@ export default function QuotePage() {
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin, destination, vehicleTypeId: vehicleId, isUrgent, pickupTime: pickupTime || undefined, observations: observations || undefined }),
+      body: JSON.stringify({ origin, destination, vehicleTypeId: vehicleId, isUrgent, pickupTime: pickupTime || undefined, observations: observations || undefined, phoneNumber: phoneNumber || undefined }),
       credentials: "include",
     });
     const data = await res.json();
@@ -109,6 +110,7 @@ export default function QuotePage() {
     setPickupTime("");
     setPickupTimeError("");
     setObservations("");
+    setPhoneNumber("");
     setConfirmed(false);
     setQuoteId("");
   };
@@ -129,7 +131,7 @@ export default function QuotePage() {
               <div className="text-center space-y-2">
                 <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">¡Confirmado!</h2>
                 <p className="text-foreground">Hemos recibido tu solicitud</p>
-                <p className="text-foreground">Estamos en camino...</p>
+                <p className="text-foreground">Te confirmaremos lo antes posible</p>
                 <p className="text-sm text-muted-foreground">Número: {quoteId.slice(0, 8)}</p>
               </div>
             </div>
@@ -171,6 +173,10 @@ export default function QuotePage() {
           <div>
             <Label>Observaciones</Label>
             <Textarea value={observations} onChange={(e) => setObservations(e.target.value)} placeholder="Agregar cualquier información relevante para la entrega..." rows={3} data-testid="textarea-observations" />
+          </div>
+          <div>
+            <Label>Teléfono de Contacto</Label>
+            <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ej: +34 123 456 789" data-testid="input-phone" />
           </div>
           <div className="flex items-center gap-2">
             <Checkbox id="urgent" checked={isUrgent} onCheckedChange={(checked) => setIsUrgent(checked === true)} data-testid="checkbox-urgent" />

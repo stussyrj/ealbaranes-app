@@ -87,11 +87,11 @@
 
 @keyframes truckSlide {
   0% { transform: translateX(-100px); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
   100% { transform: translateX(100vw); opacity: 0; }
 }
 
 .truck-animation {
-  animation: truckSlide 3s ease-in-out infinite;
+  animation: truckSlide 8s ease-in-out infinite;
 }

@@ -140,6 +140,7 @@ export async function registerRoutes(
         isUrgent: data.isUrgent ?? false,
         pickupTime: data.pickupTime || null,
         observations: data.observations || null,
+        phoneNumber: data.phoneNumber || null,
         status: "pending",
       });
       
