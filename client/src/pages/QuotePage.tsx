@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function QuotePage() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleId, setVehicleId] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
+  const [pickupTime, setPickupTime] = useState("");
+  const [observations, setObservations] = useState("");
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -29,13 +32,30 @@ export default function QuotePage() {
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin, destination, vehicleTypeId: vehicleId, isUrgent }),
+      body: JSON.stringify({ 
+        origin, 
+        destination, 
+        vehicleTypeId: vehicleId, 
+        isUrgent,
+        pickupTime: pickupTime || undefined,
+        observations: observations || undefined,
+      }),
       credentials: "include",
     });
     const data = await res.json();
     if (data && data.breakdown) {
       setResult(data.breakdown);
     }
+  };
+
+  const handleReset = () => {
+    setResult(null);
+    setOrigin("");
+    setDestination("");
+    setVehicleId("");
+    setIsUrgent(false);
+    setPickupTime("");
+    setObservations("");
   };
 
   return (
@@ -77,6 +97,24 @@ export default function QuotePage() {
               ))}
             </select>
           </div>
+          <div>
+            <Label>Horario de Recogida</Label>
+            <Input
+              type="time"
+              value={pickupTime}
+              onChange={(e) => setPickupTime(e.target.value)}
+              placeholder="Ej: 14:30"
+            />
+          </div>
+          <div>
+            <Label>Observaciones</Label>
+            <Textarea
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
+              placeholder="Agregar cualquier información relevante para la entrega..."
+              rows={3}
+            />
+          </div>
           <div className="flex items-center gap-2">
             <Checkbox
               id="urgent"
@@ -117,6 +155,18 @@ export default function QuotePage() {
                 <p className="font-medium">{result.vehicle?.name || "—"}</p>
               </div>
             </div>
+            {result.pickupTime && (
+              <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded">
+                <p className="text-sm text-muted-foreground">Horario de Recogida</p>
+                <p className="font-medium">{result.pickupTime}</p>
+              </div>
+            )}
+            {result.observations && (
+              <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded">
+                <p className="text-sm text-muted-foreground">Observaciones</p>
+                <p className="text-sm">{result.observations}</p>
+              </div>
+            )}
             <div className="border-t pt-3 space-y-1">
               <div className="flex justify-between">
                 <span>Distancia (€/km):</span>
@@ -143,13 +193,7 @@ export default function QuotePage() {
             </div>
             <Button
               variant="outline"
-              onClick={() => {
-                setResult(null);
-                setOrigin("");
-                setDestination("");
-                setVehicleId("");
-                setIsUrgent(false);
-              }}
+              onClick={handleReset}
               className="w-full"
             >
               Nuevo

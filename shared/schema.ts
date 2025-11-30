@@ -49,6 +49,8 @@ export const quotes = pgTable("quotes", {
   distanceCost: real("distance_cost").notNull(),
   totalPrice: real("total_price").notNull(),
   isUrgent: boolean("is_urgent").default(false),
+  pickupTime: text("pickup_time"),
+  observations: text("observations"),
   status: text("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -81,6 +83,8 @@ export const calculateQuoteRequestSchema = z.object({
   destination: z.string().min(1),
   vehicleTypeId: z.string().min(1),
   isUrgent: z.boolean().optional(),
+  pickupTime: z.string().optional(),
+  observations: z.string().optional(),
 });
 
 export type GeocodeRequest = z.infer<typeof geocodeRequestSchema>;

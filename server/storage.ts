@@ -166,6 +166,8 @@ export class MemStorage implements IStorage {
       distanceCost: quote.distanceCost,
       totalPrice: quote.totalPrice,
       isUrgent: quote.isUrgent ?? false,
+      pickupTime: quote.pickupTime ?? null,
+      observations: quote.observations ?? null,
       status: quote.status ?? "pending",
       createdAt: new Date(),
     };

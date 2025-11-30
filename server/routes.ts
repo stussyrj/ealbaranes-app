@@ -136,6 +136,8 @@ export async function registerRoutes(
         distanceCost,
         totalPrice: Math.round(totalPrice * 100) / 100,
         isUrgent: data.isUrgent ?? false,
+        pickupTime: data.pickupTime || null,
+        observations: data.observations || null,
         status: "pending",
       });
       
@@ -166,6 +168,8 @@ export async function registerRoutes(
             isUrgent: data.isUrgent ?? false,
             totalPrice: Math.round(totalPrice * 100) / 100,
           },
+          pickupTime: data.pickupTime,
+          observations: data.observations,
         },
       });
     } catch (error) {
