@@ -287,8 +287,8 @@ export function QuoteHistory() {
                   <p className="font-medium">{selectedQuote.vehicleTypeName || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Zona</p>
-                  <p className="font-medium">{selectedQuote.zoneName || "—"}</p>
+                  <p className="text-sm text-muted-foreground">Duración Est.</p>
+                  <p className="font-medium">{selectedQuote.duration ? `${Math.floor(selectedQuote.duration / 60)}h ${Math.round(selectedQuote.duration % 60)}min` : "—"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Estado</p>
@@ -297,25 +297,13 @@ export function QuoteHistory() {
               </div>
               <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Precio base</span>
+                  <span className="text-muted-foreground">Tarifa base</span>
                   <span className="font-mono">{selectedQuote.basePrice.toFixed(2)}€</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Coste distancia</span>
+                  <span className="text-muted-foreground">Coste distancia ({selectedQuote.distance.toFixed(1)} km)</span>
                   <span className="font-mono">{selectedQuote.distanceCost.toFixed(2)}€</span>
                 </div>
-                {selectedQuote.tollCost > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Peajes</span>
-                    <span className="font-mono">{selectedQuote.tollCost.toFixed(2)}€</span>
-                  </div>
-                )}
-                {selectedQuote.extrasCost > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Extras</span>
-                    <span className="font-mono">{selectedQuote.extrasCost.toFixed(2)}€</span>
-                  </div>
-                )}
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Total</span>
