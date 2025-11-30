@@ -15,7 +15,10 @@ TransQuote is a B2B SaaS application for calculating transportation quotes based
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language
+- Language: Spanish (todo en español)
+- Features: Dark/light theme toggle (activated), Dashboard shows 0 values (pre-launch state)
+- Architecture: Role-based access control (admin vs customer)
 
 ## System Architecture
 
@@ -31,11 +34,28 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
+**Role-Based Access Control (RBAC)**:
+- Two user roles: `admin` and `customer`
+- Separate routers for each role with protected access
+- AdminRouter: Dashboard, Pricing Rules, Vehicle Types
+- CustomerRouter: Quote Calculator, History, Contact
+
+**Admin Area** (Protected):
+- `/` - Dashboard (0 values - pre-launch)
+- `/admin/pricing` - Manage pricing rules
+- `/admin/vehicles` - Manage vehicle types
+
+**Customer Area** (Protected):
+- `/` - Quote calculator
+- `/history` - Quote history
+- `/contact` - Contact information
+
 **React SPA with Client-Side Routing**:
 - Uses Wouter for lightweight routing
 - Context-based state management (AuthContext, ThemeContext)
 - React Query (TanStack Query) for server state management
 - Form handling via React Hook Form with Zod validation
+- ProtectedRoute component enforces role-based access
 
 **Component Philosophy**:
 - shadcn/ui components provide accessible, customizable primitives
@@ -44,23 +64,26 @@ Preferred communication style: Simple, everyday language.
 - Custom theming via CSS variables for light/dark mode support
 
 **Key Design Decisions**:
-- **No global state library**: React Query handles server state, Context API handles auth/theme (sufficient for this app's complexity)
-- **Composition over configuration**: Components are copied into codebase (shadcn pattern) rather than imported from npm, enabling full customization
+- **Role-based routing**: AdminRouter and CustomerRouter are completely separate, preventing customer access to admin areas
+- **ProtectedRoute component**: Validates user role before rendering content
+- **No global state library**: React Query handles server state, Context API handles auth/theme/role
+- **Composition over configuration**: Components are copied into codebase (shadcn pattern)
 - **Type-safe API calls**: Shared schemas ensure frontend and backend agree on data structures
 
 ### Backend Architecture
 
 **Express REST API**:
 - TypeScript for type safety
-- Session-based authentication (planned - currently mock OAuth)
+- Session-based authentication with mock admin user (Carlos Admin)
 - RESTful endpoints for CRUD operations on pricing rules, vehicle types, and quotes
+- Role information stored in session (not yet persisted, currently mock)
 
 **Service Layer**:
 - `openrouteservice.ts` - External API integration for geocoding and routing
 - `storage.ts` - Data access abstraction (in-memory mock with plans for database implementation)
 
 **Key Design Decisions**:
-- **Service abstraction**: `IStorage` interface allows swapping between in-memory and database implementations without changing route handlers
+- **Service abstraction**: `IStorage` interface allows swapping between in-memory and database implementations
 - **Memoization potential**: Distance calculations can be cached since routes rarely change
 - **Error handling**: API errors are caught and returned with appropriate HTTP status codes
 
@@ -68,9 +91,9 @@ Preferred communication style: Simple, everyday language.
 
 **Schema (Drizzle ORM)**:
 
-**Users Table**:
+**Users Table** (Future):
 - Authentication and authorization
-- `isAdmin` flag for role-based access control
+- `role` field for admin/customer distinction
 
 **Pricing Rules Table**:
 - Zone-based pricing configuration
@@ -81,7 +104,7 @@ Preferred communication style: Simple, everyday language.
 **Vehicle Types Table**:
 - Vehicle configurations with capacity information
 - `priceMultiplier` adjusts base pricing per vehicle
-- Examples: Van (1.0x), Trailer (1.85x)
+- Current types: Moto (1.0x), Furgoneta (1.0x), Furgón (1.0x), Carrozado (1.0x)
 
 **Quotes Table**:
 - Historical quote storage
@@ -90,15 +113,18 @@ Preferred communication style: Simple, everyday language.
 - User association for history viewing
 
 **Design Rationale**:
-- Pricing rules are configurable rather than hardcoded, allowing non-technical users to adjust pricing
-- Storing full quote details (including coordinates and breakdowns) enables auditing and analytics
+- Pricing rules are configurable rather than hardcoded
+- Storing full quote details enables auditing and analytics
 - Soft deletion via `isActive` preserves historical data
 
 ### Authentication Strategy
 
-**Current Implementation**: Mock OAuth (development placeholder)
+**Current Implementation**: Mock authentication
+- Default user: Carlos Admin (admin role)
+- Authentication system ready for Replit Auth integration
+- Role-based route access enforced client-side
 
-**Planned Implementation**: Replit Auth
+**Planned Implementation**: Replit Auth + Database session store
 - OAuth-based authentication
 - Session management via `express-session` with PostgreSQL session store (`connect-pg-simple`)
 - Role-based access: regular users can create quotes, admins can modify pricing rules and vehicle types
@@ -129,7 +155,7 @@ Preferred communication style: Simple, everyday language.
 **OpenRouteService**:
 - Geocoding API: Address → coordinates + country detection
 - Directions API: Route calculation with distance/duration
-- API key stored in environment variables
+- API key stored in ORS_API_KEY environment variable
 
 **Error Handling**:
 - Invalid addresses return user-friendly error messages
@@ -173,6 +199,12 @@ Preferred communication style: Simple, everyday language.
 - JetBrains Mono for numerical data and code
 - Loaded via CDN in `index.html`
 
+**Theme System**:
+- Light/dark mode toggle via ThemeContext
+- localStorage persistence of theme preference
+- System preference detection as fallback
+- CSS variables for semantic colors
+
 ### Development Tools
 
 **Vite**:
@@ -208,3 +240,28 @@ Preferred communication style: Simple, everyday language.
 - `tsx` - TypeScript execution for development
 - `esbuild` - Production server bundling
 - `drizzle-kit` - Database migration tool
+
+## Recent Changes (v2.0 - Role-Based Architecture)
+
+### 2025-11-30 Architecture Restructure
+
+**Added**:
+- ProtectedRoute component for role-based access control
+- ContactPage for customers to reach admin
+- Role-based routing (AdminRouter, CustomerRouter)
+- Support for role distinction in AuthContext
+
+**Modified**:
+- AuthContext: Now manages `role` field (admin/customer) instead of `isAdmin` boolean
+- App.tsx: Completely restructured with separate routers per role
+- AppSidebar: Now displays different menu items based on user role
+- QuotePage: Fixed dark mode styling for vehicle selector dropdown
+- DashboardPage: All metrics set to 0 (pre-launch state)
+- ThemeToggle: Working light/dark mode toggle
+
+**Rationale for RBAC**:
+- Customers cannot access dashboard or admin functions
+- Admin cannot accidentally access customer areas
+- Separates concerns at routing level (complete isolation)
+- Easier to enforce permissions and prevent security issues
+- Clear separation of business logic between two distinct user types
