@@ -76,6 +76,33 @@ export default function QuotePage() {
   };
 
   const handleCalculate = async () => {
+    if (!origin.trim()) {
+      toast({
+        title: "Campo requerido",
+        description: "Por favor, ingresa el origen",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!destination.trim()) {
+      toast({
+        title: "Campo requerido",
+        description: "Por favor, ingresa el destino",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!vehicleId) {
+      toast({
+        title: "Campo requerido",
+        description: "Por favor, selecciona un vehículo",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (pickupTime && !isValidPickupTime(pickupTime)) {
       return;
     }
