@@ -1,227 +1,76 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import {
-  geocodeAddress,
-  getRouteDistance,
-  calculateRouteFromAddresses,
-} from "./services/openrouteservice";
-import {
-  geocodeRequestSchema,
-  routeRequestSchema,
-  calculateQuoteRequestSchema,
-  insertVehicleTypeSchema,
-} from "@shared/schema";
+import { useState } from "react";
+import { Calculator, TrendingUp, MapPin, Truck } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
-  
-  app.get("/api/vehicle-types", async (req, res) => {
-    try {
-      const types = await storage.getVehicleTypes();
-      res.json(types);
-    } catch (error) {
-      console.error("Error fetching vehicle types:", error);
-      res.status(500).json({ error: "Error al obtener los tipos de vehículo" });
-    }
-  });
+export default function DashboardPage() {
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  app.get("/api/vehicle-types/all", async (req, res) => {
-    try {
-      const types = await storage.getAllVehicleTypes();
-      res.json(types);
-    } catch (error) {
-      console.error("Error fetching all vehicle types:", error);
-      res.status(500).json({ error: "Error al obtener los tipos de vehículo" });
-    }
-  });
+  if (!loading && quotes.length === 0) {
+    setLoading(true);
+    fetch("/api/quotes", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d)) setQuotes(d);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }
 
-  app.post("/api/vehicle-types", async (req, res) => {
-    try {
-      const data = insertVehicleTypeSchema.parse(req.body);
-      const vehicle = await storage.createVehicleType(data);
-      res.status(201).json(vehicle);
-    } catch (error) {
-      console.error("Error creating vehicle type:", error);
-      res.status(400).json({ error: "Error al crear el tipo de vehículo" });
-    }
-  });
+  const confirmedQuotes = quotes.filter((q) => q.status === "confirmed");
+  const totalDistance = quotes.reduce((sum, q) => sum + (q.distance || 0), 0);
+  const avgDistance = quotes.length > 0 ? (totalDistance / quotes.length).toFixed(1) : "0";
+  const totalRevenue = confirmedQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
 
-  app.put("/api/vehicle-types/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-      const vehicle = await storage.updateVehicleType(id, updates);
-      if (!vehicle) {
-        return res.status(404).json({ error: "Vehículo no encontrado" });
-      }
-      res.json(vehicle);
-    } catch (error) {
-      console.error("Error updating vehicle type:", error);
-      res.status(400).json({ error: "Error al actualizar el tipo de vehículo" });
-    }
-  });
+  return (
+    <div className="space-y-6 p-6">
+      <h1 className="text-3xl font-semibold">Dashboard</h1>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Total" icon={Calculator} />
+        <StatCard title="Confirmados" value={confirmedQuotes.length.toString()} subtitle="Este mes" icon={TrendingUp} />
+        <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
+        <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Confirmados" icon={Truck} />
+      </div>
 
-  app.delete("/api/vehicle-types/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const vehicle = await storage.updateVehicleType(id, { isActive: false });
-      if (!vehicle) {
-        return res.status(404).json({ error: "Vehículo no encontrado" });
-      }
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deactivating vehicle type:", error);
-      res.status(500).json({ error: "Error al desactivar el tipo de vehículo" });
-    }
-  });
-
-  app.post("/api/geocode", async (req, res) => {
-    try {
-      const { address } = geocodeRequestSchema.parse(req.body);
-      const result = await geocodeAddress(address);
-      res.json(result);
-    } catch (error) {
-      console.error("Error geocoding address:", error);
-      const message = error instanceof Error ? error.message : "Error de geocodificación";
-      res.status(400).json({ error: message });
-    }
-  });
-
-  app.post("/api/route", async (req, res) => {
-    try {
-      const { origin, destination } = routeRequestSchema.parse(req.body);
-      const result = await getRouteDistance(origin, destination);
-      res.json(result);
-    } catch (error) {
-      console.error("Error calculating route:", error);
-      const message = error instanceof Error ? error.message : "Error al calcular la ruta";
-      res.status(400).json({ error: message });
-    }
-  });
-
-  app.post("/api/calculate-quote", async (req, res) => {
-    try {
-      const data = calculateQuoteRequestSchema.parse(req.body);
-      
-      const routeInfo = await calculateRouteFromAddresses(data.origin, data.destination);
-      
-      const distance = routeInfo.route.km;
-      const duration = routeInfo.route.durationMin;
-      
-      const vehicleType = await storage.getVehicleType(data.vehicleTypeId);
-      if (!vehicleType) {
-        return res.status(400).json({ error: "Tipo de vehículo no encontrado" });
-      }
-      
-      const distanceCost = distance * vehicleType.pricePerKm;
-      const directionCost = vehicleType.directionPrice || 0;
-      const subtotal = distanceCost + directionCost;
-      let totalPrice = Math.max(vehicleType.minimumPrice, subtotal);
-      
-      // Apply urgency surcharge (25%)
-      if (data.isUrgent) {
-        totalPrice = totalPrice * 1.25;
-      }
-      
-      const quote = await storage.createQuote({
-        origin: data.origin,
-        destination: data.destination,
-        originCoords: JSON.stringify({ lat: routeInfo.origin.lat, lng: routeInfo.origin.lng }),
-        destinationCoords: JSON.stringify({ lat: routeInfo.destination.lat, lng: routeInfo.destination.lng }),
-        distance,
-        duration,
-        vehicleTypeId: vehicleType.id,
-        vehicleTypeName: vehicleType.name,
-        distanceCost,
-        directionCost,
-        totalPrice: Math.round(totalPrice * 100) / 100,
-        isUrgent: data.isUrgent ?? false,
-        pickupTime: data.pickupTime || null,
-        observations: data.observations || null,
-        status: "pending",
-      });
-      
-      res.json({
-        quote,
-        breakdown: {
-          origin: {
-            address: data.origin,
-            coords: routeInfo.origin,
-            label: routeInfo.origin.label,
-          },
-          destination: {
-            address: data.destination,
-            coords: routeInfo.destination,
-            label: routeInfo.destination.label,
-          },
-          distance,
-          duration,
-          vehicle: {
-            id: vehicleType.id,
-            name: vehicleType.name,
-            capacity: vehicleType.capacity,
-          },
-          pricing: {
-            pricePerKm: vehicleType.pricePerKm,
-            distanceCost,
-            directionCost,
-            minimumPrice: vehicleType.minimumPrice,
-            isUrgent: data.isUrgent ?? false,
-            totalPrice: Math.round(totalPrice * 100) / 100,
-          },
-          pickupTime: data.pickupTime,
-          observations: data.observations,
-        },
-      });
-    } catch (error) {
-      console.error("Error calculating quote:", error);
-      const message = error instanceof Error ? error.message : "Error al calcular el presupuesto";
-      res.status(400).json({ error: message });
-    }
-  });
-
-  app.get("/api/quotes", async (req, res) => {
-    try {
-      const userId = req.query.userId as string | undefined;
-      const quotes = await storage.getQuotes(userId);
-      res.json(quotes);
-    } catch (error) {
-      console.error("Error fetching quotes:", error);
-      res.status(500).json({ error: "Error al obtener los presupuestos" });
-    }
-  });
-
-  app.get("/api/quotes/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const quote = await storage.getQuote(id);
-      if (!quote) {
-        return res.status(404).json({ error: "Presupuesto no encontrado" });
-      }
-      res.json(quote);
-    } catch (error) {
-      console.error("Error fetching quote:", error);
-      res.status(500).json({ error: "Error al obtener el presupuesto" });
-    }
-  });
-
-  app.patch("/api/quotes/:id/status", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      const quote = await storage.updateQuoteStatus(id, status);
-      if (!quote) {
-        return res.status(404).json({ error: "Presupuesto no encontrado" });
-      }
-      res.json(quote);
-    } catch (error) {
-      console.error("Error updating quote status:", error);
-      res.status(400).json({ error: "Error al actualizar el estado del presupuesto" });
-    }
-  });
-
-  return httpServer;
+      {confirmedQuotes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Solicitudes Confirmadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {confirmedQuotes.map((quote) => (
+                <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Origen</p>
+                      <p className="font-medium text-sm">{quote.origin}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Destino</p>
+                      <p className="font-medium text-sm">{quote.destination}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Vehículo</p>
+                      <p className="font-medium text-sm">{quote.vehicleTypeName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Precio</p>
+                      <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
+                    </div>
+                  </div>
+                  {quote.pickupTime && (
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-sm"><span className="text-muted-foreground">Horario: </span>{quote.pickupTime}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }
