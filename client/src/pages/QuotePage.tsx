@@ -186,7 +186,13 @@ export default function QuotePage() {
             <Input
               type="time"
               value={pickupTime}
-              onChange={(e) => setPickupTime(e.target.value)}
+              onChange={(e) => {
+                const newTime = e.target.value;
+                if (newTime && !isValidPickupTime(newTime)) {
+                  return;
+                }
+                setPickupTime(newTime);
+              }}
               min={minTime}
               placeholder="Ej: 14:30"
               data-testid="input-pickup-time"
