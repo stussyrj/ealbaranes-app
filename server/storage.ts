@@ -40,7 +40,7 @@ const defaultVehicleTypes: VehicleType[] = [
     id: "furgoneta", 
     name: "Servicio Furgoneta", 
     description: "Hasta 200 kg, 1 palé",
-    capacity: "200 kg",
+    capacity: "200 kg, 1 Palet",
     pricePerKm: 0.55,
     minimumPrice: 7.50,
     isActive: true 
@@ -49,7 +49,7 @@ const defaultVehicleTypes: VehicleType[] = [
     id: "furgon", 
     name: "Servicio Furgón", 
     description: "Hasta 1.400 kg, 5 palés",
-    capacity: "1.400 kg",
+    capacity: "1.400 kg, 5 Palets",
     pricePerKm: 0.65,
     minimumPrice: 9.00,
     isActive: true 
@@ -58,7 +58,7 @@ const defaultVehicleTypes: VehicleType[] = [
     id: "carrozado", 
     name: "Servicio Carrozado", 
     description: "Hasta 1.000 kg, 8 palés",
-    capacity: "1.000 kg",
+    capacity: "1.000 kg, 8 Palets",
     pricePerKm: 0.75,
     minimumPrice: 10.00,
     isActive: true 
