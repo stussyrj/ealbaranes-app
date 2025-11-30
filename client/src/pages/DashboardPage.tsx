@@ -34,12 +34,13 @@ export default function DashboardPage() {
     setQuotes(quotes.map(q => q.id === id ? { ...q, status: "canceled" } : q));
   };
 
+  const pendingQuotes = quotes.filter((q) => q.status === "pending");
   const confirmedQuotes = quotes.filter((q) => q.status === "confirmed");
   const approvedQuotes = quotes.filter((q) => q.status === "approved");
   const rejectedQuotes = quotes.filter((q) => q.status === "rejected");
   const canceledQuotes = quotes.filter((q) => q.status === "canceled");
-  const totalDistance = quotes.reduce((sum, q) => sum + (q.distance || 0), 0);
-  const avgDistance = quotes.length > 0 ? (totalDistance / quotes.length).toFixed(1) : "0";
+  const totalDistance = approvedQuotes.reduce((sum, q) => sum + (q.distance || 0), 0);
+  const avgDistance = approvedQuotes.length > 0 ? (totalDistance / approvedQuotes.length).toFixed(1) : "0";
   const totalRevenue = approvedQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
 
   const renderQuoteCard = (quote: any, showActions = false) => (
@@ -103,19 +104,53 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-semibold">Dashboard</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Total" icon={Calculator} />
-        <StatCard title="Confirmados" value={confirmedQuotes.length.toString()} subtitle="Por revisar" icon={TrendingUp} />
+        <StatCard title="Confirmados" value={approvedQuotes.length.toString()} subtitle="Aprobados" icon={TrendingUp} />
         <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
         <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Aprobados" icon={Truck} />
       </div>
 
-      {confirmedQuotes.length > 0 && (
+      {(confirmedQuotes.length > 0 || pendingQuotes.length > 0) && (
         <Card>
           <CardHeader>
-            <CardTitle>Solicitudes Pendientes de Revisión</CardTitle>
+            <CardTitle>Solicitudes Pendientes de Revisión ({(confirmedQuotes.length + pendingQuotes.length).toString()})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {confirmedQuotes.map((quote) => renderQuoteCard(quote, true))}
+              {confirmedQuotes.length > 0 && (
+                <>
+                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Por revisar ({confirmedQuotes.length})</div>
+                  {confirmedQuotes.map((quote) => renderQuoteCard(quote, true))}
+                </>
+              )}
+              {pendingQuotes.length > 0 && (
+                <>
+                  {confirmedQuotes.length > 0 && <div className="border-t my-4"></div>}
+                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Presupuestos sin confirmar ({pendingQuotes.length})</div>
+                  {pendingQuotes.map((quote) => (
+                    <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900 opacity-60">
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Origen</p>
+                          <p className="font-medium text-sm">{quote.origin}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Destino</p>
+                          <p className="font-medium text-sm">{quote.destination}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Vehículo</p>
+                          <p className="font-medium text-sm">{quote.vehicleTypeName}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Precio</p>
+                          <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground text-center p-2 bg-yellow-100/30 dark:bg-yellow-900/20 rounded">Pendiente de confirmación del cliente</div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
