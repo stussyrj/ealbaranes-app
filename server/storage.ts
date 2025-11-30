@@ -14,6 +14,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   getVehicleTypes(): Promise<VehicleType[]>;
+  getAllVehicleTypes(): Promise<VehicleType[]>;
   getVehicleType(id: string): Promise<VehicleType | undefined>;
   createVehicleType(vehicle: InsertVehicleType): Promise<VehicleType>;
   updateVehicleType(id: string, vehicle: Partial<InsertVehicleType>): Promise<VehicleType | undefined>;
@@ -100,6 +101,10 @@ export class MemStorage implements IStorage {
 
   async getVehicleTypes(): Promise<VehicleType[]> {
     return Array.from(this.vehicleTypes.values()).filter((v) => v.isActive);
+  }
+
+  async getAllVehicleTypes(): Promise<VehicleType[]> {
+    return Array.from(this.vehicleTypes.values());
   }
 
   async getVehicleType(id: string): Promise<VehicleType | undefined> {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Check, Truck, Loader2 } from "lucide-react";
+import { Plus, Pencil, Truck, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,10 +31,9 @@ import type { VehicleType, InsertVehicleType } from "@shared/schema";
 export function VehicleTypesAdmin() {
   const [editingVehicle, setEditingVehicle] = useState<VehicleType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const { data: vehicles, isLoading } = useQuery<VehicleType[]>({
-    queryKey: ["/api/vehicle-types"],
+  const { data: allVehicles, isLoading } = useQuery<VehicleType[]>({
+    queryKey: ["/api/vehicle-types/all"],
   });
 
   const createMutation = useMutation({
@@ -43,7 +42,7 @@ export function VehicleTypesAdmin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types/all"] });
       setIsDialogOpen(false);
       setEditingVehicle(null);
     },
@@ -55,19 +54,9 @@ export function VehicleTypesAdmin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types/all"] });
       setIsDialogOpen(false);
       setEditingVehicle(null);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/vehicle-types/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types"] });
-      setDeleteConfirm(null);
     },
   });
 
@@ -140,7 +129,7 @@ export function VehicleTypesAdmin() {
                 Tipos de Vehículo
               </CardTitle>
               <CardDescription>
-                Gestiona los tipos de vehículo: tarifa base, precio por km y mínimo
+                Gestiona los tipos de vehículo: activa/desactiva servicios con el botón de encendido
               </CardDescription>
             </div>
             <Button onClick={openNewVehicle} data-testid="button-add-vehicle">
@@ -164,11 +153,11 @@ export function VehicleTypesAdmin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vehicles?.map((vehicle) => (
-                  <TableRow key={vehicle.id} data-testid={`row-vehicle-${vehicle.id}`}>
+                {allVehicles?.map((vehicle) => (
+                  <TableRow key={vehicle.id} data-testid={`row-vehicle-${vehicle.id}`} className={!vehicle.isActive ? "opacity-60" : ""}>
                     <TableCell className="font-medium">{vehicle.name}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{vehicle.capacity}</Badge>
+                      <Badge variant={vehicle.isActive ? "secondary" : "outline"}>{vehicle.capacity}</Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono">
                       {vehicle.basePrice.toFixed(2)}€
@@ -180,34 +169,29 @@ export function VehicleTypesAdmin() {
                       {vehicle.minimumPrice.toFixed(2)}€
                     </TableCell>
                     <TableCell>
-                      <Switch
-                        checked={vehicle.isActive ?? true}
-                        onCheckedChange={() => toggleActive(vehicle)}
-                        data-testid={`switch-active-${vehicle.id}`}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={vehicle.isActive ?? true}
+                          onCheckedChange={() => toggleActive(vehicle)}
+                          data-testid={`switch-active-${vehicle.id}`}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {vehicle.isActive ? "Activo" : "Inactivo"}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditingVehicle(vehicle);
-                            setIsDialogOpen(true);
-                          }}
-                          data-testid={`button-edit-${vehicle.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteConfirm(vehicle.id)}
-                          data-testid={`button-delete-${vehicle.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditingVehicle(vehicle);
+                          setIsDialogOpen(true);
+                        }}
+                        data-testid={`button-edit-${vehicle.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -299,37 +283,8 @@ export function VehicleTypesAdmin() {
               {(createMutation.isPending || updateMutation.isPending) ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Check className="mr-2 h-4 w-4" />
+                "Guardar"
               )}
-              Guardar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Eliminación</DialogTitle>
-            <DialogDescription>
-              ¿Estás seguro de que deseas eliminar este tipo de vehículo? Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancelar
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              Eliminar
             </Button>
           </DialogFooter>
         </DialogContent>

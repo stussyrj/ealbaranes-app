@@ -28,6 +28,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/vehicle-types/all", async (req, res) => {
+    try {
+      const types = await storage.getAllVehicleTypes();
+      res.json(types);
+    } catch (error) {
+      console.error("Error fetching all vehicle types:", error);
+      res.status(500).json({ error: "Error al obtener los tipos de vehículo" });
+    }
+  });
+
   app.post("/api/vehicle-types", async (req, res) => {
     try {
       const data = insertVehicleTypeSchema.parse(req.body);
@@ -57,14 +67,14 @@ export async function registerRoutes(
   app.delete("/api/vehicle-types/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const deleted = await storage.deleteVehicleType(id);
-      if (!deleted) {
+      const vehicle = await storage.updateVehicleType(id, { isActive: false });
+      if (!vehicle) {
         return res.status(404).json({ error: "Vehículo no encontrado" });
       }
       res.status(204).send();
     } catch (error) {
-      console.error("Error deleting vehicle type:", error);
-      res.status(500).json({ error: "Error al eliminar el tipo de vehículo" });
+      console.error("Error deactivating vehicle type:", error);
+      res.status(500).json({ error: "Error al desactivar el tipo de vehículo" });
     }
   });
 
