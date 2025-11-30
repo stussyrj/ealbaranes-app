@@ -11,24 +11,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { VehicleType } from "@shared/schema";
 
 interface QuoteResult {
-  origin: {
-    label: string;
+  origin?: {
+    label?: string;
   };
-  destination: {
-    label: string;
+  destination?: {
+    label?: string;
   };
-  distance: number;
-  duration: number;
-  vehicle: {
-    name: string;
-    capacity: string;
+  distance?: number;
+  duration?: number;
+  vehicle?: {
+    name?: string;
+    capacity?: string;
   };
-  pricing: {
-    basePrice: number;
-    pricePerKm: number;
-    distanceCost: number;
-    minimumPrice: number;
-    totalPrice: number;
+  pricing?: {
+    basePrice?: number;
+    pricePerKm?: number;
+    distanceCost?: number;
+    minimumPrice?: number;
+    totalPrice?: number;
   };
 }
 
@@ -43,12 +43,17 @@ export function QuoteCalculatorAdvanced() {
   const { data: vehicleTypes = [], isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
     queryKey: ["/api/vehicle-types"],
     queryFn: async () => {
-      const response = await fetch("/api/vehicle-types", {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to load vehicle types");
-      const json = await response.json();
-      return Array.isArray(json) ? json : [];
+      try {
+        const response = await fetch("/api/vehicle-types", {
+          credentials: "include",
+        });
+        if (!response.ok) throw new Error("Failed to load vehicle types");
+        const json = await response.json();
+        return Array.isArray(json) ? json : [];
+      } catch (e) {
+        console.error("Error loading vehicle types:", e);
+        return [];
+      }
     },
   });
 
@@ -79,31 +84,7 @@ export function QuoteCalculatorAdvanced() {
       const data = await response.json();
       
       if (data && typeof data === "object" && data.breakdown) {
-        const breakdown = data.breakdown;
-        
-        const typedResult: QuoteResult = {
-          origin: {
-            label: String(breakdown?.origin?.label || breakdown?.origin?.address || "Origen"),
-          },
-          destination: {
-            label: String(breakdown?.destination?.label || breakdown?.destination?.address || "Destino"),
-          },
-          distance: Number(breakdown?.distance) || 0,
-          duration: Number(breakdown?.duration) || 0,
-          vehicle: {
-            name: String(breakdown?.vehicle?.name || "Vehículo"),
-            capacity: String(breakdown?.vehicle?.capacity || ""),
-          },
-          pricing: {
-            basePrice: Number(breakdown?.pricing?.basePrice) || 0,
-            pricePerKm: Number(breakdown?.pricing?.pricePerKm) || 0,
-            distanceCost: Number(breakdown?.pricing?.distanceCost) || 0,
-            minimumPrice: Number(breakdown?.pricing?.minimumPrice) || 0,
-            totalPrice: Number(breakdown?.pricing?.totalPrice) || 0,
-          },
-        };
-        
-        setResult(typedResult);
+        setResult(data.breakdown || {});
       } else {
         throw new Error("Respuesta inválida del servidor");
       }
@@ -116,11 +97,73 @@ export function QuoteCalculatorAdvanced() {
     }
   };
 
-  const formatDuration = (minutes: number): string => {
-    if (!minutes || typeof minutes !== "number" || isNaN(minutes)) return "—";
+  const formatDuration = (minutes: number | undefined): string => {
+    if (typeof minutes !== "number" || isNaN(minutes) || !minutes) return "—";
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
     return `${hours}h ${mins}min`;
+  };
+
+  const getOriginLabel = (): string => {
+    if (!result) return "—";
+    return String(result?.origin?.label || "Origen");
+  };
+
+  const getDestinationLabel = (): string => {
+    if (!result) return "—";
+    return String(result?.destination?.label || "Destino");
+  };
+
+  const getDistance = (): number => {
+    if (!result) return 0;
+    const val = Number(result?.distance);
+    return isNaN(val) ? 0 : val;
+  };
+
+  const getDuration = (): number | undefined => {
+    if (!result) return undefined;
+    const val = Number(result?.duration);
+    return isNaN(val) ? undefined : val;
+  };
+
+  const getVehicleName = (): string => {
+    if (!result) return "—";
+    return String(result?.vehicle?.name || "Vehículo");
+  };
+
+  const getVehicleCapacity = (): string => {
+    if (!result) return "—";
+    return String(result?.vehicle?.capacity || "");
+  };
+
+  const getBasePrice = (): number => {
+    if (!result) return 0;
+    const val = Number(result?.pricing?.basePrice);
+    return isNaN(val) ? 0 : val;
+  };
+
+  const getPricePerKm = (): number => {
+    if (!result) return 0;
+    const val = Number(result?.pricing?.pricePerKm);
+    return isNaN(val) ? 0 : val;
+  };
+
+  const getDistanceCost = (): number => {
+    if (!result) return 0;
+    const val = Number(result?.pricing?.distanceCost);
+    return isNaN(val) ? 0 : val;
+  };
+
+  const getMinimumPrice = (): number => {
+    if (!result) return 0;
+    const val = Number(result?.pricing?.minimumPrice);
+    return isNaN(val) ? 0 : val;
+  };
+
+  const getTotalPrice = (): number => {
+    if (!result) return 0;
+    const val = Number(result?.pricing?.totalPrice);
+    return isNaN(val) ? 0 : val;
   };
 
   const resetForm = () => {
@@ -131,7 +174,7 @@ export function QuoteCalculatorAdvanced() {
     setErrorMsg("");
   };
 
-  const selectedVehicle = vehicleTypes?.find(v => v.id === vehicleTypeId);
+  const selectedVehicle = vehicleTypes?.find(v => v?.id === vehicleTypeId);
 
   return (
     <div className="space-y-6">
@@ -231,7 +274,7 @@ export function QuoteCalculatorAdvanced() {
         </CardContent>
       </Card>
 
-      {result && (
+      {result && Object.keys(result).length > 0 && (
         <Card className="border-primary/50">
           <CardHeader className="bg-primary/5">
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -252,10 +295,10 @@ export function QuoteCalculatorAdvanced() {
                     </div>
                     <div className="space-y-2 min-w-0">
                       <p className="font-medium truncate" data-testid="text-origin">
-                        {result?.origin?.label || "—"}
+                        {getOriginLabel()}
                       </p>
                       <p className="font-medium truncate" data-testid="text-destination">
-                        {result?.destination?.label || "—"}
+                        {getDestinationLabel()}
                       </p>
                     </div>
                   </div>
@@ -265,21 +308,21 @@ export function QuoteCalculatorAdvanced() {
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Distancia</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
-                      {(result?.distance || 0).toFixed(1)} km
+                      {getDistance().toFixed(1)} km
                     </p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Duración</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-duration">
-                      {formatDuration(result?.duration || 0)}
+                      {formatDuration(getDuration())}
                     </p>
                   </div>
                 </div>
                 
                 <div>
                   <p className="text-sm text-muted-foreground">Vehículo</p>
-                  <p className="font-medium">{result?.vehicle?.name || "—"}</p>
-                  <p className="text-sm text-muted-foreground">{result?.vehicle?.capacity || "—"}</p>
+                  <p className="font-medium">{getVehicleName()}</p>
+                  <p className="text-sm text-muted-foreground">{getVehicleCapacity()}</p>
                 </div>
               </div>
 
@@ -299,24 +342,24 @@ export function QuoteCalculatorAdvanced() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dirección</span>
-                    <span className="font-mono">{(result?.pricing?.basePrice || 0).toFixed(2)}€</span>
+                    <span className="font-mono">{getBasePrice().toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Distancia ({(result?.distance || 0).toFixed(1)} km × {(result?.pricing?.pricePerKm || 0).toFixed(2)}€/km)
+                      Distancia ({getDistance().toFixed(1)} km × {getPricePerKm().toFixed(2)}€/km)
                     </span>
-                    <span className="font-mono">{(result?.pricing?.distanceCost || 0).toFixed(2)}€</span>
+                    <span className="font-mono">{getDistanceCost().toFixed(2)}€</span>
                   </div>
                   
                   <div className="border-t pt-3 mt-3">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total</span>
                       <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
-                        {(result?.pricing?.totalPrice || 0).toFixed(2)}€
+                        {getTotalPrice().toFixed(2)}€
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Mínimo: {(result?.pricing?.minimumPrice || 0).toFixed(2)}€
+                      Mínimo: {getMinimumPrice().toFixed(2)}€
                     </p>
                   </div>
                 </div>
