@@ -1,5 +1,4 @@
 import { QuoteCalculatorAdvanced } from "@/components/QuoteCalculatorAdvanced";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function QuotePage() {
   return (
@@ -10,9 +9,7 @@ export default function QuotePage() {
           Calcula el precio del transporte introduciendo origen, destino y tipo de vehículo
         </p>
       </div>
-      <ErrorBoundary>
-        <QuoteCalculatorAdvanced />
-      </ErrorBoundary>
+      <QuoteCalculatorAdvanced />
     </div>
   );
 }
