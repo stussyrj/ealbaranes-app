@@ -158,10 +158,7 @@ export function QuoteCalculatorAdvanced() {
                 <SelectContent>
                   {vehicleTypes?.map((v) => (
                     <SelectItem key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
-                      <div className="flex flex-col">
-                        <span>{v.name}</span>
-                        <span className="text-xs text-muted-foreground">{v.capacity}</span>
-                      </div>
+                      {v.name} - {v.capacity}
                     </SelectItem>
                   ))}
                 </SelectContent>
