@@ -17,24 +17,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const DEFAULT_USER: User = {
+  id: "1",
+  username: "Carlos Admin",
+  email: "carlos@transporte.com",
+  isAdmin: true,
+  profileImage: undefined,
+};
 
-  useEffect(() => {
-    // todo: remove mock functionality - replace with actual auth check
-    const timer = setTimeout(() => {
-      setUser({
-        id: "1",
-        username: "Carlos Admin",
-        email: "carlos@transporte.com",
-        isAdmin: true,
-        profileImage: undefined,
-      });
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User>(DEFAULT_USER);
+  const [isLoading, setIsLoading] = useState(false);
 
   const login = () => {
     // todo: remove mock functionality - implement actual login
