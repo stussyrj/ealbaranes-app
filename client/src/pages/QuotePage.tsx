@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 export default function QuotePage() {
   const [origin, setOrigin] = useState("");
@@ -16,6 +17,7 @@ export default function QuotePage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   if (vehicles.length === 0 && !loading) {
     setLoading(true);
@@ -28,7 +30,42 @@ export default function QuotePage() {
       .catch(() => setLoading(false));
   }
 
+  const getMinimumPickupTime = (): string => {
+    const now = new Date();
+    const minimumTime = new Date(now.getTime() + 30 * 60000);
+    const hours = String(minimumTime.getHours()).padStart(2, "0");
+    const minutes = String(minimumTime.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  const isValidPickupTime = (time: string): boolean => {
+    if (!time) return true;
+    
+    const now = new Date();
+    const minimumTime = new Date(now.getTime() + 30 * 60000);
+    
+    const [hours, minutes] = time.split(":").map(Number);
+    const selectedTime = new Date();
+    selectedTime.setHours(hours, minutes, 0, 0);
+    
+    if (selectedTime < minimumTime) {
+      const minHours = String(minimumTime.getHours()).padStart(2, "0");
+      const minMinutes = String(minimumTime.getMinutes()).padStart(2, "0");
+      toast({
+        title: "Horario inválido",
+        description: `Por favor, selecciona un horario de recogida a partir de las ${minHours}:${minMinutes}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleCalculate = async () => {
+    if (pickupTime && !isValidPickupTime(pickupTime)) {
+      return;
+    }
+
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -57,6 +94,8 @@ export default function QuotePage() {
     setPickupTime("");
     setObservations("");
   };
+
+  const minTime = getMinimumPickupTime();
 
   return (
     <div className="p-6">
@@ -100,10 +139,14 @@ export default function QuotePage() {
           </div>
           <div>
             <Label>Horario de Recogida</Label>
+            <div className="text-xs text-muted-foreground mb-2">
+              Mínimo: {minTime} (30 minutos de anticipación)
+            </div>
             <Input
               type="time"
               value={pickupTime}
               onChange={(e) => setPickupTime(e.target.value)}
+              min={minTime}
               placeholder="Ej: 14:30"
               data-testid="input-pickup-time"
             />
