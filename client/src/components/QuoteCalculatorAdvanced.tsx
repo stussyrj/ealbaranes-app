@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { MapPin, Calculator, Loader2, Info, Receipt, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,22 +10,45 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { VehicleType } from "@shared/schema";
 
+interface QuoteResult {
+  origin: {
+    label: string;
+  };
+  destination: {
+    label: string;
+  };
+  distance: number;
+  duration: number;
+  vehicle: {
+    name: string;
+    capacity: string;
+  };
+  pricing: {
+    basePrice: number;
+    pricePerKm: number;
+    distanceCost: number;
+    minimumPrice: number;
+    totalPrice: number;
+  };
+}
+
 export function QuoteCalculatorAdvanced() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<QuoteResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data: vehicleTypes, isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
+  const { data: vehicleTypes = [], isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
     queryKey: ["/api/vehicle-types"],
     queryFn: async () => {
       const response = await fetch("/api/vehicle-types", {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to load vehicle types");
-      return response.json();
+      const json = await response.json();
+      return Array.isArray(json) ? json : [];
     },
   });
 
@@ -41,9 +64,9 @@ export function QuoteCalculatorAdvanced() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          origin,
-          destination,
-          vehicleTypeId,
+          origin: String(origin).trim(),
+          destination: String(destination).trim(),
+          vehicleTypeId: String(vehicleTypeId).trim(),
         }),
         credentials: "include",
       });
@@ -55,30 +78,49 @@ export function QuoteCalculatorAdvanced() {
 
       const data = await response.json();
       
-      if (data?.breakdown) {
-        setResult(data.breakdown);
+      if (data && typeof data === "object" && data.breakdown) {
+        const breakdown = data.breakdown;
+        
+        const typedResult: QuoteResult = {
+          origin: {
+            label: String(breakdown?.origin?.label || breakdown?.origin?.address || "Origen"),
+          },
+          destination: {
+            label: String(breakdown?.destination?.label || breakdown?.destination?.address || "Destino"),
+          },
+          distance: Number(breakdown?.distance) || 0,
+          duration: Number(breakdown?.duration) || 0,
+          vehicle: {
+            name: String(breakdown?.vehicle?.name || "Vehículo"),
+            capacity: String(breakdown?.vehicle?.capacity || ""),
+          },
+          pricing: {
+            basePrice: Number(breakdown?.pricing?.basePrice) || 0,
+            pricePerKm: Number(breakdown?.pricing?.pricePerKm) || 0,
+            distanceCost: Number(breakdown?.pricing?.distanceCost) || 0,
+            minimumPrice: Number(breakdown?.pricing?.minimumPrice) || 0,
+            totalPrice: Number(breakdown?.pricing?.totalPrice) || 0,
+          },
+        };
+        
+        setResult(typedResult);
       } else {
         throw new Error("Respuesta inválida del servidor");
       }
     } catch (error: any) {
       console.error("Error al calcular presupuesto:", error);
-      setErrorMsg(error?.message || "Error al calcular el presupuesto");
+      setErrorMsg(String(error?.message || "Error al calcular el presupuesto"));
       setResult(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatDuration = (minutes: any) => {
-    if (!minutes || typeof minutes !== "number") return "—";
+  const formatDuration = (minutes: number): string => {
+    if (!minutes || typeof minutes !== "number" || isNaN(minutes)) return "—";
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
     return `${hours}h ${mins}min`;
-  };
-
-  const safeNumber = (val: any) => {
-    const num = Number(val);
-    return isNaN(num) ? 0 : num;
   };
 
   const resetForm = () => {
@@ -155,15 +197,15 @@ export function QuoteCalculatorAdvanced() {
                 data-testid="select-vehicle-type"
               >
                 <option value="">Selecciona un vehículo</option>
-                {vehicleTypes?.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
+                {vehicleTypes && Array.isArray(vehicleTypes) && vehicleTypes.map((v) => (
+                  <option key={String(v?.id || "")} value={String(v?.id || "")}>
+                    {String(v?.name || "Vehículo")}
                   </option>
                 ))}
               </select>
             )}
             {selectedVehicle && (
-              <p className="text-sm text-muted-foreground">Capacidad: {selectedVehicle.capacity}</p>
+              <p className="text-sm text-muted-foreground">Capacidad: {String(selectedVehicle?.capacity || "—")}</p>
             )}
           </div>
 
@@ -223,13 +265,13 @@ export function QuoteCalculatorAdvanced() {
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Distancia</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
-                      {safeNumber(result?.distance).toFixed(1)} km
+                      {(result?.distance || 0).toFixed(1)} km
                     </p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Duración</p>
                     <p className="text-2xl font-semibold font-mono" data-testid="text-duration">
-                      {formatDuration(result?.duration)}
+                      {formatDuration(result?.duration || 0)}
                     </p>
                   </div>
                 </div>
@@ -257,24 +299,24 @@ export function QuoteCalculatorAdvanced() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dirección</span>
-                    <span className="font-mono">{safeNumber(result?.pricing?.basePrice).toFixed(2)}€</span>
+                    <span className="font-mono">{(result?.pricing?.basePrice || 0).toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Distancia ({safeNumber(result?.distance).toFixed(1)} km × {safeNumber(result?.pricing?.pricePerKm).toFixed(2)}€/km)
+                      Distancia ({(result?.distance || 0).toFixed(1)} km × {(result?.pricing?.pricePerKm || 0).toFixed(2)}€/km)
                     </span>
-                    <span className="font-mono">{safeNumber(result?.pricing?.distanceCost).toFixed(2)}€</span>
+                    <span className="font-mono">{(result?.pricing?.distanceCost || 0).toFixed(2)}€</span>
                   </div>
                   
                   <div className="border-t pt-3 mt-3">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total</span>
                       <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
-                        {safeNumber(result?.pricing?.totalPrice).toFixed(2)}€
+                        {(result?.pricing?.totalPrice || 0).toFixed(2)}€
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Mínimo: {safeNumber(result?.pricing?.minimumPrice).toFixed(2)}€
+                      Mínimo: {(result?.pricing?.minimumPrice || 0).toFixed(2)}€
                     </p>
                   </div>
                 </div>
