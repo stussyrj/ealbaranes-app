@@ -159,7 +159,7 @@ export default function QuotePage() {
         <CardContent className="space-y-4">
           <div>
             <Label>Nombre</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre completo" data-testid="input-name" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Manuel Torres" data-testid="input-name" />
           </div>
           <div>
             <Label>Teléfono de Contacto</Label>

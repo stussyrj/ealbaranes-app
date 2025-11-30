@@ -160,6 +160,8 @@ export class MemStorage implements IStorage {
     const newQuote: Quote = {
       id,
       userId: quote.userId ?? null,
+      customerName: quote.customerName ?? null,
+      phoneNumber: quote.phoneNumber ?? null,
       origin: quote.origin,
       destination: quote.destination,
       originCoords: quote.originCoords ?? null,
