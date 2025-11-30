@@ -107,12 +107,12 @@ export function AppSidebar() {
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-              {user?.username?.slice(0, 2).toUpperCase() || "U"}
+              {user && user.username ? String(user.username).slice(0, 2).toUpperCase() : "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.username || "Usuario"}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email || ""}</p>
+            <p className="text-sm font-medium truncate">{user && user.username ? String(user.username) : "Usuario"}</p>
+            <p className="text-xs text-muted-foreground truncate">{user && user.email ? String(user.email) : ""}</p>
           </div>
           <SidebarMenuButton asChild className="h-9 w-9 p-0">
             <Link href="/settings">
