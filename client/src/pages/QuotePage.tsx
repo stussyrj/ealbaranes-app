@@ -13,6 +13,7 @@ export default function QuotePage() {
   const [vehicleId, setVehicleId] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
   const [pickupTime, setPickupTime] = useState("");
+  const [pickupTimeError, setPickupTimeError] = useState("");
   const [observations, setObservations] = useState("");
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [result, setResult] = useState<any>(null);
@@ -38,8 +39,8 @@ export default function QuotePage() {
     return `${hours}:${minutes}`;
   };
 
-  const isValidPickupTime = (time: string): boolean => {
-    if (!time) return true;
+  const getPickupTimeErrorMessage = (time: string): string => {
+    if (!time) return "";
     
     const now = new Date();
     const minimumTime = new Date(now.getTime() + 30 * 60000);
@@ -65,14 +66,9 @@ export default function QuotePage() {
     if (!isValid) {
       const minHours = String(minimumTime.getHours()).padStart(2, "0");
       const minMinutes = String(minimumTime.getMinutes()).padStart(2, "0");
-      toast({
-        title: "Horario inválido",
-        description: `Por favor, selecciona un horario de recogida a partir de las ${minHours}:${minMinutes}`,
-        variant: "destructive",
-      });
-      return false;
+      return `El horario debe ser a partir de las ${minHours}:${minMinutes}`;
     }
-    return true;
+    return "";
   };
 
   const handleCalculate = async () => {
@@ -103,7 +99,12 @@ export default function QuotePage() {
       return;
     }
 
-    if (pickupTime && !isValidPickupTime(pickupTime)) {
+    if (pickupTimeError) {
+      toast({
+        title: "Error en horario",
+        description: pickupTimeError,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -133,6 +134,7 @@ export default function QuotePage() {
     setVehicleId("");
     setIsUrgent(false);
     setPickupTime("");
+    setPickupTimeError("");
     setObservations("");
   };
 
@@ -188,15 +190,18 @@ export default function QuotePage() {
               value={pickupTime}
               onChange={(e) => {
                 const newTime = e.target.value;
-                if (newTime && !isValidPickupTime(newTime)) {
-                  return;
-                }
+                const errorMessage = getPickupTimeErrorMessage(newTime);
+                setPickupTimeError(errorMessage);
                 setPickupTime(newTime);
               }}
               min={minTime}
               placeholder="Ej: 14:30"
               data-testid="input-pickup-time"
+              className={pickupTimeError ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {pickupTimeError && (
+              <p className="text-sm text-red-500 mt-1">{pickupTimeError}</p>
+            )}
           </div>
           <div>
             <Label>Observaciones</Label>
@@ -219,7 +224,12 @@ export default function QuotePage() {
               Urgencia (+25%)
             </Label>
           </div>
-          <Button onClick={handleCalculate} className="w-full" data-testid="button-calculate">
+          <Button 
+            onClick={handleCalculate} 
+            className="w-full" 
+            data-testid="button-calculate"
+            disabled={!!pickupTimeError}
+          >
             Calcular
           </Button>
         </CardContent>
