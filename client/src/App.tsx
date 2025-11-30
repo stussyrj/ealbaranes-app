@@ -5,28 +5,53 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 import NotFound from "@/pages/not-found";
 import DashboardPage from "@/pages/DashboardPage";
 import QuotePage from "@/pages/QuotePage";
 import HistoryPage from "@/pages/HistoryPage";
+import ContactPage from "@/pages/ContactPage";
 import AdminPricingPage from "@/pages/AdminPricingPage";
 import AdminVehiclesPage from "@/pages/AdminVehiclesPage";
 
-function Router() {
+function AdminRouter() {
   return (
     <Switch>
       <Route path="/" component={DashboardPage} />
-      <Route path="/quote" component={QuotePage} />
-      <Route path="/history" component={HistoryPage} />
       <Route path="/admin/pricing" component={AdminPricingPage} />
       <Route path="/admin/vehicles" component={AdminVehiclesPage} />
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+function CustomerRouter() {
+  return (
+    <Switch>
+      <Route path="/" component={QuotePage} />
+      <Route path="/history" component={HistoryPage} />
+      <Route path="/contact" component={ContactPage} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function Router() {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <NotFound />;
+  }
+
+  if (user.role === "admin") {
+    return <AdminRouter />;
+  }
+
+  return <CustomerRouter />;
 }
 
 function MainLayout() {

@@ -5,8 +5,7 @@ import {
   Settings,
   DollarSign,
   Truck as TruckIcon,
-  MapPin,
-  Users,
+  Phone,
   LayoutDashboard,
 } from "lucide-react";
 import {
@@ -24,26 +23,30 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 
-const mainNavItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Nuevo Presupuesto", url: "/quote", icon: Calculator },
-  { title: "Historial", url: "/history", icon: History },
-];
-
 const adminNavItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Reglas de Precios", url: "/admin/pricing", icon: DollarSign },
   { title: "Tipos de Vehículo", url: "/admin/vehicles", icon: TruckIcon },
-  { title: "Zonas", url: "/admin/zones", icon: MapPin },
-  { title: "Usuarios", url: "/admin/users", icon: Users },
+];
+
+const customerNavItems = [
+  { title: "Calcular Presupuesto", url: "/", icon: Calculator },
+  { title: "Historial", url: "/history", icon: History },
+  { title: "Contacto", url: "/contact", icon: Phone },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const auth = useAuth();
-  const user = auth?.user || null;
-  const isAdmin = user?.isAdmin || false;
-  const username = user?.username || "Usuario";
-  const email = user?.email || "";
+  const { user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
+
+  const isAdmin = user.role === "admin";
+  const navItems = isAdmin ? adminNavItems : customerNavItems;
+  const username = user.username || "Usuario";
+  const email = user.email || "";
   const initials = String(username || "U").slice(0, 2).toUpperCase();
 
   return (
@@ -55,17 +58,19 @@ export function AppSidebar() {
           </div>
           <div>
             <h1 className="font-semibold text-lg">TransQuote</h1>
-            <p className="text-xs text-muted-foreground">Presupuestos de Transporte</p>
+            <p className="text-xs text-muted-foreground">
+              {isAdmin ? "Administración" : "Área de Cliente"}
+            </p>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
+          <SidebarGroupLabel>{isAdmin ? "Administración" : "Principal"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -82,30 +87,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Administración</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location === item.url}
-                      data-testid={`nav-admin-${item.title.toLowerCase().replace(/\s/g, "-")}`}
-                    >
-                      <Link href={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4">
@@ -117,13 +98,10 @@ export function AppSidebar() {
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{username}</p>
-            <p className="text-xs text-muted-foreground truncate">{email}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {isAdmin ? "Administrador" : "Cliente"}
+            </p>
           </div>
-          <SidebarMenuButton asChild className="h-9 w-9 p-0">
-            <Link href="/settings">
-              <Settings className="h-4 w-4" />
-            </Link>
-          </SidebarMenuButton>
         </div>
       </SidebarFooter>
     </Sidebar>
