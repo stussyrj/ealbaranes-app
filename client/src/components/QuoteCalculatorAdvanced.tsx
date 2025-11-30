@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MapPin, Truck, Calculator, Loader2, Info, Receipt, AlertCircle } from "lucide-react";
+import { MapPin, Calculator, Loader2, Info, Receipt, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -92,6 +91,8 @@ export function QuoteCalculatorAdvanced() {
     calculateMutation.reset();
   };
 
+  const selectedVehicle = vehicleTypes?.find(v => v.id === vehicleTypeId);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -146,23 +147,25 @@ export function QuoteCalculatorAdvanced() {
           </div>
 
           <div className="space-y-2">
-            <Label>Tipo de Vehículo</Label>
+            <Label htmlFor="vehicle">Tipo de Vehículo</Label>
             {isLoadingVehicles ? (
               <Skeleton className="h-10 w-full" />
             ) : (
               <Select value={vehicleTypeId} onValueChange={setVehicleTypeId}>
-                <SelectTrigger data-testid="select-vehicle-type">
-                  <Truck className="mr-2 h-4 w-4 text-muted-foreground" />
+                <SelectTrigger id="vehicle" data-testid="select-vehicle-type">
                   <SelectValue placeholder="Selecciona un vehículo" />
                 </SelectTrigger>
                 <SelectContent>
                   {vehicleTypes?.map((v) => (
-                    <SelectItem key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
-                      {v.name} - {v.capacity}
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            )}
+            {selectedVehicle && (
+              <p className="text-sm text-muted-foreground">Capacidad: {selectedVehicle.capacity}</p>
             )}
           </div>
 
