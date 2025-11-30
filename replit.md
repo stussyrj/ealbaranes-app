@@ -1,8 +1,8 @@
-# TransQuote - Transportation Quote SaaS
+# DirectTransports - Transportation Quote SaaS
 
 ## Overview
 
-TransQuote is a B2B SaaS application for calculating transportation quotes based on route distance, vehicle type, and zone-based pricing rules. The system integrates with OpenRouteService for real-time distance calculation and provides administrators with tools to manage pricing zones, vehicle types, and quote history.
+DirectTransports is a B2B SaaS application for calculating transportation quotes based on route distance, vehicle type, and zone-based pricing rules. The system integrates with OpenRouteService for real-time distance calculation and provides administrators with tools to manage pricing zones, vehicle types, and quote history.
 
 **Core Value Proposition**: Automated quote generation using real-world routing data, eliminating manual distance estimation and pricing calculation errors.
 
@@ -19,6 +19,8 @@ TransQuote is a B2B SaaS application for calculating transportation quotes based
 - Language: Spanish (todo en español)
 - Features: Dark/light theme toggle (activated), Dashboard shows 0 values (pre-launch state)
 - Architecture: Role-based access control (admin vs customer)
+- Admin name: Daniel (email: daniel@directtransports.com)
+- App name: DirectTransports
 
 ## System Architecture
 
@@ -69,12 +71,13 @@ TransQuote is a B2B SaaS application for calculating transportation quotes based
 - **No global state library**: React Query handles server state, Context API handles auth/theme/role
 - **Composition over configuration**: Components are copied into codebase (shadcn pattern)
 - **Type-safe API calls**: Shared schemas ensure frontend and backend agree on data structures
+- **localStorage persistence**: User role persists across page reloads
 
 ### Backend Architecture
 
 **Express REST API**:
 - TypeScript for type safety
-- Session-based authentication with mock admin user (Carlos Admin)
+- Session-based authentication with mock admin user (Daniel)
 - RESTful endpoints for CRUD operations on pricing rules, vehicle types, and quotes
 - Role information stored in session (not yet persisted, currently mock)
 
@@ -120,9 +123,10 @@ TransQuote is a B2B SaaS application for calculating transportation quotes based
 ### Authentication Strategy
 
 **Current Implementation**: Mock authentication
-- Default user: Carlos Admin (admin role)
+- Default user: Daniel (admin role)
 - Authentication system ready for Replit Auth integration
 - Role-based route access enforced client-side
+- User role persisted in localStorage
 
 **Planned Implementation**: Replit Auth + Database session store
 - OAuth-based authentication
@@ -241,27 +245,31 @@ TransQuote is a B2B SaaS application for calculating transportation quotes based
 - `esbuild` - Production server bundling
 - `drizzle-kit` - Database migration tool
 
-## Recent Changes (v2.0 - Role-Based Architecture)
+## Recent Changes (v2.1 - Branding & Stability)
 
-### 2025-11-30 Architecture Restructure
+### 2025-11-30 Final Updates
 
 **Added**:
-- ProtectedRoute component for role-based access control
-- ContactPage for customers to reach admin
-- Role-based routing (AdminRouter, CustomerRouter)
-- Support for role distinction in AuthContext
+- Role switching button in sidebar with page reload for stability
+- localStorage persistence for user role and data
+- Simplified customer pages to avoid HMR conflicts
 
 **Modified**:
-- AuthContext: Now manages `role` field (admin/customer) instead of `isAdmin` boolean
-- App.tsx: Completely restructured with separate routers per role
-- AppSidebar: Now displays different menu items based on user role
-- QuotePage: Fixed dark mode styling for vehicle selector dropdown
-- DashboardPage: All metrics set to 0 (pre-launch state)
-- ThemeToggle: Working light/dark mode toggle
+- App name changed from "TransQuote" to "DirectTransports"
+- Admin user name changed from "Carlos Admin" to "Daniel"
+- Admin email changed to "daniel@directtransports.com"
+- AppSidebar fully functional with both admin and customer views
+- QuotePage, HistoryPage, ContactPage simplified for stability
+- AuthContext now persists user data in localStorage
 
-**Rationale for RBAC**:
-- Customers cannot access dashboard or admin functions
-- Admin cannot accidentally access customer areas
-- Separates concerns at routing level (complete isolation)
-- Easier to enforce permissions and prevent security issues
-- Clear separation of business logic between two distinct user types
+**Fixed**:
+- Vite HMR conflicts when switching between admin/customer roles
+- Customer pages now load without errors
+- Navigation works smoothly between all pages
+- Dark/light theme toggle fully functional
+
+**Rationale for Changes**:
+- Simplified component architecture avoids Vite Hot Module Replacement conflicts
+- localStorage persistence ensures role is maintained across page reloads
+- Complete separation of admin and customer UI eliminates route conflicts
+- Page reload on role switch ensures clean state initialization

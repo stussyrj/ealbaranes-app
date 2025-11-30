@@ -57,8 +57,8 @@ export function AppSidebar() {
       const newRole: "customer" | "admin" = isAdmin ? "customer" : "admin";
       const newUser: User = {
         id: user.id,
-        username: newRole === "admin" ? "Carlos Admin" : "Cliente Demo",
-        email: newRole === "admin" ? "carlos@transporte.com" : "cliente@demo.com",
+        username: newRole === "admin" ? "Daniel" : "Cliente Demo",
+        email: newRole === "admin" ? "daniel@directtransports.com" : "cliente@demo.com",
         role: newRole,
       };
       setUser(newUser);
@@ -77,7 +77,7 @@ export function AppSidebar() {
             <TruckIcon className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-semibold text-lg">TransQuote</h1>
+            <h1 className="font-semibold text-lg">DirectTransports</h1>
             <p className="text-xs text-muted-foreground">
               {isAdmin ? "Administración" : "Área de Cliente"}
             </p>

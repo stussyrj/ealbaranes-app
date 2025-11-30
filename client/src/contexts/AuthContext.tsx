@@ -34,8 +34,8 @@ const getInitialUser = (): User => {
   // Default to admin
   return {
     id: "1",
-    username: "Carlos Admin",
-    email: "carlos@transporte.com",
+    username: "Daniel",
+    email: "daniel@directtransports.com",
     role: "admin",
   };
 };
