@@ -69,6 +69,9 @@ export default function DashboardPage() {
         {quote.phoneNumber && (
           <p className="text-sm"><span className="text-muted-foreground">Teléfono: </span><a href={`tel:${quote.phoneNumber}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quote.phoneNumber}</a></p>
         )}
+        {quote.observations && (
+          <p className="text-sm"><span className="text-muted-foreground">Observaciones: </span><span className="text-xs">{quote.observations}</span></p>
+        )}
       </div>
       {showActions && (
         <div className="flex gap-2">
