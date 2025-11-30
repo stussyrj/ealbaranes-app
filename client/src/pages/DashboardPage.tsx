@@ -62,11 +62,14 @@ export default function DashboardPage() {
           <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
         </div>
       </div>
-      {quote.phoneNumber && (
-        <div className="border-t pt-3 mb-3">
+      <div className="border-t pt-3 mb-3 space-y-2">
+        {quote.customerName && (
+          <p className="text-sm"><span className="text-muted-foreground">Cliente: </span><span className="font-medium">{quote.customerName}</span></p>
+        )}
+        {quote.phoneNumber && (
           <p className="text-sm"><span className="text-muted-foreground">Teléfono: </span><a href={`tel:${quote.phoneNumber}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quote.phoneNumber}</a></p>
-        </div>
-      )}
+        )}
+      </div>
       {showActions && (
         <div className="flex gap-2">
           <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white text-sm" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>

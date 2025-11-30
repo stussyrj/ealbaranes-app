@@ -39,6 +39,8 @@ export type VehicleType = typeof vehicleTypes.$inferSelect;
 export const quotes = pgTable("quotes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id"),
+  customerName: text("customer_name"),
+  phoneNumber: text("phone_number"),
   origin: text("origin").notNull(),
   destination: text("destination").notNull(),
   originCoords: text("origin_coords"),
@@ -81,13 +83,14 @@ export const routeRequestSchema = z.object({
 });
 
 export const calculateQuoteRequestSchema = z.object({
+  name: z.string().min(1),
+  phoneNumber: z.string().min(1),
   origin: z.string().min(1),
   destination: z.string().min(1),
   vehicleTypeId: z.string().min(1),
   isUrgent: z.boolean().optional(),
   pickupTime: z.string().optional(),
   observations: z.string().optional(),
-  phoneNumber: z.string().optional(),
 });
 
 export type GeocodeRequest = z.infer<typeof geocodeRequestSchema>;

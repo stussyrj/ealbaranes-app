@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Truck } from "lucide-react";
 
 export default function QuotePage() {
+  const [name, setName] = useState("");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleId, setVehicleId] = useState("");
@@ -62,6 +63,14 @@ export default function QuotePage() {
   };
 
   const handleCalculate = async () => {
+    if (!name.trim()) {
+      toast({ title: "Campo requerido", description: "Por favor, ingresa tu nombre", variant: "destructive" });
+      return;
+    }
+    if (!phoneNumber.trim()) {
+      toast({ title: "Campo requerido", description: "Por favor, ingresa tu teléfono", variant: "destructive" });
+      return;
+    }
     if (!origin.trim()) {
       toast({ title: "Campo requerido", description: "Por favor, ingresa el origen", variant: "destructive" });
       return;
@@ -82,7 +91,7 @@ export default function QuotePage() {
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin, destination, vehicleTypeId: vehicleId, isUrgent, pickupTime: pickupTime || undefined, observations: observations || undefined, phoneNumber: phoneNumber || undefined }),
+      body: JSON.stringify({ name, phoneNumber, origin, destination, vehicleTypeId: vehicleId, isUrgent, pickupTime: pickupTime || undefined, observations: observations || undefined }),
       credentials: "include",
     });
     const data = await res.json();
@@ -103,6 +112,7 @@ export default function QuotePage() {
 
   const handleReset = () => {
     setResult(null);
+    setName("");
     setOrigin("");
     setDestination("");
     setVehicleId("");
@@ -148,6 +158,14 @@ export default function QuotePage() {
         <CardHeader><CardTitle>Calculadora</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
+            <Label>Nombre</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre completo" data-testid="input-name" />
+          </div>
+          <div>
+            <Label>Teléfono de Contacto</Label>
+            <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ej: +34 123 456 789" data-testid="input-phone" />
+          </div>
+          <div>
             <Label>Origen</Label>
             <Input value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Ej: Calle Gran Vía, 45, 28013 Madrid" />
           </div>
@@ -173,10 +191,6 @@ export default function QuotePage() {
           <div>
             <Label>Observaciones</Label>
             <Textarea value={observations} onChange={(e) => setObservations(e.target.value)} placeholder="Agregar cualquier información relevante para la entrega..." rows={3} data-testid="textarea-observations" />
-          </div>
-          <div>
-            <Label>Teléfono de Contacto</Label>
-            <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ej: +34 123 456 789" data-testid="input-phone" />
           </div>
           <div className="flex items-center gap-2">
             <Checkbox id="urgent" checked={isUrgent} onCheckedChange={(checked) => setIsUrgent(checked === true)} data-testid="checkbox-urgent" />
