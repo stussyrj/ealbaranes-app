@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Calculator, Loader2, Info, Receipt, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,171 +10,59 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { VehicleType } from "@shared/schema";
 
-interface QuoteResult {
-  origin?: {
-    label?: string;
-  };
-  destination?: {
-    label?: string;
-  };
-  distance?: number;
-  duration?: number;
-  vehicle?: {
-    name?: string;
-    capacity?: string;
-  };
-  pricing?: {
-    basePrice?: number;
-    pricePerKm?: number;
-    distanceCost?: number;
-    minimumPrice?: number;
-    totalPrice?: number;
-  };
-}
-
 export function QuoteCalculatorAdvanced() {
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [vehicleTypeId, setVehicleTypeId] = useState("");
-  const [result, setResult] = useState<QuoteResult | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [origin, setOrigin] = useState<string>("");
+  const [destination, setDestination] = useState<string>("");
+  const [vehicleTypeId, setVehicleTypeId] = useState<string>("");
+  const [resultData, setResultData] = useState<Record<string, any> | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { data: vehicleTypes = [], isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
+  const { data: vehicleTypes = [] } = useQuery<VehicleType[]>({
     queryKey: ["/api/vehicle-types"],
     queryFn: async () => {
-      try {
-        const response = await fetch("/api/vehicle-types", {
-          credentials: "include",
-        });
-        if (!response.ok) throw new Error("Failed to load vehicle types");
-        const json = await response.json();
-        return Array.isArray(json) ? json : [];
-      } catch (e) {
-        console.error("Error loading vehicle types:", e);
-        return [];
-      }
+      const response = await fetch("/api/vehicle-types", { credentials: "include" });
+      if (!response.ok) return [];
+      const json = await response.json();
+      return Array.isArray(json) ? json : [];
     },
   });
 
-  const calculateQuote = async () => {
+  const handleCalculate = async () => {
     if (!origin || !destination || !vehicleTypeId) return;
     
-    try {
-      setIsLoading(true);
-      setErrorMsg("");
-      setResult(null);
+    setIsLoading(true);
+    setErrorMsg("");
+    setResultData(null);
 
+    try {
       const response = await fetch("/api/calculate-quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          origin: String(origin).trim(),
-          destination: String(destination).trim(),
-          vehicleTypeId: String(vehicleTypeId).trim(),
-        }),
+        body: JSON.stringify({ origin, destination, vehicleTypeId }),
         credentials: "include",
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Error al calcular el presupuesto");
+        setErrorMsg("Error al calcular el presupuesto");
+        return;
       }
 
-      const data = await response.json();
-      
-      if (data && typeof data === "object" && data.breakdown) {
-        setResult(data.breakdown || {});
-      } else {
-        throw new Error("Respuesta inválida del servidor");
-      }
-    } catch (error: any) {
-      console.error("Error al calcular presupuesto:", error);
-      setErrorMsg(String(error?.message || "Error al calcular el presupuesto"));
-      setResult(null);
+      const json = await response.json();
+      setResultData(json?.breakdown || null);
+    } catch (e) {
+      setErrorMsg("Error de conexión");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatDuration = (minutes: number | undefined): string => {
-    if (typeof minutes !== "number" || isNaN(minutes) || !minutes) return "—";
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
-    return `${hours}h ${mins}min`;
-  };
-
-  const getOriginLabel = (): string => {
-    if (!result) return "—";
-    return String(result?.origin?.label || "Origen");
-  };
-
-  const getDestinationLabel = (): string => {
-    if (!result) return "—";
-    return String(result?.destination?.label || "Destino");
-  };
-
-  const getDistance = (): number => {
-    if (!result) return 0;
-    const val = Number(result?.distance);
-    return isNaN(val) ? 0 : val;
-  };
-
-  const getDuration = (): number | undefined => {
-    if (!result) return undefined;
-    const val = Number(result?.duration);
-    return isNaN(val) ? undefined : val;
-  };
-
-  const getVehicleName = (): string => {
-    if (!result) return "—";
-    return String(result?.vehicle?.name || "Vehículo");
-  };
-
-  const getVehicleCapacity = (): string => {
-    if (!result) return "—";
-    return String(result?.vehicle?.capacity || "");
-  };
-
-  const getBasePrice = (): number => {
-    if (!result) return 0;
-    const val = Number(result?.pricing?.basePrice);
-    return isNaN(val) ? 0 : val;
-  };
-
-  const getPricePerKm = (): number => {
-    if (!result) return 0;
-    const val = Number(result?.pricing?.pricePerKm);
-    return isNaN(val) ? 0 : val;
-  };
-
-  const getDistanceCost = (): number => {
-    if (!result) return 0;
-    const val = Number(result?.pricing?.distanceCost);
-    return isNaN(val) ? 0 : val;
-  };
-
-  const getMinimumPrice = (): number => {
-    if (!result) return 0;
-    const val = Number(result?.pricing?.minimumPrice);
-    return isNaN(val) ? 0 : val;
-  };
-
-  const getTotalPrice = (): number => {
-    if (!result) return 0;
-    const val = Number(result?.pricing?.totalPrice);
-    return isNaN(val) ? 0 : val;
-  };
-
   const resetForm = () => {
-    setResult(null);
+    setResultData(null);
     setOrigin("");
     setDestination("");
     setVehicleTypeId("");
-    setErrorMsg("");
   };
-
-  const selectedVehicle = vehicleTypes?.find(v => v?.id === vehicleTypeId);
 
   return (
     <div className="space-y-6">
@@ -229,31 +117,24 @@ export function QuoteCalculatorAdvanced() {
 
           <div className="space-y-2">
             <Label htmlFor="vehicle">Tipo de Vehículo</Label>
-            {isLoadingVehicles ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <select
-                id="vehicle"
-                value={vehicleTypeId}
-                onChange={(e) => setVehicleTypeId(e.target.value)}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                data-testid="select-vehicle-type"
-              >
-                <option value="">Selecciona un vehículo</option>
-                {vehicleTypes && Array.isArray(vehicleTypes) && vehicleTypes.map((v) => (
-                  <option key={String(v?.id || "")} value={String(v?.id || "")}>
-                    {String(v?.name || "Vehículo")}
-                  </option>
-                ))}
-              </select>
-            )}
-            {selectedVehicle && (
-              <p className="text-sm text-muted-foreground">Capacidad: {String(selectedVehicle?.capacity || "—")}</p>
-            )}
+            <select
+              id="vehicle"
+              value={vehicleTypeId}
+              onChange={(e) => setVehicleTypeId(e.target.value)}
+              className="w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              data-testid="select-vehicle-type"
+            >
+              <option value="">Selecciona un vehículo</option>
+              {vehicleTypes.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <Button
-            onClick={calculateQuote}
+            onClick={handleCalculate}
             disabled={!origin || !destination || !vehicleTypeId || isLoading}
             className="w-full"
             size="lg"
@@ -274,112 +155,132 @@ export function QuoteCalculatorAdvanced() {
         </CardContent>
       </Card>
 
-      {result && Object.keys(result).length > 0 && (
-        <Card className="border-primary/50">
-          <CardHeader className="bg-primary/5">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Receipt className="h-5 w-5" />
-              Presupuesto Generado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Ruta</p>
-                  <div className="flex items-start gap-2 mt-1">
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <div className="w-0.5 h-8 bg-border" />
-                      <div className="w-3 h-3 rounded-full bg-red-500" />
-                    </div>
-                    <div className="space-y-2 min-w-0">
-                      <p className="font-medium truncate" data-testid="text-origin">
-                        {getOriginLabel()}
-                      </p>
-                      <p className="font-medium truncate" data-testid="text-destination">
-                        {getDestinationLabel()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Distancia</p>
-                    <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
-                      {getDistance().toFixed(1)} km
-                    </p>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Duración</p>
-                    <p className="text-2xl font-semibold font-mono" data-testid="text-duration">
-                      {formatDuration(getDuration())}
-                    </p>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground">Vehículo</p>
-                  <p className="font-medium">{getVehicleName()}</p>
-                  <p className="text-sm text-muted-foreground">{getVehicleCapacity()}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 p-4 bg-card border rounded-lg">
-                <h4 className="font-semibold flex items-center gap-2">
-                  Desglose de Precio
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Precio = max(Mínimo, Dirección + (km × €/km))</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </h4>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dirección</span>
-                    <span className="font-mono">{getBasePrice().toFixed(2)}€</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Distancia ({getDistance().toFixed(1)} km × {getPricePerKm().toFixed(2)}€/km)
-                    </span>
-                    <span className="font-mono">{getDistanceCost().toFixed(2)}€</span>
-                  </div>
-                  
-                  <div className="border-t pt-3 mt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Total</span>
-                      <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
-                        {getTotalPrice().toFixed(2)}€
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Mínimo: {getMinimumPrice().toFixed(2)}€
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6 flex-wrap">
-              <Button data-testid="button-save-quote">
-                Guardar Presupuesto
-              </Button>
-              <Button variant="outline" data-testid="button-print-quote">
-                Imprimir / PDF
-              </Button>
-              <Button variant="outline" onClick={resetForm} data-testid="button-new-quote">
-                Nuevo Cálculo
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Suspense fallback={null}>
+        {resultData && <QuoteResult data={resultData} onReset={resetForm} />}
+      </Suspense>
     </div>
+  );
+}
+
+function QuoteResult({ data, onReset }: { data: Record<string, any>; onReset: () => void }) {
+  const originLabel = data?.origin?.label || "Origen";
+  const destLabel = data?.destination?.label || "Destino";
+  const distance = data?.distance || 0;
+  const duration = data?.duration || 0;
+  const vehicleName = data?.vehicle?.name || "Vehículo";
+  const vehicleCapacity = data?.vehicle?.capacity || "";
+  const basePrice = data?.pricing?.basePrice || 0;
+  const pricePerKm = data?.pricing?.pricePerKm || 0;
+  const distanceCost = data?.pricing?.distanceCost || 0;
+  const minimumPrice = data?.pricing?.minimumPrice || 0;
+  const totalPrice = data?.pricing?.totalPrice || 0;
+
+  const durationStr = duration ? `${Math.floor(duration / 60)}h ${Math.round(duration % 60)}min` : "—";
+
+  return (
+    <Card className="border-primary/50">
+      <CardHeader className="bg-primary/5">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Receipt className="h-5 w-5" />
+          Presupuesto Generado
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Ruta</p>
+              <div className="flex items-start gap-2 mt-1">
+                <div className="flex flex-col items-center">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <div className="w-0.5 h-8 bg-border" />
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                </div>
+                <div className="space-y-2 min-w-0">
+                  <p className="font-medium truncate" data-testid="text-origin">
+                    {originLabel}
+                  </p>
+                  <p className="font-medium truncate" data-testid="text-destination">
+                    {destLabel}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Distancia</p>
+                <p className="text-2xl font-semibold font-mono" data-testid="text-distance">
+                  {distance.toFixed(1)} km
+                </p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Duración</p>
+                <p className="text-2xl font-semibold font-mono" data-testid="text-duration">
+                  {durationStr}
+                </p>
+              </div>
+            </div>
+            
+            <div>
+              <p className="text-sm text-muted-foreground">Vehículo</p>
+              <p className="font-medium">{vehicleName}</p>
+              <p className="text-sm text-muted-foreground">{vehicleCapacity}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 p-4 bg-card border rounded-lg">
+            <h4 className="font-semibold flex items-center gap-2">
+              Desglose de Precio
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Precio = max(Mínimo, Dirección + (km × €/km))</p>
+                </TooltipContent>
+              </Tooltip>
+            </h4>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Dirección</span>
+                <span className="font-mono">{basePrice.toFixed(2)}€</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Distancia ({distance.toFixed(1)} km × {pricePerKm.toFixed(2)}€/km)
+                </span>
+                <span className="font-mono">{distanceCost.toFixed(2)}€</span>
+              </div>
+              
+              <div className="border-t pt-3 mt-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total</span>
+                  <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
+                    {totalPrice.toFixed(2)}€
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mínimo: {minimumPrice.toFixed(2)}€
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6 flex-wrap">
+          <Button data-testid="button-save-quote">
+            Guardar Presupuesto
+          </Button>
+          <Button variant="outline" data-testid="button-print-quote">
+            Imprimir / PDF
+          </Button>
+          <Button variant="outline" onClick={onReset} data-testid="button-new-quote">
+            Nuevo Cálculo
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
