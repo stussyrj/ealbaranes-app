@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Check, X, DollarSign } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, Check, DollarSign, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -22,65 +24,84 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-
-interface PricingRule {
-  id: string;
-  name: string;
-  zone: number;
-  country: string;
-  minKm: number;
-  maxKm: number;
-  basePrice: number;
-  pricePerKm: number;
-  tollSurcharge: number;
-  minPrice: number;
-  isActive: boolean;
-}
-
-// todo: remove mock functionality - replace with actual pricing rules from API
-const initialRules: PricingRule[] = [
-  { id: "1", name: "Local", zone: 1, country: "España", minKm: 0, maxKm: 10, basePrice: 15, pricePerKm: 0.80, tollSurcharge: 0, minPrice: 15, isActive: true },
-  { id: "2", name: "Local Extendido", zone: 2, country: "España", minKm: 10, maxKm: 50, basePrice: 25, pricePerKm: 0.75, tollSurcharge: 0, minPrice: 25, isActive: true },
-  { id: "3", name: "Regional", zone: 3, country: "España", minKm: 50, maxKm: 200, basePrice: 60, pricePerKm: 0.65, tollSurcharge: 0, minPrice: 60, isActive: true },
-  { id: "4", name: "Inter-regional", zone: 4, country: "España", minKm: 200, maxKm: 800, basePrice: 200, pricePerKm: 0.50, tollSurcharge: 10, minPrice: 120, isActive: true },
-  { id: "5", name: "Internacional Portugal", zone: 5, country: "Portugal", minKm: 0, maxKm: 800, basePrice: 220, pricePerKm: 0.60, tollSurcharge: 15, minPrice: 140, isActive: true },
-  { id: "6", name: "Internacional Francia", zone: 6, country: "Francia", minKm: 0, maxKm: 800, basePrice: 240, pricePerKm: 0.65, tollSurcharge: 20, minPrice: 160, isActive: true },
-];
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { PricingRule, InsertPricingRule } from "@shared/schema";
 
 export function PricingRulesAdmin() {
-  const [rules, setRules] = useState<PricingRule[]>(initialRules);
   const [editingRule, setEditingRule] = useState<PricingRule | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  const { data: rules, isLoading } = useQuery<PricingRule[]>({
+    queryKey: ["/api/pricing-rules"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: InsertPricingRule) => {
+      const response = await apiRequest("POST", "/api/pricing-rules", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pricing-rules"] });
+      setIsDialogOpen(false);
+      setEditingRule(null);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertPricingRule> }) => {
+      const response = await apiRequest("PUT", `/api/pricing-rules/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pricing-rules"] });
+      setIsDialogOpen(false);
+      setEditingRule(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/pricing-rules/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pricing-rules"] });
+      setDeleteConfirm(null);
+    },
+  });
+
   const handleSave = () => {
     if (!editingRule) return;
     
-    if (editingRule.id) {
-      setRules(rules.map(r => r.id === editingRule.id ? editingRule : r));
+    const data: InsertPricingRule = {
+      zone: editingRule.zone,
+      name: editingRule.name,
+      country: editingRule.country,
+      minKm: editingRule.minKm,
+      maxKm: editingRule.maxKm,
+      basePrice: editingRule.basePrice,
+      pricePerKm: editingRule.pricePerKm,
+      tollSurcharge: editingRule.tollSurcharge,
+      minPrice: editingRule.minPrice,
+      isActive: editingRule.isActive,
+    };
+    
+    if (editingRule.id && !editingRule.id.startsWith("new-")) {
+      updateMutation.mutate({ id: editingRule.id, data });
     } else {
-      setRules([...rules, { ...editingRule, id: Date.now().toString() }]);
+      createMutation.mutate(data);
     }
-    setIsDialogOpen(false);
-    setEditingRule(null);
-    console.log("Rule saved:", editingRule);
   };
 
-  const handleDelete = (id: string) => {
-    setRules(rules.filter(r => r.id !== id));
-    setDeleteConfirm(null);
-    console.log("Rule deleted:", id);
-  };
-
-  const toggleActive = (id: string) => {
-    setRules(rules.map(r => r.id === id ? { ...r, isActive: !r.isActive } : r));
+  const toggleActive = (rule: PricingRule) => {
+    updateMutation.mutate({ id: rule.id, data: { isActive: !rule.isActive } });
   };
 
   const openNewRule = () => {
     setEditingRule({
-      id: "",
+      id: "new-" + Date.now(),
+      zone: (rules?.length || 0) + 1,
       name: "",
-      zone: rules.length + 1,
       country: "España",
       minKm: 0,
       maxKm: 100,
@@ -92,6 +113,26 @@ export function PricingRulesAdmin() {
     });
     setIsDialogOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            Reglas de Precios por Zona
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -131,7 +172,7 @@ export function PricingRulesAdmin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rules.map((rule) => (
+                {rules?.map((rule) => (
                   <TableRow key={rule.id} data-testid={`row-rule-${rule.id}`}>
                     <TableCell>
                       <Badge variant="outline">Zona {rule.zone}</Badge>
@@ -149,8 +190,8 @@ export function PricingRulesAdmin() {
                     <TableCell className="text-right font-mono">{rule.minPrice.toFixed(2)}€</TableCell>
                     <TableCell>
                       <Switch
-                        checked={rule.isActive}
-                        onCheckedChange={() => toggleActive(rule.id)}
+                        checked={rule.isActive ?? true}
+                        onCheckedChange={() => toggleActive(rule)}
                         data-testid={`switch-active-${rule.id}`}
                       />
                     </TableCell>
@@ -189,7 +230,7 @@ export function PricingRulesAdmin() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingRule?.id ? "Editar Zona" : "Nueva Zona de Precios"}
+              {editingRule?.id && !editingRule.id.startsWith("new-") ? "Editar Zona" : "Nueva Zona de Precios"}
             </DialogTitle>
             <DialogDescription>
               Configure los parámetros de precios para esta zona
@@ -285,8 +326,15 @@ export function PricingRulesAdmin() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
-              <Check className="mr-2 h-4 w-4" />
+            <Button 
+              onClick={handleSave} 
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {(createMutation.isPending || updateMutation.isPending) ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="mr-2 h-4 w-4" />
+              )}
               Guardar
             </Button>
           </DialogFooter>
@@ -305,8 +353,16 @@ export function PricingRulesAdmin() {
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
-              <Trash2 className="mr-2 h-4 w-4" />
+            <Button 
+              variant="destructive" 
+              onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
               Eliminar
             </Button>
           </DialogFooter>

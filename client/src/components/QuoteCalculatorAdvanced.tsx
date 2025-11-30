@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MapPin, Truck, Calculator, Loader2, Info, Receipt } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { MapPin, Truck, Calculator, Loader2, Info, Receipt, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,48 +9,61 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-// Pricing rules based on user specifications
-const pricingZones = [
-  { id: 1, name: "Local", country: "España", minKm: 0, maxKm: 10, basePrice: 15, pricePerKm: 0.80, tollSurcharge: 0, minPrice: 15 },
-  { id: 2, name: "Local Extendido", country: "España", minKm: 10, maxKm: 50, basePrice: 25, pricePerKm: 0.75, tollSurcharge: 0, minPrice: 25 },
-  { id: 3, name: "Regional", country: "España", minKm: 50, maxKm: 200, basePrice: 60, pricePerKm: 0.65, tollSurcharge: 0, minPrice: 60 },
-  { id: 4, name: "Inter-regional", country: "España", minKm: 200, maxKm: 800, basePrice: 200, pricePerKm: 0.50, tollSurcharge: 10, minPrice: 120 },
-  { id: 5, name: "Internacional Portugal", country: "Portugal", minKm: 0, maxKm: 800, basePrice: 220, pricePerKm: 0.60, tollSurcharge: 15, minPrice: 140 },
-  { id: 6, name: "Internacional Francia", country: "Francia", minKm: 0, maxKm: 800, basePrice: 240, pricePerKm: 0.65, tollSurcharge: 20, minPrice: 160 },
-];
-
-// todo: remove mock functionality - replace with actual vehicle types from API
-const vehicleTypes = [
-  { id: "van", name: "Furgoneta", capacity: "800kg / 8m³", multiplier: 1.0 },
-  { id: "truck-small", name: "Camión Pequeño (3.5t)", capacity: "3.5t / 20m³", multiplier: 1.15 },
-  { id: "truck-medium", name: "Camión Mediano (7.5t)", capacity: "7.5t / 40m³", multiplier: 1.35 },
-  { id: "truck-large", name: "Camión Grande (12t)", capacity: "12t / 60m³", multiplier: 1.55 },
-  { id: "trailer", name: "Tráiler (24t)", capacity: "24t / 90m³", multiplier: 1.85 },
-];
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest } from "@/lib/queryClient";
+import type { VehicleType } from "@shared/schema";
 
 interface QuoteBreakdown {
-  origin: string;
-  destination: string;
+  origin: {
+    address: string;
+    coords: { lat: number; lng: number };
+    label: string;
+  };
+  destination: {
+    address: string;
+    coords: { lat: number; lng: number };
+    label: string;
+  };
   distance: number;
   duration: number;
-  zone: typeof pricingZones[0];
-  vehicleType: typeof vehicleTypes[0];
-  basePrice: number;
-  distanceCost: number;
-  tollCost: number;
-  vehicleMultiplier: number;
-  subtotal: number;
-  extras: { name: string; cost: number }[];
-  totalPrice: number;
+  zone: {
+    id: string;
+    zone: number;
+    name: string;
+    country: string;
+  };
+  vehicle: {
+    id: string;
+    name: string;
+    capacity: string;
+    multiplier: number;
+  };
+  pricing: {
+    basePrice: number;
+    distanceCost: number;
+    pricePerKm: number;
+    tollSurcharge: number;
+    tollCost: number;
+    vehicleMultiplier: number;
+    subtotal: number;
+    extras: { name: string; cost: number }[];
+    extrasCost: number;
+    minimumPrice: number;
+    totalPrice: number;
+  };
+}
+
+interface QuoteResponse {
+  quote: object;
+  breakdown: QuoteBreakdown;
 }
 
 export function QuoteCalculatorAdvanced() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const [vehicleType, setVehicleType] = useState("");
+  const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [destinationCountry, setDestinationCountry] = useState("España");
-  const [isCalculating, setIsCalculating] = useState(false);
   const [result, setResult] = useState<QuoteBreakdown | null>(null);
   const [extras, setExtras] = useState({
     urgente: false,
@@ -57,72 +71,35 @@ export function QuoteCalculatorAdvanced() {
     seguroExtra: false,
   });
 
-  const getZoneForDistance = (distance: number, country: string) => {
-    if (country === "Portugal") {
-      return pricingZones.find(z => z.country === "Portugal");
-    }
-    if (country === "Francia") {
-      return pricingZones.find(z => z.country === "Francia");
-    }
-    return pricingZones.find(z => 
-      z.country === "España" && distance >= z.minKm && distance < z.maxKm
-    ) || pricingZones[3];
-  };
+  const { data: vehicleTypes, isLoading: isLoadingVehicles } = useQuery<VehicleType[]>({
+    queryKey: ["/api/vehicle-types"],
+  });
 
-  const calculateQuote = async () => {
-    if (!origin || !destination || !vehicleType) return;
-    
-    setIsCalculating(true);
-    console.log("Calculating quote for:", { origin, destination, vehicleType, destinationCountry });
-    
-    // todo: remove mock functionality - replace with actual OpenRouteService API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    const vehicle = vehicleTypes.find((v) => v.id === vehicleType)!;
-    const mockDistance = destinationCountry === "España" 
-      ? 50 + Math.random() * 300 
-      : 200 + Math.random() * 400;
-    const distance = Math.round(mockDistance);
-    const duration = distance * 1.1;
-    
-    const zone = getZoneForDistance(distance, destinationCountry)!;
-    
-    const basePrice = zone.basePrice;
-    const distanceCost = distance * zone.pricePerKm;
-    const subtotalBeforeTolls = basePrice + distanceCost;
-    const tollCost = zone.tollSurcharge > 0 ? subtotalBeforeTolls * (zone.tollSurcharge / 100) : 0;
-    const vehicleMultipliedCost = (subtotalBeforeTolls + tollCost) * vehicle.multiplier;
-    
-    const extrasList: { name: string; cost: number }[] = [];
-    if (extras.urgente) extrasList.push({ name: "Envío Urgente (+25%)", cost: vehicleMultipliedCost * 0.25 });
-    if (extras.cargaFragil) extrasList.push({ name: "Carga Frágil (+10%)", cost: vehicleMultipliedCost * 0.10 });
-    if (extras.seguroExtra) extrasList.push({ name: "Seguro Extra", cost: 35 });
-    
-    const extrasCost = extrasList.reduce((sum, e) => sum + e.cost, 0);
-    let totalPrice = vehicleMultipliedCost + extrasCost;
-    
-    if (totalPrice < zone.minPrice * vehicle.multiplier) {
-      totalPrice = zone.minPrice * vehicle.multiplier;
-    }
-    
-    const quote: QuoteBreakdown = {
+  const calculateMutation = useMutation({
+    mutationFn: async (data: {
+      origin: string;
+      destination: string;
+      vehicleTypeId: string;
+      destinationCountry: string;
+      extras: typeof extras;
+    }) => {
+      const response = await apiRequest("POST", "/api/calculate-quote", data);
+      return response.json() as Promise<QuoteResponse>;
+    },
+    onSuccess: (data) => {
+      setResult(data.breakdown);
+    },
+  });
+
+  const calculateQuote = () => {
+    if (!origin || !destination || !vehicleTypeId) return;
+    calculateMutation.mutate({
       origin,
       destination,
-      distance,
-      duration: Math.round(duration),
-      zone,
-      vehicleType: vehicle,
-      basePrice,
-      distanceCost,
-      tollCost,
-      vehicleMultiplier: vehicle.multiplier,
-      subtotal: subtotalBeforeTolls,
-      extras: extrasList,
-      totalPrice: Math.round(totalPrice * 100) / 100,
-    };
-    
-    setResult(quote);
-    setIsCalculating(false);
+      vehicleTypeId,
+      destinationCountry,
+      extras,
+    });
   };
 
   const formatDuration = (minutes: number) => {
@@ -135,8 +112,9 @@ export function QuoteCalculatorAdvanced() {
     setResult(null);
     setOrigin("");
     setDestination("");
-    setVehicleType("");
+    setVehicleTypeId("");
     setExtras({ urgente: false, cargaFragil: false, seguroExtra: false });
+    calculateMutation.reset();
   };
 
   return (
@@ -152,6 +130,15 @@ export function QuoteCalculatorAdvanced() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {calculateMutation.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {(calculateMutation.error as Error)?.message || "Error al calcular el presupuesto. Verifica las direcciones e intenta de nuevo."}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="origin">Dirección de Origen</Label>
@@ -159,7 +146,7 @@ export function QuoteCalculatorAdvanced() {
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600" />
                 <Input
                   id="origin"
-                  placeholder="Ej: Calle Mayor 1, Madrid"
+                  placeholder="Ej: Calle Mayor 1, Madrid, España"
                   value={origin}
                   onChange={(e) => setOrigin(e.target.value)}
                   className="pl-10"
@@ -173,7 +160,7 @@ export function QuoteCalculatorAdvanced() {
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-600" />
                 <Input
                   id="destination"
-                  placeholder="Ej: Avenida Diagonal 100, Barcelona"
+                  placeholder="Ej: Avenida Diagonal 100, Barcelona, España"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   className="pl-10"
@@ -185,7 +172,7 @@ export function QuoteCalculatorAdvanced() {
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>País de Destino</Label>
+              <Label>País de Destino (referencia)</Label>
               <Select value={destinationCountry} onValueChange={setDestinationCountry}>
                 <SelectTrigger data-testid="select-country">
                   <SelectValue />
@@ -199,22 +186,26 @@ export function QuoteCalculatorAdvanced() {
             </div>
             <div className="space-y-2">
               <Label>Tipo de Vehículo</Label>
-              <Select value={vehicleType} onValueChange={setVehicleType}>
-                <SelectTrigger data-testid="select-vehicle-type">
-                  <Truck className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="Selecciona un vehículo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicleTypes.map((v) => (
-                    <SelectItem key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
-                      <div className="flex flex-col">
-                        <span>{v.name}</span>
-                        <span className="text-xs text-muted-foreground">{v.capacity}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isLoadingVehicles ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select value={vehicleTypeId} onValueChange={setVehicleTypeId}>
+                  <SelectTrigger data-testid="select-vehicle-type">
+                    <Truck className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Selecciona un vehículo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicleTypes?.map((v) => (
+                      <SelectItem key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
+                        <div className="flex flex-col">
+                          <span>{v.name}</span>
+                          <span className="text-xs text-muted-foreground">{v.capacity}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 
@@ -259,12 +250,12 @@ export function QuoteCalculatorAdvanced() {
 
           <Button
             onClick={calculateQuote}
-            disabled={!origin || !destination || !vehicleType || isCalculating}
+            disabled={!origin || !destination || !vehicleTypeId || calculateMutation.isPending}
             className="w-full"
             size="lg"
             data-testid="button-calculate-quote"
           >
-            {isCalculating ? (
+            {calculateMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Calculando ruta con OpenRouteService...
@@ -288,7 +279,7 @@ export function QuoteCalculatorAdvanced() {
                 Presupuesto Generado
               </CardTitle>
               <Badge variant="secondary" className="text-sm">
-                Zona {result.zone.id}: {result.zone.name}
+                Zona {result.zone.zone}: {result.zone.name}
               </Badge>
             </div>
           </CardHeader>
@@ -304,8 +295,8 @@ export function QuoteCalculatorAdvanced() {
                       <div className="w-3 h-3 rounded-full bg-red-500" />
                     </div>
                     <div className="space-y-2">
-                      <p className="font-medium" data-testid="text-origin">{result.origin}</p>
-                      <p className="font-medium" data-testid="text-destination">{result.destination}</p>
+                      <p className="font-medium" data-testid="text-origin">{result.origin.label}</p>
+                      <p className="font-medium" data-testid="text-destination">{result.destination.label}</p>
                     </div>
                   </div>
                 </div>
@@ -327,8 +318,8 @@ export function QuoteCalculatorAdvanced() {
                 
                 <div>
                   <p className="text-sm text-muted-foreground">Vehículo</p>
-                  <p className="font-medium">{result.vehicleType.name}</p>
-                  <p className="text-sm text-muted-foreground">{result.vehicleType.capacity}</p>
+                  <p className="font-medium">{result.vehicle.name}</p>
+                  <p className="text-sm text-muted-foreground">{result.vehicle.capacity}</p>
                 </div>
               </div>
 
@@ -348,35 +339,35 @@ export function QuoteCalculatorAdvanced() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tarifa base ({result.zone.name})</span>
-                    <span className="font-mono">{result.basePrice.toFixed(2)}€</span>
+                    <span className="font-mono">{result.pricing.basePrice.toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Distancia ({result.distance}km × {result.zone.pricePerKm.toFixed(2)}€)
+                      Distancia ({result.distance}km × {result.pricing.pricePerKm.toFixed(2)}€)
                     </span>
-                    <span className="font-mono">{result.distanceCost.toFixed(2)}€</span>
+                    <span className="font-mono">{result.pricing.distanceCost.toFixed(2)}€</span>
                   </div>
-                  {result.tollCost > 0 && (
+                  {result.pricing.tollCost > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Peajes (+{result.zone.tollSurcharge}%)
+                        Peajes (+{result.pricing.tollSurcharge}%)
                       </span>
-                      <span className="font-mono">{result.tollCost.toFixed(2)}€</span>
+                      <span className="font-mono">{result.pricing.tollCost.toFixed(2)}€</span>
                     </div>
                   )}
-                  {result.vehicleMultiplier !== 1 && (
+                  {result.pricing.vehicleMultiplier !== 1 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Multiplicador vehículo (×{result.vehicleMultiplier.toFixed(2)})
+                        Multiplicador vehículo (×{result.pricing.vehicleMultiplier.toFixed(2)})
                       </span>
                       <span className="font-mono text-muted-foreground">aplicado</span>
                     </div>
                   )}
                   
-                  {result.extras.length > 0 && (
+                  {result.pricing.extras.length > 0 && (
                     <>
                       <div className="border-t my-2" />
-                      {result.extras.map((extra, i) => (
+                      {result.pricing.extras.map((extra, i) => (
                         <div key={i} className="flex justify-between">
                           <span className="text-muted-foreground">{extra.name}</span>
                           <span className="font-mono">{extra.cost.toFixed(2)}€</span>
@@ -389,11 +380,11 @@ export function QuoteCalculatorAdvanced() {
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-base">Total</span>
                       <span className="text-3xl font-bold font-mono text-primary" data-testid="text-total-price">
-                        {result.totalPrice.toFixed(2)}€
+                        {result.pricing.totalPrice.toFixed(2)}€
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Precio mínimo: {(result.zone.minPrice * result.vehicleMultiplier).toFixed(2)}€
+                      Precio mínimo: {result.pricing.minimumPrice.toFixed(2)}€
                     </p>
                   </div>
                 </div>

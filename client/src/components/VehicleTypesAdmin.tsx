@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Check, Truck } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, Check, Truck, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -23,57 +25,77 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-
-interface VehicleType {
-  id: string;
-  name: string;
-  description: string;
-  capacity: string;
-  priceMultiplier: number;
-  isActive: boolean;
-}
-
-// todo: remove mock functionality - replace with actual vehicle types from API
-const initialVehicles: VehicleType[] = [
-  { id: "1", name: "Furgoneta", description: "Ideal para envíos pequeños y mudanzas urbanas", capacity: "Hasta 800kg / 8m³", priceMultiplier: 1.0, isActive: true },
-  { id: "2", name: "Camión Pequeño", description: "Para cargas medianas y distancias cortas", capacity: "Hasta 3.5t / 20m³", priceMultiplier: 1.15, isActive: true },
-  { id: "3", name: "Camión Mediano", description: "Transporte regional de mercancías", capacity: "Hasta 7.5t / 40m³", priceMultiplier: 1.35, isActive: true },
-  { id: "4", name: "Camión Grande", description: "Cargas pesadas y largas distancias", capacity: "Hasta 12t / 60m³", priceMultiplier: 1.55, isActive: true },
-  { id: "5", name: "Tráiler", description: "Transporte de gran volumen nacional e internacional", capacity: "Hasta 24t / 90m³", priceMultiplier: 1.85, isActive: true },
-];
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { VehicleType, InsertVehicleType } from "@shared/schema";
 
 export function VehicleTypesAdmin() {
-  const [vehicles, setVehicles] = useState<VehicleType[]>(initialVehicles);
   const [editingVehicle, setEditingVehicle] = useState<VehicleType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  const { data: vehicles, isLoading } = useQuery<VehicleType[]>({
+    queryKey: ["/api/vehicle-types"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: InsertVehicleType) => {
+      const response = await apiRequest("POST", "/api/vehicle-types", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types"] });
+      setIsDialogOpen(false);
+      setEditingVehicle(null);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertVehicleType> }) => {
+      const response = await apiRequest("PUT", `/api/vehicle-types/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types"] });
+      setIsDialogOpen(false);
+      setEditingVehicle(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/vehicle-types/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-types"] });
+      setDeleteConfirm(null);
+    },
+  });
+
   const handleSave = () => {
     if (!editingVehicle) return;
     
-    if (editingVehicle.id) {
-      setVehicles(vehicles.map(v => v.id === editingVehicle.id ? editingVehicle : v));
+    const data: InsertVehicleType = {
+      name: editingVehicle.name,
+      description: editingVehicle.description,
+      capacity: editingVehicle.capacity,
+      priceMultiplier: editingVehicle.priceMultiplier,
+      isActive: editingVehicle.isActive,
+    };
+    
+    if (editingVehicle.id && !editingVehicle.id.startsWith("new-")) {
+      updateMutation.mutate({ id: editingVehicle.id, data });
     } else {
-      setVehicles([...vehicles, { ...editingVehicle, id: Date.now().toString() }]);
+      createMutation.mutate(data);
     }
-    setIsDialogOpen(false);
-    setEditingVehicle(null);
-    console.log("Vehicle saved:", editingVehicle);
   };
 
-  const handleDelete = (id: string) => {
-    setVehicles(vehicles.filter(v => v.id !== id));
-    setDeleteConfirm(null);
-    console.log("Vehicle deleted:", id);
-  };
-
-  const toggleActive = (id: string) => {
-    setVehicles(vehicles.map(v => v.id === id ? { ...v, isActive: !v.isActive } : v));
+  const toggleActive = (vehicle: VehicleType) => {
+    updateMutation.mutate({ id: vehicle.id, data: { isActive: !vehicle.isActive } });
   };
 
   const openNewVehicle = () => {
     setEditingVehicle({
-      id: "",
+      id: "new-" + Date.now(),
       name: "",
       description: "",
       capacity: "",
@@ -82,6 +104,26 @@ export function VehicleTypesAdmin() {
     });
     setIsDialogOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Truck className="h-5 w-5 text-primary" />
+            Tipos de Vehículo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -117,7 +159,7 @@ export function VehicleTypesAdmin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vehicles.map((vehicle) => (
+                {vehicles?.map((vehicle) => (
                   <TableRow key={vehicle.id} data-testid={`row-vehicle-${vehicle.id}`}>
                     <TableCell className="font-medium">{vehicle.name}</TableCell>
                     <TableCell className="text-muted-foreground max-w-[200px] truncate">
@@ -131,8 +173,8 @@ export function VehicleTypesAdmin() {
                     </TableCell>
                     <TableCell>
                       <Switch
-                        checked={vehicle.isActive}
-                        onCheckedChange={() => toggleActive(vehicle.id)}
+                        checked={vehicle.isActive ?? true}
+                        onCheckedChange={() => toggleActive(vehicle)}
                         data-testid={`switch-active-${vehicle.id}`}
                       />
                     </TableCell>
@@ -171,7 +213,7 @@ export function VehicleTypesAdmin() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingVehicle?.id ? "Editar Vehículo" : "Nuevo Tipo de Vehículo"}
+              {editingVehicle?.id && !editingVehicle.id.startsWith("new-") ? "Editar Vehículo" : "Nuevo Tipo de Vehículo"}
             </DialogTitle>
             <DialogDescription>
               Configure las características y precio del tipo de vehículo
@@ -190,7 +232,7 @@ export function VehicleTypesAdmin() {
               <div className="space-y-2">
                 <Label>Descripción</Label>
                 <Textarea
-                  value={editingVehicle.description}
+                  value={editingVehicle.description || ""}
                   onChange={(e) => setEditingVehicle({ ...editingVehicle, description: e.target.value })}
                   placeholder="Descripción del tipo de vehículo..."
                   rows={2}
@@ -200,7 +242,7 @@ export function VehicleTypesAdmin() {
                 <div className="space-y-2">
                   <Label>Capacidad</Label>
                   <Input
-                    value={editingVehicle.capacity}
+                    value={editingVehicle.capacity || ""}
                     onChange={(e) => setEditingVehicle({ ...editingVehicle, capacity: e.target.value })}
                     placeholder="Ej: Hasta 5t / 30m³"
                   />
@@ -221,8 +263,15 @@ export function VehicleTypesAdmin() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
-              <Check className="mr-2 h-4 w-4" />
+            <Button 
+              onClick={handleSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {(createMutation.isPending || updateMutation.isPending) ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="mr-2 h-4 w-4" />
+              )}
               Guardar
             </Button>
           </DialogFooter>
@@ -241,8 +290,16 @@ export function VehicleTypesAdmin() {
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
-              <Trash2 className="mr-2 h-4 w-4" />
+            <Button 
+              variant="destructive" 
+              onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
               Eliminar
             </Button>
           </DialogFooter>
