@@ -104,7 +104,7 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-semibold">Dashboard</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Total" icon={Calculator} />
-        <StatCard title="Confirmados" value={approvedQuotes.length.toString()} subtitle="Aprobados" icon={TrendingUp} />
+        <StatCard title="En revisión" value={confirmedQuotes.length.toString()} subtitle="Pendientes" icon={TrendingUp} />
         <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
         <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Aprobados" icon={Truck} />
       </div>
