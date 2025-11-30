@@ -1,0 +1,66 @@
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+
+interface User {
+  id: string;
+  username: string;
+  email?: string;
+  isAdmin: boolean;
+  profileImage?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: () => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // todo: remove mock functionality - replace with actual auth check
+    const timer = setTimeout(() => {
+      setUser({
+        id: "1",
+        username: "Carlos Admin",
+        email: "carlos@transporte.com",
+        isAdmin: true,
+        profileImage: undefined,
+      });
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const login = () => {
+    // todo: remove mock functionality - implement actual login
+    setUser({
+      id: "1",
+      username: "Carlos Admin",
+      email: "carlos@transporte.com",
+      isAdmin: true,
+    });
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}

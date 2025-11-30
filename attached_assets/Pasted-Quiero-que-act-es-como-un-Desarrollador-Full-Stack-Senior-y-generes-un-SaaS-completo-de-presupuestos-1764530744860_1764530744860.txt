@@ -1,0 +1,59 @@
+Quiero que actúes como un Desarrollador Full-Stack Senior y generes un SaaS completo de presupuestos de transporte.
+
+OBJETIVO:
+Crear una aplicación SaaS donde el usuario introduzca origen, destino y tipo de vehículo, y el sistema calcule automáticamente el precio del transporte usando mis reglas de precios y la distancia real obtenida con la API gratuita de OpenRouteService.
+
+FUNCIONALIDADES CORE:
+1. Login y autenticación de usuarios (Replit Auth).
+2. Panel Administrativo para gestionar:
+   - Tarifas por zona
+   - Precio base
+   - Precio por kilómetro
+   - Recargo por peajes
+   - Precio mínimo
+   - Tipos de vehículo
+3. Formulario para que el cliente introduzca:
+   - Dirección de origen
+   - Dirección de destino
+   - Tipo de vehículo
+4. Cálculo AUTOMÁTICO de distancia usando la API de OpenRouteService.
+5. Selección automática de zona según los kilómetros y el país.
+6. Cálculo del presupuesto siguiendo estas reglas oficiales:
+
+   - Zona 1: Local 0–10 km (España)
+     Base 15€, 0,80€/km, mínimo 15€
+
+   - Zona 2: Local 10–50 km (España)
+     Base 25€, 0,75€/km, mínimo 25€
+
+   - Zona 3: Regional 50–200 km (España)
+     Base 60€, 0,65€/km, mínimo 60€
+
+   - Zona 4: Inter-regional 200–800 km (España)
+     Base 200€, 0,50€/km, peajes +10%, mínimo 120€
+
+   - Zona 5: Internacional Portugal 0–800 km
+     Base 220€, 0,60€/km, peajes +15%, mínimo 140€
+
+   - Zona 6: Internacional Francia 0–800 km
+     Base 240€, 0,65€/km, peajes +20%, mínimo 160€
+
+7. Cálculo del precio final incluyendo:
+   - Base
+   - Coste por km
+   - Peajes
+   - Extras opcionales
+   - Total final
+
+8. Mostrar desglose al cliente.
+9. Panel de usuario con historial de presupuestos generados.
+
+REQUISITOS TÉCNICOS:
+- Backend en Node.js
+- Base de datos PostgreSQL integrada de Replit
+- API de rutas: OpenRouteService (gratuita)
+- Frontend simple y profesional
+- Todo funcionando sin servicios de pago
+- Código limpio, organizado y listo para producción
+
+Genera directamente el código, archivos y estructura completa del proyecto.
