@@ -26,7 +26,7 @@ const DEFAULT_USER: User = {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(DEFAULT_USER);
+  const [user, setUser] = useState<User | null>(DEFAULT_USER);
   const [isLoading, setIsLoading] = useState(false);
 
   const login = () => {
