@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 export type UserRole = "admin" | "customer";
 
@@ -19,13 +19,58 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>({
+const getInitialUser = (): User => {
+  // Try to get saved user from localStorage
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("user");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved user:", e);
+      }
+    }
+  }
+  // Default to admin
+  return {
     id: "1",
     username: "Carlos Admin",
     email: "carlos@transporte.com",
     role: "admin",
-  });
+  };
+};
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUserState] = useState<User | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize user from localStorage on mount
+  useEffect(() => {
+    const initialUser = getInitialUser();
+    setUserState(initialUser);
+    setIsInitialized(true);
+  }, []);
+
+  const setUser = (newUser: User | null) => {
+    setUserState(newUser);
+    if (newUser) {
+      try {
+        localStorage.setItem("user", JSON.stringify(newUser));
+      } catch (e) {
+        console.error("Failed to save user:", e);
+      }
+    } else {
+      try {
+        localStorage.removeItem("user");
+      } catch (e) {
+        console.error("Failed to remove user:", e);
+      }
+    }
+  };
+
+  if (!isInitialized) {
+    return null;
+  }
 
   return (
     <AuthContext.Provider
