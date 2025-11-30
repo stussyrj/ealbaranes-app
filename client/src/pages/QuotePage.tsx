@@ -264,8 +264,18 @@ export default function QuotePage() {
                 <span className="text-muted-foreground">Importe por distancia:</span>
                 <span className="font-mono">{(result.pricing?.distanceCost || 0).toFixed(2)}€</span>
               </div>
+              {result.pricing?.directionCost > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Dirección:</span>
+                  <span className="font-mono">{(result.pricing?.directionCost || 0).toFixed(2)}€</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm bg-slate-50 dark:bg-slate-900 -mx-3 px-3 py-1">
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="font-mono font-semibold">{((result.pricing?.distanceCost || 0) + (result.pricing?.directionCost || 0)).toFixed(2)}€</span>
+              </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tarifa mínima:</span>
+                <span className="text-muted-foreground">Tarifa mínima aplicable:</span>
                 <span className="font-mono">{(result.pricing?.minimumPrice || 0).toFixed(2)}€</span>
               </div>
               {result.pricing?.isUrgent && (

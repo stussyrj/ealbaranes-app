@@ -24,6 +24,7 @@ export const vehicleTypes = pgTable("vehicle_types", {
   description: text("description"),
   capacity: text("capacity"),
   pricePerKm: real("price_per_km").notNull(),
+  directionPrice: real("direction_price").notNull().default(0),
   minimumPrice: real("minimum_price").notNull(),
   isActive: boolean("is_active").default(true),
 });
@@ -47,6 +48,7 @@ export const quotes = pgTable("quotes", {
   vehicleTypeId: varchar("vehicle_type_id"),
   vehicleTypeName: text("vehicle_type_name"),
   distanceCost: real("distance_cost").notNull(),
+  directionCost: real("direction_cost").notNull().default(0),
   totalPrice: real("total_price").notNull(),
   isUrgent: boolean("is_urgent").default(false),
   pickupTime: text("pickup_time"),

@@ -33,6 +33,7 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 5 kg, 40x30x40 cm",
     capacity: "5 kg",
     pricePerKm: 0.54,
+    directionPrice: 3.70,
     minimumPrice: 3.70,
     isActive: true 
   },
@@ -42,6 +43,7 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 200 kg, 1 palé",
     capacity: "200 kg, 1 Palet",
     pricePerKm: 0.55,
+    directionPrice: 5.15,
     minimumPrice: 7.50,
     isActive: true 
   },
@@ -51,6 +53,7 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 1.400 kg, 5 palés",
     capacity: "1.400 kg, 5 Palets",
     pricePerKm: 0.65,
+    directionPrice: 6.00,
     minimumPrice: 9.00,
     isActive: true 
   },
@@ -60,6 +63,7 @@ const defaultVehicleTypes: VehicleType[] = [
     description: "Hasta 1.000 kg, 8 palés",
     capacity: "1.000 kg, 8 Palets",
     pricePerKm: 0.75,
+    directionPrice: 7.00,
     minimumPrice: 10.00,
     isActive: true 
   },
@@ -115,6 +119,7 @@ export class MemStorage implements IStorage {
       description: vehicle.description ?? null,
       capacity: vehicle.capacity ?? null,
       pricePerKm: vehicle.pricePerKm,
+      directionPrice: vehicle.directionPrice ?? 0,
       minimumPrice: vehicle.minimumPrice,
       isActive: vehicle.isActive ?? true,
     };
@@ -164,6 +169,7 @@ export class MemStorage implements IStorage {
       vehicleTypeId: quote.vehicleTypeId ?? null,
       vehicleTypeName: quote.vehicleTypeName ?? null,
       distanceCost: quote.distanceCost,
+      directionCost: quote.directionCost ?? 0,
       totalPrice: quote.totalPrice,
       isUrgent: quote.isUrgent ?? false,
       pickupTime: quote.pickupTime ?? null,

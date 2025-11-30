@@ -117,7 +117,9 @@ export async function registerRoutes(
       }
       
       const distanceCost = distance * vehicleType.pricePerKm;
-      let totalPrice = Math.max(vehicleType.minimumPrice, distanceCost);
+      const directionCost = vehicleType.directionPrice || 0;
+      const subtotal = distanceCost + directionCost;
+      let totalPrice = Math.max(vehicleType.minimumPrice, subtotal);
       
       // Apply urgency surcharge (25%)
       if (data.isUrgent) {
@@ -134,6 +136,7 @@ export async function registerRoutes(
         vehicleTypeId: vehicleType.id,
         vehicleTypeName: vehicleType.name,
         distanceCost,
+        directionCost,
         totalPrice: Math.round(totalPrice * 100) / 100,
         isUrgent: data.isUrgent ?? false,
         pickupTime: data.pickupTime || null,
@@ -164,6 +167,7 @@ export async function registerRoutes(
           pricing: {
             pricePerKm: vehicleType.pricePerKm,
             distanceCost,
+            directionCost,
             minimumPrice: vehicleType.minimumPrice,
             isUrgent: data.isUrgent ?? false,
             totalPrice: Math.round(totalPrice * 100) / 100,
