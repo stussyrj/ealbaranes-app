@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,10 @@ export default function QuotePage() {
   const [vehicleId, setVehicleId] = useState("");
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  if (vehicles.length === 0 && !loading) {
+    setLoading(true);
     fetch("/api/vehicle-types", { credentials: "include" })
       .then((r) => r.json())
       .then((d) => {
@@ -20,9 +21,9 @@ export default function QuotePage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }
 
-  const calculate = async () => {
+  const handleCalculate = async () => {
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,7 +31,9 @@ export default function QuotePage() {
       credentials: "include",
     });
     const data = await res.json();
-    if (data && data.breakdown) setResult(data.breakdown);
+    if (data && data.breakdown) {
+      setResult(data.breakdown);
+    }
   };
 
   return (
@@ -47,7 +50,6 @@ export default function QuotePage() {
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
               placeholder="Ej: Madrid"
-              data-testid="input-origin"
             />
           </div>
           <div>
@@ -56,7 +58,6 @@ export default function QuotePage() {
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               placeholder="Ej: Barcelona"
-              data-testid="input-destination"
             />
           </div>
           <div>
@@ -65,8 +66,6 @@ export default function QuotePage() {
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
               className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-gray-300 dark:border-gray-600"
-              data-testid="select-vehicle-type"
-              disabled={loading}
             >
               <option value="">Selecciona</option>
               {vehicles.map((v) => (
@@ -76,7 +75,7 @@ export default function QuotePage() {
               ))}
             </select>
           </div>
-          <Button onClick={calculate} className="w-full" data-testid="button-calculate-quote">
+          <Button onClick={handleCalculate} className="w-full">
             Calcular
           </Button>
         </CardContent>
@@ -91,21 +90,15 @@ export default function QuotePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Origen</p>
-                <p className="font-medium" data-testid="text-origin">
-                  {result.origin?.label || "—"}
-                </p>
+                <p className="font-medium">{result.origin?.label || "—"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Destino</p>
-                <p className="font-medium" data-testid="text-destination">
-                  {result.destination?.label || "—"}
-                </p>
+                <p className="font-medium">{result.destination?.label || "—"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Distancia</p>
-                <p className="font-medium" data-testid="text-distance">
-                  {(result.distance || 0).toFixed(1)} km
-                </p>
+                <p className="font-medium">{(result.distance || 0).toFixed(1)} km</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Vehículo</p>
@@ -123,9 +116,7 @@ export default function QuotePage() {
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span data-testid="text-total-price">
-                  {(result.pricing?.totalPrice || 0).toFixed(2)}€
-                </span>
+                <span>{(result.pricing?.totalPrice || 0).toFixed(2)}€</span>
               </div>
             </div>
             <Button
@@ -137,7 +128,6 @@ export default function QuotePage() {
                 setVehicleId("");
               }}
               className="w-full"
-              data-testid="button-new-quote"
             >
               Nuevo
             </Button>

@@ -1,4 +1,4 @@
-import { QuoteHistory } from "@/components/QuoteHistory";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function HistoryPage() {
   return (
@@ -9,7 +9,17 @@ export default function HistoryPage() {
           Consulta y gestiona todos tus presupuestos anteriores
         </p>
       </div>
-      <QuoteHistory />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Tus Presupuestos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-center py-8">
+            Aún no tienes presupuestos guardados
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
