@@ -39,35 +39,27 @@ export default function QuotePage() {
     return `${hours}:${minutes}`;
   };
 
-  const getPickupTimeErrorMessage = (time: string): string => {
+  const validatePickupTime = (time: string): string => {
     if (!time) return "";
-    
+
     const now = new Date();
     const minimumTime = new Date(now.getTime() + 30 * 60000);
-    
-    // Convertir a minutos desde medianoche para comparación correcta (incluyendo cambio de día)
-    const [hours, minutes] = time.split(":").map(Number);
-    const selectedMinutes = hours * 60 + minutes;
-    const minimumMinutes = minimumTime.getHours() * 60 + minimumTime.getMinutes();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    
-    // Si el mínimo está en el futuro hoy, el usuario debe seleccionar un tiempo en el futuro
-    let isValid = false;
-    
-    if (minimumMinutes > nowMinutes) {
-      // El mínimo es hoy (después de la hora actual)
-      isValid = selectedMinutes >= minimumMinutes;
-    } else {
-      // El mínimo es mañana (pasó medianoche), entonces cualquier hora que el usuario seleccione es válida si es >= mínimo
-      // O si selecciona una hora "anterior" que será interpretada como mañana
-      isValid = selectedMinutes >= minimumMinutes || selectedMinutes <= 1440;
+
+    const [selectedHours, selectedMinutes] = time.split(":").map(Number);
+    const selectedDate = new Date();
+    selectedDate.setHours(selectedHours, selectedMinutes, 0);
+
+    // Si la hora seleccionada es menor que la actual, asumimos que es para mañana
+    if (selectedDate.getTime() < now.getTime()) {
+      selectedDate.setDate(selectedDate.getDate() + 1);
     }
-    
-    if (!isValid) {
+
+    if (selectedDate.getTime() < minimumTime.getTime()) {
       const minHours = String(minimumTime.getHours()).padStart(2, "0");
       const minMinutes = String(minimumTime.getMinutes()).padStart(2, "0");
       return `El horario debe ser a partir de las ${minHours}:${minMinutes}`;
     }
+
     return "";
   };
 
@@ -111,10 +103,10 @@ export default function QuotePage() {
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        origin, 
-        destination, 
-        vehicleTypeId: vehicleId, 
+      body: JSON.stringify({
+        origin,
+        destination,
+        vehicleTypeId: vehicleId,
         isUrgent,
         pickupTime: pickupTime || undefined,
         observations: observations || undefined,
@@ -190,8 +182,8 @@ export default function QuotePage() {
               value={pickupTime}
               onChange={(e) => {
                 const newTime = e.target.value;
-                const errorMessage = getPickupTimeErrorMessage(newTime);
-                setPickupTimeError(errorMessage);
+                const error = validatePickupTime(newTime);
+                setPickupTimeError(error);
                 setPickupTime(newTime);
               }}
               min={minTime}
@@ -224,9 +216,9 @@ export default function QuotePage() {
               Urgencia (+25%)
             </Label>
           </div>
-          <Button 
-            onClick={handleCalculate} 
-            className="w-full" 
+          <Button
+            onClick={handleCalculate}
+            className="w-full"
             data-testid="button-calculate"
             disabled={!!pickupTimeError}
           >
