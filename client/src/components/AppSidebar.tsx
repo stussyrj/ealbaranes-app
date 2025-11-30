@@ -24,6 +24,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import type { User } from "@/contexts/AuthContext";
 
 const adminNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -53,12 +54,18 @@ export function AppSidebar() {
 
   const switchRole = () => {
     if (user) {
-      setUser({
-        ...user,
-        role: isAdmin ? "customer" : "admin",
-        username: isAdmin ? "Cliente Demo" : "Carlos Admin",
-        email: isAdmin ? "cliente@demo.com" : "carlos@transporte.com",
-      });
+      const newRole: "customer" | "admin" = isAdmin ? "customer" : "admin";
+      const newUser: User = {
+        id: user.id,
+        username: newRole === "admin" ? "Carlos Admin" : "Cliente Demo",
+        email: newRole === "admin" ? "carlos@transporte.com" : "cliente@demo.com",
+        role: newRole,
+      };
+      setUser(newUser);
+      // Reload page after state update to avoid HMR conflicts
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     }
   };
 
