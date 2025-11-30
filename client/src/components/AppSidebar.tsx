@@ -39,13 +39,12 @@ const adminNavItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const authContext = useAuth();
-  const user = authContext?.user || null;
-  const isAdmin = !!(user && user.isAdmin === true);
-  
-  const username = user && typeof user.username === "string" ? String(user.username) : "";
-  const email = user && typeof user.email === "string" ? String(user.email) : "";
-  const userInitials = username ? username.slice(0, 2).toUpperCase() : "U";
+  const auth = useAuth();
+  const user = auth?.user || null;
+  const isAdmin = user?.isAdmin || false;
+  const username = user?.username || "Usuario";
+  const email = user?.email || "";
+  const initials = String(username || "U").slice(0, 2).toUpperCase();
 
   return (
     <Sidebar>
@@ -66,24 +65,20 @@ export function AppSidebar() {
           <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => {
-                const itemTitle = item?.title || "";
-                const testId = `nav-${String(itemTitle).toLowerCase().replace(/\s/g, "-")}`;
-                return (
-                  <SidebarMenuItem key={itemTitle}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location === item.url}
-                      data-testid={testId}
-                    >
-                      <Link href={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {mainNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                    data-testid={`nav-${item.title.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    <Link href={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -93,24 +88,20 @@ export function AppSidebar() {
             <SidebarGroupLabel>Administración</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminNavItems.map((item) => {
-                  const itemTitle = item?.title || "";
-                  const testId = `nav-admin-${String(itemTitle).toLowerCase().replace(/\s/g, "-")}`;
-                  return (
-                    <SidebarMenuItem key={itemTitle}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === item.url}
-                        data-testid={testId}
-                      >
-                        <Link href={item.url}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === item.url}
+                      data-testid={`nav-admin-${item.title.toLowerCase().replace(/\s/g, "-")}`}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -121,11 +112,11 @@ export function AppSidebar() {
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-              {userInitials}
+              {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{username || "Usuario"}</p>
+            <p className="text-sm font-medium truncate">{username}</p>
             <p className="text-xs text-muted-foreground truncate">{email}</p>
           </div>
           <SidebarMenuButton asChild className="h-9 w-9 p-0">

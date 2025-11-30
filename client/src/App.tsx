@@ -5,11 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
-import { LoginPage } from "@/components/LoginPage";
-import { Loader2 } from "lucide-react";
 
 import NotFound from "@/pages/not-found";
 import DashboardPage from "@/pages/DashboardPage";
@@ -31,24 +29,7 @@ function Router() {
   );
 }
 
-function AuthenticatedApp() {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginPage onLogin={() => {}} />;
-  }
-
+function MainLayout() {
   const sidebarStyle = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -80,7 +61,7 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <TooltipProvider>
-            <AuthenticatedApp />
+            <MainLayout />
             <Toaster />
           </TooltipProvider>
         </AuthProvider>

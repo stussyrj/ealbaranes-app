@@ -8,23 +8,30 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function QuotePage() {
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [vehicleId, setVehicleId] = useState("");
+  const [origin, setOrigin] = useState<string>("");
+  const [destination, setDestination] = useState<string>("");
+  const [vehicleId, setVehicleId] = useState<string>("");
   const [vehicles, setVehicles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState("");
-  const [calculating, setCalculating] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [calculating, setCalculating] = useState<boolean>(false);
 
   useEffect(() => {
-    fetch("/api/vehicle-types", { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (Array.isArray(data)) setVehicles(data);
-      })
-      .catch((e) => console.error(e))
-      .finally(() => setLoading(false));
+    const load = async () => {
+      try {
+        const res = await fetch("/api/vehicle-types", { credentials: "include" });
+        if (res.ok) {
+          const data: any = await res.json();
+          setVehicles(Array.isArray(data) ? data : []);
+        }
+      } catch (e) {
+        setVehicles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
   const calculate = async () => {
@@ -45,13 +52,16 @@ export default function QuotePage() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error("Error en el cálculo");
-      const data = await res.json();
-      if (data.breakdown) {
+      if (!res.ok) {
+        throw new Error("Error en el cálculo");
+      }
+
+      const data: any = await res.json();
+      if (data && data.breakdown) {
         setResult(data.breakdown);
       }
     } catch (e: any) {
-      setError(e.message || "Error al calcular");
+      setError(e?.message || "Error al calcular");
     } finally {
       setCalculating(false);
     }
@@ -62,7 +72,7 @@ export default function QuotePage() {
       <div>
         <h1 className="text-3xl font-semibold">Nuevo Presupuesto</h1>
         <p className="text-muted-foreground mt-1">
-          Calcula el precio del transporte introduciendo origen, destino y tipo de vehículo
+          Calcula el precio del transporte
         </p>
       </div>
 
@@ -70,9 +80,9 @@ export default function QuotePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            Calculadora de Presupuesto
+            Calculadora
           </CardTitle>
-          <CardDescription>Calcula el precio automáticamente</CardDescription>
+          <CardDescription>Ingresa los datos para calcular</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -87,7 +97,7 @@ export default function QuotePage() {
               <Label htmlFor="origin">Origen</Label>
               <Input
                 id="origin"
-                placeholder="Ej: Madrid"
+                placeholder="Madrid"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
                 data-testid="input-origin"
@@ -97,7 +107,7 @@ export default function QuotePage() {
               <Label htmlFor="destination">Destino</Label>
               <Input
                 id="destination"
-                placeholder="Ej: Barcelona"
+                placeholder="Barcelona"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 data-testid="input-destination"
@@ -117,7 +127,7 @@ export default function QuotePage() {
                 className="w-full px-3 py-2 border rounded-md"
                 data-testid="select-vehicle-type"
               >
-                <option value="">Selecciona un vehículo</option>
+                <option value="">Selecciona</option>
                 {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
@@ -153,7 +163,7 @@ export default function QuotePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Receipt className="h-5 w-5" />
-              Presupuesto
+              Resultado
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -172,7 +182,7 @@ export default function QuotePage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Distancia</p>
-                <p className="text-lg font-semibold" data-testid="text-distance">
+                <p className="font-semibold" data-testid="text-distance">
                   {(result.distance || 0).toFixed(1)} km
                 </p>
               </div>
@@ -182,15 +192,13 @@ export default function QuotePage() {
               </div>
             </div>
 
-            <div className="border-t pt-4 space-y-2">
+            <div className="border-t pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Tarifa base:</span>
+                <span>Tarifa:</span>
                 <span>{(result.pricing?.basePrice || 0).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between">
-                <span>
-                  Distancia: {(result.distance || 0).toFixed(1)} km × {(result.pricing?.pricePerKm || 0).toFixed(2)}€/km
-                </span>
+                <span>Distancia:</span>
                 <span>{(result.pricing?.distanceCost || 0).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
@@ -199,9 +207,6 @@ export default function QuotePage() {
                   {(result.pricing?.totalPrice || 0).toFixed(2)}€
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Mínimo: {(result.pricing?.minimumPrice || 0).toFixed(2)}€
-              </p>
             </div>
 
             <Button
