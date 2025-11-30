@@ -29,9 +29,15 @@ export default function DashboardPage() {
     setQuotes(quotes.map(q => q.id === id ? { ...q, status: "rejected" } : q));
   };
 
+  const handleCancel = async (id: string) => {
+    await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "canceled" }), credentials: "include" });
+    setQuotes(quotes.map(q => q.id === id ? { ...q, status: "canceled" } : q));
+  };
+
   const confirmedQuotes = quotes.filter((q) => q.status === "confirmed");
   const approvedQuotes = quotes.filter((q) => q.status === "approved");
   const rejectedQuotes = quotes.filter((q) => q.status === "rejected");
+  const canceledQuotes = quotes.filter((q) => q.status === "canceled");
   const totalDistance = quotes.reduce((sum, q) => sum + (q.distance || 0), 0);
   const avgDistance = quotes.length > 0 ? (totalDistance / quotes.length).toFixed(1) : "0";
   const totalRevenue = approvedQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
@@ -68,11 +74,20 @@ export default function DashboardPage() {
           <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-sm" data-testid={`button-call-${quote.id}`}>Llamar</Button>
         </div>
       )}
-      {quote.status === "approved" && (
+      {quote.status === "approved" && !showActions && (
+        <div className="flex gap-2 mt-3">
+          <div className="flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm p-2 rounded text-center font-medium">Aprobada</div>
+          <Button onClick={() => handleCancel(quote.id)} className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-700 text-white text-sm" data-testid={`button-cancel-${quote.id}`}>Cancelar</Button>
+        </div>
+      )}
+      {quote.status === "approved" && showActions && (
         <div className="mt-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm p-2 rounded text-center font-medium">Aprobada</div>
       )}
       {quote.status === "rejected" && (
         <div className="mt-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm p-2 rounded text-center font-medium">Rechazada</div>
+      )}
+      {quote.status === "canceled" && (
+        <div className="mt-3 bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300 text-sm p-2 rounded text-center font-medium">Cancelada</div>
       )}
     </div>
   );
@@ -100,7 +115,7 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {(approvedQuotes.length > 0 || rejectedQuotes.length > 0) && (
+      {(approvedQuotes.length > 0 || rejectedQuotes.length > 0 || canceledQuotes.length > 0) && (
         <Card>
           <CardHeader>
             <CardTitle>Historial de Solicitudes</CardTitle>
@@ -120,6 +135,15 @@ export default function DashboardPage() {
                 <h3 className="font-semibold text-red-600 dark:text-red-400 mb-3">Rechazadas ({rejectedQuotes.length})</h3>
                 <div className="space-y-3">
                   {rejectedQuotes.map((quote) => renderQuoteCard(quote, false))}
+                </div>
+              </div>
+            )}
+            {canceledQuotes.length > 0 && (
+              <div>
+                {(approvedQuotes.length > 0 || rejectedQuotes.length > 0) && <div className="border-t my-4"></div>}
+                <h3 className="font-semibold text-gray-600 dark:text-gray-400 mb-3">Canceladas ({canceledQuotes.length})</h3>
+                <div className="space-y-3">
+                  {canceledQuotes.map((quote) => renderQuoteCard(quote, false))}
                 </div>
               </div>
             )}
