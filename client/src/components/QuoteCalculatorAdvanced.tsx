@@ -20,9 +20,10 @@ export function QuoteCalculatorAdvanced() {
 
   useEffect(() => {
     fetch("/api/vehicle-types", { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setVehicles(Array.isArray(data) ? data : []))
-      .catch(() => setVehicles([]))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setVehicles(data);
+      })
       .finally(() => setLoading(false));
   }, []);
 
