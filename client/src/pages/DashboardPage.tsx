@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Calculator, TrendingUp, MapPin, Truck } from "lucide-react";
+import { Calculator, TrendingUp, MapPin, Truck, Search } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function DashboardPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchNumber, setSearchNumber] = useState("");
 
   if (!loading && quotes.length === 0) {
     setLoading(true);
@@ -43,8 +45,35 @@ export default function DashboardPage() {
   const avgDistance = approvedQuotes.length > 0 ? (totalDistance / approvedQuotes.length).toFixed(1) : "0";
   const totalRevenue = approvedQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
 
+  const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
+
+  const filteredConfirmedQuotes = confirmedQuotes.filter(q => 
+    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
+  );
+
+  const filteredPendingQuotes = pendingQuotes.filter(q => 
+    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
+  );
+
+  const filteredApprovedQuotes = approvedQuotes.filter(q => 
+    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
+  );
+
+  const filteredRejectedQuotes = rejectedQuotes.filter(q => 
+    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
+  );
+
+  const filteredCanceledQuotes = canceledQuotes.filter(q => 
+    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
+  );
+
   const renderQuoteCard = (quote: any, showActions = false) => (
     <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900">
+      <div className="flex justify-between items-start mb-3">
+        <div className="text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+          Nº {getQuoteNumber(quote.id)}
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-4 mb-3">
         <div>
           <p className="text-sm text-muted-foreground">Origen</p>
@@ -101,7 +130,20 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-semibold">Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-semibold">Dashboard</h1>
+        <div className="relative w-72">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            type="text" 
+            placeholder="Buscar por nº presupuesto..." 
+            value={searchNumber} 
+            onChange={(e) => setSearchNumber(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-quote"
+          />
+        </div>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Aprobados" icon={Truck} />
         <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
@@ -110,25 +152,30 @@ export default function DashboardPage() {
         <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Totales" icon={Calculator} />
       </div>
 
-      {(confirmedQuotes.length > 0 || pendingQuotes.length > 0) && (
+      {(filteredConfirmedQuotes.length > 0 || filteredPendingQuotes.length > 0) && (
         <Card>
           <CardHeader>
-            <CardTitle>Solicitudes Pendientes de Revisión ({(confirmedQuotes.length + pendingQuotes.length).toString()})</CardTitle>
+            <CardTitle>Solicitudes Pendientes de Revisión ({(filteredConfirmedQuotes.length + filteredPendingQuotes.length).toString()})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {confirmedQuotes.length > 0 && (
+              {filteredConfirmedQuotes.length > 0 && (
                 <>
-                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Por revisar ({confirmedQuotes.length})</div>
-                  {confirmedQuotes.map((quote) => renderQuoteCard(quote, true))}
+                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Por revisar ({filteredConfirmedQuotes.length})</div>
+                  {filteredConfirmedQuotes.map((quote) => renderQuoteCard(quote, true))}
                 </>
               )}
-              {pendingQuotes.length > 0 && (
+              {filteredPendingQuotes.length > 0 && (
                 <>
-                  {confirmedQuotes.length > 0 && <div className="border-t my-4"></div>}
-                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Presupuestos sin confirmar ({pendingQuotes.length})</div>
-                  {pendingQuotes.map((quote) => (
+                  {filteredConfirmedQuotes.length > 0 && <div className="border-t my-4"></div>}
+                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Presupuestos sin confirmar ({filteredPendingQuotes.length})</div>
+                  {filteredPendingQuotes.map((quote) => (
                     <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900 opacity-60">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                          Nº {getQuoteNumber(quote.id)}
+                        </div>
+                      </div>
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Origen</p>
@@ -157,35 +204,35 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {(approvedQuotes.length > 0 || rejectedQuotes.length > 0 || canceledQuotes.length > 0) && (
+      {(filteredApprovedQuotes.length > 0 || filteredRejectedQuotes.length > 0 || filteredCanceledQuotes.length > 0) && (
         <Card>
           <CardHeader>
             <CardTitle>Historial de Solicitudes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {approvedQuotes.length > 0 && (
+            {filteredApprovedQuotes.length > 0 && (
               <div>
-                <h3 className="font-semibold text-green-600 dark:text-green-400 mb-3">Aprobadas ({approvedQuotes.length})</h3>
+                <h3 className="font-semibold text-green-600 dark:text-green-400 mb-3">Aprobadas ({filteredApprovedQuotes.length})</h3>
                 <div className="space-y-3">
-                  {approvedQuotes.map((quote) => renderQuoteCard(quote, false))}
+                  {filteredApprovedQuotes.map((quote) => renderQuoteCard(quote, false))}
                 </div>
               </div>
             )}
-            {rejectedQuotes.length > 0 && (
+            {filteredRejectedQuotes.length > 0 && (
               <div>
-                {approvedQuotes.length > 0 && <div className="border-t my-4"></div>}
-                <h3 className="font-semibold text-red-600 dark:text-red-400 mb-3">Rechazadas ({rejectedQuotes.length})</h3>
+                {filteredApprovedQuotes.length > 0 && <div className="border-t my-4"></div>}
+                <h3 className="font-semibold text-red-600 dark:text-red-400 mb-3">Rechazadas ({filteredRejectedQuotes.length})</h3>
                 <div className="space-y-3">
-                  {rejectedQuotes.map((quote) => renderQuoteCard(quote, false))}
+                  {filteredRejectedQuotes.map((quote) => renderQuoteCard(quote, false))}
                 </div>
               </div>
             )}
-            {canceledQuotes.length > 0 && (
+            {filteredCanceledQuotes.length > 0 && (
               <div>
-                {(approvedQuotes.length > 0 || rejectedQuotes.length > 0) && <div className="border-t my-4"></div>}
-                <h3 className="font-semibold text-gray-600 dark:text-gray-400 mb-3">Canceladas ({canceledQuotes.length})</h3>
+                {(filteredApprovedQuotes.length > 0 || filteredRejectedQuotes.length > 0) && <div className="border-t my-4"></div>}
+                <h3 className="font-semibold text-gray-600 dark:text-gray-400 mb-3">Canceladas ({filteredCanceledQuotes.length})</h3>
                 <div className="space-y-3">
-                  {canceledQuotes.map((quote) => renderQuoteCard(quote, false))}
+                  {filteredCanceledQuotes.map((quote) => renderQuoteCard(quote, false))}
                 </div>
               </div>
             )}
