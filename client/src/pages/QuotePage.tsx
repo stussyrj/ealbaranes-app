@@ -163,7 +163,7 @@ export default function QuotePage() {
           </div>
           <div>
             <Label>Teléfono de Contacto</Label>
-            <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ej: +34 123 456 789" data-testid="input-phone" />
+            <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ej: 123 456 789" data-testid="input-phone" />
           </div>
           <div>
             <Label>Origen</Label>
