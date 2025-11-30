@@ -71,7 +71,7 @@ export default function QuotePage() {
             <Input
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
-              placeholder="Ej: Madrid"
+              placeholder="Ej: Calle Gran Vía, 45, 28013 Madrid"
             />
           </div>
           <div>
@@ -79,7 +79,7 @@ export default function QuotePage() {
             <Input
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              placeholder="Ej: Barcelona"
+              placeholder="Ej: Paseo de Gràcia, 120, 08008 Barcelona"
             />
           </div>
           <div>
@@ -88,11 +88,12 @@ export default function QuotePage() {
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
               className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-gray-300 dark:border-gray-600"
+              data-testid="select-vehicle"
             >
               <option value="">Selecciona</option>
               {vehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
+                <option key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
+                  {v.name} - {v.capacity}
                 </option>
               ))}
             </select>
@@ -104,6 +105,7 @@ export default function QuotePage() {
               value={pickupTime}
               onChange={(e) => setPickupTime(e.target.value)}
               placeholder="Ej: 14:30"
+              data-testid="input-pickup-time"
             />
           </div>
           <div>
@@ -113,6 +115,7 @@ export default function QuotePage() {
               onChange={(e) => setObservations(e.target.value)}
               placeholder="Agregar cualquier información relevante para la entrega..."
               rows={3}
+              data-testid="textarea-observations"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -120,12 +123,13 @@ export default function QuotePage() {
               id="urgent"
               checked={isUrgent}
               onCheckedChange={(checked) => setIsUrgent(checked === true)}
+              data-testid="checkbox-urgent"
             />
             <Label htmlFor="urgent" className="cursor-pointer text-sm">
               Urgencia (+25%)
             </Label>
           </div>
-          <Button onClick={handleCalculate} className="w-full">
+          <Button onClick={handleCalculate} className="w-full" data-testid="button-calculate">
             Calcular
           </Button>
         </CardContent>
@@ -195,6 +199,7 @@ export default function QuotePage() {
               variant="outline"
               onClick={handleReset}
               className="w-full"
+              data-testid="button-new-quote"
             >
               Nuevo
             </Button>
