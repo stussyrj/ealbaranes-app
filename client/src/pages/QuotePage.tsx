@@ -64,7 +64,7 @@ export default function QuotePage() {
             <select
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-gray-300 dark:border-gray-600"
               data-testid="select-vehicle-type"
               disabled={loading}
             >
@@ -90,25 +90,25 @@ export default function QuotePage() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500">Origen</p>
+                <p className="text-sm text-muted-foreground">Origen</p>
                 <p className="font-medium" data-testid="text-origin">
                   {result.origin?.label || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Destino</p>
+                <p className="text-sm text-muted-foreground">Destino</p>
                 <p className="font-medium" data-testid="text-destination">
                   {result.destination?.label || "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Distancia</p>
+                <p className="text-sm text-muted-foreground">Distancia</p>
                 <p className="font-medium" data-testid="text-distance">
                   {(result.distance || 0).toFixed(1)} km
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Vehículo</p>
+                <p className="text-sm text-muted-foreground">Vehículo</p>
                 <p className="font-medium">{result.vehicle?.name || "—"}</p>
               </div>
             </div>
