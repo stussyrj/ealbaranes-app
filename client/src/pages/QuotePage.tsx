@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Truck } from "lucide-react";
+import { VanDoorsAnimation } from "@/components/VanDoorsAnimation";
 
 export default function QuotePage() {
   const [name, setName] = useState("");
@@ -23,7 +24,15 @@ export default function QuotePage() {
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [quoteId, setQuoteId] = useState<string>("");
+  const [showAnimation, setShowAnimation] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const hasSeenAnimation = sessionStorage.getItem("hasSeenClientAnimation");
+    if (hasSeenAnimation) {
+      setShowAnimation(false);
+    }
+  }, []);
 
   if (vehicles.length === 0 && !loading) {
     setLoading(true);
@@ -127,6 +136,17 @@ export default function QuotePage() {
 
   const minTime = getMinimumPickupTime();
 
+  if (showAnimation) {
+    return (
+      <VanDoorsAnimation
+        onComplete={() => {
+          sessionStorage.setItem("hasSeenClientAnimation", "true");
+          setShowAnimation(false);
+        }}
+      />
+    );
+  }
+
   if (confirmed && result) {
     return (
       <div className="p-6 flex items-center justify-center min-h-screen">
@@ -152,7 +172,7 @@ export default function QuotePage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="space-y-6 p-6">
       <h1 className="text-3xl mb-4">Nuevo Presupuesto</h1>
       <Card className="mb-6">
         <CardHeader><CardTitle>Solicitar Presupuesto</CardTitle></CardHeader>

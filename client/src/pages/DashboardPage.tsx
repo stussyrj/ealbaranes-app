@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calculator, TrendingUp, MapPin, Truck, Search } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 
 export default function DashboardPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchNumber, setSearchNumber] = useState("");
+  const [showAnimation, setShowAnimation] = useState(true);
+
+  useEffect(() => {
+    const hasSeenAnimation = sessionStorage.getItem("hasSeenAdminAnimation");
+    if (hasSeenAnimation) {
+      setShowAnimation(false);
+    }
+  }, []);
 
   if (!loading && quotes.length === 0) {
     setLoading(true);
@@ -127,6 +136,17 @@ export default function DashboardPage() {
       )}
     </div>
   );
+
+  if (showAnimation) {
+    return (
+      <DriverDoorAnimation
+        onComplete={() => {
+          sessionStorage.setItem("hasSeenAdminAnimation", "true");
+          setShowAnimation(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">
