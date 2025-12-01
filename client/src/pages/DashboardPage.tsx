@@ -26,6 +26,8 @@ export default function DashboardPage() {
   const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [albaranesModalOpen, setAlbaranesModalOpen] = useState(false);
+  const [albaranesModalType, setAlbaranesModalType] = useState<"pending" | "signed">("pending");
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const previewDeliveryNote = (photo: string) => {
@@ -178,22 +180,17 @@ export default function DashboardPage() {
               </div>
               {pendingDeliveryNotes.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-2">Pendientes: {pendingDeliveryNotes.length}</p>
-                  <div className="space-y-2">
-                    {pendingDeliveryNotes.map((note: any) => (
-                      <Button
-                        key={note.id}
-                        onClick={() => note.photo && previewDeliveryNote(note.photo)}
-                        variant="outline"
-                        className="w-full text-xs h-8 justify-start"
-                        data-testid={`button-view-pending-${note.id}`}
-                        disabled={!note.photo}
-                      >
-                        <MapPin className="w-3 h-3 mr-2" />
-                        {note.destination}
-                      </Button>
-                    ))}
-                  </div>
+                  <Button
+                    onClick={() => {
+                      setAlbaranesModalType("pending");
+                      setAlbaranesModalOpen(true);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-view-pending-albaranes"
+                  >
+                    Ver {pendingDeliveryNotes.length} Albarán{pendingDeliveryNotes.length !== 1 ? "es" : ""} Pendiente{pendingDeliveryNotes.length !== 1 ? "s" : ""}
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -211,22 +208,17 @@ export default function DashboardPage() {
               </div>
               {signedDeliveryNotes.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-2">Firmados: {signedDeliveryNotes.length}</p>
-                  <div className="space-y-2">
-                    {signedDeliveryNotes.map((note: any) => (
-                      <Button
-                        key={note.id}
-                        onClick={() => note.photo && previewDeliveryNote(note.photo)}
-                        variant="outline"
-                        className="w-full text-xs h-8 justify-start"
-                        data-testid={`button-view-signed-${note.id}`}
-                        disabled={!note.photo}
-                      >
-                        <MapPin className="w-3 h-3 mr-2" />
-                        {note.destination}
-                      </Button>
-                    ))}
-                  </div>
+                  <Button
+                    onClick={() => {
+                      setAlbaranesModalType("signed");
+                      setAlbaranesModalOpen(true);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-view-signed-albaranes"
+                  >
+                    Ver {signedDeliveryNotes.length} Albarán{signedDeliveryNotes.length !== 1 ? "es" : ""} Firmado{signedDeliveryNotes.length !== 1 ? "s" : ""}
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -245,6 +237,35 @@ export default function DashboardPage() {
         onOpenChange={setWorkerManagementOpen}
       />
 
+      {/* Albaranes List Modal */}
+      <Dialog open={albaranesModalOpen} onOpenChange={setAlbaranesModalOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base sm:text-lg">
+              Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {(albaranesModalType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
+              <Button
+                key={note.id}
+                onClick={() => {
+                  if (note.photo) {
+                    previewDeliveryNote(note.photo);
+                  }
+                }}
+                variant="outline"
+                className="w-full text-xs h-auto py-2 justify-start flex flex-col items-start"
+                data-testid={`button-albarane-${note.id}`}
+                disabled={!note.photo}
+              >
+                <span className="font-semibold">{note.destination}</span>
+                <span className="text-[10px] text-muted-foreground">{note.clientName || 'Sin cliente'}</span>
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Preview Modal - Simple Overlay */}
       {previewModalOpen && previewImage && (
