@@ -231,28 +231,78 @@ export default function DashboardPage() {
               Albaranes {deliveryNotesType === "pending" ? "Pendientes" : "Firmados"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {(deliveryNotesType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
-              <div key={note.id} className="rounded-lg border border-border bg-card p-4">
-                <div className="flex justify-between items-start mb-3">
+              <div key={note.id} className="rounded-lg border border-border bg-card overflow-hidden">
+                {/* Header */}
+                <div className="flex justify-between items-start p-4 border-b border-border/50">
                   <div>
-                    <p className="font-semibold">{note.destination || 'Sin destino'}</p>
-                    <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                    <p className="font-bold text-lg">{note.destination || 'Sin destino'}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{note.clientName || 'Sin cliente'}</p>
                   </div>
                   <Badge className={deliveryNotesType === "pending" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"}>
                     {deliveryNotesType === "pending" ? "Pendiente" : "✓ Firmado"}
                   </Badge>
                 </div>
-                <div className="text-sm space-y-2">
-                  <div><span className="text-muted-foreground">Trabajador:</span> {(note as any).workerName || 'Desconocido'}</div>
-                  <div><span className="text-muted-foreground">Origen:</span> {note.pickupOrigin || 'N/A'}</div>
-                  <div><span className="text-muted-foreground">Vehículo:</span> {note.vehicleType || 'N/A'}</div>
-                  <div><span className="text-muted-foreground">Fecha:</span> {note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</div>
-                  <div><span className="text-muted-foreground">Hora:</span> {note.time || 'N/A'}</div>
-                  {note.observations && <div><span className="text-muted-foreground">Observaciones:</span> {note.observations}</div>}
-                  {deliveryNotesType === "signed" && note.signedAt && <div><span className="text-muted-foreground">Firmado:</span> {new Date(note.signedAt).toLocaleString('es-ES')}</div>}
+
+                {/* Content */}
+                <div className="p-4 space-y-4">
+                  {/* Trabajador */}
+                  <div className="bg-muted/30 rounded p-3">
+                    <p className="text-xs text-muted-foreground font-semibold mb-1">TRABAJADOR</p>
+                    <p className="font-medium">{(note as any).workerName || 'Desconocido'}</p>
+                  </div>
+
+                  {/* Ruta */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-muted/30 rounded p-3">
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">ORIGEN</p>
+                      <p className="font-medium text-sm">{note.pickupOrigin || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-3">
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">DESTINO</p>
+                      <p className="font-medium text-sm">{note.destination || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {/* Vehículo y Fecha */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-muted/30 rounded p-3">
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">VEHÍCULO</p>
+                      <p className="font-medium text-sm">{note.vehicleType || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-3">
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">FECHA</p>
+                      <p className="font-medium text-sm">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {/* Hora */}
+                  <div className="bg-muted/30 rounded p-3">
+                    <p className="text-xs text-muted-foreground font-semibold mb-1">HORA</p>
+                    <p className="font-medium">{note.time || 'N/A'}</p>
+                  </div>
+
+                  {/* Observaciones */}
+                  {note.observations && (
+                    <div className="bg-muted/30 rounded p-3">
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">OBSERVACIONES</p>
+                      <p className="text-sm">{note.observations}</p>
+                    </div>
+                  )}
+
+                  {/* Firma */}
+                  {deliveryNotesType === "signed" && note.signedAt && (
+                    <div className="bg-muted/30 rounded p-3">
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">FIRMADO</p>
+                      <p className="font-medium text-sm">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
+                    </div>
+                  )}
+
+                  {/* Foto */}
                   {note.photo && (
                     <div className="pt-2">
+                      <p className="text-xs text-muted-foreground font-semibold mb-2">FOTO</p>
                       <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-60 object-cover" />
                     </div>
                   )}
