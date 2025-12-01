@@ -240,10 +240,12 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
 
-      // Validate carrozado availability before approving
+      let warning: string | null = null;
+
+      // Check carrozado availability and add warning if not available
       if (status === "approved" && quote.vehicleTypeId === "carrozado" && quote.pickupTime && quote.duration) {
         if (!storage.isCarrozadoAvailableAtDateTime(quote.pickupTime, quote.duration)) {
-          return res.status(400).json({ error: "El carrozado no está disponible en el horario solicitado. No se puede aprobar este pedido." });
+          warning = "El carrozado no está disponible en este horario. Otros pedidos ya están reservados en ese momento.";
         }
       }
 
@@ -251,7 +253,12 @@ export async function registerRoutes(
       if (!updatedQuote) {
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
-      res.json(updatedQuote);
+      
+      const response: any = { ...updatedQuote };
+      if (warning) {
+        response.warning = warning;
+      }
+      res.json(response);
     } catch (error) {
       console.error("Error updating quote status:", error);
       res.status(400).json({ error: "Error al actualizar el estado del presupuesto" });

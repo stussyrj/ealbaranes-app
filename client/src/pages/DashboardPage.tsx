@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchNumber, setSearchNumber] = useState("");
@@ -31,7 +33,11 @@ export default function DashboardPage() {
   }
 
   const handleApprove = async (id: string) => {
-    await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "approved" }), credentials: "include" });
+    const res = await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "approved" }), credentials: "include" });
+    const data = await res.json();
+    if (data.warning) {
+      toast({ title: "Aviso", description: data.warning, variant: "destructive" });
+    }
     setQuotes(quotes.map(q => q.id === id ? { ...q, status: "approved" } : q));
   };
 
