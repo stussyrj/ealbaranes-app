@@ -336,27 +336,61 @@ export default function QuotePage() {
           </div>
           <div className="relative">
             <Label>Origen</Label>
-            <Input value={origin} onChange={(e) => handleOriginChange(e.target.value)} placeholder="Ej: Calle Gran Vía, 45, 28013 Madrid" data-testid="input-origin" />
-            {showOriginSuggestions && originSuggestions.length > 0 && (
+            <Input 
+              value={origin} 
+              onChange={(e) => handleOriginChange(e.target.value)} 
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && origin.trim()) {
+                  setShowOriginSuggestions(false);
+                  setOriginSuggestions([]);
+                }
+              }}
+              placeholder="Ej: Calle Gran Vía, 45, 28013 Madrid" 
+              data-testid="input-origin" 
+            />
+            {showOriginSuggestions && origin.length >= 2 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
-                {originSuggestions.map((suggestion, idx) => (
-                  <div key={idx} onClick={() => selectSuggestion(suggestion, "origin")} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm">
-                    {suggestion.label}
+                {originSuggestions.length > 0 ? (
+                  originSuggestions.map((suggestion, idx) => (
+                    <div key={idx} onClick={() => selectSuggestion(suggestion, "origin")} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm">
+                      {suggestion.label}
+                    </div>
+                  ))
+                ) : (
+                  <div onClick={() => { setShowOriginSuggestions(false); setOriginSuggestions([]); }} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-muted-foreground">
+                    Usar: <strong>{origin}</strong>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
           <div className="relative">
             <Label>Destino</Label>
-            <Input value={destination} onChange={(e) => handleDestinationChange(e.target.value)} placeholder="Ej: Paseo de Gràcia, 120, 08008 Barcelona" data-testid="input-destination" />
-            {showDestSuggestions && destSuggestions.length > 0 && (
+            <Input 
+              value={destination} 
+              onChange={(e) => handleDestinationChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && destination.trim()) {
+                  setShowDestSuggestions(false);
+                  setDestSuggestions([]);
+                }
+              }}
+              placeholder="Ej: Paseo de Gràcia, 120, 08008 Barcelona" 
+              data-testid="input-destination" 
+            />
+            {showDestSuggestions && destination.length >= 2 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
-                {destSuggestions.map((suggestion, idx) => (
-                  <div key={idx} onClick={() => selectSuggestion(suggestion, "destination")} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm">
-                    {suggestion.label}
+                {destSuggestions.length > 0 ? (
+                  destSuggestions.map((suggestion, idx) => (
+                    <div key={idx} onClick={() => selectSuggestion(suggestion, "destination")} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm">
+                      {suggestion.label}
+                    </div>
+                  ))
+                ) : (
+                  <div onClick={() => { setShowDestSuggestions(false); setDestSuggestions([]); }} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-muted-foreground">
+                    Usar: <strong>{destination}</strong>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
