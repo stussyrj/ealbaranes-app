@@ -165,7 +165,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 space-y-3">
+      <SidebarFooter className="p-4 space-y-2">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
@@ -179,7 +179,7 @@ export function AppSidebar() {
             </p>
           </div>
         </div>
-        {user.role === "worker" ? (
+        {user.role === "worker" && (
           <Button
             variant="outline"
             size="sm"
@@ -190,46 +190,45 @@ export function AppSidebar() {
             <LogOut className="h-4 w-4 mr-2" />
             Cambiar Trabajador
           </Button>
-        ) : (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-between text-xs"
-                data-testid="button-switch-role"
-              >
-                <span className="flex items-center gap-1">
-                  <LogOut className="h-4 w-4" />
-                  Cambiar Rol
-                </span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => switchToRole("customer")}
-                  data-testid="menu-switch-to-customer"
-                >
-                  Cliente
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => switchToRole("admin")}
-                  data-testid="menu-switch-to-admin"
-                >
-                  Administrador
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => switchToRole("worker")}
-                  data-testid="menu-switch-to-worker"
-                >
-                  Trabajador
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenuPortal>
-          </DropdownMenu>
         )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-between text-xs"
+              data-testid="button-switch-role"
+            >
+              <span className="flex items-center gap-1">
+                <LogOut className="h-4 w-4" />
+                Cambiar Rol
+              </span>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={() => switchToRole("customer")}
+                data-testid="menu-switch-to-customer"
+              >
+                Cliente
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => switchToRole("admin")}
+                data-testid="menu-switch-to-admin"
+              >
+                Administrador
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => switchToRole("worker")}
+                data-testid="menu-switch-to-worker"
+              >
+                Trabajador
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenuPortal>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );
