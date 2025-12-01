@@ -154,23 +154,32 @@ export default function DashboardPage() {
               <CardTitle>Pendientes ({totalPendingCount})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4">
-                {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
-                {pendingDeliveryNotes.map((note: any) => (
-                  <div key={note.id} className="pb-4 border-b border-border last:border-b-0">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-semibold">{note.destination || 'Sin destino'}</p>
-                        <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                      </div>
-                      <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">Pendiente</Badge>
-                    </div>
-                    <div className="text-sm space-y-1">
-                      <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
-                      <div>{note.date && <span>{new Date(note.date).toLocaleDateString('es-ES')}</span>}</div>
-                    </div>
+              <div className="space-y-4">
+                {pendingQuotes.length > 0 && (
+                  <div className="grid gap-4">
+                    {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
                   </div>
-                ))}
+                )}
+                {pendingDeliveryNotes.length > 0 && (
+                  <div className="space-y-3">
+                    {pendingQuotes.length > 0 && <div className="border-t border-border pt-4"></div>}
+                    {pendingDeliveryNotes.map((note: any) => (
+                      <div key={note.id} className="rounded-lg border border-border bg-card p-4 hover-elevate">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold">{note.destination || 'Sin destino'}</p>
+                            <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                          </div>
+                          <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">Pendiente</Badge>
+                        </div>
+                        <div className="text-sm space-y-1 mt-2">
+                          <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
+                          <div>{note.date && <span>{new Date(note.date).toLocaleDateString('es-ES')}</span>}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -182,28 +191,37 @@ export default function DashboardPage() {
               <CardTitle>Firmados ({totalSignedCount})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4">
-                {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
-                {signedDeliveryNotes.map((note: any) => (
-                  <div key={note.id} className="pb-4 border-b border-border last:border-b-0">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-semibold">{note.destination || 'Sin destino'}</p>
-                        <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                      </div>
-                      <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">✓ Firmado</Badge>
-                    </div>
-                    <div className="text-sm space-y-1">
-                      <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
-                      <div>{note.signedAt && <span>Firmado: {new Date(note.signedAt).toLocaleString('es-ES')}</span>}</div>
-                      {note.photo && (
-                        <div className="pt-2">
-                          <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-40 object-cover" />
-                        </div>
-                      )}
-                    </div>
+              <div className="space-y-4">
+                {signedQuotes.length > 0 && (
+                  <div className="grid gap-4">
+                    {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
                   </div>
-                ))}
+                )}
+                {signedDeliveryNotes.length > 0 && (
+                  <div className="space-y-3">
+                    {signedQuotes.length > 0 && <div className="border-t border-border pt-4"></div>}
+                    {signedDeliveryNotes.map((note: any) => (
+                      <div key={note.id} className="rounded-lg border border-border bg-card p-4 hover-elevate">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold">{note.destination || 'Sin destino'}</p>
+                            <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                          </div>
+                          <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">✓ Firmado</Badge>
+                        </div>
+                        <div className="text-sm space-y-1 mt-2">
+                          <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
+                          <div>{note.signedAt && <span>Firmado: {new Date(note.signedAt).toLocaleString('es-ES')}</span>}</div>
+                          {note.photo && (
+                            <div className="pt-2">
+                              <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-40 object-cover" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
