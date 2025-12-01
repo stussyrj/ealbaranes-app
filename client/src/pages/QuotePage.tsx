@@ -124,7 +124,7 @@ export default function QuotePage() {
   };
 
   const fetchAddressSuggestions = async (input: string, type: "origin" | "destination") => {
-    if (!input || input.length < 2) {
+    if (!input || input.length < 1) {
       if (type === "origin") {
         setOriginSuggestions([]);
         setShowOriginSuggestions(false);

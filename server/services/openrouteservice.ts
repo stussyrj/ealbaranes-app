@@ -119,15 +119,16 @@ export async function getRouteDistance(
 }
 
 export async function getAddressSuggestions(text: string): Promise<GeocodeResult[]> {
-  if (!text || text.length < 2) return [];
+  if (!text || text.length < 1) return [];
   
   const apiKey = getApiKey();
   
   const params = new URLSearchParams({
     api_key: apiKey,
     text: text,
-    size: "5",
+    size: "15",
     "boundary.country": "ES,PT,FR",
+    type: "street,city,house",
   });
   
   const url = `${ORS_BASE_URL}/geocode/search?${params}`;
@@ -143,7 +144,7 @@ export async function getAddressSuggestions(text: string): Promise<GeocodeResult
     const data = await response.json();
     if (!data.features || data.features.length === 0) return [];
     
-    return data.features.map((feature: any) => {
+    return data.features.slice(0, 10).map((feature: any) => {
       const [lng, lat] = feature.geometry.coordinates;
       const properties = feature.properties;
       return {
