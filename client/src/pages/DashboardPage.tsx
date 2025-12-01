@@ -333,7 +333,14 @@ export default function DashboardPage() {
                               buttonsDiv.remove();
                             }
                             
-                            const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+                            clonedElement.style.position = "fixed";
+                            clonedElement.style.left = "-9999px";
+                            clonedElement.style.top = "-9999px";
+                            document.body.appendChild(clonedElement);
+                            
+                            const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+                            document.body.removeChild(clonedElement);
+                            
                             const blob = await new Promise<Blob>((resolve) => {
                               canvas.toBlob((b) => resolve(b as Blob), "image/png");
                             });
@@ -345,6 +352,7 @@ export default function DashboardPage() {
                               toast({ title: "Error", description: "Compartir no disponible en este navegador", variant: "destructive" });
                             }
                           } catch (error: any) {
+                            console.error("Share error:", error);
                             if (error.name !== "AbortError") {
                               toast({ title: "Error", description: "No se pudo compartir el albarán", variant: "destructive" });
                             }
