@@ -11,7 +11,6 @@ import { Home, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Quote, DeliveryNote } from "@shared/schema";
 
 export default function WorkerDashboard() {
@@ -374,18 +373,20 @@ export default function WorkerDashboard() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Tipo de Vehículo</label>
-              <Select value={formData.vehicleType} onValueChange={(value) => setFormData({ ...formData, vehicleType: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un vehículo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Moto">Moto</SelectItem>
-                  <SelectItem value="Furgoneta">Furgoneta</SelectItem>
-                  <SelectItem value="Furgón">Furgón</SelectItem>
-                  <SelectItem value="Carrozado">Carrozado</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium mb-2 block">Tipo de Vehículo</label>
+              <div className="grid grid-cols-2 gap-2">
+                {["Moto", "Furgoneta", "Furgón", "Carrozado"].map((tipo) => (
+                  <Button
+                    key={tipo}
+                    type="button"
+                    variant={formData.vehicleType === tipo ? "default" : "outline"}
+                    onClick={() => setFormData({ ...formData, vehicleType: tipo })}
+                    className="text-xs"
+                  >
+                    {tipo}
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
