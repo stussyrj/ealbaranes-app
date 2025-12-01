@@ -25,6 +25,9 @@ export default function WorkerDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
+  const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
+  const [lastCreatedNote, setLastCreatedNote] = useState<DeliveryNote | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     clientName: "",
     pickupOrigin: "",
@@ -33,7 +36,6 @@ export default function WorkerDashboard() {
     date: new Date().toISOString().split("T")[0],
     time: "09:00",
     observations: "",
-    photo: null as string | null,
   });
 
   const handleSelectWorker = (workerId: string) => {
@@ -617,55 +619,6 @@ export default function WorkerDashboard() {
                 rows={3}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Fotografía</label>
-              <div className="flex gap-2 flex-col">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={async () => {
-                    try {
-                      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                      const video = document.createElement("video");
-                      video.srcObject = stream;
-                      video.play();
-                      
-                      const canvas = document.createElement("canvas");
-                      setTimeout(() => {
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        const ctx = canvas.getContext("2d");
-                        if (ctx) ctx.drawImage(video, 0, 0);
-                        stream.getTracks().forEach(track => track.stop());
-                        const photoData = canvas.toDataURL("image/jpeg", 0.8);
-                        setFormData({ ...formData, photo: photoData });
-                      }, 500);
-                    } catch (error) {
-                      console.error("Error accediendo a la cámara:", error);
-                      alert("No se pudo acceder a la cámara");
-                    }
-                  }}
-                  className="w-full"
-                  data-testid="button-capture-photo"
-                >
-                  📸 Capturar Foto
-                </Button>
-                {formData.photo && (
-                  <div className="relative">
-                    <img src={formData.photo} alt="Foto del albarán" className="w-full rounded-lg max-h-40 object-cover" />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setFormData({ ...formData, photo: null })}
-                      className="absolute top-2 right-2"
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setCreateDeliveryOpen(false)} className="flex-1">
                 Cancelar
@@ -688,7 +641,6 @@ export default function WorkerDashboard() {
                       date: formData.date,
                       time: formData.time,
                       observations: formData.observations,
-                      photo: formData.photo,
                       status: "signed",
                       signedAt: new Date().toISOString(),
                     };
@@ -723,6 +675,9 @@ export default function WorkerDashboard() {
                       await queryClient.invalidateQueries({ queryKey: adminKey });
                       
                       setCreateDeliveryOpen(false);
+                      setLastCreatedNote(newDeliveryNote);
+                      setCapturePhotoOpen(true);
+                      setCapturedPhoto(null);
                       setFormData({
                         clientName: "",
                         pickupOrigin: "",
@@ -731,7 +686,6 @@ export default function WorkerDashboard() {
                         date: new Date().toISOString().split("T")[0],
                         time: "09:00",
                         observations: "",
-                        photo: null,
                       });
                     }
                   } catch (error) {
@@ -741,6 +695,116 @@ export default function WorkerDashboard() {
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 Guardar Albarán
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={capturePhotoOpen} onOpenChange={setCapturePhotoOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Fotografía del Albarán</DialogTitle>
+            <DialogDescription>Captura una foto del albarán (opcional)</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                  const video = document.createElement("video");
+                  video.srcObject = stream;
+                  video.play();
+                  
+                  const canvas = document.createElement("canvas");
+                  setTimeout(() => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) ctx.drawImage(video, 0, 0);
+                    stream.getTracks().forEach(track => track.stop());
+                    const photoData = canvas.toDataURL("image/jpeg", 0.8);
+                    setCapturedPhoto(photoData);
+                  }, 500);
+                } catch (error) {
+                  console.error("Error accediendo a la cámara:", error);
+                  alert("No se pudo acceder a la cámara");
+                }
+              }}
+              className="w-full"
+              data-testid="button-capture-photo"
+            >
+              📸 Capturar Foto
+            </Button>
+            {capturedPhoto && (
+              <div className="relative">
+                <img src={capturedPhoto} alt="Foto capturada" className="w-full rounded-lg max-h-48 object-cover" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setCapturedPhoto(null)}
+                  className="absolute top-2 right-2"
+                >
+                  ✕
+                </Button>
+              </div>
+            )}
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCapturePhotoOpen(false);
+                  setCapturedPhoto(null);
+                }} 
+                className="flex-1"
+                data-testid="button-skip-photo"
+              >
+                Saltarse
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!lastCreatedNote) return;
+                  try {
+                    const response = await fetch(`/api/delivery-notes/${lastCreatedNote.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ photo: capturedPhoto }),
+                      credentials: "include",
+                    });
+                    
+                    if (response.ok) {
+                      const updatedNote = await response.json();
+                      
+                      // Update cache
+                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                      const adminKey = ["/api/delivery-notes"];
+                      
+                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                      const updatedWorkerNotes = workerNotes.map(n => n.id === updatedNote.id ? updatedNote : n);
+                      queryClient.setQueryData(workerKey, updatedWorkerNotes);
+                      
+                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                      const updatedAllNotes = allNotes.map(n => n.id === updatedNote.id ? updatedNote : n);
+                      queryClient.setQueryData(adminKey, updatedAllNotes);
+                      
+                      await queryClient.invalidateQueries({ queryKey: workerKey });
+                      await queryClient.invalidateQueries({ queryKey: adminKey });
+                      
+                      setCapturePhotoOpen(false);
+                      setCapturedPhoto(null);
+                    }
+                  } catch (error) {
+                    console.error("Error guardando foto:", error);
+                  }
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                disabled={!capturedPhoto}
+                data-testid="button-save-photo"
+              >
+                Guardar Foto
               </Button>
             </div>
           </div>
