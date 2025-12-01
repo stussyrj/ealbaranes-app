@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
+import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -14,6 +15,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [searchNumber, setSearchNumber] = useState("");
   const [showAnimation, setShowAnimation] = useState(true);
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any>(null);
 
   useEffect(() => {
     const hasSeenAnimation = sessionStorage.getItem("hasSeenAdminAnimation");
@@ -71,6 +74,11 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
   const handleCancel = async (id: string) => {
     await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "canceled" }), credentials: "include" });
     setQuotes(quotes.map(q => q.id === id ? { ...q, status: "canceled" } : q));
+  };
+
+  const handleAssignWorker = (quote: any) => {
+    setSelectedQuote(quote);
+    setAssignmentModalOpen(true);
   };
 
   const pendingQuotes = quotes.filter((q) => q.status === "pending");

@@ -291,5 +291,101 @@ export async function registerRoutes(
     }
   });
 
+  // Workers endpoints
+  app.get("/api/workers", async (req, res) => {
+    try {
+      const workers = await storage.getWorkers();
+      res.json(workers);
+    } catch (error) {
+      console.error("Error fetching workers:", error);
+      res.status(500).json({ error: "Error al obtener trabajadores" });
+    }
+  });
+
+  // Assign quote to worker
+  app.patch("/api/quotes/:id/assign-worker", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { workerId } = req.body;
+      
+      if (!workerId) {
+        return res.status(400).json({ error: "ID del trabajador es requerido" });
+      }
+
+      const quote = await storage.assignQuoteToWorker(id, workerId);
+      if (!quote) {
+        return res.status(404).json({ error: "Presupuesto no encontrado" });
+      }
+      res.json(quote);
+    } catch (error) {
+      console.error("Error assigning quote to worker:", error);
+      res.status(400).json({ error: "Error al asignar trabajador" });
+    }
+  });
+
+  // Worker orders
+  app.get("/api/workers/:workerId/orders", async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const orders = await storage.getQuotes(undefined, workerId);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching worker orders:", error);
+      res.status(500).json({ error: "Error al obtener pedidos" });
+    }
+  });
+
+  // Delivery notes
+  app.post("/api/delivery-notes", async (req, res) => {
+    try {
+      const data = req.body;
+      const note = await storage.createDeliveryNote(data);
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Error creating delivery note:", error);
+      res.status(400).json({ error: "Error al crear albarán" });
+    }
+  });
+
+  app.get("/api/delivery-notes/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const note = await storage.getDeliveryNote(id);
+      if (!note) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      res.json(note);
+    } catch (error) {
+      console.error("Error fetching delivery note:", error);
+      res.status(500).json({ error: "Error al obtener albarán" });
+    }
+  });
+
+  app.patch("/api/delivery-notes/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+      const note = await storage.updateDeliveryNote(id, data);
+      if (!note) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      res.json(note);
+    } catch (error) {
+      console.error("Error updating delivery note:", error);
+      res.status(400).json({ error: "Error al actualizar albarán" });
+    }
+  });
+
+  app.get("/api/workers/:workerId/delivery-notes", async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const notes = await storage.getDeliveryNotes(undefined, workerId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching worker delivery notes:", error);
+      res.status(500).json({ error: "Error al obtener albaranes" });
+    }
+  });
+
   return httpServer;
 }

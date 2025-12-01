@@ -17,6 +17,7 @@ import HistoryPage from "@/pages/HistoryPage";
 import ContactPage from "@/pages/ContactPage";
 import AdminPricingPage from "@/pages/AdminPricingPage";
 import AdminVehiclesPage from "@/pages/AdminVehiclesPage";
+import WorkerDashboard from "@/pages/WorkerDashboard.tsx";
 
 function Router() {
   const { user } = useAuth();
@@ -31,6 +32,15 @@ function Router() {
         <Route path="/" component={DashboardPage} />
         <Route path="/admin/pricing" component={AdminPricingPage} />
         <Route path="/admin/vehicles" component={AdminVehiclesPage} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  if (user.role === "worker") {
+    return (
+      <Switch>
+        <Route path="/" component={WorkerDashboard} />
         <Route component={NotFound} />
       </Switch>
     );

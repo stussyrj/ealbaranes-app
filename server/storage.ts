@@ -5,6 +5,10 @@ import {
   type InsertVehicleType,
   type Quote,
   type InsertQuote,
+  type Worker,
+  type InsertWorker,
+  type DeliveryNote,
+  type InsertDeliveryNote,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -13,6 +17,11 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
+  getWorkers(): Promise<Worker[]>;
+  getWorker(id: string): Promise<Worker | undefined>;
+  createWorker(worker: InsertWorker): Promise<Worker>;
+  updateWorker(id: string, worker: Partial<InsertWorker>): Promise<Worker | undefined>;
+  
   getVehicleTypes(): Promise<VehicleType[]>;
   getAllVehicleTypes(): Promise<VehicleType[]>;
   getVehicleType(id: string): Promise<VehicleType | undefined>;
@@ -20,10 +29,16 @@ export interface IStorage {
   updateVehicleType(id: string, vehicle: Partial<InsertVehicleType>): Promise<VehicleType | undefined>;
   deleteVehicleType(id: string): Promise<boolean>;
   
-  getQuotes(userId?: string): Promise<Quote[]>;
+  getQuotes(userId?: string, workerId?: string): Promise<Quote[]>;
   getQuote(id: string): Promise<Quote | undefined>;
   createQuote(quote: InsertQuote): Promise<Quote>;
   updateQuoteStatus(id: string, status: string): Promise<Quote | undefined>;
+  assignQuoteToWorker(quoteId: string, workerId: string): Promise<Quote | undefined>;
+  
+  getDeliveryNotes(quoteId?: string, workerId?: string): Promise<DeliveryNote[]>;
+  getDeliveryNote(id: string): Promise<DeliveryNote | undefined>;
+  createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote>;
+  updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
 }
 
 const defaultVehicleTypes: VehicleType[] = [
@@ -69,17 +84,49 @@ const defaultVehicleTypes: VehicleType[] = [
   },
 ];
 
+const defaultWorkers: Worker[] = [
+  {
+    id: "worker-jose",
+    name: "José",
+    email: "jose@directtransports.com",
+    phone: "600000001",
+    isActive: true,
+    createdAt: new Date(),
+  },
+  {
+    id: "worker-luis",
+    name: "Luis",
+    email: "luis@directtransports.com",
+    phone: "600000002",
+    isActive: true,
+    createdAt: new Date(),
+  },
+  {
+    id: "worker-miguel",
+    name: "Miguel",
+    email: "miguel@directtransports.com",
+    phone: "600000003",
+    isActive: true,
+    createdAt: new Date(),
+  },
+];
+
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
+  private workers: Map<string, Worker>;
   private vehicleTypes: Map<string, VehicleType>;
   private quotes: Map<string, Quote>;
+  private deliveryNotes: Map<string, DeliveryNote>;
 
   constructor() {
     this.users = new Map();
+    this.workers = new Map();
     this.vehicleTypes = new Map();
     this.quotes = new Map();
+    this.deliveryNotes = new Map();
     
     defaultVehicleTypes.forEach((vehicle) => this.vehicleTypes.set(vehicle.id, vehicle));
+    defaultWorkers.forEach((worker) => this.workers.set(worker.id, worker));
   }
 
   isCarrozadoAvailableAtDateTime(pickupTimeStr: string, duration?: number): boolean {
@@ -89,7 +136,6 @@ export class MemStorage implements IStorage {
       q => (q.status === "confirmed" || q.status === "approved") && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration
     );
 
-    // Parse requested pickupTime: "YYYY-MM-DD HH:MM"
     const pickupDateTime = pickupTimeStr.split(" ");
     if (pickupDateTime.length !== 2) return true;
     
@@ -97,11 +143,9 @@ export class MemStorage implements IStorage {
     const [hours, minutes] = pickupDateTime[1].split(":").map(Number);
     const requestedPickupTime = new Date(year, month - 1, day, hours, minutes, 0);
     
-    // Use provided duration or estimate from current quote being checked
-    const estimatedDuration = duration || 30; // default 30 min if not provided
+    const estimatedDuration = duration || 30;
     const requestedEndTime = new Date(requestedPickupTime.getTime() + (estimatedDuration * 2 + 30) * 60000);
 
-    // Check if requested time range conflicts with any confirmed carrozado trip
     for (const quote of confirmedQuotes) {
       if (!quote.pickupTime || !quote.duration) continue;
       
@@ -114,8 +158,6 @@ export class MemStorage implements IStorage {
       const confirmedPickupTime = new Date(qYear, qMonth - 1, qDay, qHours, qMinutes, 0);
       const confirmedEndTime = new Date(confirmedPickupTime.getTime() + (quote.duration * 2 + 30) * 60000);
       
-      // Check if time ranges overlap (not just start time)
-      // Two ranges overlap if: start1 < end2 AND end1 > start2
       if (requestedPickupTime < confirmedEndTime && requestedEndTime > confirmedPickupTime) {
         return false;
       }
@@ -135,7 +177,6 @@ export class MemStorage implements IStorage {
     for (const quote of confirmedQuotes) {
       if (!quote.pickupTime || !quote.duration) continue;
       
-      // Parse pickupTime: "YYYY-MM-DD HH:MM"
       const pickupDateTime = quote.pickupTime.split(" ");
       if (pickupDateTime.length !== 2) continue;
       
@@ -144,7 +185,6 @@ export class MemStorage implements IStorage {
       
       const pickupDate = new Date(year, month - 1, day, hours, minutes, 0);
       
-      // Skip if pickup is in the past
       if (pickupDate < now) continue;
       
       const endTime = new Date(pickupDate.getTime() + (quote.duration * 2 + 30) * 60000);
@@ -177,11 +217,38 @@ export class MemStorage implements IStorage {
     return user;
   }
 
+  async getWorkers(): Promise<Worker[]> {
+    return Array.from(this.workers.values()).filter(w => w.isActive);
+  }
+
+  async getWorker(id: string): Promise<Worker | undefined> {
+    return this.workers.get(id);
+  }
+
+  async createWorker(worker: InsertWorker): Promise<Worker> {
+    const id = randomUUID();
+    const newWorker: Worker = {
+      id,
+      name: worker.name,
+      email: worker.email,
+      phone: worker.phone ?? null,
+      isActive: worker.isActive ?? true,
+      createdAt: new Date(),
+    };
+    this.workers.set(id, newWorker);
+    return newWorker;
+  }
+
+  async updateWorker(id: string, updates: Partial<InsertWorker>): Promise<Worker | undefined> {
+    const existing = this.workers.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...updates };
+    this.workers.set(id, updated);
+    return updated;
+  }
+
   async getVehicleTypes(): Promise<VehicleType[]> {
-    return Array.from(this.vehicleTypes.values()).filter((v) => {
-      if (!v.isActive) return false;
-      return true;
-    });
+    return Array.from(this.vehicleTypes.values()).filter((v) => v.isActive);
   }
 
   async getAllVehicleTypes(): Promise<VehicleType[]> {
@@ -220,12 +287,19 @@ export class MemStorage implements IStorage {
     return this.vehicleTypes.delete(id);
   }
 
-  async getQuotes(userId?: string): Promise<Quote[]> {
+  async getQuotes(userId?: string, workerId?: string): Promise<Quote[]> {
     const allQuotes = Array.from(this.quotes.values());
+    let filtered = allQuotes;
+    
     if (userId) {
-      return allQuotes.filter((q) => q.userId === userId);
+      filtered = filtered.filter((q) => q.userId === userId);
     }
-    return allQuotes.sort((a, b) => {
+    
+    if (workerId) {
+      filtered = filtered.filter((q) => q.assignedWorkerId === workerId);
+    }
+    
+    return filtered.sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return dateB - dateA;
@@ -258,6 +332,9 @@ export class MemStorage implements IStorage {
       pickupTime: quote.pickupTime ?? null,
       observations: quote.observations ?? null,
       status: quote.status ?? "pending",
+      assignedWorkerId: quote.assignedWorkerId ?? null,
+      confirmedAt: quote.confirmedAt ?? null,
+      carrozadoUnavailableUntil: quote.carrozadoUnavailableUntil ?? null,
       createdAt: new Date(),
     };
     this.quotes.set(id, newQuote);
@@ -269,6 +346,61 @@ export class MemStorage implements IStorage {
     if (!existing) return undefined;
     const updated = { ...existing, status };
     this.quotes.set(id, updated);
+    return updated;
+  }
+
+  async assignQuoteToWorker(quoteId: string, workerId: string): Promise<Quote | undefined> {
+    const existing = this.quotes.get(quoteId);
+    if (!existing) return undefined;
+    const updated = { ...existing, assignedWorkerId: workerId, status: "assigned" };
+    this.quotes.set(quoteId, updated);
+    return updated;
+  }
+
+  async getDeliveryNotes(quoteId?: string, workerId?: string): Promise<DeliveryNote[]> {
+    const allNotes = Array.from(this.deliveryNotes.values());
+    let filtered = allNotes;
+    
+    if (quoteId) {
+      filtered = filtered.filter((n) => n.quoteId === quoteId);
+    }
+    
+    if (workerId) {
+      filtered = filtered.filter((n) => n.workerId === workerId);
+    }
+    
+    return filtered.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+
+  async getDeliveryNote(id: string): Promise<DeliveryNote | undefined> {
+    return this.deliveryNotes.get(id);
+  }
+
+  async createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote> {
+    const id = randomUUID();
+    const newNote: DeliveryNote = {
+      id,
+      quoteId: note.quoteId,
+      workerId: note.workerId,
+      status: note.status ?? "pending",
+      signature: note.signature ?? null,
+      signedAt: note.signedAt ?? null,
+      notes: note.notes ?? null,
+      createdAt: new Date(),
+    };
+    this.deliveryNotes.set(id, newNote);
+    return newNote;
+  }
+
+  async updateDeliveryNote(id: string, updates: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined> {
+    const existing = this.deliveryNotes.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...updates };
+    this.deliveryNotes.set(id, updated);
     return updated;
   }
 }

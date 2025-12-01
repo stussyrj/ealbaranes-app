@@ -18,6 +18,23 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export const workers = pgTable("workers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertWorkerSchema = createInsertSchema(workers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWorker = z.infer<typeof insertWorkerSchema>;
+export type Worker = typeof workers.$inferSelect;
+
 export const vehicleTypes = pgTable("vehicle_types", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -56,6 +73,7 @@ export const quotes = pgTable("quotes", {
   pickupTime: text("pickup_time"),
   observations: text("observations"),
   status: text("status").default("pending"),
+  assignedWorkerId: varchar("assigned_worker_id"),
   confirmedAt: timestamp("confirmed_at"),
   carrozadoUnavailableUntil: timestamp("carrozado_unavailable_until"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -68,6 +86,25 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
 
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type Quote = typeof quotes.$inferSelect;
+
+export const deliveryNotes = pgTable("delivery_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quoteId: varchar("quote_id").notNull(),
+  workerId: varchar("worker_id").notNull(),
+  status: text("status").default("pending"),
+  signature: text("signature"),
+  signedAt: timestamp("signed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDeliveryNoteSchema = createInsertSchema(deliveryNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDeliveryNote = z.infer<typeof insertDeliveryNoteSchema>;
+export type DeliveryNote = typeof deliveryNotes.$inferSelect;
 
 export const geocodeRequestSchema = z.object({
   address: z.string().min(1, "La dirección es requerida"),
