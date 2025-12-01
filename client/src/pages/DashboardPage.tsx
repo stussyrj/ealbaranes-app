@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, MapPin, Truck, Users, Plus } from "lucide-react";
+import { TrendingUp, MapPin, Truck, Users } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { WorkerManagementModal } from "@/components/WorkerManagementModal";
-import { CreateQuoteModal } from "@/components/CreateQuoteModal";
 import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
@@ -21,7 +19,6 @@ export default function DashboardPage() {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
-  const [createQuoteOpen, setCreateQuoteOpen] = useState(false);
 
   useEffect(() => {
     const hasSeenAnimation = sessionStorage.getItem("hasSeenAdminAnimation");
@@ -123,14 +120,6 @@ export default function DashboardPage() {
       <div className="relative z-10 space-y-6 p-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
           <h1 className="text-2xl md:text-3xl font-semibold">Dashboard Presupuestos</h1>
-          <Button
-            onClick={() => setCreateQuoteOpen(true)}
-            className="gap-2 bg-blue-600/85 hover:bg-blue-700/85 dark:bg-blue-600/85 dark:hover:bg-blue-700/85 text-white"
-            data-testid="button-create-quote"
-          >
-            <Plus className="h-4 w-4" />
-            Crear Presupuesto
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-5">
