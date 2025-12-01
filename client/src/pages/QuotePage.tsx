@@ -144,9 +144,23 @@ export default function QuotePage() {
       if (type === "origin") {
         setOriginSuggestions(limited);
         setShowOriginSuggestions(limited.length > 0);
+        
+        // Hide suggestions after 2 seconds of receiving them
+        if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
+        const hideTimer = setTimeout(() => {
+          setShowOriginSuggestions(false);
+        }, 2000);
+        setHideSuggestionsTimer(hideTimer);
       } else {
         setDestSuggestions(limited);
         setShowDestSuggestions(limited.length > 0);
+        
+        // Hide suggestions after 2 seconds of receiving them
+        if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
+        const hideTimer = setTimeout(() => {
+          setShowDestSuggestions(false);
+        }, 2000);
+        setHideSuggestionsTimer(hideTimer);
       }
     } catch (error) {
       console.error("Error fetching suggestions:", error);
@@ -155,36 +169,24 @@ export default function QuotePage() {
 
   const handleOriginChange = (value: string) => {
     setOrigin(value);
+    setShowOriginSuggestions(true);
     if (suggestionTimer) clearTimeout(suggestionTimer);
-    if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
     
     const timer = setTimeout(() => {
       fetchAddressSuggestions(value, "origin");
     }, 300);
     setSuggestionTimer(timer);
-    
-    // Set timer to hide suggestions after 2 seconds of inactivity
-    const hideTimer = setTimeout(() => {
-      setShowOriginSuggestions(false);
-    }, 2000);
-    setHideSuggestionsTimer(hideTimer);
   };
 
   const handleDestinationChange = (value: string) => {
     setDestination(value);
+    setShowDestSuggestions(true);
     if (suggestionTimer) clearTimeout(suggestionTimer);
-    if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
     
     const timer = setTimeout(() => {
       fetchAddressSuggestions(value, "destination");
     }, 300);
     setSuggestionTimer(timer);
-    
-    // Set timer to hide suggestions after 2 seconds of inactivity
-    const hideTimer = setTimeout(() => {
-      setShowDestSuggestions(false);
-    }, 2000);
-    setHideSuggestionsTimer(hideTimer);
   };
 
   const selectSuggestion = (suggestion: any, type: "origin" | "destination") => {
