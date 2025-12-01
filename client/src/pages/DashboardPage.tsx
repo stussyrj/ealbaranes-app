@@ -239,71 +239,83 @@ export default function DashboardPage() {
 
       {/* Albaranes List Modal */}
       <Dialog open={albaranesModalOpen} onOpenChange={setAlbaranesModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
+        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base sm:text-lg">
               Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {(albaranesModalType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
-              <Card key={note.id} className="p-3">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-sm">{note.destination || 'Sin destino'}</h4>
-                      <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                    </div>
-                    {note.photo && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-7"
-                        onClick={() => previewDeliveryNote(note.photo)}
-                        data-testid={`button-view-photo-${note.id}`}
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        Ver foto
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <p className="text-muted-foreground">Origen</p>
-                      <p className="font-medium text-[11px]">{note.pickupOrigin || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Vehículo</p>
-                      <p className="font-medium text-[11px]">{note.vehicleType || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Fecha</p>
-                      <p className="font-medium text-[11px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Hora</p>
-                      <p className="font-medium text-[11px]">{note.time || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  {note.observations && (
-                    <div className="text-xs">
-                      <p className="text-muted-foreground">Observaciones</p>
-                      <p className="font-medium text-[11px]">{note.observations}</p>
+              <Card key={note.id} className="p-2 overflow-hidden">
+                <div className="space-y-1.5">
+                  {/* Photo on top - compact */}
+                  {note.photo && (
+                    <div className="mb-1.5 -m-2 mb-2">
+                      <img src={note.photo} alt="Albarán" className="w-full rounded-t max-h-32 object-cover cursor-pointer hover:opacity-90" onClick={() => previewDeliveryNote(note.photo)} />
                     </div>
                   )}
 
-                  <div className="text-xs">
-                    <p className="text-muted-foreground">Trabajador</p>
-                    <p className="font-medium text-[11px]">{note.workerName || 'Desconocido'}</p>
+                  {/* Header - Destination and Client */}
+                  <div>
+                    <p className="font-bold text-xs sm:text-sm">{note.destination || 'Sin destino'}</p>
+                    <p className="text-[10px] text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
                   </div>
 
-                  {albaranesModalType === "signed" && note.signedAt && (
-                    <div className="text-xs">
-                      <p className="text-muted-foreground">Firmado</p>
-                      <p className="font-medium text-[10px]">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
+                      <p className="font-medium text-[10px]">{note.pickupOrigin || 'N/A'}</p>
                     </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
+                      <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
+                      <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
+                      <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {/* Worker */}
+                  <div className="bg-muted/30 rounded p-1">
+                    <p className="text-muted-foreground text-[9px] font-semibold">TRABAJADOR</p>
+                    <p className="font-medium text-[10px]">{note.workerName || 'Desconocido'}</p>
+                  </div>
+
+                  {/* Observations if present */}
+                  {note.observations && (
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
+                      <p className="font-medium text-[10px] line-clamp-1">{note.observations}</p>
+                    </div>
+                  )}
+
+                  {/* Signed Date if present */}
+                  {albaranesModalType === "signed" && note.signedAt && (
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
+                      <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
+                    </div>
+                  )}
+
+                  {/* View button if photo exists */}
+                  {note.photo && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs h-7 mt-1"
+                      onClick={() => previewDeliveryNote(note.photo)}
+                      data-testid={`button-view-photo-${note.id}`}
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Ver foto
+                    </Button>
                   )}
                 </div>
               </Card>
