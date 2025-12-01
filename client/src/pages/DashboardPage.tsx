@@ -110,28 +110,28 @@ export default function DashboardPage() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs sm:text-sm">
           <div>
             <p className="text-muted-foreground text-xs">Distancia</p>
-            <p className="font-semibold">{(quote.distance || 0).toFixed(1)} km</p>
+            <p className="font-semibold text-sm sm:text-base">{(quote.distance || 0).toFixed(1)} km</p>
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Precio</p>
-            <p className="font-semibold">{(quote.totalPrice || 0).toFixed(2)}€</p>
+            <p className="font-semibold text-sm sm:text-base">{(quote.totalPrice || 0).toFixed(2)}€</p>
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Cliente</p>
-            <p className="font-semibold text-xs">{quote.customerName}</p>
+            <p className="font-semibold text-xs line-clamp-1">{quote.customerName}</p>
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Teléfono</p>
-            <p className="font-semibold text-xs">{quote.phoneNumber}</p>
+            <p className="font-semibold text-xs line-clamp-1">{quote.phoneNumber}</p>
           </div>
         </div>
         {showAssignBtn && !quote.assignedWorkerId && (
           <Button
             onClick={() => handleAssignWorker(quote)}
-            className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white px-4 py-2 rounded-lg backdrop-blur-sm border border-purple-500/40"
+            className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white h-10 sm:h-9 text-sm sm:text-base rounded-lg backdrop-blur-sm border border-purple-500/40"
             data-testid={`button-assign-worker-${quote.id}`}
           >
             Asignar Trabajador
@@ -155,9 +155,9 @@ export default function DashboardPage() {
   return (
     <div className="relative">
       <AnimatedPageBackground />
-      <div className="relative z-10 space-y-6 p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-          <h1 className="text-2xl md:text-3xl font-semibold">Dashboard Presupuestos</h1>
+      <div className="relative z-10 space-y-3 sm:space-y-6 p-3 sm:p-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 sm:gap-3">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Dashboard Presupuestos</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -165,26 +165,26 @@ export default function DashboardPage() {
           <StatCard title="Firmados" value={totalSignedCount.toString()} subtitle="Completados" icon={MapPin} />
           <button
             onClick={() => setWorkerManagementOpen(true)}
-            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left transition-all hover-elevate"
+            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate"
             data-testid="button-manage-workers"
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Administrar</p>
-                <h3 className="text-lg md:text-xl font-bold mt-1">Trabajadores</h3>
+                <h3 className="text-base sm:text-lg md:text-xl font-bold mt-1">Trabajadores</h3>
               </div>
-              <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
             </div>
           </button>
         </div>
 
         {(pendingQuotes.length > 0 || pendingDeliveryNotes.length > 0) && (
           <Card>
-            <CardHeader>
-              <CardTitle>Pendientes ({totalPendingCount})</CardTitle>
+            <CardHeader className="py-3 sm:py-4">
+              <CardTitle className="text-base sm:text-lg">Pendientes ({totalPendingCount})</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
+            <CardContent className="p-3 sm:p-6">
+              <div className="grid gap-3 sm:gap-4">
                 {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
               </div>
               {pendingDeliveryNotes.length > 0 && (
@@ -208,11 +208,11 @@ export default function DashboardPage() {
 
         {(signedQuotes.length > 0 || signedDeliveryNotes.length > 0) && (
           <Card>
-            <CardHeader>
-              <CardTitle>Firmados ({totalSignedCount})</CardTitle>
+            <CardHeader className="py-3 sm:py-4">
+              <CardTitle className="text-base sm:text-lg">Firmados ({totalSignedCount})</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
+            <CardContent className="p-3 sm:p-6">
+              <div className="grid gap-3 sm:gap-4">
                 {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
               </div>
               {signedDeliveryNotes.length > 0 && (
@@ -247,9 +247,9 @@ export default function DashboardPage() {
       />
 
       <Dialog open={deliveryNotesModalOpen} onOpenChange={setDeliveryNotesModalOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto w-[95vw] p-3 sm:p-4">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-base sm:text-lg">
+        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-3 sm:p-4 sm:rounded-lg rounded-none">
+          <DialogHeader className="pb-2 sticky top-0 bg-background z-10">
+            <DialogTitle className="text-lg sm:text-xl">
               Albaranes {deliveryNotesType === "pending" ? "Pendientes" : "Firmados"}
             </DialogTitle>
           </DialogHeader>
@@ -275,26 +275,26 @@ export default function DashboardPage() {
                     <p className="font-medium text-xs sm:text-sm">{(note as any).workerName || 'Desconocido'}</p>
                   </div>
 
-                  {/* Ruta */}
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* Ruta - Stack en móvil, grid en desktop */}
+                  <div className="space-y-1.5 sm:grid sm:grid-cols-2 sm:gap-2">
                     <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">ORIGEN</p>
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">ORIGEN</p>
                       <p className="font-medium text-xs line-clamp-2">{note.pickupOrigin || 'N/A'}</p>
                     </div>
                     <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">DESTINO</p>
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">DESTINO</p>
                       <p className="font-medium text-xs line-clamp-2">{note.destination || 'N/A'}</p>
                     </div>
                   </div>
 
-                  {/* Vehículo y Fecha */}
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* Vehículo y Fecha - Stack en móvil */}
+                  <div className="space-y-1.5 sm:grid sm:grid-cols-2 sm:gap-2">
                     <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">VEHÍCULO</p>
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">VEHÍCULO</p>
                       <p className="font-medium text-xs">{note.vehicleType || 'N/A'}</p>
                     </div>
                     <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">FECHA</p>
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">FECHA</p>
                       <p className="font-medium text-xs">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
                     </div>
                   </div>
@@ -360,11 +360,11 @@ export default function DashboardPage() {
 
                   {/* Share buttons for signed notes */}
                   {deliveryNotesType === "signed" && note.photo && (
-                    <div className="border-t border-border/50 pt-2.5 mt-2.5 flex gap-2">
+                    <div className="border-t border-border/50 pt-2 mt-2 flex gap-1.5 sm:gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 text-xs h-8"
+                        className="flex-1 text-xs h-9 sm:h-8"
                         onClick={() => captureAndPreviewDeliveryNote(note)}
                         data-testid={`button-download-delivery-note-${note.id}`}
                       >
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 text-xs h-8"
+                        className="flex-1 text-xs h-9 sm:h-8"
                         onClick={() => {
                           const element = deliveryNoteRefs.current[note.id];
                           if (element && navigator.share) {
@@ -404,17 +404,17 @@ export default function DashboardPage() {
 
       {/* Preview Modal */}
       <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw]">
-          <DialogHeader>
-            <DialogTitle>Vista previa del Albarán</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-3 sm:p-4 sm:rounded-lg rounded-none flex flex-col">
+          <DialogHeader className="sticky top-0 bg-background z-10 pb-2">
+            <DialogTitle className="text-lg sm:text-xl">Vista previa del Albarán</DialogTitle>
           </DialogHeader>
           {previewImage && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
               <img src={previewImage} alt="Albarán" className="w-full rounded-lg border border-border" />
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 text-sm h-10 sm:h-9"
                   onClick={() => {
                     const link = document.createElement("a");
                     link.href = previewImage;
@@ -424,12 +424,12 @@ export default function DashboardPage() {
                   data-testid="button-open-preview"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Abrir en nueva ventana
+                  Abrir
                 </Button>
                 {navigator.share && (
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 text-sm h-10 sm:h-9"
                     onClick={() => {
                       fetch(previewImage)
                         .then(res => res.blob())
@@ -445,8 +445,8 @@ export default function DashboardPage() {
                   </Button>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
-                💡 Para descargar: Haz clic en "Abrir en nueva ventana" y luego click derecho → Guardar imagen como
+              <p className="text-xs sm:text-sm text-muted-foreground p-2 bg-muted/30 rounded">
+                Click derecho en la imagen → Guardar imagen como para descargar
               </p>
             </div>
           )}
