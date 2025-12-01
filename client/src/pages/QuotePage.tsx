@@ -207,13 +207,16 @@ export default function QuotePage() {
   const pickupTimeError = validatePickupTime(selectedDate, selectedHour, selectedMinute);
   
   useEffect(() => {
-    if (!selectedDate) return;
+    if (!selectedDate) {
+      setCarrozadoSlotAvailable(true);
+      return;
+    }
     
     const dateStr = selectedDate.toISOString().split("T")[0];
     const timeStr = `${selectedHour}:${selectedMinute}`;
     setPickupTime(`${dateStr} ${timeStr}`);
 
-    // Check carrozado availability for this specific date/time
+    // Only check carrozado availability if carrozado is selected
     if (vehicleId === "carrozado") {
       fetch("/api/check-carrozado-availability", {
         method: "POST",
@@ -225,6 +228,7 @@ export default function QuotePage() {
         .then((d) => setCarrozadoSlotAvailable(d.available === true))
         .catch(() => setCarrozadoSlotAvailable(true));
     } else {
+      // Reset to true when not selecting carrozado
       setCarrozadoSlotAvailable(true);
     }
   }, [selectedDate, selectedHour, selectedMinute, vehicleId]);
