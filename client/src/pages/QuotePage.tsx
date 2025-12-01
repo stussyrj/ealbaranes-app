@@ -189,11 +189,9 @@ export default function QuotePage() {
   };
 
   const handleConfirm = async () => {
-    const res = await fetch(`/api/quotes/${quoteId}/confirm`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include" });
-    if (res.ok) {
-      setConfirmed(true);
-      setTimeout(() => { handleReset(); }, 4000);
-    }
+    // Just show success - admin will approve it
+    setConfirmed(true);
+    setTimeout(() => { handleReset(); }, 4000);
   };
 
   const handleReset = () => {
@@ -247,10 +245,10 @@ export default function QuotePage() {
                 </div>
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-300">¡Confirmado!</h2>
-                <p className="text-foreground">Hemos recibido tu solicitud</p>
-                <p className="text-foreground">Te confirmaremos lo antes posible</p>
-                <p className="text-sm text-muted-foreground">Número: {quoteId.slice(0, 8)}</p>
+                <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-300">¡Solicitud Enviada!</h2>
+                <p className="text-foreground">Hemos recibido tu solicitud de presupuesto</p>
+                <p className="text-foreground">Nuestro equipo la revisará pronto</p>
+                <p className="text-sm text-muted-foreground">Número de solicitud: {quoteId.slice(0, 8).toUpperCase()}</p>
               </div>
             </div>
           </CardContent>
@@ -397,8 +395,8 @@ export default function QuotePage() {
               <div className="border-t pt-3 flex justify-between"><span className="font-semibold">Precio total a pagar:</span><span className="font-bold text-lg font-mono text-primary">{(result.pricing?.totalPrice || 0).toFixed(2)}€</span></div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleReset} className="w-full" data-testid="button-new-quote">Nuevo</Button>
-              <Button onClick={handleConfirm} className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white" data-testid="button-confirm-quote">Confirmar</Button>
+              <Button variant="outline" onClick={handleReset} className="w-full" data-testid="button-new-quote">Nueva Solicitud</Button>
+              <Button onClick={handleConfirm} className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white" data-testid="button-confirm-quote">Solicitar</Button>
             </div>
           </CardContent>
         </Card>
