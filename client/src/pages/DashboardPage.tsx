@@ -108,6 +108,12 @@ export default function DashboardPage() {
         {quote.phoneNumber && (
           <p className="text-sm"><span className="text-muted-foreground">Teléfono: </span><a href={`tel:${quote.phoneNumber}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quote.phoneNumber}</a></p>
         )}
+        {quote.createdAt && (
+          <p className="text-sm"><span className="text-muted-foreground">Solicitud: </span><span className="font-mono text-xs">{new Date(quote.createdAt).toLocaleString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></p>
+        )}
+        {quote.pickupTime && (
+          <p className="text-sm"><span className="text-muted-foreground">Recogida: </span><span className="font-mono text-xs">{quote.pickupTime}</span></p>
+        )}
         {quote.observations && (
           <p className="text-sm"><span className="text-muted-foreground">Observaciones: </span><span className="text-xs">{quote.observations}</span></p>
         )}
@@ -213,6 +219,14 @@ export default function DashboardPage() {
                           <p className="text-sm text-muted-foreground">Precio</p>
                           <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
                         </div>
+                      </div>
+                      <div className="space-y-1 mb-2 text-sm">
+                        {quote.createdAt && (
+                          <p><span className="text-muted-foreground">Solicitud: </span><span className="font-mono text-xs">{new Date(quote.createdAt).toLocaleString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></p>
+                        )}
+                        {quote.pickupTime && (
+                          <p><span className="text-muted-foreground">Recogida: </span><span className="font-mono text-xs">{quote.pickupTime}</span></p>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground text-center p-2 bg-yellow-100/30 dark:bg-yellow-900/20 rounded">Pendiente de confirmación del cliente</div>
                     </div>
