@@ -287,11 +287,13 @@ export default function WorkerDashboard() {
     return (
       <Card key={note.id} className="hover-elevate">
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-lg">{note.quoteId}</CardTitle>
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex-1">
+              <CardTitle className="text-lg line-clamp-2">
+                {note.pickupOrigin && note.destination ? `${note.pickupOrigin} → ${note.destination}` : note.quoteId}
+              </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Nº {note.id.slice(0, 8).toUpperCase()}
+                {note.clientName && `Cliente: ${note.clientName}`}
               </p>
             </div>
             <Badge className={`${getStatusColor(note.status)}`}>
@@ -301,22 +303,53 @@ export default function WorkerDashboard() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="text-sm space-y-2">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            {note.vehicleType && (
+              <div>
+                <p className="text-muted-foreground text-xs">Vehículo</p>
+                <p className="font-semibold">{note.vehicleType}</p>
+              </div>
+            )}
+            {note.date && (
+              <div>
+                <p className="text-muted-foreground text-xs">Fecha</p>
+                <p className="font-semibold">{new Date(note.date).toLocaleDateString('es-ES')}</p>
+              </div>
+            )}
+            {note.time && (
+              <div>
+                <p className="text-muted-foreground text-xs">Hora</p>
+                <p className="font-semibold">{note.time}</p>
+              </div>
+            )}
             {note.signedAt && (
-              <>
-                <p className="text-muted-foreground">
-                  Fecha: <span className="font-semibold text-foreground">
-                    {new Date(note.signedAt).toLocaleDateString('es-ES')}
-                  </span>
-                </p>
-                <p className="text-muted-foreground">
-                  Hora: <span className="font-semibold text-foreground">
-                    {new Date(note.signedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </p>
-              </>
+              <div>
+                <p className="text-muted-foreground text-xs">Firmado</p>
+                <p className="font-semibold">{new Date(note.signedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
             )}
           </div>
+
+          {note.pickupOrigin && (
+            <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded text-sm">
+              <p className="text-muted-foreground text-xs">Recogida</p>
+              <p className="font-semibold">{note.pickupOrigin}</p>
+            </div>
+          )}
+
+          {note.destination && (
+            <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded text-sm">
+              <p className="text-muted-foreground text-xs">Entrega</p>
+              <p className="font-semibold">{note.destination}</p>
+            </div>
+          )}
+
+          {note.observations && (
+            <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded text-sm">
+              <p className="text-muted-foreground text-xs">Observaciones</p>
+              <p>{note.observations}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
