@@ -41,6 +41,7 @@ export default function DashboardPage() {
       const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
       const imageData = canvas.toDataURL("image/png");
       setPreviewImage(imageData);
+      setDeliveryNotesModalOpen(false);
       setPreviewModalOpen(true);
     } catch (error) {
       console.error("Error capturing delivery note:", error);
