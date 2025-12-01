@@ -73,6 +73,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private vehicleTypes: Map<string, VehicleType>;
   private quotes: Map<string, Quote>;
+  private carrozadoUnavailableUntil: Date | null = null;
 
   constructor() {
     this.users = new Map();
@@ -80,6 +81,20 @@ export class MemStorage implements IStorage {
     this.quotes = new Map();
     
     defaultVehicleTypes.forEach((vehicle) => this.vehicleTypes.set(vehicle.id, vehicle));
+  }
+
+  isCarrozadoBlocked(): boolean {
+    if (!this.carrozadoUnavailableUntil) return false;
+    return new Date() < this.carrozadoUnavailableUntil;
+  }
+
+  blockCarrozado(durationMinutes: number): void {
+    const now = new Date();
+    this.carrozadoUnavailableUntil = new Date(now.getTime() + durationMinutes * 60000);
+  }
+
+  getCarrozadoUnavailableUntil(): Date | null {
+    return this.carrozadoUnavailableUntil;
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -100,7 +115,12 @@ export class MemStorage implements IStorage {
   }
 
   async getVehicleTypes(): Promise<VehicleType[]> {
-    return Array.from(this.vehicleTypes.values()).filter((v) => v.isActive);
+    return Array.from(this.vehicleTypes.values()).filter((v) => {
+      if (!v.isActive) return false;
+      // Exclude carrozado if it's blocked
+      if (v.id === "carrozado" && this.isCarrozadoBlocked()) return false;
+      return true;
+    });
   }
 
   async getAllVehicleTypes(): Promise<VehicleType[]> {
@@ -187,6 +207,15 @@ export class MemStorage implements IStorage {
     const existing = this.quotes.get(id);
     if (!existing) return undefined;
     const updated = { ...existing, status };
+    
+    // If confirming with carrozado, block it
+    if (status === "confirmed" && existing.vehicleTypeId === "carrozado" && existing.duration) {
+      // Calculate total duration: ida + vuelta + 30 min margen
+      const totalMinutes = (existing.duration * 2) + 30;
+      this.blockCarrozado(totalMinutes);
+      updated.carrozadoUnavailableUntil = this.getCarrozadoUnavailableUntil();
+    }
+    
     this.quotes.set(id, updated);
     return updated;
   }

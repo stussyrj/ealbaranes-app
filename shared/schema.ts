@@ -56,6 +56,8 @@ export const quotes = pgTable("quotes", {
   pickupTime: text("pickup_time"),
   observations: text("observations"),
   status: text("status").default("pending"),
+  confirmedAt: timestamp("confirmed_at"),
+  carrozadoUnavailableUntil: timestamp("carrozado_unavailable_until"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -27,6 +27,7 @@ export default function QuotePage() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [lastCalculatedData, setLastCalculatedData] = useState<any>(null);
   const [recalculateTimer, setRecalculateTimer] = useState<NodeJS.Timeout | null>(null);
+  const [carrozadoUnavailableUntil, setCarrozadoUnavailableUntil] = useState<Date | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,7 +73,14 @@ export default function QuotePage() {
     fetch("/api/vehicle-types", { credentials: "include" })
       .then((r) => r.json())
       .then((d) => {
-        if (Array.isArray(d)) setVehicles(d);
+        if (d.types && Array.isArray(d.types)) {
+          setVehicles(d.types);
+        } else if (Array.isArray(d)) {
+          setVehicles(d);
+        }
+        if (d.carrozadoUnavailableUntil) {
+          setCarrozadoUnavailableUntil(new Date(d.carrozadoUnavailableUntil));
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -237,10 +245,21 @@ export default function QuotePage() {
             <Label>Vehículo</Label>
             <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-gray-300 dark:border-gray-600" data-testid="select-vehicle">
               <option value="">Selecciona</option>
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>{v.name} - {v.capacity}</option>
-              ))}
+              {vehicles.map((v) => {
+                const isCarrozadoBlocked = v.id === "carrozado" && carrozadoUnavailableUntil && new Date() < carrozadoUnavailableUntil;
+                return (
+                  <option key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`} disabled={isCarrozadoBlocked}>
+                    {v.name} - {v.capacity}
+                    {isCarrozadoBlocked ? " (No disponible)" : ""}
+                  </option>
+                );
+              })}
             </select>
+            {carrozadoUnavailableUntil && new Date() < carrozadoUnavailableUntil && (
+              <div className="text-xs text-yellow-700 dark:text-yellow-400 mt-2">
+                El carrozado estará disponible a las {new Date(carrozadoUnavailableUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+              </div>
+            )}
           </div>
           <div>
             <Label>Horario de Recogida</Label>
