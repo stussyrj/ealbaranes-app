@@ -787,27 +787,35 @@ export default function WorkerDashboard() {
 
             {showCameraPreview && !capturedPhoto && (
               <div className="space-y-4">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full rounded-lg bg-black"
-                  style={{ 
-                    display: 'block',
-                    height: '300px',
-                    objectFit: 'cover',
-                    WebkitTransform: 'scaleX(-1)',
-                    transform: 'scaleX(-1)'
-                  }}
-                  data-testid="video-camera-preview"
-                  onLoadedMetadata={() => {
-                    console.log("Video metadata loaded", {
-                      width: videoRef.current?.videoWidth,
-                      height: videoRef.current?.videoHeight
-                    });
-                  }}
-                />
+                <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-lg overflow-hidden border-2 border-gray-700 h-80">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{ 
+                      width: '100%',
+                      height: '100%',
+                      display: 'block',
+                      objectFit: 'cover',
+                      WebkitTransform: 'scaleX(-1)',
+                      transform: 'scaleX(-1)'
+                    }}
+                    data-testid="video-camera-preview"
+                    onLoadedMetadata={() => {
+                      console.log("Video stream ready", {
+                        width: videoRef.current?.videoWidth,
+                        height: videoRef.current?.videoHeight
+                      });
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                    <div className="text-white text-center">
+                      <div className="text-4xl mb-2">📷</div>
+                      <p className="text-sm">Vista previa en vivo</p>
+                    </div>
+                  </div>
+                </div>
                 <Button
                   type="button"
                   onClick={() => {
@@ -835,7 +843,7 @@ export default function WorkerDashboard() {
                   className="w-full bg-green-600 hover:bg-green-700"
                   data-testid="button-take-photo"
                 >
-                  Tomar Foto
+                  📸 Tomar Foto
                 </Button>
               </div>
             )}
