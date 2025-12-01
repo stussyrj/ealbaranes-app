@@ -306,7 +306,7 @@ export default function DashboardPage() {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex gap-1 mt-1">
+                  <div className="flex gap-1 mt-1" data-testid={`buttons-${note.id}`}>
                     {note.photo && (
                       <Button
                         size="sm"
@@ -327,7 +327,13 @@ export default function DashboardPage() {
                         const element = deliveryNoteRefs.current[note.id];
                         if (element) {
                           try {
-                            const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+                            const clonedElement = element.cloneNode(true) as HTMLElement;
+                            const buttonsDiv = clonedElement.querySelector(`[data-testid="buttons-${note.id}"]`);
+                            if (buttonsDiv) {
+                              buttonsDiv.remove();
+                            }
+                            
+                            const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
                             const blob = await new Promise<Blob>((resolve) => {
                               canvas.toBlob((b) => resolve(b as Blob), "image/png");
                             });
