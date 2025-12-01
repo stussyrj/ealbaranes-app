@@ -25,6 +25,8 @@ export default function QuotePage() {
   const [confirmed, setConfirmed] = useState(false);
   const [quoteId, setQuoteId] = useState<string>("");
   const [showAnimation, setShowAnimation] = useState(true);
+  const [lastCalculatedData, setLastCalculatedData] = useState<any>(null);
+  const [recalculateTimer, setRecalculateTimer] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -33,6 +35,37 @@ export default function QuotePage() {
       setShowAnimation(false);
     }
   }, []);
+
+  // Auto-recalculate when key fields change
+  useEffect(() => {
+    if (result && lastCalculatedData) {
+      const keysChanged = 
+        origin !== lastCalculatedData.origin ||
+        destination !== lastCalculatedData.destination ||
+        vehicleId !== lastCalculatedData.vehicleId ||
+        isUrgent !== lastCalculatedData.isUrgent ||
+        pickupTime !== lastCalculatedData.pickupTime ||
+        observations !== lastCalculatedData.observations;
+
+      if (keysChanged) {
+        // Clear previous timer if exists
+        if (recalculateTimer) clearTimeout(recalculateTimer);
+        
+        // Set new timer for auto-recalculate
+        const timer = setTimeout(() => {
+          if (!pickupTimeError && name && phoneNumber && origin && destination && vehicleId) {
+            handleCalculate();
+          }
+        }, 1000);
+        
+        setRecalculateTimer(timer);
+      }
+    }
+
+    return () => {
+      if (recalculateTimer) clearTimeout(recalculateTimer);
+    };
+  }, [origin, destination, vehicleId, isUrgent, pickupTime, observations, result, lastCalculatedData, pickupTimeError, name, phoneNumber]);
 
   if (vehicles.length === 0 && !loading) {
     setLoading(true);
@@ -108,6 +141,14 @@ export default function QuotePage() {
       setResult(data.breakdown);
       setQuoteId(data.quote.id);
       setConfirmed(false);
+      setLastCalculatedData({
+        origin,
+        destination,
+        vehicleId,
+        isUrgent,
+        pickupTime,
+        observations
+      });
     }
   };
 

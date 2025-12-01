@@ -77,9 +77,6 @@ export async function getRouteDistance(
   const start = [Number(origin.lng), Number(origin.lat)];
   const end = [Number(destination.lng), Number(destination.lat)];
   
-  console.log("🗺️ Route Request - Origin:", origin, "Destination:", destination);
-  console.log("📍 Coordinates - Start:", start, "End:", end);
-  
   const url = `${ORS_BASE_URL}/v2/directions/driving-car/geojson`;
   const body = {
     coordinates: [start, end],
@@ -115,12 +112,8 @@ export async function getRouteDistance(
   const meters = summary.distance;
   const seconds = summary.duration;
   
-  console.log("✅ Route Response - Distance (meters):", meters, "Duration (seconds):", seconds);
-  
   const km = Math.round((meters / 1000) * 100) / 100;
   const durationMin = Math.round(seconds / 60);
-  
-  console.log("📊 Calculated - Distance (km):", km, "Duration (min):", durationMin);
   
   return { km, durationMin, raw: data };
 }
