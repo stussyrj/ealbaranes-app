@@ -537,10 +537,15 @@ export default function WorkerDashboard() {
 
                     if (response.ok) {
                       console.log("Albarán guardado:", deliveryNoteData);
-                      // Invalidar la cache para que se recarguen los albaranes
-                      queryClient.invalidateQueries({
-                        queryKey: ["/api/workers", user?.workerId || "", "delivery-notes"],
-                      });
+                      // Refetch data to show the saved delivery note
+                      await Promise.all([
+                        queryClient.refetchQueries({
+                          queryKey: ["/api/workers", user?.workerId || "", "delivery-notes"],
+                        }),
+                        queryClient.refetchQueries({
+                          queryKey: ["/api/delivery-notes"],
+                        }),
+                      ]);
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
