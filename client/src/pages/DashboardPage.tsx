@@ -26,9 +26,11 @@ export default function DashboardPage() {
   const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
   const [deliveryNotesModalOpen, setDeliveryNotesModalOpen] = useState(false);
   const [deliveryNotesType, setDeliveryNotesType] = useState<"pending" | "signed">("pending");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  const captureAndDownloadDeliveryNote = async (note: any) => {
+  const captureAndPreviewDeliveryNote = async (note: any) => {
     try {
       const element = deliveryNoteRefs.current[note.id];
       if (!element) {
@@ -37,25 +39,12 @@ export default function DashboardPage() {
       }
 
       const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-      
-      // Convertir a data URL
       const imageData = canvas.toDataURL("image/png");
-      
-      // Crear enlace descargable
-      const link = document.createElement("a");
-      link.href = imageData;
-      const fileName = `alaban-${note.destination || "entrega"}-${new Date().toISOString().split("T")[0]}.png`.replace(/[^a-zA-Z0-9-_.]/g, "_");
-      link.download = fileName;
-      
-      // Click para descargar
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({ title: "Éxito", description: "Albarán descargado correctamente" });
+      setPreviewImage(imageData);
+      setPreviewModalOpen(true);
     } catch (error) {
       console.error("Error capturing delivery note:", error);
-      toast({ title: "Error", description: "Error al descargar el albarán", variant: "destructive" });
+      toast({ title: "Error", description: "Error al capturar el albarán", variant: "destructive" });
     }
   };
 
@@ -376,11 +365,11 @@ export default function DashboardPage() {
                         size="sm"
                         variant="outline"
                         className="flex-1 text-xs h-8"
-                        onClick={() => captureAndDownloadDeliveryNote(note)}
+                        onClick={() => captureAndPreviewDeliveryNote(note)}
                         data-testid={`button-download-delivery-note-${note.id}`}
                       >
                         <Download className="w-3 h-3 mr-1" />
-                        Descargar
+                        Ver
                       </Button>
                       <Button
                         size="sm"
@@ -410,6 +399,57 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Modal */}
+      <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Vista previa del Albarán</DialogTitle>
+          </DialogHeader>
+          {previewImage && (
+            <div className="space-y-4">
+              <img src={previewImage} alt="Albarán" className="w-full rounded-lg border border-border" />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = previewImage;
+                    link.download = `alaban-${new Date().toISOString().split("T")[0]}.png`;
+                    window.open(previewImage, "_blank");
+                  }}
+                  data-testid="button-open-preview"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Abrir en nueva ventana
+                </Button>
+                {navigator.share && (
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      fetch(previewImage)
+                        .then(res => res.blob())
+                        .then(blob => {
+                          const file = new File([blob], "alaban.png", { type: "image/png" });
+                          navigator.share({ files: [file], title: "Albarán" });
+                        });
+                    }}
+                    data-testid="button-share-preview"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Compartir
+                  </Button>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                💡 Para descargar: Haz clic en "Abrir en nueva ventana" y luego click derecho → Guardar imagen como
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
