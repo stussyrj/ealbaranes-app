@@ -417,6 +417,12 @@ export async function registerRoutes(
     try {
       const { id } = req.params;
       const data = req.body;
+      
+      // Convert signedAt string to Date if present
+      if (data.signedAt && typeof data.signedAt === 'string') {
+        data.signedAt = new Date(data.signedAt);
+      }
+      
       const note = await storage.updateDeliveryNote(id, data);
       if (!note) {
         return res.status(404).json({ error: "Albarán no encontrado" });
