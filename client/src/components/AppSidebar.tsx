@@ -49,6 +49,10 @@ const customerNavItems = [
   { title: "Contacto", url: "/contact", icon: Phone },
 ];
 
+const workerNavItems = [
+  { title: "Mis Servicios", url: "/", icon: LayoutDashboard },
+];
+
 function NavLink({ href, icon: Icon, title }: any) {
   const [location] = useLocation();
   const { setOpen, setOpenMobile, isMobile } = useSidebar();
@@ -91,7 +95,8 @@ export function AppSidebar() {
   }
 
   const isAdmin = user.role === "admin";
-  const navItems = isAdmin ? adminNavItems : customerNavItems;
+  const isWorker = user.role === "worker";
+  const navItems = isAdmin ? adminNavItems : isWorker ? workerNavItems : customerNavItems;
   const username = user.username || "Usuario";
   const email = user.email || "";
   const initials = String(username || "U").slice(0, 2).toUpperCase();
