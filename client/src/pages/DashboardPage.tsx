@@ -371,25 +371,20 @@ export default function DashboardPage() {
       </Dialog>
 
       {/* Preview Modal */}
-      <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
-        <DialogContent className="max-w-lg max-h-[95vh] overflow-hidden w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none flex flex-col">
-          <DialogHeader className="pb-1.5 flex-shrink-0">
-            <DialogTitle className="text-base sm:text-lg">Albarán</DialogTitle>
-          </DialogHeader>
-          {previewImage && (
-            <div className="flex-1 overflow-y-auto flex flex-col">
-              <div className="flex-1 flex items-center justify-center p-2">
-                <img src={previewImage} alt="Albarán" className="w-full h-auto rounded border border-border max-h-[60vh]" />
+      {previewModalOpen && previewImage && (
+        <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
+          <DialogContent className="max-w-sm max-h-[90vh] overflow-hidden w-screen sm:w-full h-screen sm:h-auto p-0 sm:p-0 sm:rounded-lg rounded-none flex flex-col bg-background border-0 sm:border">
+            <div className="flex-1 overflow-hidden flex flex-col bg-black/90 sm:bg-background">
+              <div className="flex-1 flex items-center justify-center p-2 bg-black">
+                <img src={previewImage} alt="Albarán" className="w-auto h-auto max-w-full max-h-[80vh] object-contain" />
               </div>
-              <div className="flex-shrink-0 space-y-2 p-2">
-                <div className="flex flex-col sm:flex-row gap-1.5">
+              <div className="flex-shrink-0 bg-background border-t border-border p-2 space-y-2">
+                <div className="flex gap-1 flex-col sm:flex-row">
                   <Button
                     variant="outline"
-                    className="flex-1 text-xs h-8"
+                    size="sm"
+                    className="flex-1 text-xs"
                     onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = previewImage;
-                      link.download = `alaban-${new Date().toISOString().split("T")[0]}.png`;
                       window.open(previewImage, "_blank");
                     }}
                     data-testid="button-open-preview"
@@ -400,7 +395,8 @@ export default function DashboardPage() {
                   {navigator.share && (
                     <Button
                       variant="outline"
-                      className="flex-1 text-xs h-8"
+                      size="sm"
+                      className="flex-1 text-xs"
                       onClick={() => {
                         fetch(previewImage)
                           .then(res => res.blob())
@@ -416,14 +412,14 @@ export default function DashboardPage() {
                     </Button>
                   )}
                 </div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground p-1.5 bg-muted/50 rounded text-center leading-tight">
+                <p className="text-[10px] text-muted-foreground text-center">
                   Click derecho → Guardar imagen como
                 </p>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
