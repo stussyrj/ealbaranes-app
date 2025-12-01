@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { Quote } from "@shared/schema";
+import type { Quote, DeliveryNote } from "@shared/schema";
 
 interface DeliveryNoteGeneratorProps {
   open: boolean;
@@ -81,16 +81,23 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
       });
 
       if (response.ok) {
+        const newDeliveryNote = await response.json();
         setNotes("");
         handleClearSignature();
         
-        // Refetch data before closing modal
-        await Promise.all([
-          queryClient.refetchQueries({ queryKey: ["/api/workers", workerId, "delivery-notes"] }),
-          queryClient.refetchQueries({ queryKey: ["/api/delivery-notes"] }),
-        ]);
+        // Update both caches immediately with the new delivery note
+        const workerKey = ["/api/workers", workerId, "delivery-notes"];
+        const adminKey = ["/api/delivery-notes"];
         
-        // Close modal after data is refreshed
+        // Add to worker's delivery notes
+        const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+        queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
+        
+        // Add to admin's delivery notes
+        const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+        queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
+        
+        // Close modal after data is updated
         onOpenChange(false);
       }
     } catch (error) {

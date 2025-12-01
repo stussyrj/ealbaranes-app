@@ -536,16 +536,21 @@ export default function WorkerDashboard() {
                     });
 
                     if (response.ok) {
-                      console.log("Albarán guardado:", deliveryNoteData);
-                      // Refetch data to show the saved delivery note
-                      await Promise.all([
-                        queryClient.refetchQueries({
-                          queryKey: ["/api/workers", user?.workerId || "", "delivery-notes"],
-                        }),
-                        queryClient.refetchQueries({
-                          queryKey: ["/api/delivery-notes"],
-                        }),
-                      ]);
+                      const newDeliveryNote = await response.json();
+                      console.log("Albarán guardado:", newDeliveryNote);
+                      
+                      // Update both caches immediately with the new delivery note
+                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                      const adminKey = ["/api/delivery-notes"];
+                      
+                      // Add to worker's delivery notes
+                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                      queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
+                      
+                      // Add to admin's delivery notes
+                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                      queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
+                      
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
