@@ -5,87 +5,124 @@ import { Truck, MapPin, Clock } from "lucide-react";
 
 // Animated background pattern component
 function AnimatedBackground() {
-  const circles = [
-    { id: 1, size: 300, delay: 0, duration: 20 },
-    { id: 2, size: 200, delay: 2, duration: 25 },
-    { id: 3, size: 250, delay: 4, duration: 22 },
-  ];
-
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-50/30 dark:to-blue-950/20" />
+      {/* Main gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white/30 to-orange-50/30 dark:from-blue-950/30 dark:via-slate-950/20 dark:to-orange-950/20" />
       
-      {/* Left side animated circles */}
-      {circles.map((circle) => (
-        <motion.div
-          key={`left-${circle.id}`}
-          className="absolute rounded-full border border-blue-200 dark:border-blue-800/50 opacity-20 dark:opacity-10"
-          style={{
-            width: circle.size,
-            height: circle.size,
-            left: `-${circle.size / 2}px`,
-            top: `${circle.id * 30}%`,
-          }}
-          animate={{
-            y: [0, 30, 0],
-            x: [0, 20, 0],
-          }}
-          transition={{
-            duration: circle.duration,
-            delay: circle.delay,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
+      {/* Large left circle - hidden on mobile, visible on desktop */}
+      <motion.div
+        className="absolute hidden md:block rounded-full border-2 border-blue-300 dark:border-blue-800/60 opacity-15 dark:opacity-10"
+        style={{
+          width: 300,
+          height: 300,
+          left: -150,
+          top: 100,
+        }}
+        animate={{
+          y: [0, 40, 0],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
 
-      {/* Right side animated circles - symmetric */}
-      {circles.map((circle) => (
-        <motion.div
-          key={`right-${circle.id}`}
-          className="absolute rounded-full border border-orange-200 dark:border-orange-800/50 opacity-20 dark:opacity-10"
-          style={{
-            width: circle.size,
-            height: circle.size,
-            right: `-${circle.size / 2}px`,
-            top: `${circle.id * 30}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            x: [0, -20, 0],
-          }}
-          transition={{
-            duration: circle.duration,
-            delay: circle.delay,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
+      {/* Large right circle - hidden on mobile, visible on desktop */}
+      <motion.div
+        className="absolute hidden md:block rounded-full border-2 border-orange-300 dark:border-orange-800/60 opacity-15 dark:opacity-10"
+        style={{
+          width: 280,
+          height: 280,
+          right: -140,
+          top: 200,
+        }}
+        animate={{
+          y: [0, -40, 0],
+        }}
+        transition={{
+          duration: 22,
+          delay: 1,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
 
-      {/* Center floating dots */}
-      <div className="absolute inset-0 opacity-30 dark:opacity-20">
-        {[...Array(6)].map((_, i) => (
+      {/* Small center circles visible on all sizes */}
+      <motion.div
+        className="absolute rounded-full border border-blue-300/60 dark:border-blue-800/40 opacity-25 dark:opacity-15"
+        style={{
+          width: 150,
+          height: 150,
+          left: "5%",
+          top: "10%",
+        }}
+        animate={{
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      <motion.div
+        className="absolute rounded-full border border-orange-300/60 dark:border-orange-800/40 opacity-25 dark:opacity-15"
+        style={{
+          width: 120,
+          height: 120,
+          right: "8%",
+          bottom: "15%",
+        }}
+        animate={{
+          scale: [1, 1.15, 1],
+        }}
+        transition={{
+          duration: 5,
+          delay: 0.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* Animated dots - gradient line effect */}
+      <div className="absolute inset-0">
+        {[...Array(8)].map((_, i) => (
           <motion.div
             key={`dot-${i}`}
-            className="absolute w-1 h-1 rounded-full bg-gradient-to-r from-blue-500 to-orange-500"
+            className="absolute rounded-full bg-gradient-to-r from-blue-500 to-orange-500"
             style={{
-              left: `${25 + i * 12}%`,
-              top: `${20 + (i % 3) * 25}%`,
+              width: 2,
+              height: 2,
+              left: `${15 + i * 10}%`,
+              top: `${30 + Math.sin(i) * 20}%`,
             }}
             animate={{
-              opacity: [0.3, 0.8, 0.3],
-              scale: [1, 1.5, 1],
+              opacity: [0.2, 0.6, 0.2],
+              y: [0, 10, 0],
             }}
             transition={{
-              duration: 3 + i * 0.5,
-              delay: i * 0.3,
+              duration: 2.5 + i * 0.2,
+              delay: i * 0.15,
               repeat: Infinity,
               ease: "easeInOut",
             }}
           />
         ))}
+      </div>
+
+      {/* Grid pattern overlay for texture */}
+      <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05]">
+        <svg width="100%" height="100%" className="absolute">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
       </div>
     </div>
   );
