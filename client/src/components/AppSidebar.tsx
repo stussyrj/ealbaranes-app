@@ -9,6 +9,7 @@ import {
   Phone,
   LayoutDashboard,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +26,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import type { User } from "@/contexts/AuthContext";
 
@@ -90,19 +97,15 @@ export function AppSidebar() {
 
   const [, navigate] = useLocation();
 
-  const switchRole = () => {
+  const switchToRole = (role: "customer" | "admin" | "worker") => {
     if (user) {
-      // Cycle through roles: customer → admin → worker → customer
-      let newRole: "customer" | "admin" | "worker" = "customer";
       let newUsername = "Cliente Demo";
       let newEmail = "cliente@demo.com";
 
-      if (user.role === "customer") {
-        newRole = "admin";
+      if (role === "admin") {
         newUsername = "Daniel";
         newEmail = "daniel@directtransports.com";
-      } else if (user.role === "admin") {
-        newRole = "worker";
+      } else if (role === "worker") {
         newUsername = "Trabajador";
         newEmail = "trabajador@directtransports.com";
       }
@@ -111,7 +114,7 @@ export function AppSidebar() {
         id: user.id,
         username: newUsername,
         email: newEmail,
-        role: newRole,
+        role: role,
       };
       setUser(newUser);
       navigate("/");
@@ -187,16 +190,42 @@ export function AppSidebar() {
             Cambiar Trabajador
           </Button>
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={switchRole}
-            className="w-full justify-start text-xs"
-            data-testid="button-switch-role"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            {isAdmin ? "Cambiar a Cliente" : "Cambiar a Admin"}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between text-xs"
+                data-testid="button-switch-role"
+              >
+                <span className="flex items-center gap-1">
+                  <LogOut className="h-4 w-4" />
+                  Cambiar Rol
+                </span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={() => switchToRole("customer")}
+                data-testid="menu-switch-to-customer"
+              >
+                Cliente
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => switchToRole("admin")}
+                data-testid="menu-switch-to-admin"
+              >
+                Administrador
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => switchToRole("worker")}
+                data-testid="menu-switch-to-worker"
+              >
+                Trabajador
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </SidebarFooter>
     </Sidebar>
