@@ -36,6 +36,7 @@ export default function DashboardPage() {
       return;
     }
     setPreviewImage(photo);
+    setAlbaranesModalOpen(false);
     setPreviewModalOpen(true);
   };
 
@@ -381,7 +382,10 @@ export default function DashboardPage() {
                   variant="outline"
                   size="sm"
                   className="flex-1 text-xs"
-                  onClick={() => setPreviewModalOpen(false)}
+                  onClick={() => {
+                    setPreviewModalOpen(false);
+                    setAlbaranesModalOpen(true);
+                  }}
                   data-testid="button-close-preview"
                 >
                   <X className="w-3 h-3 mr-1" />
