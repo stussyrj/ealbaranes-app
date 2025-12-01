@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Truck, MapPin, Clock, CheckCircle2 } from "lucide-react";
+import { CustomVan } from "@/components/CustomVan";
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
@@ -12,7 +13,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/95 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center">
           <div className="flex items-center gap-2">
-            <Truck className="w-6 h-6 text-blue-900 dark:text-blue-500" />
+            <CustomVan className="w-6 h-6" />
             <span className="text-xl font-bold text-blue-900 dark:text-blue-400">DirectTransports</span>
           </div>
         </div>
