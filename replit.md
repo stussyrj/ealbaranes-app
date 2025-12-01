@@ -85,6 +85,7 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 
 **Service Layer**:
 - `openrouteservice.ts` - External API integration for geocoding and routing
+- `googleplaces.ts` - Google Places API integration for precise address suggestions (experimental)
 - `storage.ts` - Data access abstraction (in-memory mock with plans for database implementation)
 
 **Key Design Decisions**:
@@ -165,11 +166,19 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Geocoding API: Address → coordinates + country detection
 - Directions API: Route calculation with distance/duration
 - API key stored in ORS_API_KEY environment variable
+- Limited to 3 address suggestions with postal codes for clarity
+
+**Google Places API** (Experimental):
+- Purpose: Geocoding and address autocomplete with precision
+- API key stored in GOOGLE_PLACES_API_KEY environment variable
+- Currently created but not actively used (OpenRouteService is primary)
+- Available for future integration when precise address matching is critical
 
 **Error Handling**:
 - Invalid addresses return user-friendly error messages
 - API rate limits are handled gracefully (though not currently implemented)
 - Failed geocoding suggests address corrections
+- Users can use any address they type, even if not in suggestions (fallback)
 
 **Future Consideration**: Caching geocoding results and route distances for frequently requested routes could reduce API costs.
 
@@ -193,8 +202,14 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - API key: `ORS_API_KEY` environment variable
 - Base URL: `https://api.openrouteservice.org`
 - Endpoints used:
-  - `/geocode/search` - Address to coordinates
+  - `/geocode/search` - Address to coordinates (limited to 3 suggestions)
   - `/v2/directions/driving-car` - Route with distance/duration
+
+**Google Places API** (Experimental):
+- Purpose: Address autocomplete with precise suggestions
+- API key: `GOOGLE_PLACES_API_KEY` environment variable
+- Endpoints: Autocomplete and Details API
+- Status: Integrated but not active (fallback available)
 
 ### UI & Styling
 
@@ -250,7 +265,54 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - `esbuild` - Production server bundling
 - `drizzle-kit` - Database migration tool
 
-## Recent Changes (v2.2 - Pricing & Urgency Updates)
+## Recent Changes (v2.3 - Address Autocomplete Improvements)
+
+### 2025-12-01 Address Suggestions Enhancement
+
+**Added**:
+- Fallback option: Users can use any address they type, even if not in suggestions
+- Auto-hide functionality: Suggestions disappear after 2 seconds of inactivity
+- Enter key support: Press Enter to confirm custom address
+- Manual selection: Click "Usar: [dirección]" option when no suggestions match
+- Limited suggestions: Max 3 address suggestions with postal codes
+
+**Integrated**:
+- Google Places API service (experimental, for future precision enhancement)
+- Postal code display in all address suggestions
+- Manual entry flow for complex or uncommon addresses
+
+**Frontend Changes** (`QuotePage.tsx`):
+- Added `hideSuggestionsTimer` state for 2-second auto-hide
+- Suggestions appear when user starts typing (min 2 characters)
+- Dropdown shows either API suggestions or "Usar: [typed address]" fallback option
+- Auto-hide mechanism: suggestions disappear 2 seconds after being fetched
+- Enter key closes suggestions dropdown for quick confirmation
+
+**Backend Changes** (`routes.ts` & `openrouteservice.ts`):
+- Limited address suggestions to 3 results maximum
+- Changed from 20 to 5 initial fetch for performance
+- Added postal code inclusion in suggestion labels
+- Error logging for debugging
+
+**Design Rationale**:
+- Users expect autocomplete but many addresses are complex/custom
+- Fallback option ensures no dead ends in form flow
+- 2-second auto-hide keeps UI clean while giving time to choose
+- Postal codes provide crucial location clarity
+- 3 suggestions strike balance between options and simplicity
+
+**Known Limitations**:
+- OpenRouteService sometimes lacks precise street numbers in database
+- Google Places API available but not active (can be enabled if needed)
+- Complex addresses may require manual entry fallback
+
+**Next Steps for Future Sessions**:
+- Test with more complex address scenarios (rural areas, new developments)
+- Consider enabling Google Places integration if precision becomes critical
+- Add caching layer for frequently searched addresses
+- Implement address history for repeat customers
+
+## v2.2 - Pricing & Urgency Updates (Previous)
 
 ### 2025-11-30 Pricing Model Refactor
 
@@ -263,7 +325,6 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Urgency option in quote calculator (+25% surcharge)
 - `isUrgent` field in quotes table
 - Urgency indicator in quote breakdown display
-- Method to show urgency surcharge calculation
 
 **Modified**:
 - Quote calculation: now uses only (distance × pricePerKm) vs minimumPrice
@@ -271,14 +332,8 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Quote results display: shows distance breakdown and urgency status
 - Admin vehicle form: reduced to pricePerKm and minimumPrice only
 
-**Fixed**:
-- Removed confusing base/direction pricing
-- Aligned pricing model with actual business operations
-- Simplified calculation logic for clarity
-
 **Rationale for Changes**:
 - Client operates on distance-based pricing only
 - Base pricing was unnecessary overhead
 - Urgency feature provides flexibility for premium deliveries
 - Cleaner UI reduces admin configuration burden
-
