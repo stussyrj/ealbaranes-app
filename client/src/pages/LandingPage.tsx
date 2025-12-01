@@ -66,7 +66,7 @@ export default function LandingPage() {
             >
               {[
                 { number: "100%", label: "Rutas reales" },
-                { number: "30", label: "Presupuestos en segundos" },
+                { number: "30", label: "Presupuestos en 30 segundos" },
                 { number: "24/7", label: "Disponible" },
                 { number: "∞", label: "Flexible" },
               ].map((stat, i) => (
