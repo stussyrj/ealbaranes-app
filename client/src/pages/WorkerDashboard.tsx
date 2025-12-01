@@ -837,16 +837,7 @@ export default function WorkerDashboard() {
           </DialogHeader>
           <div className="space-y-4">
             {!showCameraPreview && !capturedPhoto && (
-              <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCameraPreview(true)}
-                  className="w-full"
-                  data-testid="button-open-camera"
-                >
-                  📸 Abrir Cámara
-                </Button>
+              <div>
                 <Button
                   type="button"
                   variant="outline"
@@ -878,58 +869,6 @@ export default function WorkerDashboard() {
               </div>
             )}
 
-            {showCameraPreview && !capturedPhoto && (
-              <div className="space-y-4">
-                <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-lg overflow-hidden border-2 border-gray-700 aspect-video">
-                  <canvas
-                    ref={canvasRef}
-                    className="w-full h-full"
-                    style={{ 
-                      display: 'block',
-                      transform: 'scaleX(-1)',
-                      WebkitTransform: 'scaleX(-1)',
-                      backgroundColor: '#000000'
-                    }}
-                    data-testid="video-camera-preview"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
-                    <div className="text-white text-center">
-                      <div className="text-4xl mb-2">📷</div>
-                      <p className="text-sm">Vista previa en vivo</p>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (canvasRef.current && canvasRef.current.width > 0 && canvasRef.current.height > 0) {
-                      try {
-                        const photoData = canvasRef.current.toDataURL("image/jpeg", 0.8);
-                        if (photoData && photoData !== "data:image/jpeg;base64,") {
-                          if (cameraStream) {
-                            cameraStream.getTracks().forEach(track => track.stop());
-                            setCameraStream(null);
-                          }
-                          setShowCameraPreview(false);
-                          setCapturedPhoto(photoData);
-                        } else {
-                          alert("Error al capturar la foto. Intenta de nuevo.");
-                        }
-                      } catch (err) {
-                        console.error("Error capturando foto:", err);
-                        alert("Error al capturar la foto. Intenta de nuevo.");
-                      }
-                    } else {
-                      alert("La cámara no está lista. Espera un momento e intenta de nuevo.");
-                    }
-                  }}
-                  className="w-full"
-                  data-testid="button-take-photo"
-                >
-                  Tomar Foto
-                </Button>
-              </div>
-            )}
 
             {capturedPhoto && (
               <div className="relative">
