@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Truck, MapPin, Clock, CheckCircle2 } from "lucide-react";
-import { CustomVan } from "@/components/CustomVan";
+import { Van3D } from "@/components/Van3D";
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
@@ -13,7 +13,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/95 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center">
           <div className="flex items-center gap-2">
-            <CustomVan className="w-6 h-6" />
+            <Truck className="w-6 h-6 text-blue-900 dark:text-blue-500" />
             <span className="text-xl font-bold text-blue-900 dark:text-blue-400">DirectTransports</span>
           </div>
         </div>
@@ -55,31 +55,14 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* Right side - Stats */}
+            {/* Right side - 3D Van */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="grid grid-cols-2 gap-6"
+              className="bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4"
             >
-              {[
-                { number: "100%", label: "Rutas reales" },
-                { number: "30s", label: "Presupuestos" },
-                { number: "24/7", label: "Disponible" },
-                { number: "∞", label: "Flexible" },
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  className="bg-slate-50 dark:bg-slate-900 p-6 rounded-lg border border-slate-200 dark:border-slate-800"
-                >
-                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-400">
-                    {stat.number}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
+              <Van3D />
             </motion.div>
           </div>
         </div>
