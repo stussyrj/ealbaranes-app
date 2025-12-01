@@ -9,6 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Truck } from "lucide-react";
 import { VanDoorsAnimation } from "@/components/VanDoorsAnimation";
+import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 
 export default function QuotePage() {
   const [name, setName] = useState("");
@@ -46,6 +47,81 @@ export default function QuotePage() {
       setShowAnimation(false);
     }
   }, []);
+
+  return (
+    <div className="relative">
+      <AnimatedPageBackground />
+      <QuotePageContent
+        name={name}
+        setName={setName}
+        origin={origin}
+        setOrigin={setOrigin}
+        destination={destination}
+        setDestination={setDestination}
+        vehicleId={vehicleId}
+        setVehicleId={setVehicleId}
+        isUrgent={isUrgent}
+        setIsUrgent={setIsUrgent}
+        pickupTime={pickupTime}
+        setPickupTime={setPickupTime}
+        observations={observations}
+        setObservations={setObservations}
+        phoneNumber={phoneNumber}
+        setPhoneNumber={setPhoneNumber}
+        vehicles={vehicles}
+        setVehicles={setVehicles}
+        result={result}
+        setResult={setResult}
+        loading={loading}
+        setLoading={setLoading}
+        confirmed={confirmed}
+        setConfirmed={setConfirmed}
+        quoteId={quoteId}
+        setQuoteId={setQuoteId}
+        showAnimation={showAnimation}
+        setShowAnimation={setShowAnimation}
+        lastCalculatedData={lastCalculatedData}
+        setLastCalculatedData={setLastCalculatedData}
+        recalculateTimer={recalculateTimer}
+        setRecalculateTimer={setRecalculateTimer}
+        carrozadoUnavailableUntil={carrozadoUnavailableUntil}
+        setCarrozadoUnavailableUntil={setCarrozadoUnavailableUntil}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        selectedHour={selectedHour}
+        setSelectedHour={setSelectedHour}
+        selectedMinute={selectedMinute}
+        setSelectedMinute={setSelectedMinute}
+        showCalendar={showCalendar}
+        setShowCalendar={setShowCalendar}
+        originSuggestions={originSuggestions}
+        setOriginSuggestions={setOriginSuggestions}
+        destSuggestions={destSuggestions}
+        setDestSuggestions={setDestSuggestions}
+        showOriginSuggestions={showOriginSuggestions}
+        setShowOriginSuggestions={setShowOriginSuggestions}
+        showDestSuggestions={showDestSuggestions}
+        setShowDestSuggestions={setShowDestSuggestions}
+        suggestionTimer={suggestionTimer}
+        setSuggestionTimer={setSuggestionTimer}
+        hideSuggestionsTimer={hideSuggestionsTimer}
+        setHideSuggestionsTimer={setHideSuggestionsTimer}
+        toast={toast}
+      />
+    </div>
+  );
+}
+
+function QuotePageContent({
+  name, setName, origin, setOrigin, destination, setDestination, vehicleId, setVehicleId,
+  isUrgent, setIsUrgent, pickupTime, setPickupTime, observations, setObservations, phoneNumber, setPhoneNumber,
+  vehicles, setVehicles, result, setResult, loading, setLoading, confirmed, setConfirmed, quoteId, setQuoteId,
+  showAnimation, setShowAnimation, lastCalculatedData, setLastCalculatedData, recalculateTimer, setRecalculateTimer,
+  carrozadoUnavailableUntil, setCarrozadoUnavailableUntil, selectedDate, setSelectedDate, selectedHour, setSelectedHour,
+  selectedMinute, setSelectedMinute, showCalendar, setShowCalendar, originSuggestions, setOriginSuggestions,
+  destSuggestions, setDestSuggestions, showOriginSuggestions, setShowOriginSuggestions, showDestSuggestions, setShowDestSuggestions,
+  suggestionTimer, setSuggestionTimer, hideSuggestionsTimer, setHideSuggestionsTimer, toast
+}: any) {
 
   // Auto-recalculate when key fields change
   useEffect(() => {
@@ -318,8 +394,8 @@ export default function QuotePage() {
 
   if (confirmed && result) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
+      <div className="relative p-6 flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md relative z-10">
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="flex justify-center">
@@ -341,7 +417,7 @@ export default function QuotePage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="relative space-y-6 p-6">
       <Card className="mb-6">
         <CardHeader><CardTitle>Solicitar Presupuesto</CardTitle></CardHeader>
         <CardContent className="space-y-4">
