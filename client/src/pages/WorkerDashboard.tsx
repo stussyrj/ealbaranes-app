@@ -53,7 +53,7 @@ export default function WorkerDashboard() {
     }
   };
 
-  // Limpio y manejo del stream de cámara
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (cameraStream) {
@@ -62,15 +62,52 @@ export default function WorkerDashboard() {
     };
   }, []);
 
-  // Manejo del stream cuando se muestra/oculta preview
+  // Get stream and assign to video element when preview is shown
   useEffect(() => {
-    if (!showCameraPreview && cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
+    if (!showCameraPreview) return;
+
+    let isMounted = true;
+    
+    const setupCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment" } 
+        });
+        
+        if (!isMounted) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        
+        setCameraStream(stream);
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error accediendo a la cámara:", error);
+          alert("No se pudo acceder a la cámara");
+          setShowCameraPreview(false);
+        }
       }
-    }
+    };
+
+    setupCamera();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [showCameraPreview]);
+
+  // Cleanup when preview is hidden
+  useEffect(() => {
+    return () => {
+      if (!showCameraPreview && cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+    };
   }, [showCameraPreview]);
 
   const { data: orders = [] } = useQuery<Quote[]>({
@@ -740,22 +777,7 @@ export default function WorkerDashboard() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={async () => {
-                  try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    setCameraStream(stream);
-                    setShowCameraPreview(true);
-                    setTimeout(() => {
-                      if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                        videoRef.current.play();
-                      }
-                    }, 100);
-                  } catch (error) {
-                    console.error("Error accediendo a la cámara:", error);
-                    alert("No se pudo acceder a la cámara");
-                  }
-                }}
+                onClick={() => setShowCameraPreview(true)}
                 className="w-full"
                 data-testid="button-open-camera"
               >
