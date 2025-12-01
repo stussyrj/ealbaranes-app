@@ -767,11 +767,24 @@ export default function WorkerDashboard() {
               <div className="space-y-4">
                 <video
                   ref={videoRef}
+                  autoPlay
                   playsInline
                   muted
-                  className="w-full rounded-lg max-h-64 bg-black"
+                  className="w-full rounded-lg bg-black"
+                  style={{ 
+                    display: 'block',
+                    height: '300px',
+                    objectFit: 'cover',
+                    WebkitTransform: 'scaleX(-1)',
+                    transform: 'scaleX(-1)'
+                  }}
                   data-testid="video-camera-preview"
-                  style={{ display: 'block' }}
+                  onLoadedMetadata={() => {
+                    console.log("Video metadata loaded", {
+                      width: videoRef.current?.videoWidth,
+                      height: videoRef.current?.videoHeight
+                    });
+                  }}
                 />
                 <Button
                   type="button"
