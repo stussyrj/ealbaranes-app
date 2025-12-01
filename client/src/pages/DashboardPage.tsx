@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 export default function DashboardPage() {
   const { toast } = useToast();
   const [quotes, setQuotes] = useState<any[]>([]);
+  const [deliveryNotes, setDeliveryNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchNumber, setSearchNumber] = useState("");
   const [showAnimation, setShowAnimation] = useState(true);
@@ -29,10 +30,13 @@ export default function DashboardPage() {
 
   if (!loading && quotes.length === 0) {
     setLoading(true);
-    fetch("/api/quotes", { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d)) setQuotes(d);
+    Promise.all([
+      fetch("/api/quotes", { credentials: "include" }).then((r) => r.json()),
+      fetch("/api/delivery-notes", { credentials: "include" }).then((r) => r.json()),
+    ])
+      .then(([quotesData, notesData]) => {
+        if (Array.isArray(quotesData)) setQuotes(quotesData);
+        if (Array.isArray(notesData)) setDeliveryNotes(notesData);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -46,6 +50,7 @@ export default function DashboardPage() {
   const assignedQuotes = quotes.filter((q: any) => q.assignedWorkerId);
   const signedQuotes = quotes.filter((q: any) => q.status === "signed");
   const pendingQuotes = quotes.filter((q: any) => !q.assignedWorkerId && q.status !== "signed");
+  const totalDeliveryNotes = deliveryNotes.length;
 
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
@@ -126,6 +131,7 @@ export default function DashboardPage() {
           <StatCard title="Pendientes" value={pendingQuotes.length.toString()} subtitle="Sin asignar" icon={TrendingUp} />
           <StatCard title="Asignados" value={assignedQuotes.length.toString()} subtitle="A trabajadores" icon={Users} />
           <StatCard title="Firmados" value={signedQuotes.length.toString()} subtitle="Completados" icon={MapPin} />
+          <StatCard title="Albaranes" value={totalDeliveryNotes.toString()} subtitle="Generados" icon={Truck} />
           <button
             onClick={() => setWorkerManagementOpen(true)}
             className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left transition-all hover-elevate"

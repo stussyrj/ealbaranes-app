@@ -405,6 +405,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/delivery-notes", async (req, res) => {
+    try {
+      const notes = await storage.getDeliveryNotes();
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching all delivery notes:", error);
+      res.status(500).json({ error: "Error al obtener albaranes" });
+    }
+  });
+
   app.get("/api/workers/:workerId/delivery-notes", async (req, res) => {
     try {
       const { workerId } = req.params;
