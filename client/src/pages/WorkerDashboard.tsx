@@ -652,72 +652,66 @@ export default function WorkerDashboard() {
             </TabsContent>
 
             <TabsContent value="albaranes" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Albaranes Pendientes */}
-                <div>
-                  <h2 className="text-xl font-semibold mb-4 pb-2 border-b">Albaranes Pendientes</h2>
-                  <div className="space-y-3">
-                    {deliveryNotes.filter(n => !n.photo).length === 0 ? (
-                      <Card>
-                        <CardContent className="pt-6 text-center">
-                          <p className="text-muted-foreground text-sm">No hay albaranes pendientes</p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <Tabs defaultValue="list-pending" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-3">
-                          <TabsTrigger value="list-pending" className="text-xs">Lista</TabsTrigger>
-                          <TabsTrigger value="detail-pending" className="text-xs">Detalles</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="list-pending" className="space-y-2">
-                          {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
-                            <div key={note.id} className="p-3 border rounded-lg hover:bg-accent/50 cursor-pointer" onClick={() => setSelectedNoteForPhoto(note)}>
-                              <p className="font-semibold text-sm line-clamp-1">{note.destination || 'Sin destino'}</p>
-                              <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                            </div>
-                          ))}
-                        </TabsContent>
-                        <TabsContent value="detail-pending" className="space-y-3">
-                          {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => renderDeliveryNoteCard(note))}
-                        </TabsContent>
-                      </Tabs>
-                    )}
-                  </div>
-                </div>
+              {/* Albaranes Pendientes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Albaranes Pendientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {deliveryNotes.filter(n => !n.photo).length === 0 ? (
+                    <p className="text-muted-foreground text-center py-6">No hay albaranes pendientes</p>
+                  ) : (
+                    <Tabs defaultValue="list-pending" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="list-pending">Lista</TabsTrigger>
+                        <TabsTrigger value="detail-pending">Detalles</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="list-pending" className="space-y-2">
+                        {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
+                          <div key={note.id} className="p-3 border rounded-lg hover:bg-accent/50 cursor-pointer transition" onClick={() => setSelectedNoteForPhoto(note)}>
+                            <p className="font-semibold text-sm line-clamp-1">{note.destination || 'Sin destino'}</p>
+                            <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                          </div>
+                        ))}
+                      </TabsContent>
+                      <TabsContent value="detail-pending" className="space-y-3">
+                        {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => renderDeliveryNoteCard(note))}
+                      </TabsContent>
+                    </Tabs>
+                  )}
+                </CardContent>
+              </Card>
 
-                {/* Albaranes Firmados */}
-                <div>
-                  <h2 className="text-xl font-semibold mb-4 pb-2 border-b">Albaranes Firmados</h2>
-                  <div className="space-y-3">
-                    {deliveryNotes.filter(n => n.photo).length === 0 ? (
-                      <Card>
-                        <CardContent className="pt-6 text-center">
-                          <p className="text-muted-foreground text-sm">No hay albaranes firmados</p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <Tabs defaultValue="list-signed" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-3">
-                          <TabsTrigger value="list-signed" className="text-xs">Lista</TabsTrigger>
-                          <TabsTrigger value="detail-signed" className="text-xs">Detalles</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="list-signed" className="space-y-2">
-                          {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => (
-                            <div key={note.id} className="p-3 border rounded-lg hover:bg-green-50 dark:hover:bg-green-950/20 cursor-pointer">
-                              <p className="font-semibold text-sm line-clamp-1">{note.destination || 'Sin destino'}</p>
-                              <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                              <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Firmado</p>
-                            </div>
-                          ))}
-                        </TabsContent>
-                        <TabsContent value="detail-signed" className="space-y-3">
-                          {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => renderDeliveryNoteCard(note))}
-                        </TabsContent>
-                      </Tabs>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Albaranes Firmados */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Albaranes Firmados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {deliveryNotes.filter(n => n.photo).length === 0 ? (
+                    <p className="text-muted-foreground text-center py-6">No hay albaranes firmados</p>
+                  ) : (
+                    <Tabs defaultValue="list-signed" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="list-signed">Lista</TabsTrigger>
+                        <TabsTrigger value="detail-signed">Detalles</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="list-signed" className="space-y-2">
+                        {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => (
+                          <div key={note.id} className="p-3 border rounded-lg hover:bg-green-50 dark:hover:bg-green-950/20 cursor-pointer transition">
+                            <p className="font-semibold text-sm line-clamp-1">{note.destination || 'Sin destino'}</p>
+                            <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Firmado</p>
+                          </div>
+                        ))}
+                      </TabsContent>
+                      <TabsContent value="detail-signed" className="space-y-3">
+                        {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => renderDeliveryNoteCard(note))}
+                      </TabsContent>
+                    </Tabs>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         )}
