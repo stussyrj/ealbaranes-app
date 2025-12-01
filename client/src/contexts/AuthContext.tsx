@@ -21,18 +21,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const getInitialUser = (): User => {
-  // Try to get saved user from localStorage
-  if (typeof window !== "undefined") {
-    const saved = localStorage.getItem("user");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse saved user:", e);
+  try {
+    if (typeof window !== "undefined") {
+      const saved = localStorage?.getItem("user");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id) return parsed;
       }
     }
+  } catch (e) {
+    console.error("Failed to get initial user:", e);
   }
-  // Default to admin
   return {
     id: "1",
     username: "Daniel",
@@ -42,19 +41,10 @@ const getInitialUser = (): User => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUserState] = useState<User | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Initialize user from localStorage on mount
-  useEffect(() => {
-    const initialUser = getInitialUser();
-    setUserState(initialUser);
-    setIsInitialized(true);
-  }, []);
+  const [user, setUserState] = useState<User | null>(() => getInitialUser());
 
   const setUser = (newUser: User | null) => {
     setUserState(newUser);
-    // Clear animation flags when changing user/role to show welcome animations
     sessionStorage.removeItem("hasSeenClientAnimation");
     sessionStorage.removeItem("hasSeenAdminAnimation");
     if (newUser) {
@@ -71,10 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
   };
-
-  if (!isInitialized) {
-    return null;
-  }
 
   return (
     <AuthContext.Provider
