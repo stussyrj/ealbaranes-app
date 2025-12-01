@@ -723,13 +723,11 @@ export default function WorkerDashboard() {
                 onClick={async () => {
                   try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    if (videoRef.current) {
+                      videoRef.current.srcObject = stream;
+                    }
                     setCameraStream(stream);
                     setShowCameraPreview(true);
-                    setTimeout(() => {
-                      if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                      }
-                    }, 0);
                   } catch (error) {
                     console.error("Error accediendo a la cámara:", error);
                     alert("No se pudo acceder a la cámara");
@@ -748,7 +746,8 @@ export default function WorkerDashboard() {
                   ref={videoRef}
                   autoPlay
                   playsInline
-                  className="w-full rounded-lg max-h-48 object-cover bg-black"
+                  muted
+                  className="w-full rounded-lg max-h-64 object-cover bg-black"
                   data-testid="video-camera-preview"
                 />
                 <Button
