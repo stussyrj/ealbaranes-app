@@ -32,6 +32,7 @@ export default function QuotePage() {
   const [selectedHour, setSelectedHour] = useState("09");
   const [selectedMinute, setSelectedMinute] = useState("00");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [carrozadoSlotAvailable, setCarrozadoSlotAvailable] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -149,21 +150,10 @@ export default function QuotePage() {
       return;
     }
 
-    // Check carrozado availability
-    if (vehicleId === "carrozado") {
-      const dateStr = selectedDate.toISOString().split("T")[0];
-      const timeStr = `${selectedHour}:${selectedMinute}`;
-      const availRes = await fetch("/api/check-carrozado-availability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vehicleTypeId: vehicleId, pickupTime: `${dateStr} ${timeStr}` }),
-        credentials: "include",
-      });
-      const availData = await availRes.json();
-      if (!availData.available) {
-        toast({ title: "No disponible", description: "El carrozado no está disponible en el horario solicitado", variant: "destructive" });
-        return;
-      }
+    // Block if carrozado slot is not available
+    if (vehicleId === "carrozado" && !carrozadoSlotAvailable) {
+      toast({ title: "No disponible", description: "El carrozado no está disponible en el horario solicitado", variant: "destructive" });
+      return;
     }
 
     const res = await fetch("/api/calculate-quote", {
@@ -221,8 +211,23 @@ export default function QuotePage() {
       const dateStr = selectedDate.toISOString().split("T")[0];
       const timeStr = `${selectedHour}:${selectedMinute}`;
       setPickupTime(`${dateStr} ${timeStr}`);
+
+      // Check carrozado availability for this specific date/time
+      if (vehicleId === "carrozado") {
+        fetch("/api/check-carrozado-availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vehicleTypeId: "carrozado", pickupTime: `${dateStr} ${timeStr}` }),
+          credentials: "include",
+        })
+          .then((r) => r.json())
+          .then((d) => setCarrozadoSlotAvailable(d.available !== false))
+          .catch(() => setCarrozadoSlotAvailable(true));
+      } else {
+        setCarrozadoSlotAvailable(true);
+      }
     }
-  }, [selectedDate, selectedHour, selectedMinute]);
+  }, [selectedDate, selectedHour, selectedMinute, vehicleId]);
 
   if (showAnimation) {
     return (
@@ -328,6 +333,13 @@ export default function QuotePage() {
               </div>
             )}
             
+            {selectedDate && !carrozadoSlotAvailable && vehicleId === "carrozado" && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded text-sm text-red-700 dark:text-red-300 mb-3">
+                <p className="font-semibold mb-1">El carrozado no está disponible</p>
+                <p>Por favor, selecciona otro vehículo o ponte en contacto con nosotros en la sección de Contacto.</p>
+              </div>
+            )}
+
             {selectedDate && (
               <div className="flex gap-2 mb-3">
                 <div className="flex-1">
@@ -383,7 +395,7 @@ export default function QuotePage() {
             onClick={handleCalculate} 
             className="w-full" 
             data-testid="button-calculate" 
-            disabled={!!pickupTimeError || (vehicleId === "carrozado" && selectedDate && !isCarrozadoAvailableAtTime(selectedHour, selectedMinute))}
+            disabled={!!pickupTimeError || (vehicleId === "carrozado" && selectedDate && !carrozadoSlotAvailable)}
           >
             Calcular
           </Button>
