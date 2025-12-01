@@ -8,6 +8,7 @@ interface GeocodeResult {
   lng: number;
   label: string;
   country: string;
+  postcode?: string;
 }
 
 interface RouteResult {
@@ -126,9 +127,8 @@ export async function getAddressSuggestions(text: string): Promise<GeocodeResult
   const params = new URLSearchParams({
     api_key: apiKey,
     text: text,
-    size: "15",
+    size: "20",
     "boundary.country": "ES,PT,FR",
-    type: "street,city,house",
   });
   
   const url = `${ORS_BASE_URL}/geocode/search?${params}`;
@@ -147,11 +147,20 @@ export async function getAddressSuggestions(text: string): Promise<GeocodeResult
     return data.features.slice(0, 10).map((feature: any) => {
       const [lng, lat] = feature.geometry.coordinates;
       const properties = feature.properties;
+      const postcode = properties.postcode || "";
+      
+      // Build comprehensive label with postcode if available
+      let label = properties.label || text;
+      if (postcode && !label.includes(postcode)) {
+        label = `${label}, ${postcode}`;
+      }
+      
       return {
         lat,
         lng,
-        label: properties.label || text,
+        label,
         country: properties.country || "España",
+        postcode,
       };
     });
   } catch (error) {
