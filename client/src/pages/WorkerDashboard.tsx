@@ -46,6 +46,34 @@ export default function WorkerDashboard() {
     setDeliveryModalOpen(true);
   };
 
+  // Calcular estadísticas
+  const confirmedOrders = orders.filter((o: Quote) => 
+    o.status === "assigned" || o.status === "confirmed" || o.status === "approved"
+  );
+
+  const totalRouteMinutes = orders.reduce((sum: number, order: Quote) => 
+    sum + (order.duration || 0), 0
+  );
+
+  const getTodayRouteMinutes = () => {
+    const today = new Date().toDateString();
+    return orders.reduce((sum: number, order: Quote) => {
+      if (order.createdAt) {
+        const orderDate = new Date(order.createdAt).toDateString();
+        if (orderDate === today) {
+          return sum + (order.duration || 0);
+        }
+      }
+      return sum;
+    }, 0);
+  };
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
   const renderOrderCard = (order: Quote, showGenerateBtn = false) => {
     const noteStatus = getDeliveryNoteStatus(order.id);
     const getStatusColor = (status: string | null) => {
@@ -150,6 +178,45 @@ export default function WorkerDashboard() {
             <h1 className="text-3xl font-semibold">Mis Servicios</h1>
             <p className="text-sm text-muted-foreground mt-1">Trabajador: {user?.username}</p>
           </div>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-6">
+          <Card className="hover-elevate">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-muted-foreground">Pedidos Totales Confirmados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                {confirmedOrders.length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Servicios en estado confirmado o asignado
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover-elevate">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-muted-foreground">Hora en Ruta Total</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Hoy</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {formatDuration(getTodayRouteMinutes())}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Total Mes</p>
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {formatDuration(totalRouteMinutes)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {orders.length === 0 ? (
