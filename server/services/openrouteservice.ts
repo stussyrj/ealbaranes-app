@@ -120,14 +120,14 @@ export async function getRouteDistance(
 }
 
 export async function getAddressSuggestions(text: string): Promise<GeocodeResult[]> {
-  if (!text || text.length < 1) return [];
+  if (!text || text.length < 2) return [];
   
   const apiKey = getApiKey();
   
   const params = new URLSearchParams({
     api_key: apiKey,
     text: text,
-    size: "20",
+    size: "5",
     "boundary.country": "ES,PT,FR",
   });
   
@@ -144,7 +144,8 @@ export async function getAddressSuggestions(text: string): Promise<GeocodeResult
     const data = await response.json();
     if (!data.features || data.features.length === 0) return [];
     
-    return data.features.slice(0, 10).map((feature: any) => {
+    // Limit to 3 results and build labels with postal codes
+    return data.features.slice(0, 3).map((feature: any) => {
       const [lng, lat] = feature.geometry.coordinates;
       const properties = feature.properties;
       const postcode = properties.postcode || "";
@@ -164,6 +165,7 @@ export async function getAddressSuggestions(text: string): Promise<GeocodeResult
       };
     });
   } catch (error) {
+    console.error("Error fetching address suggestions from ORS:", error);
     return [];
   }
 }

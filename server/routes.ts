@@ -26,8 +26,10 @@ export async function registerRoutes(
       if (!text) {
         return res.json([]);
       }
-      // Use Google Places for address suggestions with precision (max 3 results)
-      const suggestions = await getAddressSuggestionsGoogle(text);
+      // Use OpenRouteService with postal codes - limited to 3 results
+      let suggestions = await getAddressSuggestions(text);
+      // Ensure max 3 suggestions
+      suggestions = suggestions.slice(0, 3);
       res.json(suggestions);
     } catch (error) {
       console.error("Error fetching address suggestions:", error);

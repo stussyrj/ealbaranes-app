@@ -55,7 +55,13 @@ export async function getAddressSuggestionsGoogle(
 ): Promise<AddressSuggestion[]> {
   if (!text || text.length < 2) return [];
 
-  const apiKey = getApiKey();
+  let apiKey: string;
+  try {
+    apiKey = getApiKey();
+  } catch (error) {
+    console.error("Error getting API key:", error);
+    return [];
+  }
 
   try {
     // First, get predictions from Places Autocomplete API
@@ -69,6 +75,7 @@ export async function getAddressSuggestionsGoogle(
       components: "country:es|country:pt|country:fr",
     });
 
+    console.log(`[GooglePlaces] Fetching predictions for: "${text}"`);
     const predictionsResponse = await fetch(
       `${predictionsUrl}?${predictionsParams}`,
       {
@@ -78,7 +85,9 @@ export async function getAddressSuggestionsGoogle(
     );
 
     if (!predictionsResponse.ok) {
-      console.error("Error fetching places predictions:", predictionsResponse.status);
+      console.error(`[GooglePlaces] Error fetching predictions: ${predictionsResponse.status}`);
+      const errorText = await predictionsResponse.text();
+      console.error(`[GooglePlaces] Error response:`, errorText);
       return [];
     }
 
@@ -87,12 +96,16 @@ export async function getAddressSuggestionsGoogle(
       status?: string;
     };
 
+    console.log(`[GooglePlaces] Response status: ${predictionsData.status}, predictions: ${predictionsData.predictions?.length || 0}`);
+
     if (!predictionsData.predictions || predictionsData.predictions.length === 0) {
+      console.log(`[GooglePlaces] No predictions found`);
       return [];
     }
 
     // Take only top 3 predictions
     const topPredictions = predictionsData.predictions.slice(0, 3);
+    console.log(`[GooglePlaces] Processing ${topPredictions.length} predictions`);
 
     // Fetch details for each prediction to get coordinates and postal code
     const suggestions: AddressSuggestion[] = [];
@@ -115,14 +128,20 @@ export async function getAddressSuggestionsGoogle(
           }
         );
 
-        if (!detailsResponse.ok) continue;
+        if (!detailsResponse.ok) {
+          console.warn(`[GooglePlaces] Details fetch failed: ${detailsResponse.status}`);
+          continue;
+        }
 
         const detailsData = (await detailsResponse.json()) as {
           result?: GooglePlaceDetails;
           status?: string;
         };
 
-        if (!detailsData.result) continue;
+        if (!detailsData.result) {
+          console.warn(`[GooglePlaces] No result in details response`);
+          continue;
+        }
 
         const details = detailsData.result;
         const postcode = extractPostalCode(details);
@@ -142,15 +161,16 @@ export async function getAddressSuggestionsGoogle(
           country,
         });
       } catch (error) {
-        console.error("Error fetching place details:", error);
+        console.error("[GooglePlaces] Error fetching place details:", error);
         // Continue to next prediction if this one fails
         continue;
       }
     }
 
+    console.log(`[GooglePlaces] Returning ${suggestions.length} suggestions`);
     return suggestions;
   } catch (error) {
-    console.error("Error in getAddressSuggestionsGoogle:", error);
+    console.error("[GooglePlaces] Error in getAddressSuggestionsGoogle:", error);
     return [];
   }
 }
