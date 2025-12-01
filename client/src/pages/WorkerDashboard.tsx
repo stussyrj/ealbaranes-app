@@ -42,7 +42,6 @@ export default function WorkerDashboard() {
     vehicleType: "Furgoneta",
     date: new Date().toISOString().split("T")[0],
     time: "09:00",
-    distance: "",
     observations: "",
   });
 
@@ -795,16 +794,6 @@ export default function WorkerDashboard() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Distancia (km)</label>
-              <Input
-                type="number"
-                placeholder="Ej: 15.5"
-                step="0.1"
-                value={formData.distance}
-                onChange={(e) => setFormData({ ...formData, distance: e.target.value })}
-              />
-            </div>
-            <div>
               <label className="text-sm font-medium">Observaciones</label>
               <Textarea
                 placeholder="Notas adicionales sobre el albarán..."
@@ -834,7 +823,6 @@ export default function WorkerDashboard() {
                       vehicleType: formData.vehicleType,
                       date: formData.date,
                       time: formData.time,
-                      distance: formData.distance ? parseFloat(formData.distance) : null,
                       observations: formData.observations,
                       status: "pending",
                     };
@@ -876,7 +864,6 @@ export default function WorkerDashboard() {
                         vehicleType: "Furgoneta",
                         date: new Date().toISOString().split("T")[0],
                         time: "09:00",
-                        distance: "",
                         observations: "",
                       });
                     }
