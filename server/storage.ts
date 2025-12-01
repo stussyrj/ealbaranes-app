@@ -93,13 +93,17 @@ export class MemStorage implements IStorage {
     for (const quote of confirmedQuotes) {
       if (!quote.pickupTime || !quote.duration) continue;
       
-      const [hours, minutes] = quote.pickupTime.split(":").map(Number);
-      const pickupDate = new Date();
-      pickupDate.setHours(hours, minutes, 0);
+      // Parse pickupTime: "YYYY-MM-DD HH:MM"
+      const pickupDateTime = quote.pickupTime.split(" ");
+      if (pickupDateTime.length !== 2) continue;
       
-      if (pickupDate < now) {
-        pickupDate.setDate(pickupDate.getDate() + 1);
-      }
+      const [year, month, day] = pickupDateTime[0].split("-").map(Number);
+      const [hours, minutes] = pickupDateTime[1].split(":").map(Number);
+      
+      const pickupDate = new Date(year, month - 1, day, hours, minutes, 0);
+      
+      // Skip if pickup is in the past
+      if (pickupDate < now) continue;
       
       const endTime = new Date(pickupDate.getTime() + (quote.duration * 2 + 30) * 60000);
       
