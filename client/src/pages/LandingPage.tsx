@@ -8,11 +8,11 @@ function AnimatedBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Main gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white/30 to-orange-50/30 dark:from-blue-950/30 dark:via-slate-950/20 dark:to-orange-950/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-100/80 via-white/60 to-orange-100/70 dark:from-blue-950/40 dark:via-slate-950/30 dark:to-orange-950/30" />
       
       {/* Large left circle - hidden on mobile, visible on desktop */}
       <motion.div
-        className="absolute hidden md:block rounded-full border-2 border-blue-300 dark:border-blue-800/60 opacity-15 dark:opacity-10"
+        className="absolute hidden md:block rounded-full border-2 border-blue-400 dark:border-blue-700/70 opacity-40 dark:opacity-30"
         style={{
           width: 300,
           height: 300,
@@ -31,7 +31,7 @@ function AnimatedBackground() {
 
       {/* Large right circle - hidden on mobile, visible on desktop */}
       <motion.div
-        className="absolute hidden md:block rounded-full border-2 border-orange-300 dark:border-orange-800/60 opacity-15 dark:opacity-10"
+        className="absolute hidden md:block rounded-full border-2 border-orange-400 dark:border-orange-700/70 opacity-40 dark:opacity-30"
         style={{
           width: 280,
           height: 280,
@@ -51,7 +51,7 @@ function AnimatedBackground() {
 
       {/* Small center circles visible on all sizes */}
       <motion.div
-        className="absolute rounded-full border border-blue-300/60 dark:border-blue-800/40 opacity-25 dark:opacity-15"
+        className="absolute rounded-full border-2 border-blue-400 dark:border-blue-700/60 opacity-50 dark:opacity-35"
         style={{
           width: 150,
           height: 150,
@@ -69,7 +69,7 @@ function AnimatedBackground() {
       />
 
       <motion.div
-        className="absolute rounded-full border border-orange-300/60 dark:border-orange-800/40 opacity-25 dark:opacity-15"
+        className="absolute rounded-full border-2 border-orange-400 dark:border-orange-700/60 opacity-50 dark:opacity-35"
         style={{
           width: 120,
           height: 120,
@@ -92,15 +92,15 @@ function AnimatedBackground() {
         {[...Array(8)].map((_, i) => (
           <motion.div
             key={`dot-${i}`}
-            className="absolute rounded-full bg-gradient-to-r from-blue-500 to-orange-500"
+            className="absolute rounded-full bg-gradient-to-r from-blue-600 to-orange-600"
             style={{
-              width: 2,
-              height: 2,
+              width: 3,
+              height: 3,
               left: `${15 + i * 10}%`,
               top: `${30 + Math.sin(i) * 20}%`,
             }}
             animate={{
-              opacity: [0.2, 0.6, 0.2],
+              opacity: [0.4, 0.9, 0.4],
               y: [0, 10, 0],
             }}
             transition={{
@@ -114,7 +114,7 @@ function AnimatedBackground() {
       </div>
 
       {/* Grid pattern overlay for texture */}
-      <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05]">
+      <div className="absolute inset-0 opacity-[0.06] dark:opacity-[0.08]">
         <svg width="100%" height="100%" className="absolute">
           <defs>
             <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
