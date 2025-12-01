@@ -333,14 +333,85 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
+      <section className="relative py-20 px-6 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Animated gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-800 dark:from-blue-800 dark:to-blue-900" />
+          
+          {/* Animated circles for CTA */}
+          <motion.div
+            className="absolute rounded-full border-2 border-blue-700 dark:border-blue-600 opacity-20 dark:opacity-15"
+            style={{
+              width: 250,
+              height: 250,
+              left: -125,
+              top: -50,
+            }}
+            animate={{
+              y: [0, 30, 0],
+              x: [0, 20, 0],
+            }}
+            transition={{
+              duration: 18,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          
+          <motion.div
+            className="absolute rounded-full border-2 border-blue-700 dark:border-blue-600 opacity-20 dark:opacity-15"
+            style={{
+              width: 200,
+              height: 200,
+              right: -100,
+              bottom: -50,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              x: [0, -20, 0],
+            }}
+            transition={{
+              duration: 20,
+              delay: 1,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+
+          {/* Floating dots */}
+          <div className="absolute inset-0">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={`cta-dot-${i}`}
+                className="absolute rounded-full bg-blue-300/40"
+                style={{
+                  width: 2,
+                  height: 2,
+                  left: `${20 + i * 12}%`,
+                  top: `${40 + (i % 2) * 20}%`,
+                }}
+                animate={{
+                  opacity: [0.2, 0.6, 0.2],
+                  scale: [1, 1.3, 1],
+                }}
+                transition={{
+                  duration: 2.5 + i * 0.2,
+                  delay: i * 0.2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="relative z-10 max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-blue-900 to-blue-800 dark:from-blue-800 dark:to-blue-900 rounded-lg p-12 text-center space-y-6"
+            className="bg-gradient-to-r from-blue-900/90 to-blue-800/90 dark:from-blue-800/90 dark:to-blue-900/90 rounded-lg p-12 text-center space-y-6 backdrop-blur-sm"
           >
             <h2 className="text-4xl font-bold text-white">
               Listo para tu primer presupuesto?
@@ -357,7 +428,7 @@ export default function LandingPage() {
                   sessionStorage.removeItem("hasSeenClientAnimation");
                   navigate("/quote");
                 }}
-                className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white text-lg px-10 py-6 rounded-lg"
+                className="bg-orange-600/85 hover:bg-orange-700/85 dark:bg-orange-600/85 dark:hover:bg-orange-700/85 text-white text-lg px-10 py-6 rounded-lg backdrop-blur-sm border border-orange-500/40"
                 data-testid="button-cta-quote"
               >
                 Solicitar Presupuesto
