@@ -79,9 +79,12 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
         setNotes("");
         handleClearSignature();
         onOpenChange(false);
-        // Invalidate and refetch worker's delivery notes
-        await queryClient.invalidateQueries({
+        // Refetch worker's delivery notes and admin delivery notes immediately
+        await queryClient.refetchQueries({
           queryKey: ["/api/workers", workerId, "delivery-notes"],
+        });
+        await queryClient.refetchQueries({
+          queryKey: ["/api/delivery-notes"],
         });
       }
     } catch (error) {
