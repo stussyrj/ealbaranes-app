@@ -86,7 +86,7 @@ export class MemStorage implements IStorage {
     if (!pickupTimeStr) return true;
     
     const confirmedQuotes = Array.from(this.quotes.values()).filter(
-      q => q.status === "confirmed" && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration
+      q => (q.status === "confirmed" || q.status === "approved") && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration
     );
 
     // Parse requested pickupTime: "YYYY-MM-DD HH:MM"
@@ -121,7 +121,7 @@ export class MemStorage implements IStorage {
 
   getCarrozadoAvailability(): { isBlocked: boolean; unavailableUntil: Date | null } {
     const confirmedQuotes = Array.from(this.quotes.values()).filter(
-      q => q.status === "confirmed" && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration
+      q => (q.status === "confirmed" || q.status === "approved") && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration
     );
 
     const now = new Date();
