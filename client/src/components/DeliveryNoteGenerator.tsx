@@ -79,21 +79,16 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
         setNotes("");
         handleClearSignature();
         onOpenChange(false);
-        // Fetch fresh data for both worker and admin dashboards
-        await queryClient.fetchQuery({
-          queryKey: ["/api/workers", workerId, "delivery-notes"],
-          queryFn: async () => {
-            const res = await fetch(`/api/workers/${workerId}/delivery-notes`, { credentials: "include" });
-            return res.json();
-          },
-        });
-        await queryClient.fetchQuery({
-          queryKey: ["/api/delivery-notes"],
-          queryFn: async () => {
-            const res = await fetch("/api/delivery-notes", { credentials: "include" });
-            return res.json();
-          },
-        });
+        
+        // Fetch fresh data and update cache
+        const [workerNotes, allNotes] = await Promise.all([
+          fetch(`/api/workers/${workerId}/delivery-notes`, { credentials: "include" }).then(r => r.json()),
+          fetch("/api/delivery-notes", { credentials: "include" }).then(r => r.json()),
+        ]);
+        
+        // Update cache with fresh data to trigger re-renders
+        queryClient.setQueryData(["/api/workers", workerId, "delivery-notes"], workerNotes);
+        queryClient.setQueryData(["/api/delivery-notes"], allNotes);
       }
     } catch (error) {
       console.error("Error creating delivery note:", error);
