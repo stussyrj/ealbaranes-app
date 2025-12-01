@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Truck } from "lucide-react";
 import { VanDoorsAnimation } from "@/components/VanDoorsAnimation";
@@ -16,7 +17,6 @@ export default function QuotePage() {
   const [vehicleId, setVehicleId] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
   const [pickupTime, setPickupTime] = useState("");
-  const [pickupTimeError, setPickupTimeError] = useState("");
   const [observations, setObservations] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -28,6 +28,10 @@ export default function QuotePage() {
   const [lastCalculatedData, setLastCalculatedData] = useState<any>(null);
   const [recalculateTimer, setRecalculateTimer] = useState<NodeJS.Timeout | null>(null);
   const [carrozadoUnavailableUntil, setCarrozadoUnavailableUntil] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedHour, setSelectedHour] = useState("09");
+  const [selectedMinute, setSelectedMinute] = useState("00");
+  const [showCalendar, setShowCalendar] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,7 +58,7 @@ export default function QuotePage() {
         
         // Set new timer for auto-recalculate
         const timer = setTimeout(() => {
-          if (!pickupTimeError && name && phoneNumber && origin && destination && vehicleId) {
+          if (name && phoneNumber && origin && destination && vehicleId && selectedDate) {
             handleCalculate();
           }
         }, 1000);
@@ -86,30 +90,32 @@ export default function QuotePage() {
       .catch(() => setLoading(false));
   }
 
-  const getMinimumPickupTime = (): string => {
+  const getMinimumPickupDate = (): Date => {
     const now = new Date();
-    const minimumTime = new Date(now.getTime() + 30 * 60000);
-    const hours = String(minimumTime.getHours()).padStart(2, "0");
-    const minutes = String(minimumTime.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
+    return new Date(now.getTime() + 30 * 60000);
   };
 
-  const validatePickupTime = (time: string): string => {
-    if (!time) return "";
+  const validatePickupTime = (date: Date | undefined, hour: string, minute: string): string => {
+    if (!date) return "Por favor, selecciona una fecha";
     const now = new Date();
-    const minimumTime = new Date(now.getTime() + 30 * 60000);
-    const [selectedHours, selectedMinutes] = time.split(":").map(Number);
-    const selectedDate = new Date();
-    selectedDate.setHours(selectedHours, selectedMinutes, 0);
-    if (selectedDate.getTime() < now.getTime()) {
-      selectedDate.setDate(selectedDate.getDate() + 1);
-    }
+    const minimumTime = getMinimumPickupDate();
+    const selectedDate = new Date(date);
+    selectedDate.setHours(parseInt(hour), parseInt(minute), 0);
+    
     if (selectedDate.getTime() < minimumTime.getTime()) {
       const minHours = String(minimumTime.getHours()).padStart(2, "0");
       const minMinutes = String(minimumTime.getMinutes()).padStart(2, "0");
       return `El horario debe ser a partir de las ${minHours}:${minMinutes}`;
     }
     return "";
+  };
+
+  const isCarrozadoAvailableAtTime = (hour: string, minute: string): boolean => {
+    if (!carrozadoUnavailableUntil || vehicleId !== "carrozado") return true;
+    if (!selectedDate) return true;
+    const selectedTime = new Date(selectedDate);
+    selectedTime.setHours(parseInt(hour), parseInt(minute), 0);
+    return selectedTime >= new Date(carrozadoUnavailableUntil);
   };
 
   const handleCalculate = async () => {
@@ -176,14 +182,25 @@ export default function QuotePage() {
     setVehicleId("");
     setIsUrgent(false);
     setPickupTime("");
-    setPickupTimeError("");
+    setSelectedDate(undefined);
+    setSelectedHour("09");
+    setSelectedMinute("00");
     setObservations("");
     setPhoneNumber("");
     setConfirmed(false);
     setQuoteId("");
   };
 
-  const minTime = getMinimumPickupTime();
+  const minDate = getMinimumPickupDate();
+  const pickupTimeError = validatePickupTime(selectedDate, selectedHour, selectedMinute);
+  
+  useEffect(() => {
+    if (selectedDate) {
+      const dateStr = selectedDate.toISOString().split("T")[0];
+      const timeStr = `${selectedHour}:${selectedMinute}`;
+      setPickupTime(`${dateStr} ${timeStr}`);
+    }
+  }, [selectedDate, selectedHour, selectedMinute]);
 
   if (showAnimation) {
     return (
@@ -246,7 +263,7 @@ export default function QuotePage() {
             <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-gray-300 dark:border-gray-600" data-testid="select-vehicle">
               <option value="">Selecciona</option>
               {vehicles.map((v) => {
-                const isCarrozadoBlocked = v.id === "carrozado" && carrozadoUnavailableUntil && new Date() < carrozadoUnavailableUntil;
+                const isCarrozadoBlocked = v.id === "carrozado" && carrozadoUnavailableUntil && new Date() < carrozadoUnavailableUntil ? true : false;
                 return (
                   <option key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`} disabled={isCarrozadoBlocked}>
                     {v.name} - {v.capacity}
@@ -255,16 +272,81 @@ export default function QuotePage() {
                 );
               })}
             </select>
-            {carrozadoUnavailableUntil && new Date() < carrozadoUnavailableUntil && (
+            {carrozadoUnavailableUntil && (
               <div className="text-xs text-yellow-700 dark:text-yellow-400 mt-2">
-                El carrozado estará disponible a las {new Date(carrozadoUnavailableUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                El carrozado estará disponible a las {carrozadoUnavailableUntil instanceof Date ? carrozadoUnavailableUntil.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : new Date(carrozadoUnavailableUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
               </div>
             )}
           </div>
           <div>
-            <Label>Horario de Recogida</Label>
-            <div className="text-xs text-muted-foreground mb-2">Mínimo: {minTime} (necesitamos 30 minutos para llegar al origen)</div>
-            <Input type="time" value={pickupTime} onChange={(e) => { const newTime = e.target.value; const error = validatePickupTime(newTime); setPickupTimeError(error); setPickupTime(newTime); }} min={minTime} placeholder="Ej: 14:30" data-testid="input-pickup-time" className={pickupTimeError ? "border-red-500 focus-visible:ring-red-500" : ""} />
+            <Label>Fecha y Horario de Recogida</Label>
+            <div className="text-xs text-muted-foreground mb-2">Necesitamos 30 minutos para llegar al origen</div>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="w-full mb-2 text-left"
+              data-testid="button-select-date"
+            >
+              {selectedDate ? selectedDate.toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) : "Selecciona una fecha"}
+            </Button>
+            
+            {showCalendar && (
+              <div className="border rounded-lg p-3 mb-3 bg-white dark:bg-slate-900">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    setSelectedDate(date);
+                    setShowCalendar(false);
+                  }}
+                  disabled={(date) => date < new Date(minDate.toISOString().split("T")[0])}
+                  data-testid="calendar-pickup"
+                />
+              </div>
+            )}
+            
+            {selectedDate && (
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1">
+                  <Label className="text-xs">Hora</Label>
+                  <select 
+                    value={selectedHour} 
+                    onChange={(e) => setSelectedHour(e.target.value)}
+                    className="w-full px-2 py-2 border rounded bg-white dark:bg-slate-900 text-sm"
+                    data-testid="select-hour"
+                  >
+                    {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                      <option key={h} value={String(h).padStart(2, "0")}>
+                        {String(h).padStart(2, "0")}:00
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs">Minuto</Label>
+                  <select 
+                    value={selectedMinute} 
+                    onChange={(e) => setSelectedMinute(e.target.value)}
+                    className="w-full px-2 py-2 border rounded bg-white dark:bg-slate-900 text-sm"
+                    data-testid="select-minute"
+                  >
+                    {["00", "15", "30", "45"].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+            
+            {vehicleId === "carrozado" && selectedDate && !isCarrozadoAvailableAtTime(selectedHour, selectedMinute) && carrozadoUnavailableUntil && (
+              <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded p-2 mb-2">
+                <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                  El carrozado no está disponible a esa hora. Disponible desde: {carrozadoUnavailableUntil instanceof Date ? carrozadoUnavailableUntil.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : new Date(carrozadoUnavailableUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+            )}
+            
             {pickupTimeError && (<p className="text-sm text-red-500 mt-1">{pickupTimeError}</p>)}
           </div>
           <div>
@@ -275,7 +357,14 @@ export default function QuotePage() {
             <Checkbox id="urgent" checked={isUrgent} onCheckedChange={(checked) => setIsUrgent(checked === true)} data-testid="checkbox-urgent" />
             <Label htmlFor="urgent" className="cursor-pointer text-sm">Urgencia (+25%)</Label>
           </div>
-          <Button onClick={handleCalculate} className="w-full" data-testid="button-calculate" disabled={!!pickupTimeError}>Calcular</Button>
+          <Button 
+            onClick={handleCalculate} 
+            className="w-full" 
+            data-testid="button-calculate" 
+            disabled={!!pickupTimeError || (vehicleId === "carrozado" && selectedDate && !isCarrozadoAvailableAtTime(selectedHour, selectedMinute))}
+          >
+            Calcular
+          </Button>
         </CardContent>
       </Card>
 
