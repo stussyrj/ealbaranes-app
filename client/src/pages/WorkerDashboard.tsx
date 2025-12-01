@@ -7,12 +7,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
+import { Home } from "lucide-react";
 import type { Quote, DeliveryNote } from "@shared/schema";
 
 export default function WorkerDashboard() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+
+  const handleBackToSelection = () => {
+    if (user) {
+      setUser({ ...user, workerId: undefined });
+    }
+  };
 
   const { data: orders = [] } = useQuery<Quote[]>({
     queryKey: ["/api/workers", user?.workerId || "", "orders"],
@@ -184,6 +191,16 @@ export default function WorkerDashboard() {
             <h1 className="text-3xl font-semibold">Mis Servicios</h1>
             <p className="text-sm text-muted-foreground mt-1">Trabajador: {user?.username}</p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBackToSelection}
+            className="gap-2"
+            data-testid="button-back-to-worker-selection"
+          >
+            <Home className="h-4 w-4" />
+            Inicio
+          </Button>
         </div>
 
         {/* Estadísticas */}
