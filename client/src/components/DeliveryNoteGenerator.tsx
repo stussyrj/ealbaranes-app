@@ -79,12 +79,20 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
         setNotes("");
         handleClearSignature();
         onOpenChange(false);
-        // Refetch worker's delivery notes and admin delivery notes immediately
-        await queryClient.refetchQueries({
+        // Fetch fresh data for both worker and admin dashboards
+        await queryClient.fetchQuery({
           queryKey: ["/api/workers", workerId, "delivery-notes"],
+          queryFn: async () => {
+            const res = await fetch(`/api/workers/${workerId}/delivery-notes`, { credentials: "include" });
+            return res.json();
+          },
         });
-        await queryClient.refetchQueries({
+        await queryClient.fetchQuery({
           queryKey: ["/api/delivery-notes"],
+          queryFn: async () => {
+            const res = await fetch("/api/delivery-notes", { credentials: "include" });
+            return res.json();
+          },
         });
       }
     } catch (error) {
