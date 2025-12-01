@@ -239,29 +239,74 @@ export default function DashboardPage() {
 
       {/* Albaranes List Modal */}
       <Dialog open={albaranesModalOpen} onOpenChange={setAlbaranesModalOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base sm:text-lg">
               Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {(albaranesModalType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
-              <Button
-                key={note.id}
-                onClick={() => {
-                  if (note.photo) {
-                    previewDeliveryNote(note.photo);
-                  }
-                }}
-                variant="outline"
-                className="w-full text-xs h-auto py-2 justify-start flex flex-col items-start"
-                data-testid={`button-albarane-${note.id}`}
-                disabled={!note.photo}
-              >
-                <span className="font-semibold">{note.destination}</span>
-                <span className="text-[10px] text-muted-foreground">{note.clientName || 'Sin cliente'}</span>
-              </Button>
+              <Card key={note.id} className="p-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm">{note.destination || 'Sin destino'}</h4>
+                      <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                    </div>
+                    {note.photo && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7"
+                        onClick={() => previewDeliveryNote(note.photo)}
+                        data-testid={`button-view-photo-${note.id}`}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Ver foto
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Origen</p>
+                      <p className="font-medium text-[11px]">{note.pickupOrigin || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Vehículo</p>
+                      <p className="font-medium text-[11px]">{note.vehicleType || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Fecha</p>
+                      <p className="font-medium text-[11px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Hora</p>
+                      <p className="font-medium text-[11px]">{note.time || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {note.observations && (
+                    <div className="text-xs">
+                      <p className="text-muted-foreground">Observaciones</p>
+                      <p className="font-medium text-[11px]">{note.observations}</p>
+                    </div>
+                  )}
+
+                  <div className="text-xs">
+                    <p className="text-muted-foreground">Trabajador</p>
+                    <p className="font-medium text-[11px]">{note.workerName || 'Desconocido'}</p>
+                  </div>
+
+                  {albaranesModalType === "signed" && note.signedAt && (
+                    <div className="text-xs">
+                      <p className="text-muted-foreground">Firmado</p>
+                      <p className="font-medium text-[10px]">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
             ))}
           </div>
         </DialogContent>
