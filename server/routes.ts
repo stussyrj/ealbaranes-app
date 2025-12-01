@@ -374,10 +374,21 @@ export async function registerRoutes(
         return res.status(400).json({ error: "workerId y quoteId son requeridos" });
       }
       
-      // Convert signedAt string to Date if present
+      // Convert signedAt string to Date if present and map camelCase to snake_case for DB columns
       const noteData = {
-        ...data,
+        quoteId: data.quoteId,
+        workerId: data.workerId,
+        clientName: data.clientName || null,
+        pickupOrigin: data.pickupOrigin || null,
+        destination: data.destination || null,
+        vehicleType: data.vehicleType || null,
+        date: data.date || null,
+        time: data.time || null,
+        observations: data.observations || null,
+        status: data.status || "pending",
+        signature: data.signature || null,
         signedAt: data.signedAt ? new Date(data.signedAt) : new Date(),
+        notes: data.notes || null,
       };
       const note = await storage.createDeliveryNote(noteData);
       res.status(201).json(note);
