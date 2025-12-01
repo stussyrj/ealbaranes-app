@@ -82,37 +82,95 @@ export default function DashboardPage() {
         <div className="text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
           Nº {getQuoteNumber(quote.id)}
         </div>
+        {quote.isUrgent && <div className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-1 rounded">Urgente (+25%)</div>}
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-3">
-        <div>
-          <p className="text-sm text-muted-foreground">Origen</p>
-          <p className="font-medium text-sm">{quote.origin}</p>
+      
+      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+        <p className="text-xs text-muted-foreground mb-2 font-semibold">SOLICITUD</p>
+        {quote.createdAt && (
+          <p className="text-xs"><span className="text-muted-foreground">Fecha y hora: </span><span className="font-mono font-medium">{new Date(quote.createdAt).toLocaleString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></p>
+        )}
+      </div>
+      
+      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+        <p className="text-xs text-muted-foreground mb-2 font-semibold">RECOGIDA SOLICITADA</p>
+        {quote.pickupTime && (
+          <p className="text-xs"><span className="text-muted-foreground">Fecha y hora: </span><span className="font-mono font-medium">{quote.pickupTime}</span></p>
+        )}
+      </div>
+      
+      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+        <p className="text-xs text-muted-foreground mb-2 font-semibold">RUTA</p>
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div>
+            <p className="text-xs text-muted-foreground">Origen</p>
+            <p className="text-sm font-medium">{quote.origin}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Destino</p>
+            <p className="text-sm font-medium">{quote.destination}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Destino</p>
-          <p className="font-medium text-sm">{quote.destination}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Vehículo</p>
-          <p className="font-medium text-sm">{quote.vehicleTypeName}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Precio</p>
-          <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div>
+            <p className="text-muted-foreground">Distancia</p>
+            <p className="font-medium">{(quote.distance || 0).toFixed(1)} km</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Duración</p>
+            <p className="font-medium">{quote.duration || 0} min</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Vehículo</p>
+            <p className="font-medium">{quote.vehicleTypeName}</p>
+          </div>
         </div>
       </div>
+      
+      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+        <p className="text-xs text-muted-foreground mb-2 font-semibold">PRECIO</p>
+        <div className="space-y-1 text-xs">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Distancia ({(quote.distance || 0).toFixed(1)} km × {(quote.distanceCost / quote.distance).toFixed(2)}€):</span>
+            <span className="font-mono">{(quote.distanceCost || 0).toFixed(2)}€</span>
+          </div>
+          {quote.directionCost > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Dirección:</span>
+              <span className="font-mono">{(quote.directionCost || 0).toFixed(2)}€</span>
+            </div>
+          )}
+          <div className="flex justify-between border-t pt-1">
+            <span className="text-muted-foreground">Subtotal:</span>
+            <span className="font-mono font-medium">{((quote.distanceCost || 0) + (quote.directionCost || 0)).toFixed(2)}€</span>
+          </div>
+          {quote.isUrgent && (
+            <div className="flex justify-between text-orange-600 dark:text-orange-400">
+              <span>Con urgencia (+25%):</span>
+              <span className="font-mono font-medium">{(quote.totalPrice || 0).toFixed(2)}€</span>
+            </div>
+          )}
+          {!quote.isUrgent && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total:</span>
+              <span className="font-mono font-medium text-green-600 dark:text-green-400">{(quote.totalPrice || 0).toFixed(2)}€</span>
+            </div>
+          )}
+          {quote.isUrgent && (
+            <div className="flex justify-between border-t pt-1 text-green-600 dark:text-green-400">
+              <span className="font-semibold">TOTAL A PAGAR:</span>
+              <span className="font-mono font-bold">{(quote.totalPrice || 0).toFixed(2)}€</span>
+            </div>
+          )}
+        </div>
+      </div>
+      
       <div className="border-t pt-3 mb-3 space-y-2">
         {quote.customerName && (
           <p className="text-sm"><span className="text-muted-foreground">Cliente: </span><span className="font-medium">{quote.customerName}</span></p>
         )}
         {quote.phoneNumber && (
           <p className="text-sm"><span className="text-muted-foreground">Teléfono: </span><a href={`tel:${quote.phoneNumber}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quote.phoneNumber}</a></p>
-        )}
-        {quote.createdAt && (
-          <p className="text-sm"><span className="text-muted-foreground">Solicitud: </span><span className="font-mono text-xs">{new Date(quote.createdAt).toLocaleString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></p>
-        )}
-        {quote.pickupTime && (
-          <p className="text-sm"><span className="text-muted-foreground">Recogida: </span><span className="font-mono text-xs">{quote.pickupTime}</span></p>
         )}
         {quote.observations && (
           <p className="text-sm"><span className="text-muted-foreground">Observaciones: </span><span className="text-xs">{quote.observations}</span></p>
