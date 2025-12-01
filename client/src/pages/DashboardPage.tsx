@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, Users } from "lucide-react";
+import { TrendingUp, MapPin, Truck, Users, X } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,12 @@ import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { WorkerManagementModal } from "@/components/WorkerManagementModal";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -17,6 +23,8 @@ export default function DashboardPage() {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
+  const [deliveryNotesModalOpen, setDeliveryNotesModalOpen] = useState(false);
+  const [deliveryNotesType, setDeliveryNotesType] = useState<"pending" | "signed">("pending");
 
   useEffect(() => {
     const hasSeenAnimation = sessionStorage.getItem("hasSeenAdminAnimation");
@@ -156,22 +164,22 @@ export default function DashboardPage() {
             <CardContent>
               <div className="grid gap-4">
                 {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
-                {pendingDeliveryNotes.map((note: any) => (
-                  <div key={note.id} className="rounded-lg border border-border bg-card p-4 hover-elevate">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold">{note.destination || 'Sin destino'}</p>
-                        <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                      </div>
-                      <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">Pendiente</Badge>
-                    </div>
-                    <div className="text-sm space-y-1 mt-2">
-                      <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
-                      <div>{note.date && <span>{new Date(note.date).toLocaleDateString('es-ES')}</span>}</div>
-                    </div>
-                  </div>
-                ))}
               </div>
+              {pendingDeliveryNotes.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Button
+                    onClick={() => {
+                      setDeliveryNotesType("pending");
+                      setDeliveryNotesModalOpen(true);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-view-pending-albaranes"
+                  >
+                    Ver {pendingDeliveryNotes.length} Albarán{pendingDeliveryNotes.length !== 1 ? "es" : ""} Pendiente{pendingDeliveryNotes.length !== 1 ? "s" : ""}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -184,27 +192,22 @@ export default function DashboardPage() {
             <CardContent>
               <div className="grid gap-4">
                 {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
-                {signedDeliveryNotes.map((note: any) => (
-                  <div key={note.id} className="rounded-lg border border-border bg-card p-4 hover-elevate">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold">{note.destination || 'Sin destino'}</p>
-                        <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                      </div>
-                      <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">✓ Firmado</Badge>
-                    </div>
-                    <div className="text-sm space-y-1 mt-2">
-                      <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
-                      <div>{note.signedAt && <span>Firmado: {new Date(note.signedAt).toLocaleString('es-ES')}</span>}</div>
-                      {note.photo && (
-                        <div className="pt-2">
-                          <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-40 object-cover" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
               </div>
+              {signedDeliveryNotes.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Button
+                    onClick={() => {
+                      setDeliveryNotesType("signed");
+                      setDeliveryNotesModalOpen(true);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-view-signed-albaranes"
+                  >
+                    Ver {signedDeliveryNotes.length} Albarán{signedDeliveryNotes.length !== 1 ? "es" : ""} Firmado{signedDeliveryNotes.length !== 1 ? "s" : ""}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -220,6 +223,44 @@ export default function DashboardPage() {
         open={workerManagementOpen}
         onOpenChange={setWorkerManagementOpen}
       />
+
+      <Dialog open={deliveryNotesModalOpen} onOpenChange={setDeliveryNotesModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Albaranes {deliveryNotesType === "pending" ? "Pendientes" : "Firmados"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {(deliveryNotesType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
+              <div key={note.id} className="rounded-lg border border-border bg-card p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-semibold">{note.destination || 'Sin destino'}</p>
+                    <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                  </div>
+                  <Badge className={deliveryNotesType === "pending" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"}>
+                    {deliveryNotesType === "pending" ? "Pendiente" : "✓ Firmado"}
+                  </Badge>
+                </div>
+                <div className="text-sm space-y-2">
+                  <div><span className="text-muted-foreground">Origen:</span> {note.pickupOrigin || 'N/A'}</div>
+                  <div><span className="text-muted-foreground">Vehículo:</span> {note.vehicleType || 'N/A'}</div>
+                  <div><span className="text-muted-foreground">Fecha:</span> {note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</div>
+                  <div><span className="text-muted-foreground">Hora:</span> {note.time || 'N/A'}</div>
+                  {note.observations && <div><span className="text-muted-foreground">Observaciones:</span> {note.observations}</div>}
+                  {deliveryNotesType === "signed" && note.signedAt && <div><span className="text-muted-foreground">Firmado:</span> {new Date(note.signedAt).toLocaleString('es-ES')}</div>}
+                  {note.photo && (
+                    <div className="pt-2">
+                      <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-60 object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
