@@ -303,11 +303,6 @@ export default function QuotePage() {
                 );
               })}
             </select>
-            {carrozadoUnavailableUntil && (
-              <div className="text-xs text-yellow-700 dark:text-yellow-400 mt-2">
-                El carrozado estará disponible a las {carrozadoUnavailableUntil instanceof Date ? carrozadoUnavailableUntil.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : new Date(carrozadoUnavailableUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-              </div>
-            )}
           </div>
           <div>
             <Label>Fecha y Horario de Recogida</Label>
@@ -377,13 +372,6 @@ export default function QuotePage() {
               </div>
             )}
             
-            {vehicleId === "carrozado" && selectedDate && !isCarrozadoAvailableAtTime(selectedHour, selectedMinute) && carrozadoUnavailableUntil && (
-              <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded p-2 mb-2">
-                <p className="text-xs text-yellow-700 dark:text-yellow-400">
-                  El carrozado no está disponible a esa hora. Disponible desde: {carrozadoUnavailableUntil instanceof Date ? carrozadoUnavailableUntil.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : new Date(carrozadoUnavailableUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                </p>
-              </div>
-            )}
             
             {pickupTimeError && (<p className="text-sm text-red-500 mt-1">{pickupTimeError}</p>)}
           </div>
