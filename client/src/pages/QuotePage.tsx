@@ -37,6 +37,7 @@ export default function QuotePage() {
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
   const [showDestSuggestions, setShowDestSuggestions] = useState(false);
   const [suggestionTimer, setSuggestionTimer] = useState<NodeJS.Timeout | null>(null);
+  const [hideSuggestionsTimer, setHideSuggestionsTimer] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -155,19 +156,35 @@ export default function QuotePage() {
   const handleOriginChange = (value: string) => {
     setOrigin(value);
     if (suggestionTimer) clearTimeout(suggestionTimer);
+    if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
+    
     const timer = setTimeout(() => {
       fetchAddressSuggestions(value, "origin");
     }, 300);
     setSuggestionTimer(timer);
+    
+    // Set timer to hide suggestions after 2 seconds of inactivity
+    const hideTimer = setTimeout(() => {
+      setShowOriginSuggestions(false);
+    }, 2000);
+    setHideSuggestionsTimer(hideTimer);
   };
 
   const handleDestinationChange = (value: string) => {
     setDestination(value);
     if (suggestionTimer) clearTimeout(suggestionTimer);
+    if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
+    
     const timer = setTimeout(() => {
       fetchAddressSuggestions(value, "destination");
     }, 300);
     setSuggestionTimer(timer);
+    
+    // Set timer to hide suggestions after 2 seconds of inactivity
+    const hideTimer = setTimeout(() => {
+      setShowDestSuggestions(false);
+    }, 2000);
+    setHideSuggestionsTimer(hideTimer);
   };
 
   const selectSuggestion = (suggestion: any, type: "origin" | "destination") => {
