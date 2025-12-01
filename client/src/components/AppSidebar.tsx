@@ -31,6 +31,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import type { User } from "@/contexts/AuthContext";
@@ -205,26 +206,28 @@ export function AppSidebar() {
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={() => switchToRole("customer")}
-                data-testid="menu-switch-to-customer"
-              >
-                Cliente
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => switchToRole("admin")}
-                data-testid="menu-switch-to-admin"
-              >
-                Administrador
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => switchToRole("worker")}
-                data-testid="menu-switch-to-worker"
-              >
-                Trabajador
-              </DropdownMenuItem>
-            </DropdownMenuContent>
+            <DropdownMenuPortal>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onClick={() => switchToRole("customer")}
+                  data-testid="menu-switch-to-customer"
+                >
+                  Cliente
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => switchToRole("admin")}
+                  data-testid="menu-switch-to-admin"
+                >
+                  Administrador
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => switchToRole("worker")}
+                  data-testid="menu-switch-to-worker"
+                >
+                  Trabajador
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenuPortal>
           </DropdownMenu>
         )}
       </SidebarFooter>
