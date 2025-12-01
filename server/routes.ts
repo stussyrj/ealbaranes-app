@@ -21,8 +21,8 @@ export async function registerRoutes(
   app.get("/api/vehicle-types", async (req, res) => {
     try {
       const types = await storage.getVehicleTypes();
-      const carrozadoUnavailableUntil = storage.getCarrozadoUnavailableUntil();
-      res.json({ types, carrozadoUnavailableUntil });
+      const availability = storage.getCarrozadoAvailability();
+      res.json({ types, carrozadoUnavailableUntil: availability.unavailableUntil });
     } catch (error) {
       console.error("Error fetching vehicle types:", error);
       res.status(500).json({ error: "Error al obtener los tipos de vehículo" });

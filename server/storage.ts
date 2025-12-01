@@ -73,7 +73,6 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private vehicleTypes: Map<string, VehicleType>;
   private quotes: Map<string, Quote>;
-  private carrozadoUnavailableUntil: Date | null = null;
 
   constructor() {
     this.users = new Map();
@@ -83,18 +82,36 @@ export class MemStorage implements IStorage {
     defaultVehicleTypes.forEach((vehicle) => this.vehicleTypes.set(vehicle.id, vehicle));
   }
 
-  isCarrozadoBlocked(): boolean {
-    if (!this.carrozadoUnavailableUntil) return false;
-    return new Date() < this.carrozadoUnavailableUntil;
-  }
+  getCarrozadoAvailability(): { isBlocked: boolean; unavailableUntil: Date | null } {
+    const confirmedQuotes = Array.from(this.quotes.values()).filter(
+      q => q.status === "confirmed" && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration
+    );
 
-  blockCarrozado(durationMinutes: number): void {
     const now = new Date();
-    this.carrozadoUnavailableUntil = new Date(now.getTime() + durationMinutes * 60000);
-  }
+    let latestEndTime: Date | null = null;
 
-  getCarrozadoUnavailableUntil(): Date | null {
-    return this.carrozadoUnavailableUntil;
+    for (const quote of confirmedQuotes) {
+      if (!quote.pickupTime || !quote.duration) continue;
+      
+      const [hours, minutes] = quote.pickupTime.split(":").map(Number);
+      const pickupDate = new Date();
+      pickupDate.setHours(hours, minutes, 0);
+      
+      if (pickupDate < now) {
+        pickupDate.setDate(pickupDate.getDate() + 1);
+      }
+      
+      const endTime = new Date(pickupDate.getTime() + (quote.duration * 2 + 30) * 60000);
+      
+      if (!latestEndTime || endTime > latestEndTime) {
+        latestEndTime = endTime;
+      }
+    }
+
+    return {
+      isBlocked: latestEndTime ? now < latestEndTime : false,
+      unavailableUntil: latestEndTime && now < latestEndTime ? latestEndTime : null,
+    };
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -115,10 +132,10 @@ export class MemStorage implements IStorage {
   }
 
   async getVehicleTypes(): Promise<VehicleType[]> {
+    const { isBlocked } = this.getCarrozadoAvailability();
     return Array.from(this.vehicleTypes.values()).filter((v) => {
       if (!v.isActive) return false;
-      // Exclude carrozado if it's blocked
-      if (v.id === "carrozado" && this.isCarrozadoBlocked()) return false;
+      if (v.id === "carrozado" && isBlocked) return false;
       return true;
     });
   }
@@ -207,15 +224,6 @@ export class MemStorage implements IStorage {
     const existing = this.quotes.get(id);
     if (!existing) return undefined;
     const updated = { ...existing, status };
-    
-    // If confirming with carrozado, block it
-    if (status === "confirmed" && existing.vehicleTypeId === "carrozado" && existing.duration) {
-      // Calculate total duration: ida + vuelta + 30 min margen
-      const totalMinutes = (existing.duration * 2) + 30;
-      this.blockCarrozado(totalMinutes);
-      updated.carrozadoUnavailableUntil = this.getCarrozadoUnavailableUntil();
-    }
-    
     this.quotes.set(id, updated);
     return updated;
   }
