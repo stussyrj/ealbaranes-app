@@ -104,13 +104,11 @@ export const deliveryNotes = pgTable("delivery_notes", {
   signedAt: timestamp("signed_at"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertDeliveryNoteSchema = createInsertSchema(deliveryNotes).omit({
   id: true,
   createdAt: true,
-  updatedAt: true,
 });
 
 export type InsertDeliveryNote = z.infer<typeof insertDeliveryNoteSchema>;

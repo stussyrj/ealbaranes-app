@@ -313,27 +313,13 @@ export default function DashboardPage() {
                       <div className="flex gap-2">
                         <div className="flex flex-col items-center">
                           <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5"></div>
-                          <div className="w-0.5 h-6 bg-border/30 my-1"></div>
+                          {note.signedAt && <div className="w-0.5 h-6 bg-border/30 my-1"></div>}
                         </div>
                         <div>
                           <p className="font-medium">Creado</p>
                           <p className="text-muted-foreground">{note.createdAt ? new Date(note.createdAt).toLocaleString('es-ES') : 'N/A'}</p>
                         </div>
                       </div>
-
-                      {/* Updated */}
-                      {(note as any).updatedAt && (note as any).updatedAt !== note.createdAt && (
-                        <div className="flex gap-2">
-                          <div className="flex flex-col items-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5"></div>
-                            <div className="w-0.5 h-6 bg-border/30 my-1"></div>
-                          </div>
-                          <div>
-                            <p className="font-medium">Actualizado</p>
-                            <p className="text-muted-foreground">{new Date((note as any).updatedAt).toLocaleString('es-ES')}</p>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Signed */}
                       {note.signedAt && (

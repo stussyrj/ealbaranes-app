@@ -423,9 +423,6 @@ export async function registerRoutes(
         data.signedAt = new Date(data.signedAt);
       }
       
-      // Always update the updatedAt timestamp
-      data.updatedAt = new Date();
-      
       const note = await storage.updateDeliveryNote(id, data);
       if (!note) {
         return res.status(404).json({ error: "Albarán no encontrado" });
@@ -455,6 +452,73 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching worker delivery notes:", error);
       res.status(500).json({ error: "Error al obtener albaranes" });
+    }
+  });
+
+  // Seed random delivery notes for testing
+  app.post("/api/seed-delivery-notes", async (req, res) => {
+    try {
+      const workers = ["worker-jose", "worker-luis", "worker-miguel"];
+      const cities = ["Madrid", "Barcelona", "Valencia", "Sevilla", "Bilbao", "Zaragoza", "Malaga", "Murcia"];
+      const vehicles = ["Moto", "Furgoneta", "Furgón", "Carrozado"];
+      const clientNames = ["Juan García", "María López", "Carlos Rodríguez", "Ana Martínez", "Pedro Sánchez"];
+      const observations = [
+        "Entrega con firma",
+        "Requiere firma del cliente",
+        "Urgente - Mañana antes de las 12",
+        "Cuidado: Frágil",
+        "Dejar en recepción",
+        "Sin observaciones"
+      ];
+
+      const generatedNotes = [];
+
+      for (let i = 0; i < 5; i++) {
+        const randomWorker = workers[Math.floor(Math.random() * workers.length)];
+        const randomOrigin = cities[Math.floor(Math.random() * cities.length)];
+        const randomDest = cities[Math.floor(Math.random() * cities.length)];
+        const randomVehicle = vehicles[Math.floor(Math.random() * vehicles.length)];
+        const randomClient = clientNames[Math.floor(Math.random() * clientNames.length)];
+        const randomObs = observations[Math.floor(Math.random() * observations.length)];
+        
+        // Generate date in last 7 days
+        const date = new Date();
+        date.setDate(date.getDate() - Math.floor(Math.random() * 7));
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Random hour 8-18
+        const hour = String(8 + Math.floor(Math.random() * 10)).padStart(2, '0');
+        const minute = String(Math.floor(Math.random() * 60)).padStart(2, '0');
+        const timeStr = `${hour}:${minute}`;
+
+        // 60% chance to be signed (has photo)
+        const isSigned = Math.random() < 0.6;
+        const signedDate = isSigned ? new Date() : null;
+
+        const noteData = {
+          quoteId: `quote-${i}`,
+          workerId: randomWorker,
+          clientName: randomClient,
+          pickupOrigin: randomOrigin,
+          destination: randomDest,
+          vehicleType: randomVehicle,
+          date: dateStr,
+          time: timeStr,
+          observations: randomObs,
+          photo: isSigned ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='18' fill='%23666'%3EFoto Albarán%3C/text%3E%3C/svg%3E" : null,
+          status: isSigned ? "signed" : "pending",
+          signedAt: signedDate,
+          notes: null,
+        };
+
+        const note = await storage.createDeliveryNote(noteData);
+        generatedNotes.push(note);
+      }
+
+      res.status(201).json({ message: "5 albaranes generados", notes: generatedNotes });
+    } catch (error) {
+      console.error("Error seeding delivery notes:", error);
+      res.status(400).json({ error: "Error al generar albaranes de prueba" });
     }
   });
 
