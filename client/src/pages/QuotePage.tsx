@@ -491,7 +491,7 @@ function QuotePageContent({
           </div>
           <div>
             <Label>Vehículo</Label>
-            <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-gray-300 dark:border-gray-600" data-testid="select-vehicle">
+            <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-slate-200 dark:border-slate-700" data-testid="select-vehicle">
               <option value="">Selecciona</option>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
@@ -575,7 +575,7 @@ function QuotePageContent({
           </div>
           <Button 
             onClick={handleCalculate} 
-            className="w-full" 
+            className="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white" 
             data-testid="button-calculate" 
             disabled={!!pickupTimeError}
           >
@@ -607,7 +607,7 @@ function QuotePageContent({
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleReset} className="w-full" data-testid="button-new-quote">Nueva Solicitud</Button>
-              <Button onClick={handleConfirm} className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white" data-testid="button-confirm-quote">Solicitar</Button>
+              <Button onClick={handleConfirm} className="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white" data-testid="button-confirm-quote">Solicitar</Button>
             </div>
           </CardContent>
         </Card>

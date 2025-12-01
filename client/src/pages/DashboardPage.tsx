@@ -206,15 +206,15 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
       </div>
       {showActions && (
         <div className="flex gap-2">
-          <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white text-sm" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
-          <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white text-sm" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
-          <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-sm" data-testid={`button-call-${quote.id}`}>Llamar</Button>
+          <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white text-sm" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
+          <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white text-sm" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
+          <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white text-sm" data-testid={`button-call-${quote.id}`}>Llamar</Button>
         </div>
       )}
       {quote.status === "approved" && !showActions && (
         <div className="flex gap-2 mt-3">
           <div className="flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm p-2 rounded text-center font-medium">Aprobada</div>
-          <Button onClick={() => handleCancel(quote.id)} className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-700 text-white text-sm" data-testid={`button-cancel-${quote.id}`}>Cancelar</Button>
+          <Button onClick={() => handleCancel(quote.id)} className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white text-sm" data-testid={`button-cancel-${quote.id}`}>Cancelar</Button>
         </div>
       )}
       {quote.status === "approved" && showActions && (
