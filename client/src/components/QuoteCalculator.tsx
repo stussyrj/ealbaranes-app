@@ -138,7 +138,7 @@ export function QuoteCalculator({ onQuoteGenerated }: QuoteCalculatorProps) {
           <Button
             onClick={handleCalculate}
             disabled={!origin || !destination || !vehicleType || isCalculating}
-            className="w-full bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-6 py-3 rounded-lg"
+            className="w-full bg-blue-600/85 hover:bg-blue-700/85 dark:bg-blue-600/85 dark:hover:bg-blue-700/85 text-white text-lg px-10 py-6 rounded-lg backdrop-blur-sm border border-blue-500/40"
             data-testid="button-calculate-quote"
           >
             {isCalculating ? (
@@ -218,10 +218,10 @@ export function QuoteCalculator({ onQuoteGenerated }: QuoteCalculatorProps) {
             </div>
 
             <div className="flex gap-3 mt-6 flex-wrap">
-              <Button className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 rounded-lg" data-testid="button-save-quote">
+              <Button className="bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white px-4 py-2 rounded-lg backdrop-blur-sm border border-green-500/40" data-testid="button-save-quote">
                 Guardar Presupuesto
               </Button>
-              <Button variant="outline" className="px-4 py-2 rounded-lg" data-testid="button-new-quote" onClick={() => setResult(null)}>
+              <Button variant="outline" className="px-4 py-2 rounded-lg backdrop-blur-sm border border-slate-300 dark:border-slate-600" data-testid="button-new-quote" onClick={() => setResult(null)}>
                 Nuevo Cálculo
               </Button>
             </div>

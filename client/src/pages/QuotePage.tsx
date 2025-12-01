@@ -606,8 +606,8 @@ function QuotePageContent({
               <div className="border-t pt-3 flex justify-between"><span className="font-semibold">Precio total a pagar:</span><span className="font-bold text-lg font-mono text-primary">{(result.pricing?.totalPrice || 0).toFixed(2)}€</span></div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleReset} className="w-full" data-testid="button-new-quote">Nueva Solicitud</Button>
-              <Button onClick={handleConfirm} className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white text-base px-6 py-3 rounded-lg" data-testid="button-confirm-quote">Solicitar</Button>
+              <Button variant="outline" onClick={handleReset} className="w-full backdrop-blur-sm border border-slate-300 dark:border-slate-600 rounded-lg" data-testid="button-new-quote">Nueva Solicitud</Button>
+              <Button onClick={handleConfirm} className="w-full bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white text-base px-6 py-3 rounded-lg backdrop-blur-sm border border-green-500/40" data-testid="button-confirm-quote">Solicitar</Button>
             </div>
           </CardContent>
         </Card>
