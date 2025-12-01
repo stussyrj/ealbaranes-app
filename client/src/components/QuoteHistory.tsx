@@ -238,6 +238,7 @@ export function QuoteHistory() {
                       size="sm"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
+                      className="px-3 py-2 rounded-lg"
                       data-testid="button-prev-page"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -247,6 +248,7 @@ export function QuoteHistory() {
                       size="sm"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
+                      className="px-3 py-2 rounded-lg"
                       data-testid="button-next-page"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -314,7 +316,7 @@ export function QuoteHistory() {
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" onClick={() => setSelectedQuote(null)}>
+                <Button variant="outline" onClick={() => setSelectedQuote(null)} className="px-4 py-2 rounded-lg">
                   Cerrar
                 </Button>
               </div>

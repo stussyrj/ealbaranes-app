@@ -132,7 +132,7 @@ export function VehicleTypesAdmin() {
                 Gestiona los tipos de vehículo: activa/desactiva servicios con el botón de encendido
               </CardDescription>
             </div>
-            <Button onClick={openNewVehicle} data-testid="button-add-vehicle">
+            <Button onClick={openNewVehicle} className="bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg" data-testid="button-add-vehicle">
               <Plus className="mr-2 h-4 w-4" />
               Nuevo Vehículo
             </Button>
@@ -273,12 +273,13 @@ export function VehicleTypesAdmin() {
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg">
               Cancelar
             </Button>
             <Button 
               onClick={handleSave}
               disabled={createMutation.isPending || updateMutation.isPending}
+              className="bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg"
             >
               {(createMutation.isPending || updateMutation.isPending) ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

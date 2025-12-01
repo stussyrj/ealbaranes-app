@@ -74,8 +74,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <Button
-              variant="outline"
-              className="w-full gap-3"
+              className="w-full gap-3 bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-6 py-3 rounded-lg"
               onClick={() => handleLogin("Google")}
               disabled={isLoading}
               data-testid="button-login-google"
@@ -84,8 +83,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               Continuar con Google
             </Button>
             <Button
-              variant="outline"
-              className="w-full gap-3"
+              className="w-full gap-3 bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-6 py-3 rounded-lg"
               onClick={() => handleLogin("GitHub")}
               disabled={isLoading}
               data-testid="button-login-github"

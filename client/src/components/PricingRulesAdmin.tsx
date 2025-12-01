@@ -148,7 +148,7 @@ export function PricingRulesAdmin() {
                 Configura las tarifas base, precio por km y recargos para cada zona
               </CardDescription>
             </div>
-            <Button onClick={openNewRule} data-testid="button-add-rule">
+            <Button onClick={openNewRule} className="bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg" data-testid="button-add-rule">
               <Plus className="mr-2 h-4 w-4" />
               Nueva Zona
             </Button>
@@ -323,12 +323,13 @@ export function PricingRulesAdmin() {
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg">
               Cancelar
             </Button>
             <Button 
               onClick={handleSave} 
               disabled={createMutation.isPending || updateMutation.isPending}
+              className="bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 py-2 rounded-lg"
             >
               {(createMutation.isPending || updateMutation.isPending) ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -350,13 +351,13 @@ export function PricingRulesAdmin() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="px-4 py-2 rounded-lg">
               Cancelar
             </Button>
             <Button 
-              variant="destructive" 
               onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
               disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 rounded-lg"
             >
               {deleteMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
