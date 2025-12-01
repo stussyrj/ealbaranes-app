@@ -99,6 +99,7 @@ export const deliveryNotes = pgTable("delivery_notes", {
   time: text("time"),
   observations: text("observations"),
   photo: text("photo"),
+  distance: real("distance"),
   status: text("status").default("pending"),
   signature: text("signature"),
   signedAt: timestamp("signed_at"),

@@ -287,6 +287,10 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
                       <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
                     </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">KM'S</p>
+                      <p className="font-medium text-[10px]">{note.distance ? (note.distance * 2).toFixed(1) : 'N/A'} km</p>
+                    </div>
                   </div>
 
                   {/* Worker */}

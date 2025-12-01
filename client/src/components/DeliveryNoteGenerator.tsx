@@ -65,6 +65,11 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
     const payload = {
       quoteId: quote.id,
       workerId,
+      clientName: quote.customerName,
+      pickupOrigin: quote.origin,
+      destination: quote.destination,
+      vehicleType: quote.vehicleTypeName,
+      distance: quote.distance,
       status: "signed",
       signature: signatureData,
       signedAt: new Date().toISOString(),
