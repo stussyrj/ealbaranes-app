@@ -26,7 +26,7 @@ export default function WorkerDashboard() {
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
   const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
-  const [lastCreatedNote, setLastCreatedNote] = useState<DeliveryNote | null>(null);
+  const [selectedNoteForPhoto, setSelectedNoteForPhoto] = useState<DeliveryNote | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     clientName: "",
@@ -360,6 +360,21 @@ export default function WorkerDashboard() {
               <img src={note.photo} alt="Foto del albarán" className="w-full rounded-md max-h-48 object-cover" data-testid={`img-delivery-note-photo-${note.id}`} />
             </div>
           )}
+
+          {!note.photo && (
+            <Button
+              onClick={() => {
+                setSelectedNoteForPhoto(note);
+                setCapturePhotoOpen(true);
+                setCapturedPhoto(null);
+              }}
+              variant="outline"
+              className="w-full"
+              data-testid={`button-add-photo-${note.id}`}
+            >
+              📸 Agregar Fotografía
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
@@ -675,9 +690,6 @@ export default function WorkerDashboard() {
                       await queryClient.invalidateQueries({ queryKey: adminKey });
                       
                       setCreateDeliveryOpen(false);
-                      setLastCreatedNote(newDeliveryNote);
-                      setCapturePhotoOpen(true);
-                      setCapturedPhoto(null);
                       setFormData({
                         clientName: "",
                         pickupOrigin: "",
@@ -705,7 +717,7 @@ export default function WorkerDashboard() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Fotografía del Albarán</DialogTitle>
-            <DialogDescription>Captura una foto del albarán (opcional)</DialogDescription>
+            <DialogDescription>Captura una foto del albarán</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Button
@@ -758,17 +770,18 @@ export default function WorkerDashboard() {
                 onClick={() => {
                   setCapturePhotoOpen(false);
                   setCapturedPhoto(null);
+                  setSelectedNoteForPhoto(null);
                 }} 
                 className="flex-1"
-                data-testid="button-skip-photo"
+                data-testid="button-cancel-photo"
               >
-                Saltarse
+                Cancelar
               </Button>
               <Button
                 onClick={async () => {
-                  if (!lastCreatedNote) return;
+                  if (!selectedNoteForPhoto || !capturedPhoto) return;
                   try {
-                    const response = await fetch(`/api/delivery-notes/${lastCreatedNote.id}`, {
+                    const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ photo: capturedPhoto }),
@@ -795,6 +808,7 @@ export default function WorkerDashboard() {
                       
                       setCapturePhotoOpen(false);
                       setCapturedPhoto(null);
+                      setSelectedNoteForPhoto(null);
                     }
                   } catch (error) {
                     console.error("Error guardando foto:", error);
