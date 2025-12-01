@@ -82,7 +82,7 @@ export class MemStorage implements IStorage {
     defaultVehicleTypes.forEach((vehicle) => this.vehicleTypes.set(vehicle.id, vehicle));
   }
 
-  isCarrozadoAvailableAtDateTime(pickupTimeStr: string): boolean {
+  isCarrozadoAvailableAtDateTime(pickupTimeStr: string, duration?: number): boolean {
     if (!pickupTimeStr) return true;
     
     const confirmedQuotes = Array.from(this.quotes.values()).filter(
@@ -95,9 +95,13 @@ export class MemStorage implements IStorage {
     
     const [year, month, day] = pickupDateTime[0].split("-").map(Number);
     const [hours, minutes] = pickupDateTime[1].split(":").map(Number);
-    const requestedTime = new Date(year, month - 1, day, hours, minutes, 0);
+    const requestedPickupTime = new Date(year, month - 1, day, hours, minutes, 0);
+    
+    // Use provided duration or estimate from current quote being checked
+    const estimatedDuration = duration || 30; // default 30 min if not provided
+    const requestedEndTime = new Date(requestedPickupTime.getTime() + (estimatedDuration * 2 + 30) * 60000);
 
-    // Check if requested time conflicts with any confirmed carrozado trip
+    // Check if requested time range conflicts with any confirmed carrozado trip
     for (const quote of confirmedQuotes) {
       if (!quote.pickupTime || !quote.duration) continue;
       
@@ -110,8 +114,9 @@ export class MemStorage implements IStorage {
       const confirmedPickupTime = new Date(qYear, qMonth - 1, qDay, qHours, qMinutes, 0);
       const confirmedEndTime = new Date(confirmedPickupTime.getTime() + (quote.duration * 2 + 30) * 60000);
       
-      // Check if requested time falls within the confirmed trip duration
-      if (requestedTime >= confirmedPickupTime && requestedTime < confirmedEndTime) {
+      // Check if time ranges overlap (not just start time)
+      // Two ranges overlap if: start1 < end2 AND end1 > start2
+      if (requestedPickupTime < confirmedEndTime && requestedEndTime > confirmedPickupTime) {
         return false;
       }
     }

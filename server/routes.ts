@@ -242,7 +242,7 @@ export async function registerRoutes(
 
       // Validate carrozado availability before approving
       if (status === "approved" && quote.vehicleTypeId === "carrozado" && quote.pickupTime && quote.duration) {
-        if (!storage.isCarrozadoAvailableAtDateTime(quote.pickupTime)) {
+        if (!storage.isCarrozadoAvailableAtDateTime(quote.pickupTime, quote.duration)) {
           return res.status(400).json({ error: "El carrozado no está disponible en el horario solicitado. No se puede aprobar este pedido." });
         }
       }
