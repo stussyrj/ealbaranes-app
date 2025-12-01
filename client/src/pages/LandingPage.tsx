@@ -340,7 +340,7 @@ export default function LandingPage() {
           
           {/* Animated circles for CTA */}
           <motion.div
-            className="absolute rounded-full border-2 border-blue-700 dark:border-blue-600 opacity-20 dark:opacity-15"
+            className="absolute rounded-full border-2 border-blue-400 dark:border-blue-500 opacity-50 dark:opacity-40"
             style={{
               width: 250,
               height: 250,
@@ -348,18 +348,19 @@ export default function LandingPage() {
               top: -50,
             }}
             animate={{
-              y: [0, 30, 0],
-              x: [0, 20, 0],
+              y: [0, 50, 0],
+              x: [0, 30, 0],
+              scale: [1, 1.1, 1],
             }}
             transition={{
-              duration: 18,
+              duration: 15,
               repeat: Infinity,
               ease: "easeInOut",
             }}
           />
           
           <motion.div
-            className="absolute rounded-full border-2 border-blue-700 dark:border-blue-600 opacity-20 dark:opacity-15"
+            className="absolute rounded-full border-2 border-blue-400 dark:border-blue-500 opacity-50 dark:opacity-40"
             style={{
               width: 200,
               height: 200,
@@ -367,12 +368,33 @@ export default function LandingPage() {
               bottom: -50,
             }}
             animate={{
-              y: [0, -30, 0],
-              x: [0, -20, 0],
+              y: [0, -50, 0],
+              x: [0, -30, 0],
+              scale: [1, 1.15, 1],
             }}
             transition={{
-              duration: 20,
+              duration: 18,
               delay: 1,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+
+          {/* Additional pulsing circles */}
+          <motion.div
+            className="absolute rounded-full border border-blue-300 dark:border-blue-400 opacity-40 dark:opacity-30"
+            style={{
+              width: 150,
+              height: 150,
+              left: "10%",
+              top: "50%",
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{
+              duration: 4,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -380,23 +402,24 @@ export default function LandingPage() {
 
           {/* Floating dots */}
           <div className="absolute inset-0">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(8)].map((_, i) => (
               <motion.div
                 key={`cta-dot-${i}`}
-                className="absolute rounded-full bg-blue-300/40"
+                className="absolute rounded-full bg-gradient-to-r from-blue-300 to-blue-200"
                 style={{
-                  width: 2,
-                  height: 2,
-                  left: `${20 + i * 12}%`,
-                  top: `${40 + (i % 2) * 20}%`,
+                  width: 3,
+                  height: 3,
+                  left: `${15 + i * 11}%`,
+                  top: `${35 + (i % 3) * 20}%`,
                 }}
                 animate={{
-                  opacity: [0.2, 0.6, 0.2],
-                  scale: [1, 1.3, 1],
+                  opacity: [0.3, 0.9, 0.3],
+                  scale: [1, 1.5, 1],
+                  y: [0, 15, 0],
                 }}
                 transition={{
-                  duration: 2.5 + i * 0.2,
-                  delay: i * 0.2,
+                  duration: 2 + i * 0.15,
+                  delay: i * 0.1,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
