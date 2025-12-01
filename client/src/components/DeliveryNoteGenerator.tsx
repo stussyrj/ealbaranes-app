@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +13,7 @@ interface DeliveryNoteGeneratorProps {
 }
 
 export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: DeliveryNoteGeneratorProps) {
+  const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
   const [signatureCanvas, setSignatureCanvas] = useState<HTMLCanvasElement | null>(null);
   const [isSigned, setIsSigned] = useState(false);
@@ -77,6 +79,10 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
         setNotes("");
         handleClearSignature();
         onOpenChange(false);
+        // Invalidate and refetch worker's delivery notes
+        await queryClient.invalidateQueries({
+          queryKey: ["/api/workers", workerId, "delivery-notes"],
+        });
       }
     } catch (error) {
       console.error("Error creating delivery note:", error);
