@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,9 @@ export default function WorkerDashboard() {
   const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
   const [selectedNoteForPhoto, setSelectedNoteForPhoto] = useState<DeliveryNote | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [formData, setFormData] = useState({
     clientName: "",
     pickupOrigin: "",
@@ -713,36 +716,67 @@ export default function WorkerDashboard() {
             <DialogDescription>Captura una foto del albarán</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={async () => {
-                try {
-                  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                  const video = document.createElement("video");
-                  video.srcObject = stream;
-                  video.play();
-                  
-                  const canvas = document.createElement("canvas");
-                  setTimeout(() => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    const ctx = canvas.getContext("2d");
-                    if (ctx) ctx.drawImage(video, 0, 0);
-                    stream.getTracks().forEach(track => track.stop());
-                    const photoData = canvas.toDataURL("image/jpeg", 0.8);
-                    setCapturedPhoto(photoData);
-                  }, 500);
-                } catch (error) {
-                  console.error("Error accediendo a la cámara:", error);
-                  alert("No se pudo acceder a la cámara");
-                }
-              }}
-              className="w-full"
-              data-testid="button-capture-photo"
-            >
-              📸 Capturar Foto
-            </Button>
+            {!showCameraPreview && !capturedPhoto && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    setCameraStream(stream);
+                    setShowCameraPreview(true);
+                    setTimeout(() => {
+                      if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                      }
+                    }, 0);
+                  } catch (error) {
+                    console.error("Error accediendo a la cámara:", error);
+                    alert("No se pudo acceder a la cámara");
+                  }
+                }}
+                className="w-full"
+                data-testid="button-open-camera"
+              >
+                📸 Abrir Cámara
+              </Button>
+            )}
+
+            {showCameraPreview && !capturedPhoto && (
+              <div className="space-y-4">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full rounded-lg max-h-48 object-cover bg-black"
+                  data-testid="video-camera-preview"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (videoRef.current && cameraStream) {
+                      const canvas = document.createElement("canvas");
+                      canvas.width = videoRef.current.videoWidth;
+                      canvas.height = videoRef.current.videoHeight;
+                      const ctx = canvas.getContext("2d");
+                      if (ctx) {
+                        ctx.drawImage(videoRef.current, 0, 0);
+                      }
+                      cameraStream.getTracks().forEach(track => track.stop());
+                      setCameraStream(null);
+                      setShowCameraPreview(false);
+                      const photoData = canvas.toDataURL("image/jpeg", 0.8);
+                      setCapturedPhoto(photoData);
+                    }
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  data-testid="button-take-photo"
+                >
+                  Tomar Foto
+                </Button>
+              </div>
+            )}
+
             {capturedPhoto && (
               <div className="relative">
                 <img src={capturedPhoto} alt="Foto capturada" className="w-full rounded-lg max-h-48 object-cover" />
@@ -750,74 +784,92 @@ export default function WorkerDashboard() {
                   type="button"
                   variant="destructive"
                   size="sm"
-                  onClick={() => setCapturedPhoto(null)}
+                  onClick={() => {
+                    setCapturedPhoto(null);
+                    setShowCameraPreview(false);
+                    if (cameraStream) {
+                      cameraStream.getTracks().forEach(track => track.stop());
+                      setCameraStream(null);
+                    }
+                  }}
                   className="absolute top-2 right-2"
+                  data-testid="button-delete-photo"
                 >
                   ✕
                 </Button>
               </div>
             )}
+
             <div className="flex gap-2 pt-4">
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setCapturePhotoOpen(false);
                   setCapturedPhoto(null);
+                  setShowCameraPreview(false);
                   setSelectedNoteForPhoto(null);
+                  if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    setCameraStream(null);
+                  }
                 }} 
                 className="flex-1"
                 data-testid="button-cancel-photo"
               >
                 Cancelar
               </Button>
-              <Button
-                onClick={async () => {
-                  if (!selectedNoteForPhoto || !capturedPhoto) return;
-                  try {
-                    const now = new Date().toISOString();
-                    const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ 
-                        photo: capturedPhoto,
-                        status: "confirmado",
-                        signedAt: now
-                      }),
-                      credentials: "include",
-                    });
-                    
-                    if (response.ok) {
-                      const noteWithSignature = await response.json();
+              {capturedPhoto && (
+                <Button
+                  onClick={async () => {
+                    if (!selectedNoteForPhoto || !capturedPhoto) return;
+                    try {
+                      const now = new Date().toISOString();
+                      const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ 
+                          photo: capturedPhoto,
+                          status: "confirmado",
+                          signedAt: now
+                        }),
+                        credentials: "include",
+                      });
                       
-                      // Update cache
-                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
-                      const adminKey = ["/api/delivery-notes"];
-                      
-                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
-                      const updatedWorkerNotes = workerNotes.map(n => n.id === noteWithSignature.id ? noteWithSignature : n);
-                      queryClient.setQueryData(workerKey, updatedWorkerNotes);
-                      
-                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
-                      const updatedAllNotes = allNotes.map(n => n.id === noteWithSignature.id ? noteWithSignature : n);
-                      queryClient.setQueryData(adminKey, updatedAllNotes);
-                      
-                      await queryClient.invalidateQueries({ queryKey: workerKey });
-                      await queryClient.invalidateQueries({ queryKey: adminKey });
-                      
-                      setCapturePhotoOpen(false);
-                      setCapturedPhoto(null);
-                      setSelectedNoteForPhoto(null);
+                      if (response.ok) {
+                        const noteWithSignature = await response.json();
+                        const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                        const adminKey = ["/api/delivery-notes"];
+                        
+                        const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                        const updatedWorkerNotes = workerNotes.map(n => n.id === noteWithSignature.id ? noteWithSignature : n);
+                        queryClient.setQueryData(workerKey, updatedWorkerNotes);
+                        
+                        const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                        const updatedAllNotes = allNotes.map(n => n.id === noteWithSignature.id ? noteWithSignature : n);
+                        queryClient.setQueryData(adminKey, updatedAllNotes);
+                        
+                        await queryClient.invalidateQueries({ queryKey: workerKey });
+                        await queryClient.invalidateQueries({ queryKey: adminKey });
+                        
+                        setCapturePhotoOpen(false);
+                        setCapturedPhoto(null);
+                        setShowCameraPreview(false);
+                        setSelectedNoteForPhoto(null);
+                        if (cameraStream) {
+                          cameraStream.getTracks().forEach(track => track.stop());
+                          setCameraStream(null);
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Error guardando foto:", error);
                     }
-                  } catch (error) {
-                    console.error("Error guardando foto:", error);
-                  }
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                disabled={!capturedPhoto}
-                data-testid="button-save-photo"
-              >
-                Guardar Foto
-              </Button>
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  data-testid="button-save-photo"
+                >
+                  Guardar Foto
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
