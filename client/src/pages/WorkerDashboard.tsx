@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +52,26 @@ export default function WorkerDashboard() {
       setUser({ ...user, workerId: undefined });
     }
   };
+
+  // Limpio y manejo del stream de cámara
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // Manejo del stream cuando se muestra/oculta preview
+  useEffect(() => {
+    if (!showCameraPreview && cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [showCameraPreview]);
 
   const { data: orders = [] } = useQuery<Quote[]>({
     queryKey: ["/api/workers", user?.workerId || "", "orders"],
@@ -723,11 +743,14 @@ export default function WorkerDashboard() {
                 onClick={async () => {
                   try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    if (videoRef.current) {
-                      videoRef.current.srcObject = stream;
-                    }
                     setCameraStream(stream);
                     setShowCameraPreview(true);
+                    setTimeout(() => {
+                      if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        videoRef.current.play();
+                      }
+                    }, 100);
                   } catch (error) {
                     console.error("Error accediendo a la cámara:", error);
                     alert("No se pudo acceder a la cámara");
@@ -744,28 +767,34 @@ export default function WorkerDashboard() {
               <div className="space-y-4">
                 <video
                   ref={videoRef}
-                  autoPlay
                   playsInline
                   muted
-                  className="w-full rounded-lg max-h-64 object-cover bg-black"
+                  className="w-full rounded-lg max-h-64 bg-black"
                   data-testid="video-camera-preview"
+                  style={{ display: 'block' }}
                 />
                 <Button
                   type="button"
                   onClick={() => {
-                    if (videoRef.current && cameraStream) {
+                    if (videoRef.current && videoRef.current.videoWidth > 0) {
                       const canvas = document.createElement("canvas");
-                      canvas.width = videoRef.current.videoWidth;
-                      canvas.height = videoRef.current.videoHeight;
+                      canvas.width = videoRef.current.videoWidth || 640;
+                      canvas.height = videoRef.current.videoHeight || 480;
                       const ctx = canvas.getContext("2d");
-                      if (ctx) {
+                      if (ctx && canvas.width > 0 && canvas.height > 0) {
                         ctx.drawImage(videoRef.current, 0, 0);
+                        if (cameraStream) {
+                          cameraStream.getTracks().forEach(track => track.stop());
+                          setCameraStream(null);
+                        }
+                        setShowCameraPreview(false);
+                        const photoData = canvas.toDataURL("image/jpeg", 0.8);
+                        setCapturedPhoto(photoData);
+                      } else {
+                        alert("Error al capturar la foto. Intenta de nuevo.");
                       }
-                      cameraStream.getTracks().forEach(track => track.stop());
-                      setCameraStream(null);
-                      setShowCameraPreview(false);
-                      const photoData = canvas.toDataURL("image/jpeg", 0.8);
-                      setCapturedPhoto(photoData);
+                    } else {
+                      alert("La cámara no está lista. Espera un momento e intenta de nuevo.");
                     }
                   }}
                   className="w-full bg-green-600 hover:bg-green-700"
