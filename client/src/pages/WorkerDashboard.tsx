@@ -100,6 +100,29 @@ export default function WorkerDashboard() {
     return `${hours}h ${mins}m`;
   };
 
+  // Calcular albaranes del día y del mes
+  const getTodayDeliveryNotes = () => {
+    const today = new Date().toDateString();
+    return deliveryNotes.filter((note: DeliveryNote) => {
+      if (note.signedAt) {
+        const noteDate = new Date(note.signedAt).toDateString();
+        return noteDate === today;
+      }
+      return false;
+    });
+  };
+
+  const getMonthDeliveryNotes = () => {
+    const now = new Date();
+    return deliveryNotes.filter((note: DeliveryNote) => {
+      if (note.signedAt) {
+        const noteDate = new Date(note.signedAt);
+        return noteDate.getMonth() === now.getMonth() && noteDate.getFullYear() === now.getFullYear();
+      }
+      return false;
+    });
+  };
+
   const renderOrderCard = (order: Quote, showGenerateBtn = false) => {
     const noteStatus = getDeliveryNoteStatus(order.id);
     const getStatusColor = (status: string | null) => {
@@ -220,15 +243,23 @@ export default function WorkerDashboard() {
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-6">
           <Card className="hover-elevate">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground">Pedidos Totales Confirmados</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Albaranes Totales</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                {confirmedOrders.length}
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Hoy</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {getTodayDeliveryNotes().length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Este Mes</p>
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {getMonthDeliveryNotes().length}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Servicios en estado confirmado o asignado
-              </p>
             </CardContent>
           </Card>
 
@@ -420,10 +451,45 @@ export default function WorkerDashboard() {
                 Cancelar
               </Button>
               <Button
-                onClick={() => {
-                  // Aquí iría la lógica para guardar el albarán
-                  console.log("Albarán creado:", formData);
-                  setCreateDeliveryOpen(false);
+                onClick={async () => {
+                  try {
+                    const deliveryNoteData = {
+                      quoteId: `custom-${Date.now()}`,
+                      workerId: user?.workerId,
+                      clientName: formData.clientName,
+                      pickupOrigin: formData.pickupOrigin,
+                      destination: formData.destination,
+                      vehicleType: formData.vehicleType,
+                      date: formData.date,
+                      time: formData.time,
+                      observations: formData.observations,
+                      status: "signed",
+                      signedAt: new Date().toISOString(),
+                    };
+
+                    const response = await fetch("/api/delivery-notes", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(deliveryNoteData),
+                      credentials: "include",
+                    });
+
+                    if (response.ok) {
+                      console.log("Albarán guardado:", deliveryNoteData);
+                      setCreateDeliveryOpen(false);
+                      setFormData({
+                        clientName: "",
+                        pickupOrigin: "",
+                        destination: "",
+                        vehicleType: "Furgoneta",
+                        date: new Date().toISOString().split("T")[0],
+                        time: "09:00",
+                        observations: "",
+                      });
+                    }
+                  } catch (error) {
+                    console.error("Error guardando albarán:", error);
+                  }
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
