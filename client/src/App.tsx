@@ -18,6 +18,7 @@ import ContactPage from "@/pages/ContactPage";
 import AdminPricingPage from "@/pages/AdminPricingPage";
 import AdminVehiclesPage from "@/pages/AdminVehiclesPage";
 import WorkerDashboard from "@/pages/WorkerDashboard.tsx";
+import WorkerSelection from "@/pages/WorkerSelection";
 
 function Router() {
   const { user } = useAuth();
@@ -38,6 +39,16 @@ function Router() {
   }
 
   if (user.role === "worker") {
+    // If no workerId selected yet, show selection page
+    if (!user.workerId) {
+      return (
+        <Switch>
+          <Route path="/" component={WorkerSelection} />
+          <Route component={NotFound} />
+        </Switch>
+      );
+    }
+    // Otherwise show worker dashboard
     return (
       <Switch>
         <Route path="/" component={WorkerDashboard} />
