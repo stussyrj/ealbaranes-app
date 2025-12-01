@@ -338,12 +338,23 @@ export default function DashboardPage() {
                   size="sm"
                   className="flex-1 text-xs"
                   onClick={() => {
-                    window.open(previewImage, "_blank");
+                    fetch(previewImage)
+                      .then(res => res.blob())
+                      .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `alaban-${new Date().toISOString().split('T')[0]}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      });
                   }}
-                  data-testid="button-open-preview"
+                  data-testid="button-download-preview"
                 >
                   <Download className="w-3 h-3 mr-1" />
-                  Abrir
+                  Descargar
                 </Button>
                 {navigator.share && (
                   <Button
@@ -377,9 +388,6 @@ export default function DashboardPage() {
                   Cerrar
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground text-center">
-                Click derecho → Guardar imagen como
-              </p>
             </div>
           </div>
         </div>
