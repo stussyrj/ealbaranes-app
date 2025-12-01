@@ -247,134 +247,102 @@ export default function DashboardPage() {
       />
 
       <Dialog open={deliveryNotesModalOpen} onOpenChange={setDeliveryNotesModalOpen}>
-        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-3 sm:p-4 sm:rounded-lg rounded-none">
-          <DialogHeader className="pb-2 sticky top-0 bg-background z-10">
-            <DialogTitle className="text-lg sm:text-xl">
+        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
+          <DialogHeader className="pb-1 sticky top-0 bg-background z-10">
+            <DialogTitle className="text-base sm:text-lg">
               Albaranes {deliveryNotesType === "pending" ? "Pendientes" : "Firmados"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {(deliveryNotesType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
               <div key={note.id} ref={(el) => { deliveryNoteRefs.current[note.id] = el; }} className="rounded-lg border border-border bg-card overflow-hidden">
-                {/* Header */}
-                <div className="flex justify-between items-start p-2.5 sm:p-3 border-b border-border/50 gap-2">
+                {/* Header - Compacto */}
+                <div className="flex justify-between items-start p-1.5 sm:p-2 border-b border-border/50 gap-1">
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm sm:text-base truncate">{note.destination || 'Sin destino'}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{note.clientName || 'Sin cliente'}</p>
+                    <p className="font-bold text-xs sm:text-sm truncate">{note.destination || 'Sin destino'}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{note.clientName || 'Sin cliente'}</p>
                   </div>
-                  <Badge className={`text-xs flex-shrink-0 ${deliveryNotesType === "pending" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"}`}>
+                  <Badge className={`text-[10px] flex-shrink-0 h-5 ${deliveryNotesType === "pending" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"}`}>
                     {deliveryNotesType === "pending" ? "Pte." : "✓"}
                   </Badge>
                 </div>
 
-                {/* Content */}
-                <div className="p-2.5 sm:p-3 space-y-2.5">
+                {/* Content - Compacto */}
+                <div className="p-1.5 sm:p-2 space-y-1">
+                  {/* Foto PRIMERO - Grande */}
+                  {note.photo && (
+                    <div className="mb-1.5">
+                      <img src={note.photo} alt="Albarán" className="w-full rounded max-h-40 object-cover" />
+                    </div>
+                  )}
+
                   {/* Trabajador */}
-                  <div className="bg-muted/30 rounded p-2">
-                    <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">TRABAJADOR</p>
-                    <p className="font-medium text-xs sm:text-sm">{(note as any).workerName || 'Desconocido'}</p>
+                  <div className="bg-muted/30 rounded p-1.5">
+                    <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">TRABAJADOR</p>
+                    <p className="font-medium text-[11px]">{(note as any).workerName || 'Desconocido'}</p>
                   </div>
 
-                  {/* Ruta - Stack en móvil, grid en desktop */}
-                  <div className="space-y-1.5 sm:grid sm:grid-cols-2 sm:gap-2">
-                    <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">ORIGEN</p>
-                      <p className="font-medium text-xs line-clamp-2">{note.pickupOrigin || 'N/A'}</p>
+                  {/* Ruta - Compacto */}
+                  <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-1">
+                    <div className="bg-muted/30 rounded p-1.5">
+                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">ORIGEN</p>
+                      <p className="font-medium text-[11px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">DESTINO</p>
-                      <p className="font-medium text-xs line-clamp-2">{note.destination || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  {/* Vehículo y Fecha - Stack en móvil */}
-                  <div className="space-y-1.5 sm:grid sm:grid-cols-2 sm:gap-2">
-                    <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">VEHÍCULO</p>
-                      <p className="font-medium text-xs">{note.vehicleType || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold mb-0.5">FECHA</p>
-                      <p className="font-medium text-xs">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                    <div className="bg-muted/30 rounded p-1.5">
+                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">DESTINO</p>
+                      <p className="font-medium text-[11px] line-clamp-1">{note.destination || 'N/A'}</p>
                     </div>
                   </div>
 
-                  {/* Hora */}
-                  <div className="bg-muted/30 rounded p-2">
-                    <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">HORA</p>
-                    <p className="font-medium text-xs sm:text-sm">{note.time || 'N/A'}</p>
+                  {/* Vehículo y Fecha - Compacto */}
+                  <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-1">
+                    <div className="bg-muted/30 rounded p-1.5">
+                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">VEHÍCULO</p>
+                      <p className="font-medium text-[11px]">{note.vehicleType || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1.5">
+                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">FECHA</p>
+                      <p className="font-medium text-[11px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                    </div>
                   </div>
 
-                  {/* Observaciones */}
-                  <div className="bg-muted/30 rounded p-2">
-                    <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">OBSERVACIONES</p>
-                    <p className="text-xs line-clamp-3">{note.observations || 'Sin observaciones'}</p>
+                  {/* Hora y Observaciones - Compacto */}
+                  <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-1">
+                    <div className="bg-muted/30 rounded p-1.5">
+                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">HORA</p>
+                      <p className="font-medium text-[11px]">{note.time || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1.5">
+                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">OBS.</p>
+                      <p className="text-[11px] line-clamp-1">{note.observations || '-'}</p>
+                    </div>
                   </div>
 
                   {/* Firma */}
                   {deliveryNotesType === "signed" && note.signedAt && (
-                    <div className="bg-muted/30 rounded p-2">
-                      <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">FIRMADO</p>
-                      <p className="font-medium text-xs">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
+                    <div className="bg-muted/30 rounded p-1.5">
+                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">FIRMADO</p>
+                      <p className="font-medium text-[10px]">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
                     </div>
                   )}
 
-                  {/* Foto */}
-                  {note.photo && (
-                    <div className="pt-1">
-                      <p className="text-[11px] text-muted-foreground font-semibold mb-1">FOTO</p>
-                      <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-48 object-cover" />
-                    </div>
-                  )}
-
-                  {/* Historial Timeline */}
-                  <div className="border-t border-border/50 pt-2.5 mt-2.5">
-                    <p className="text-[11px] text-muted-foreground font-semibold mb-2">HISTORIAL</p>
-                    <div className="space-y-2 text-xs">
-                      {/* Created */}
-                      <div className="flex gap-2">
-                        <div className="flex flex-col items-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5"></div>
-                          {note.signedAt && <div className="w-0.5 h-6 bg-border/30 my-1"></div>}
-                        </div>
-                        <div>
-                          <p className="font-medium">Creado</p>
-                          <p className="text-muted-foreground">{note.createdAt ? new Date(note.createdAt).toLocaleString('es-ES') : 'N/A'}</p>
-                        </div>
-                      </div>
-
-                      {/* Signed */}
-                      {note.signedAt && (
-                        <div className="flex gap-2">
-                          <div className="flex flex-col items-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                          </div>
-                          <div>
-                            <p className="font-medium text-green-600 dark:text-green-400">Firmado</p>
-                            <p className="text-muted-foreground">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Share buttons for signed notes */}
+                  {/* Share buttons - Solo para albaranes firmados */}
                   {deliveryNotesType === "signed" && note.photo && (
-                    <div className="border-t border-border/50 pt-2 mt-2 flex gap-1.5 sm:gap-2">
+                    <div className="border-t border-border/30 pt-1 mt-1 flex gap-1">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 text-xs h-9 sm:h-8"
+                        className="flex-1 text-[10px] h-7"
                         onClick={() => captureAndPreviewDeliveryNote(note)}
                         data-testid={`button-download-delivery-note-${note.id}`}
                       >
-                        <Download className="w-3 h-3 mr-1" />
+                        <Download className="w-2.5 h-2.5 mr-0.5" />
                         Ver
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 text-xs h-9 sm:h-8"
+                        className="flex-1 text-[10px] h-7"
                         onClick={() => {
                           const element = deliveryNoteRefs.current[note.id];
                           if (element && navigator.share) {
@@ -390,7 +358,7 @@ export default function DashboardPage() {
                         }}
                         data-testid={`button-share-delivery-note-${note.id}`}
                       >
-                        <Share2 className="w-3 h-3 mr-1" />
+                        <Share2 className="w-2.5 h-2.5 mr-0.5" />
                         Compartir
                       </Button>
                     </div>
