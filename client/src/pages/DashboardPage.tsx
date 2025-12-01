@@ -252,43 +252,8 @@ export default function DashboardPage() {
               {filteredPendingQuotes.length > 0 && (
                 <>
                   {filteredConfirmedQuotes.length > 0 && <div className="border-t my-4"></div>}
-                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Presupuestos sin confirmar ({filteredPendingQuotes.length})</div>
-                  {filteredPendingQuotes.map((quote) => (
-                    <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900 opacity-60">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
-                          Nº {getQuoteNumber(quote.id)}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Origen</p>
-                          <p className="font-medium text-sm">{quote.origin}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Destino</p>
-                          <p className="font-medium text-sm">{quote.destination}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Vehículo</p>
-                          <p className="font-medium text-sm">{quote.vehicleTypeName}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Precio</p>
-                          <p className="font-bold text-green-600 dark:text-green-400">{quote.totalPrice.toFixed(2)}€</p>
-                        </div>
-                      </div>
-                      <div className="space-y-1 mb-2 text-sm">
-                        {quote.createdAt && (
-                          <p><span className="text-muted-foreground">Solicitud: </span><span className="font-mono text-xs">{new Date(quote.createdAt).toLocaleString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></p>
-                        )}
-                        {quote.pickupTime && (
-                          <p><span className="text-muted-foreground">Recogida: </span><span className="font-mono text-xs">{quote.pickupTime}</span></p>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground text-center p-2 bg-yellow-100/30 dark:bg-yellow-900/20 rounded">Pendiente de confirmación del cliente</div>
-                    </div>
-                  ))}
+                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Solicitudes para revisar ({filteredPendingQuotes.length})</div>
+                  {filteredPendingQuotes.map((quote) => renderQuoteCard(quote, true))}
                 </>
               )}
             </div>
