@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Truck, MapPin, Clock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 // Animated background pattern component
 function AnimatedBackground() {
@@ -130,21 +131,57 @@ function AnimatedBackground() {
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
+  const [isAutoScroll, setIsAutoScroll] = useState(true);
+  const [currentSection, setCurrentSection] = useState(0);
+  
+  const heroRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const aboutRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  
+  const sections = [heroRef, featuresRef, aboutRef, ctaRef];
+
+  useEffect(() => {
+    if (!isAutoScroll) return;
+
+    const timer = setInterval(() => {
+      setCurrentSection((prev) => {
+        const next = (prev + 1) % sections.length;
+        const element = sections[next].current;
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return next;
+      });
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [isAutoScroll, sections]);
+
+  const handleSectionClick = () => {
+    setIsAutoScroll(!isAutoScroll);
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* Navigation bar */}
       <nav className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/95 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Truck className="w-6 h-6 text-blue-900 dark:text-blue-500" />
             <span className="text-xl font-bold text-blue-900 dark:text-blue-400">DirectTransports</span>
           </div>
+          <button
+            onClick={handleSectionClick}
+            className="px-3 py-1 text-sm bg-blue-900/10 dark:bg-blue-900/30 text-blue-900 dark:text-blue-400 rounded-full hover:bg-blue-900/20 dark:hover:bg-blue-900/40 transition"
+          >
+            {isAutoScroll ? "Pausar tour" : "Reanudar tour"}
+          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 px-6 overflow-hidden">
+      <section ref={heroRef} className="relative py-20 md:py-32 px-6 overflow-hidden scroll-mt-16">
         <AnimatedBackground />
         <div className="relative z-10 max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -225,7 +262,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 border-t border-slate-200 dark:border-slate-800">
+      <section ref={featuresRef} className="py-20 border-t border-slate-200 dark:border-slate-800 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -284,7 +321,7 @@ export default function LandingPage() {
       </section>
 
       {/* About Section */}
-      <section className="py-20 bg-slate-50 dark:bg-slate-900">
+      <section ref={aboutRef} className="py-20 bg-slate-50 dark:bg-slate-900 scroll-mt-16">
         <div className="max-w-4xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -333,7 +370,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-20 px-6 overflow-hidden">
+      <section ref={ctaRef} className="relative py-20 px-6 overflow-hidden scroll-mt-16">
         <div className="absolute inset-0 overflow-hidden">
           {/* Animated gradient background */}
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-800 dark:from-blue-800 dark:to-blue-900" />
