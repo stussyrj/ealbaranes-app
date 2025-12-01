@@ -207,25 +207,25 @@ export default function QuotePage() {
   const pickupTimeError = validatePickupTime(selectedDate, selectedHour, selectedMinute);
   
   useEffect(() => {
-    if (selectedDate) {
-      const dateStr = selectedDate.toISOString().split("T")[0];
-      const timeStr = `${selectedHour}:${selectedMinute}`;
-      setPickupTime(`${dateStr} ${timeStr}`);
+    if (!selectedDate) return;
+    
+    const dateStr = selectedDate.toISOString().split("T")[0];
+    const timeStr = `${selectedHour}:${selectedMinute}`;
+    setPickupTime(`${dateStr} ${timeStr}`);
 
-      // Check carrozado availability for this specific date/time
-      if (vehicleId === "carrozado") {
-        fetch("/api/check-carrozado-availability", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ vehicleTypeId: "carrozado", pickupTime: `${dateStr} ${timeStr}` }),
-          credentials: "include",
-        })
-          .then((r) => r.json())
-          .then((d) => setCarrozadoSlotAvailable(d.available !== false))
-          .catch(() => setCarrozadoSlotAvailable(true));
-      } else {
-        setCarrozadoSlotAvailable(true);
-      }
+    // Check carrozado availability for this specific date/time
+    if (vehicleId === "carrozado") {
+      fetch("/api/check-carrozado-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vehicleTypeId: "carrozado", pickupTime: `${dateStr} ${timeStr}` }),
+        credentials: "include",
+      })
+        .then((r) => r.json())
+        .then((d) => setCarrozadoSlotAvailable(d.available === true))
+        .catch(() => setCarrozadoSlotAvailable(true));
+    } else {
+      setCarrozadoSlotAvailable(true);
     }
   }, [selectedDate, selectedHour, selectedMinute, vehicleId]);
 
