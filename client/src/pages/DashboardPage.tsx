@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { useToast } from "@/hooks/use-toast";
+import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -21,6 +22,25 @@ export default function DashboardPage() {
     }
   }, []);
 
+  return (
+    <div className="relative">
+      <AnimatedPageBackground />
+      <DashboardContent
+        quotes={quotes}
+        setQuotes={setQuotes}
+        loading={loading}
+        setLoading={setLoading}
+        searchNumber={searchNumber}
+        setSearchNumber={setSearchNumber}
+        showAnimation={showAnimation}
+        setShowAnimation={setShowAnimation}
+        toast={toast}
+      />
+    </div>
+  );
+}
+
+function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber, setSearchNumber, showAnimation, setShowAnimation, toast }: any) {
   if (!loading && quotes.length === 0) {
     setLoading(true);
     fetch("/api/quotes", { credentials: "include" })
