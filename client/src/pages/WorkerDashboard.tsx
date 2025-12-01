@@ -51,13 +51,19 @@ export default function WorkerDashboard() {
     o.status === "assigned" || o.status === "confirmed" || o.status === "approved"
   );
 
-  const totalRouteMinutes = orders.reduce((sum: number, order: Quote) => 
+  // Solo contar horas de órdenes con albarán firmado o entregado
+  const signedOrDeliveredOrders = orders.filter((o: Quote) => {
+    const noteStatus = getDeliveryNoteStatus(o.id);
+    return noteStatus === "signed" || noteStatus === "delivered";
+  });
+
+  const totalRouteMinutes = signedOrDeliveredOrders.reduce((sum: number, order: Quote) => 
     sum + (order.duration || 0), 0
   );
 
   const getTodayRouteMinutes = () => {
     const today = new Date().toDateString();
-    return orders.reduce((sum: number, order: Quote) => {
+    return signedOrDeliveredOrders.reduce((sum: number, order: Quote) => {
       if (order.createdAt) {
         const orderDate = new Date(order.createdAt).toDateString();
         if (orderDate === today) {
