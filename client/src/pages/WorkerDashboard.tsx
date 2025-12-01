@@ -117,17 +117,22 @@ export default function WorkerDashboard() {
           const video = videoElementRef.current;
           const canvas = canvasRef.current;
           
-          if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              // Set canvas size to match video
-              if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+          try {
+            // Always try to draw, video might have data
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                // Set canvas size to match video
+                if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+                  canvas.width = video.videoWidth;
+                  canvas.height = video.videoHeight;
+                }
+                // Draw frame
+                ctx.drawImage(video, 0, 0);
               }
-              // Draw frame
-              ctx.drawImage(video, 0, 0);
             }
+          } catch (e) {
+            console.log("Draw error:", e);
           }
           
           frameIdRef.current = requestAnimationFrame(renderFrame);
