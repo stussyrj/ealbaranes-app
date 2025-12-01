@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, Users, X } from "lucide-react";
+import { TrendingUp, MapPin, Truck, Users, X, Download, Share2 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { WorkerManagementModal } from "@/components/WorkerManagementModal";
 import { Badge } from "@/components/ui/badge";
+import html2canvas from "html2canvas";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,27 @@ export default function DashboardPage() {
   const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
   const [deliveryNotesModalOpen, setDeliveryNotesModalOpen] = useState(false);
   const [deliveryNotesType, setDeliveryNotesType] = useState<"pending" | "signed">("pending");
+  const deliveryNoteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  const captureAndDownloadDeliveryNote = async (note: any) => {
+    try {
+      const element = deliveryNoteRefs.current[note.id];
+      if (!element) {
+        toast({ title: "Error", description: "No se pudo capturar el albarán", variant: "destructive" });
+        return;
+      }
+
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff" });
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `alban-${note.destination}-${new Date().toISOString().split("T")[0]}.png`;
+      link.click();
+      toast({ title: "Éxito", description: "Albarán descargado correctamente" });
+    } catch (error) {
+      console.error("Error capturing delivery note:", error);
+      toast({ title: "Error", description: "Error al descargar el albarán", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     const hasSeenAnimation = sessionStorage.getItem("hasSeenAdminAnimation");
@@ -233,7 +255,7 @@ export default function DashboardPage() {
           </DialogHeader>
           <div className="space-y-3">
             {(deliveryNotesType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
-              <div key={note.id} className="rounded-lg border border-border bg-card overflow-hidden">
+              <div key={note.id} ref={(el) => { deliveryNoteRefs.current[note.id] = el; }} className="rounded-lg border border-border bg-card overflow-hidden">
                 {/* Header */}
                 <div className="flex justify-between items-start p-2.5 sm:p-3 border-b border-border/50 gap-2">
                   <div className="flex-1 min-w-0">
@@ -335,6 +357,44 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Share buttons for signed notes */}
+                  {deliveryNotesType === "signed" && note.photo && (
+                    <div className="border-t border-border/50 pt-2.5 mt-2.5 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8"
+                        onClick={() => captureAndDownloadDeliveryNote(note)}
+                        data-testid={`button-download-delivery-note-${note.id}`}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Descargar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8"
+                        onClick={() => {
+                          const element = deliveryNoteRefs.current[note.id];
+                          if (element && navigator.share) {
+                            html2canvas(element, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+                              canvas.toBlob(blob => {
+                                const file = new File([blob!], `alban-${note.destination}.png`, { type: "image/png" });
+                                navigator.share({ files: [file], title: `Albarán - ${note.destination}` });
+                              });
+                            });
+                          } else {
+                            toast({ title: "Info", description: "La función compartir no está disponible en tu navegador" });
+                          }
+                        }}
+                        data-testid={`button-share-delivery-note-${note.id}`}
+                      >
+                        <Share2 className="w-3 h-3 mr-1" />
+                        Compartir
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
