@@ -118,6 +118,46 @@ export async function getRouteDistance(
   return { km, durationMin, raw: data };
 }
 
+export async function getAddressSuggestions(text: string): Promise<GeocodeResult[]> {
+  if (!text || text.length < 2) return [];
+  
+  const apiKey = getApiKey();
+  
+  const params = new URLSearchParams({
+    api_key: apiKey,
+    text: text,
+    size: "5",
+    "boundary.country": "ES,PT,FR",
+  });
+  
+  const url = `${ORS_BASE_URL}/geocode/search?${params}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    if (!data.features || data.features.length === 0) return [];
+    
+    return data.features.map((feature: any) => {
+      const [lng, lat] = feature.geometry.coordinates;
+      const properties = feature.properties;
+      return {
+        lat,
+        lng,
+        label: properties.label || text,
+        country: properties.country || "España",
+      };
+    });
+  } catch (error) {
+    return [];
+  }
+}
+
 export async function calculateRouteFromAddresses(
   originAddress: string,
   destinationAddress: string

@@ -5,6 +5,7 @@ import {
   geocodeAddress,
   getRouteDistance,
   calculateRouteFromAddresses,
+  getAddressSuggestions,
 } from "./services/openrouteservice";
 import {
   geocodeRequestSchema,
@@ -18,6 +19,20 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  app.get("/api/address-suggestions", async (req, res) => {
+    try {
+      const text = req.query.q as string;
+      if (!text) {
+        return res.json([]);
+      }
+      const suggestions = await getAddressSuggestions(text);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching address suggestions:", error);
+      res.json([]);
+    }
+  });
+
   app.get("/api/vehicle-types", async (req, res) => {
     try {
       const types = await storage.getVehicleTypes();

@@ -32,6 +32,11 @@ export default function QuotePage() {
   const [selectedHour, setSelectedHour] = useState("09");
   const [selectedMinute, setSelectedMinute] = useState("00");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
+  const [destSuggestions, setDestSuggestions] = useState<any[]>([]);
+  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
+  const [showDestSuggestions, setShowDestSuggestions] = useState(false);
+  const [suggestionTimer, setSuggestionTimer] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -116,6 +121,63 @@ export default function QuotePage() {
     const selectedTime = new Date(selectedDate);
     selectedTime.setHours(parseInt(hour), parseInt(minute), 0);
     return selectedTime >= new Date(carrozadoUnavailableUntil);
+  };
+
+  const fetchAddressSuggestions = async (input: string, type: "origin" | "destination") => {
+    if (!input || input.length < 2) {
+      if (type === "origin") {
+        setOriginSuggestions([]);
+        setShowOriginSuggestions(false);
+      } else {
+        setDestSuggestions([]);
+        setShowDestSuggestions(false);
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/address-suggestions?q=${encodeURIComponent(input)}`, { credentials: "include" });
+      const suggestions = await res.json();
+      if (type === "origin") {
+        setOriginSuggestions(suggestions);
+        setShowOriginSuggestions(suggestions.length > 0);
+      } else {
+        setDestSuggestions(suggestions);
+        setShowDestSuggestions(suggestions.length > 0);
+      }
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+    }
+  };
+
+  const handleOriginChange = (value: string) => {
+    setOrigin(value);
+    if (suggestionTimer) clearTimeout(suggestionTimer);
+    const timer = setTimeout(() => {
+      fetchAddressSuggestions(value, "origin");
+    }, 300);
+    setSuggestionTimer(timer);
+  };
+
+  const handleDestinationChange = (value: string) => {
+    setDestination(value);
+    if (suggestionTimer) clearTimeout(suggestionTimer);
+    const timer = setTimeout(() => {
+      fetchAddressSuggestions(value, "destination");
+    }, 300);
+    setSuggestionTimer(timer);
+  };
+
+  const selectSuggestion = (suggestion: any, type: "origin" | "destination") => {
+    if (type === "origin") {
+      setOrigin(suggestion.label);
+      setShowOriginSuggestions(false);
+      setOriginSuggestions([]);
+    } else {
+      setDestination(suggestion.label);
+      setShowDestSuggestions(false);
+      setDestSuggestions([]);
+    }
   };
 
   const handleCalculate = async () => {
@@ -270,13 +332,31 @@ export default function QuotePage() {
             <Label>Teléfono de Contacto</Label>
             <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Ej: 123 456 789" data-testid="input-phone" />
           </div>
-          <div>
+          <div className="relative">
             <Label>Origen</Label>
-            <Input value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Ej: Calle Gran Vía, 45, 28013 Madrid" />
+            <Input value={origin} onChange={(e) => handleOriginChange(e.target.value)} placeholder="Ej: Calle Gran Vía, 45, 28013 Madrid" data-testid="input-origin" />
+            {showOriginSuggestions && originSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
+                {originSuggestions.map((suggestion, idx) => (
+                  <div key={idx} onClick={() => selectSuggestion(suggestion, "origin")} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm">
+                    {suggestion.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
+          <div className="relative">
             <Label>Destino</Label>
-            <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Ej: Paseo de Gràcia, 120, 08008 Barcelona" />
+            <Input value={destination} onChange={(e) => handleDestinationChange(e.target.value)} placeholder="Ej: Paseo de Gràcia, 120, 08008 Barcelona" data-testid="input-destination" />
+            {showDestSuggestions && destSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
+                {destSuggestions.map((suggestion, idx) => (
+                  <div key={idx} onClick={() => selectSuggestion(suggestion, "destination")} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm">
+                    {suggestion.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <Label>Vehículo</Label>
