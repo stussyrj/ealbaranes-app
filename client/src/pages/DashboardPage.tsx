@@ -37,11 +37,31 @@ export default function DashboardPage() {
       }
 
       const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff" });
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = `alban-${note.destination}-${new Date().toISOString().split("T")[0]}.png`;
-      link.click();
-      toast({ title: "Éxito", description: "Albarán descargado correctamente" });
+      
+      // Usar toBlob para mejor compatibilidad y tamaño más pequeño
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast({ title: "Error", description: "No se pudo generar la imagen", variant: "destructive" });
+          return;
+        }
+
+        // Crear URL del blob
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        const fileName = `alaban-${note.destination || "entrega"}-${new Date().toISOString().split("T")[0]}.png`;
+        link.download = fileName.replace(/[^a-zA-Z0-9-]/g, "_");
+        
+        // Agregar temporalmente al DOM para que el click funcione
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Liberar el blob URL
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        
+        toast({ title: "Éxito", description: "Albarán descargado correctamente" });
+      }, "image/png");
     } catch (error) {
       console.error("Error capturing delivery note:", error);
       toast({ title: "Error", description: "Error al descargar el albarán", variant: "destructive" });
