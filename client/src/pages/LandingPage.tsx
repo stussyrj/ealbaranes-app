@@ -45,7 +45,10 @@ export default function LandingPage() {
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
-                  onClick={() => navigate("/quote")}
+                  onClick={() => {
+                    sessionStorage.removeItem("hasSeenClientAnimation");
+                    navigate("/quote");
+                  }}
                   className="bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white text-lg px-8 py-6 rounded-lg"
                   data-testid="button-hero-quote"
                 >
@@ -213,7 +216,10 @@ export default function LandingPage() {
               whileTap={{ scale: 0.95 }}
             >
               <Button
-                onClick={() => navigate("/quote")}
+                onClick={() => {
+                  sessionStorage.removeItem("hasSeenClientAnimation");
+                  navigate("/quote");
+                }}
                 className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white text-lg px-10 py-6 rounded-lg"
                 data-testid="button-cta-quote"
               >
