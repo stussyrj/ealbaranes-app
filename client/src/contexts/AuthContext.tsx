@@ -31,12 +31,12 @@ const getInitialUser = (): User => {
       }
     }
   }
-  // Default to admin
+  // Default to customer
   return {
-    id: "1",
-    username: "Daniel",
-    email: "daniel@directtransports.com",
-    role: "admin",
+    id: "2",
+    username: "Cliente Demo",
+    email: "cliente@demo.com",
+    role: "customer",
   };
 };
 
