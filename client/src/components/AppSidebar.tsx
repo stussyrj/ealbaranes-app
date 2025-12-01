@@ -179,18 +179,6 @@ export function AppSidebar() {
             </p>
           </div>
         </div>
-        {user.role === "worker" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={switchWorker}
-            className="w-full justify-start text-xs"
-            data-testid="button-switch-worker"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Cambiar Trabajador
-          </Button>
-        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
