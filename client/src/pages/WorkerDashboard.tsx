@@ -377,7 +377,7 @@ export default function WorkerDashboard() {
               <label className="text-sm font-medium">Tipo de Vehículo</label>
               <Select value={formData.vehicleType} onValueChange={(value) => setFormData({ ...formData, vehicleType: value })}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecciona un vehículo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Moto">Moto</SelectItem>
