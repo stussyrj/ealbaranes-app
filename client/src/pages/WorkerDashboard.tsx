@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import type { Quote, DeliveryNote } from "@shared/schema";
 
 export default function WorkerDashboard() {
   const { user, setUser } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
@@ -476,6 +477,10 @@ export default function WorkerDashboard() {
 
                     if (response.ok) {
                       console.log("Albarán guardado:", deliveryNoteData);
+                      // Invalidar la cache para que se recarguen los albaranes
+                      queryClient.invalidateQueries({
+                        queryKey: ["/api/workers", user?.workerId || "", "delivery-notes"],
+                      });
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
