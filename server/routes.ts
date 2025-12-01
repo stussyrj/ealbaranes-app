@@ -235,11 +235,23 @@ export async function registerRoutes(
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const quote = await storage.updateQuoteStatus(id, status);
+      const quote = await storage.getQuote(id);
       if (!quote) {
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
-      res.json(quote);
+
+      // Validate carrozado availability before approving
+      if (status === "approved" && quote.vehicleTypeId === "carrozado" && quote.pickupTime && quote.duration) {
+        if (!storage.isCarrozadoAvailableAtDateTime(quote.pickupTime)) {
+          return res.status(400).json({ error: "El carrozado no está disponible en el horario solicitado. No se puede aprobar este pedido." });
+        }
+      }
+
+      const updatedQuote = await storage.updateQuoteStatus(id, status);
+      if (!updatedQuote) {
+        return res.status(404).json({ error: "Presupuesto no encontrado" });
+      }
+      res.json(updatedQuote);
     } catch (error) {
       console.error("Error updating quote status:", error);
       res.status(400).json({ error: "Error al actualizar el estado del presupuesto" });
