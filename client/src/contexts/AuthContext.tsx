@@ -53,8 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setUser = (newUser: User | null) => {
     setUserState(newUser);
-    // Clear animation flag when changing user/role
+    // Clear animation flags when changing user/role to show welcome animations
     sessionStorage.removeItem("hasSeenClientAnimation");
+    sessionStorage.removeItem("hasSeenAdminAnimation");
     if (newUser) {
       try {
         localStorage.setItem("user", JSON.stringify(newUser));
