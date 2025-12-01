@@ -33,6 +33,7 @@ export default function WorkerDashboard() {
     date: new Date().toISOString().split("T")[0],
     time: "09:00",
     observations: "",
+    photo: null as string | null,
   });
 
   const handleSelectWorker = (workerId: string) => {
@@ -350,6 +351,13 @@ export default function WorkerDashboard() {
               <p>{note.observations}</p>
             </div>
           )}
+
+          {note.photo && (
+            <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded">
+              <p className="text-muted-foreground text-xs mb-2">Fotografía</p>
+              <img src={note.photo} alt="Foto del albarán" className="w-full rounded-md max-h-48 object-cover" data-testid={`img-delivery-note-photo-${note.id}`} />
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -609,6 +617,55 @@ export default function WorkerDashboard() {
                 rows={3}
               />
             </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Fotografía</label>
+              <div className="flex gap-2 flex-col">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                      const video = document.createElement("video");
+                      video.srcObject = stream;
+                      video.play();
+                      
+                      const canvas = document.createElement("canvas");
+                      setTimeout(() => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const ctx = canvas.getContext("2d");
+                        if (ctx) ctx.drawImage(video, 0, 0);
+                        stream.getTracks().forEach(track => track.stop());
+                        const photoData = canvas.toDataURL("image/jpeg", 0.8);
+                        setFormData({ ...formData, photo: photoData });
+                      }, 500);
+                    } catch (error) {
+                      console.error("Error accediendo a la cámara:", error);
+                      alert("No se pudo acceder a la cámara");
+                    }
+                  }}
+                  className="w-full"
+                  data-testid="button-capture-photo"
+                >
+                  📸 Capturar Foto
+                </Button>
+                {formData.photo && (
+                  <div className="relative">
+                    <img src={formData.photo} alt="Foto del albarán" className="w-full rounded-lg max-h-40 object-cover" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, photo: null })}
+                      className="absolute top-2 right-2"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setCreateDeliveryOpen(false)} className="flex-1">
                 Cancelar
@@ -631,6 +688,7 @@ export default function WorkerDashboard() {
                       date: formData.date,
                       time: formData.time,
                       observations: formData.observations,
+                      photo: formData.photo,
                       status: "signed",
                       signedAt: new Date().toISOString(),
                     };
@@ -673,6 +731,7 @@ export default function WorkerDashboard() {
                         date: new Date().toISOString().split("T")[0],
                         time: "09:00",
                         observations: "",
+                        photo: null,
                       });
                     }
                   } catch (error) {

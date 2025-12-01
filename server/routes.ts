@@ -385,6 +385,7 @@ export async function registerRoutes(
         date: data.date || null,
         time: data.time || null,
         observations: data.observations || null,
+        photo: data.photo || null,
         status: data.status || "pending",
         signature: data.signature || null,
         signedAt: data.signedAt ? new Date(data.signedAt) : new Date(),
