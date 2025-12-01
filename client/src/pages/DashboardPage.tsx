@@ -372,50 +372,54 @@ export default function DashboardPage() {
 
       {/* Preview Modal */}
       <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-3 sm:p-4 sm:rounded-lg rounded-none flex flex-col">
-          <DialogHeader className="sticky top-0 bg-background z-10 pb-2">
-            <DialogTitle className="text-lg sm:text-xl">Vista previa del Albarán</DialogTitle>
+        <DialogContent className="max-w-lg max-h-[95vh] overflow-hidden w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none flex flex-col">
+          <DialogHeader className="pb-1.5 flex-shrink-0">
+            <DialogTitle className="text-base sm:text-lg">Albarán</DialogTitle>
           </DialogHeader>
           {previewImage && (
-            <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
-              <img src={previewImage} alt="Albarán" className="w-full rounded-lg border border-border" />
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 text-sm h-10 sm:h-9"
-                  onClick={() => {
-                    const link = document.createElement("a");
-                    link.href = previewImage;
-                    link.download = `alaban-${new Date().toISOString().split("T")[0]}.png`;
-                    window.open(previewImage, "_blank");
-                  }}
-                  data-testid="button-open-preview"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Abrir
-                </Button>
-                {navigator.share && (
+            <div className="flex-1 overflow-y-auto flex flex-col">
+              <div className="flex-1 flex items-center justify-center p-2">
+                <img src={previewImage} alt="Albarán" className="w-full h-auto rounded border border-border max-h-[60vh]" />
+              </div>
+              <div className="flex-shrink-0 space-y-2 p-2">
+                <div className="flex flex-col sm:flex-row gap-1.5">
                   <Button
                     variant="outline"
-                    className="flex-1 text-sm h-10 sm:h-9"
+                    className="flex-1 text-xs h-8"
                     onClick={() => {
-                      fetch(previewImage)
-                        .then(res => res.blob())
-                        .then(blob => {
-                          const file = new File([blob], "alaban.png", { type: "image/png" });
-                          navigator.share({ files: [file], title: "Albarán" });
-                        });
+                      const link = document.createElement("a");
+                      link.href = previewImage;
+                      link.download = `alaban-${new Date().toISOString().split("T")[0]}.png`;
+                      window.open(previewImage, "_blank");
                     }}
-                    data-testid="button-share-preview"
+                    data-testid="button-open-preview"
                   >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Compartir
+                    <Download className="w-3 h-3 mr-1" />
+                    Abrir
                   </Button>
-                )}
+                  {navigator.share && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-xs h-8"
+                      onClick={() => {
+                        fetch(previewImage)
+                          .then(res => res.blob())
+                          .then(blob => {
+                            const file = new File([blob], "alaban.png", { type: "image/png" });
+                            navigator.share({ files: [file], title: "Albarán" });
+                          });
+                      }}
+                      data-testid="button-share-preview"
+                    >
+                      <Share2 className="w-3 h-3 mr-1" />
+                      Compartir
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground p-1.5 bg-muted/50 rounded text-center leading-tight">
+                  Click derecho → Guardar imagen como
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground p-2 bg-muted/30 rounded">
-                Click derecho en la imagen → Guardar imagen como para descargar
-              </p>
             </div>
           )}
         </DialogContent>
