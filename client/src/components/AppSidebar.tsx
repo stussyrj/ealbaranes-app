@@ -92,11 +92,25 @@ export function AppSidebar() {
 
   const switchRole = () => {
     if (user) {
-      const newRole: "customer" | "admin" = isAdmin ? "customer" : "admin";
+      // Cycle through roles: customer → admin → worker → customer
+      let newRole: "customer" | "admin" | "worker" = "customer";
+      let newUsername = "Cliente Demo";
+      let newEmail = "cliente@demo.com";
+
+      if (user.role === "customer") {
+        newRole = "admin";
+        newUsername = "Daniel";
+        newEmail = "daniel@directtransports.com";
+      } else if (user.role === "admin") {
+        newRole = "worker";
+        newUsername = "Trabajador";
+        newEmail = "trabajador@directtransports.com";
+      }
+
       const newUser: User = {
         id: user.id,
-        username: newRole === "admin" ? "Daniel" : "Cliente Demo",
-        email: newRole === "admin" ? "daniel@directtransports.com" : "cliente@demo.com",
+        username: newUsername,
+        email: newEmail,
         role: newRole,
       };
       setUser(newUser);
@@ -181,7 +195,7 @@ export function AppSidebar() {
             data-testid="button-switch-role"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Cambiar a {isAdmin ? "Cliente" : "Admin"}
+            {isAdmin ? "Cambiar a Cliente" : "Cambiar a Admin"}
           </Button>
         )}
       </SidebarFooter>
