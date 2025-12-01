@@ -269,11 +269,11 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Details Grid */}
-                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                  {/* Details Grid - 3 columns for better spacing */}
+                  <div className="grid grid-cols-3 gap-1 text-[10px]">
                     <div className="bg-muted/30 rounded p-1">
                       <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
-                      <p className="font-medium text-[10px]">{note.pickupOrigin || 'N/A'}</p>
+                      <p className="font-medium text-[10px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
                     </div>
                     <div className="bg-muted/30 rounded p-1">
                       <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
@@ -287,29 +287,22 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
                       <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
                     </div>
-                  </div>
-
-                  {/* Worker */}
-                  <div className="bg-muted/30 rounded p-1">
-                    <p className="text-muted-foreground text-[9px] font-semibold">TRABAJADOR</p>
-                    <p className="font-medium text-[10px]">{note.workerName || 'Desconocido'}</p>
-                  </div>
-
-                  {/* Observations if present */}
-                  {note.observations && (
                     <div className="bg-muted/30 rounded p-1">
-                      <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
-                      <p className="font-medium text-[10px] line-clamp-1">{note.observations}</p>
+                      <p className="text-muted-foreground text-[9px] font-semibold">TRABAJADOR</p>
+                      <p className="font-medium text-[10px] line-clamp-1">{note.workerName || 'Desconocido'}</p>
                     </div>
-                  )}
-
-                  {/* Signed Date if present */}
-                  {albaranesModalType === "signed" && note.signedAt && (
-                    <div className="bg-muted/30 rounded p-1">
-                      <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
-                      <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
-                    </div>
-                  )}
+                    {albaranesModalType === "signed" && note.signedAt ? (
+                      <div className="bg-muted/30 rounded p-1">
+                        <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
+                        <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    ) : note.observations ? (
+                      <div className="bg-muted/30 rounded p-1">
+                        <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
+                        <p className="font-medium text-[10px] line-clamp-1">{note.observations}</p>
+                      </div>
+                    ) : null}
+                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex gap-1 mt-1" data-testid={`buttons-${note.id}`}>
