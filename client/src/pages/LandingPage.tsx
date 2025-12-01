@@ -72,7 +72,7 @@ export default function LandingPage() {
               ].map((stat, i) => (
                 <div
                   key={i}
-                  className="bg-slate-50 dark:bg-slate-900 p-6 rounded-lg border border-slate-200 dark:border-slate-800"
+                  className="bg-slate-50 dark:bg-slate-900 p-6 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center"
                 >
                   {stat.textAbove && (
                     <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
