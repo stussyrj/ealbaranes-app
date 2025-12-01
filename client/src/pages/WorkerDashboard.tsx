@@ -551,6 +551,10 @@ export default function WorkerDashboard() {
                       const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
                       queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
                       
+                      // Force invalidation to trigger component re-render
+                      await queryClient.invalidateQueries({ queryKey: workerKey });
+                      await queryClient.invalidateQueries({ queryKey: adminKey });
+                      
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",

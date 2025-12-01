@@ -97,6 +97,10 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
         const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
         queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
         
+        // Force invalidation to trigger component re-render
+        await queryClient.invalidateQueries({ queryKey: workerKey });
+        await queryClient.invalidateQueries({ queryKey: adminKey });
+        
         // Close modal after data is updated
         onOpenChange(false);
       }
