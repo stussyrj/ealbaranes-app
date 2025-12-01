@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, MapPin, Truck, Users } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +13,6 @@ import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const [quotes, setQuotes] = useState<any[]>([]);
-  const [deliveryNotes, setDeliveryNotes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchNumber, setSearchNumber] = useState("");
   const [showAnimation, setShowAnimation] = useState(true);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
@@ -28,29 +25,31 @@ export default function DashboardPage() {
     }
   }, []);
 
-  if (!loading && quotes.length === 0) {
-    setLoading(true);
-    Promise.all([
-      fetch("/api/quotes", { credentials: "include" }).then((r) => r.json()),
-      fetch("/api/delivery-notes", { credentials: "include" }).then((r) => r.json()),
-    ])
-      .then(([quotesData, notesData]) => {
-        if (Array.isArray(quotesData)) setQuotes(quotesData);
-        if (Array.isArray(notesData)) setDeliveryNotes(notesData);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }
+  const { data: quotes = [] } = useQuery({
+    queryKey: ["/api/quotes"],
+    queryFn: async () => {
+      const res = await fetch("/api/quotes", { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const { data: deliveryNotes = [] } = useQuery({
+    queryKey: ["/api/delivery-notes"],
+    queryFn: async () => {
+      const res = await fetch("/api/delivery-notes", { credentials: "include" });
+      return res.json();
+    },
+  });
 
   const handleAssignWorker = (quote: any) => {
     setSelectedQuote(quote);
     setAssignmentModalOpen(true);
   };
 
-  const assignedQuotes = quotes.filter((q: any) => q.assignedWorkerId);
-  const signedQuotes = quotes.filter((q: any) => q.status === "signed");
-  const pendingQuotes = quotes.filter((q: any) => !q.assignedWorkerId && q.status !== "signed");
-  const totalDeliveryNotes = deliveryNotes.length;
+  const assignedQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => q.assignedWorkerId) : [];
+  const signedQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => q.status === "signed") : [];
+  const pendingQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => !q.assignedWorkerId && q.status !== "signed") : [];
+  const totalDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes.length : 0;
 
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
