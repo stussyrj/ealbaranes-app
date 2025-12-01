@@ -48,14 +48,12 @@ const workerNavItems = [
 
 function NavLink({ href, icon: Icon, title }: any) {
   const [location] = useLocation();
-  const { setOpen, setOpenMobile, isMobile } = useSidebar();
+  const { setOpenMobile, isMobile } = useSidebar();
 
   const handleClick = (e: React.MouseEvent) => {
-    // Close sidebar immediately on click
+    // Close sidebar only on mobile when clicking
     if (isMobile) {
       setOpenMobile(false);
-    } else {
-      setOpen(false);
     }
   };
 
@@ -74,14 +72,12 @@ export function AppSidebar() {
   const { user, setUser } = useAuth();
   const { setOpen, setOpenMobile, isMobile } = useSidebar();
 
-  // Close sidebar when location changes
+  // Close sidebar only on mobile when location changes
   useEffect(() => {
     if (isMobile) {
       setOpenMobile(false);
-    } else {
-      setOpen(false);
     }
-  }, [location, setOpen, setOpenMobile, isMobile]);
+  }, [location, setOpenMobile, isMobile]);
 
   if (!user) {
     return null;
