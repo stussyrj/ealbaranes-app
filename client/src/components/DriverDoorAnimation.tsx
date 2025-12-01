@@ -46,7 +46,7 @@ export function DriverDoorAnimation({ onComplete }: { onComplete: () => void }) 
         className="absolute inset-0 bg-black pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 0, 1] }}
-        transition={{ duration: 0.8, times: [0, 0.6, 1], delay: 3.2 }}
+        transition={{ duration: 0.8, times: [0, 0.6, 1], delay: 1.7 }}
         onAnimationComplete={onComplete}
       />
     </div>
