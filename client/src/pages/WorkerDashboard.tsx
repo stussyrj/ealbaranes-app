@@ -33,6 +33,7 @@ export default function WorkerDashboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const frameIdRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     clientName: "",
     pickupOrigin: "",
@@ -836,15 +837,45 @@ export default function WorkerDashboard() {
           </DialogHeader>
           <div className="space-y-4">
             {!showCameraPreview && !capturedPhoto && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCameraPreview(true)}
-                className="w-full"
-                data-testid="button-open-camera"
-              >
-                📸 Abrir Cámara
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCameraPreview(true)}
+                  className="w-full"
+                  data-testid="button-open-camera"
+                >
+                  📸 Abrir Cámara
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                  data-testid="button-upload-photo"
+                >
+                  📁 Subir Foto
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const photoData = event.target?.result as string;
+                        setCapturedPhoto(photoData);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  data-testid="input-file-photo"
+                />
+              </div>
             )}
 
             {showCameraPreview && !capturedPhoto && (
