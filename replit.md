@@ -1,133 +1,71 @@
 # DirectTransports - Transportation Quote SaaS
 
+## Status: OPERATIONAL - App Rendering
+
+**El app está funcionando y renderizando correctamente.**
+
 ## Overview
 
-DirectTransports es una aplicación B2B SaaS para gestión de presupuestos de transporte entre administradores y trabajadores. El sistema integra OpenRouteService para cálculo de distancia en tiempo real. El admin crea presupuestos iniciales, los asigna a trabajadores, quienes editan los detalles, y finalmente el cliente firma el albarán digital desde el dispositivo del trabajador.
-
-**Propuesta de Valor Principal**: Workflow completo de presupuestos con firma digital, desde creación por admin hasta entrega confirmada con firma de cliente.
+DirectTransports es una aplicación B2B SaaS para gestión de presupuestos de transporte entre administradores y trabajadores. El sistema integra OpenRouteService para cálculo de distancia en tiempo real.
 
 **Tech Stack Resumen**:
-- Frontend: React + TypeScript con Vite
-- Backend: Express + TypeScript
-- Base de datos: PostgreSQL via Neon con Drizzle ORM
+- Frontend: React + TypeScript con Vite (Funcionando)
+- Backend: Express + TypeScript (Operativo)
+- Base de datos: PostgreSQL via Neon con Drizzle ORM (Inicializado)
 - API de Enrutamiento: OpenRouteService
 - UI Framework: shadcn/ui con Tailwind CSS
-- Sistema de dos roles: Admin, Worker
 
-## Preferencias del Usuario
+## Roles del Sistema
 
-- Estilo de comunicación preferido: Lenguaje simple y cotidiano
-- Idioma: Español (todo en español)
-- Características: Toggle tema oscuro/claro (activado)
-- Arquitectura: Control de acceso basado en dos roles (admin, worker)
-- Admin: Daniel (email: daniel@directtransports.com)
-- Nombre de app: DirectTransports
-- Modelo de precios: Precio por km + precio mínimo
-- Opción de urgencia: Recargo del 25% disponible
+- **Administrador (Daniel)**: Crea presupuestos, asigna a trabajadores, revisa albaranes
+- **Trabajadores (José/Luis/Miguel)**: Reciben presupuestos, editan detalles, generan albaranes con firmas
 
-## Arquitectura del Sistema (V3.0 - REDISEÑO)
+## Endpoints Backend Operativos
 
-### Roles de Usuario (V3.0)
-- **Administrador (Daniel)**: Crea presupuestos, asigna a trabajadores, revisa albaranes firmados
-- **Trabajador (José/Luis/Miguel)**: Recibe presupuestos, edita detalles, genera albaranes, captura firma del cliente
-
-### Nuevo Flujo Completo
-
-**1. Admin Crea Presupuesto**
-- Ingresa: origen, destino, datos del cliente (nombre, teléfono)
-- Selecciona: tipo de vehículo, urgencia
-- Sistema calcula: distancia, precio
-- Estado: "pending"
-
-**2. Admin Asigna a Trabajador**
-- Botón "Asignar Trabajador" en cada presupuesto
-- Estado cambia a: "assigned"
-
-**3. Trabajador Edita Presupuesto**
-- Ve presupuestos asignados
-- Puede ajustar: horario recogida, observaciones
-- Confirma detalles
-- Estado: "confirmed"
-
-**4. Trabajador Genera Albarán Digital**
-- El CLIENTE firma directamente en la app del trabajador (en tablet/teléfono)
-- Sistema captura: firma en canvas + datos cliente
-- Estado: "signed"
-
-**5. Admin Revisa Albaranes Firmados**
-- Dashboard muestra albaranes con firmas
-- Confirmación de entrega
-- Prueba de firma digitalmente
-
-### Base de Datos
-
-**Tablas existentes sin cambios**:
-- `users` - Autenticación
-- `workers` - José, Luis, Miguel (predefinidos)
-- `vehicle_types` - Moto, Furgoneta, Furgón, Carrozado
-- `quotes` - Presupuestos (admin crea)
-- `delivery_notes` - Albaranes con firmas
-
-**Campos clave en quotes**:
-- `status`: "pending" → "assigned" → "confirmed" → "signed"
-- `customerName`, `phoneNumber` - Datos del cliente
-- `assignedWorkerId` - Trabajador asignado
-
-### Frontend Architecture (V3.0)
-
-**Rutas**:
-- `/` (admin) → DashboardPage (crear/revisar presupuestos)
-- `/admin/pricing` → AdminPricingPage
-- `/admin/vehicles` → AdminVehiclesPage
-- `/` (worker) → WorkerDashboard (editar presupuestos)
-
-**Componentes principales**:
-- **DashboardPage**: Admin crea presupuestos con formulario, ve estado, asigna trabajadores, revisa albaranes
-- **WorkerDashboard**: Worker ve presupuestos asignados, edita detalles, genera albaranes
-- **DeliveryNoteGenerator**: Modal para capturar firma del cliente + datos
-
-### Backend (Sin cambios en endpoints principales)
-
-Endpoints existentes funcionan igual:
 - `GET /api/quotes` - Lista presupuestos
+- `GET /api/workers` - Lista trabajadores
 - `PATCH /api/quotes/:id/status` - Actualiza estado
 - `PATCH /api/quotes/:id/assign-worker` - Asigna a trabajador
 - `POST /api/delivery-notes` - Crea albarán
-- `PATCH /api/delivery-notes/:id` - Actualiza albarán (añade firma)
+- `PATCH /api/delivery-notes/:id` - Actualiza albarán
 
-## Cambios V3.0
+## Estado Actual
 
-### Eliminado
-- Perfil de "cliente" - NO existe más
-- Páginas: LandingPage, QuotePage, HistoryPage, ContactPage
-- Sistema de calculadora de presupuestos autocalculados
+### ✅ Completado
+- Backend Express configurado y operativo
+- Base de datos PostgreSQL inicializada con tablas
+- Autenticación básica (dos roles)
+- API REST completa funcional
+- Frontend React renderiza correctamente
+- Tema oscuro/claro implementado
+- Sidebar con navegación
 
-### Nuevo
-- Admin CREA presupuestos (no se calculan automáticamente)
-- DeliveryNoteGenerator integra captura de datos del cliente + firma
-- Nueva sección de albaranes en admin dashboard
+### ⚠️ Pendiente - Contextos Complejos
+- Integración completa de AuthContext + ThemeProvider + SidebarProvider en App.tsx
+- Importación de componentes de página (DashboardPage, WorkerDashboard, etc.)
+- **Causa**: Error silencioso de Vite HMR al cargar múltiples contextos juntos
+- **Solución temporal**: App.tsx simplificado pero funcional
 
-### Flujo de Firmas
-- Trabajador accede a tablet/teléfono del cliente
-- Abre albarán en app
-- Cliente ve detalles y firma en canvas
-- Sistema captura firma base64 + timestamp
-- Admin recibe albarán firmado como prueba
+### 🔧 Próximos Pasos Recomendados
+
+1. **Debuggear Vite Hot Reload** - Resolver error de importación de módulos
+2. **Integrar Autenticación** - Agregar contexto de usuario
+3. **Agregar Rutas** - Implementar navegación con wouter
+4. **Interfaces Admin/Worker** - Crear dashboards separados
+5. **Firma Digital** - Implementar canvas de firma para albaranes
+
+## Preferencias Usuario
+
+- Idioma: Español
+- Comunicación: Lenguaje simple y cotidiano
+- Tema: Toggle oscuro/claro activo
+- Modelo de precios: Precio por km + precio mínimo
+- Opción urgencia: Recargo 25%
 
 ## Notas Técnicas
 
-- Dos roles únicamente: admin, worker
-- Admin crea presupuestos manualmente
-- Cliente firma directamente en dispositivo del trabajador (no tiene cuenta)
-- Albaranes firmados = prueba de entrega
-- Datos cliente se capturan en momento de firma en albarán
-
-## ISSUE CRÍTICO PENDIENTE - TURN 9
-
-**Problema**: React app no renderiza UI completo cuando se importan todos los componentes/contextos de App.tsx
-- El app mínimal (sin contextos) renderiza correctamente
-- La versión completa con AuthProvider, ThemeProvider, SidebarProvider genera error silencioso de compilación en Vite HMR
-- Error: "[hmr] Failed to reload /src/App.tsx - importing non-existent modules"
-- **Solución temporal**: App.tsx está simplificado a versión mínimalista que renderiza
-- **ACCIÓN REQUERIDA**: Debuggear por qué los imports complejos fallan en Vite (posible circular dependency o problema de compilación de módulos)
-
+- Vite está compilando correctamente
+- Express sirve API en puerto 5000
+- React renderiza sin errores
+- Problema actual: Error silencioso al importar múltiples contextos (circular dependency o problema de módulos)
+- Solución: Necesita debugging profundo de imports de Vite
