@@ -423,6 +423,9 @@ export async function registerRoutes(
         data.signedAt = new Date(data.signedAt);
       }
       
+      // Always update the updatedAt timestamp
+      data.updatedAt = new Date();
+      
       const note = await storage.updateDeliveryNote(id, data);
       if (!note) {
         return res.status(404).json({ error: "Albarán no encontrado" });

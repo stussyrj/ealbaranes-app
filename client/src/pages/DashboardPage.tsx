@@ -304,6 +304,51 @@ export default function DashboardPage() {
                       <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-48 object-cover" />
                     </div>
                   )}
+
+                  {/* Historial Timeline */}
+                  <div className="border-t border-border/50 pt-2.5 mt-2.5">
+                    <p className="text-[11px] text-muted-foreground font-semibold mb-2">HISTORIAL</p>
+                    <div className="space-y-2 text-xs">
+                      {/* Created */}
+                      <div className="flex gap-2">
+                        <div className="flex flex-col items-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5"></div>
+                          <div className="w-0.5 h-6 bg-border/30 my-1"></div>
+                        </div>
+                        <div>
+                          <p className="font-medium">Creado</p>
+                          <p className="text-muted-foreground">{note.createdAt ? new Date(note.createdAt).toLocaleString('es-ES') : 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      {/* Updated */}
+                      {(note as any).updatedAt && (note as any).updatedAt !== note.createdAt && (
+                        <div className="flex gap-2">
+                          <div className="flex flex-col items-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5"></div>
+                            <div className="w-0.5 h-6 bg-border/30 my-1"></div>
+                          </div>
+                          <div>
+                            <p className="font-medium">Actualizado</p>
+                            <p className="text-muted-foreground">{new Date((note as any).updatedAt).toLocaleString('es-ES')}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Signed */}
+                      {note.signedAt && (
+                        <div className="flex gap-2">
+                          <div className="flex flex-col items-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                          </div>
+                          <div>
+                            <p className="font-medium text-green-600 dark:text-green-400">Firmado</p>
+                            <p className="text-muted-foreground">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
