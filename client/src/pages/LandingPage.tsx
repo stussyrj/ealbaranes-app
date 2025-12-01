@@ -3,6 +3,94 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Truck, MapPin, Clock } from "lucide-react";
 
+// Animated background pattern component
+function AnimatedBackground() {
+  const circles = [
+    { id: 1, size: 300, delay: 0, duration: 20 },
+    { id: 2, size: 200, delay: 2, duration: 25 },
+    { id: 3, size: 250, delay: 4, duration: 22 },
+  ];
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-50/30 dark:to-blue-950/20" />
+      
+      {/* Left side animated circles */}
+      {circles.map((circle) => (
+        <motion.div
+          key={`left-${circle.id}`}
+          className="absolute rounded-full border border-blue-200 dark:border-blue-800/50 opacity-20 dark:opacity-10"
+          style={{
+            width: circle.size,
+            height: circle.size,
+            left: `-${circle.size / 2}px`,
+            top: `${circle.id * 30}%`,
+          }}
+          animate={{
+            y: [0, 30, 0],
+            x: [0, 20, 0],
+          }}
+          transition={{
+            duration: circle.duration,
+            delay: circle.delay,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+
+      {/* Right side animated circles - symmetric */}
+      {circles.map((circle) => (
+        <motion.div
+          key={`right-${circle.id}`}
+          className="absolute rounded-full border border-orange-200 dark:border-orange-800/50 opacity-20 dark:opacity-10"
+          style={{
+            width: circle.size,
+            height: circle.size,
+            right: `-${circle.size / 2}px`,
+            top: `${circle.id * 30}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            x: [0, -20, 0],
+          }}
+          transition={{
+            duration: circle.duration,
+            delay: circle.delay,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+
+      {/* Center floating dots */}
+      <div className="absolute inset-0 opacity-30 dark:opacity-20">
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={`dot-${i}`}
+            className="absolute w-1 h-1 rounded-full bg-gradient-to-r from-blue-500 to-orange-500"
+            style={{
+              left: `${25 + i * 12}%`,
+              top: `${20 + (i % 3) * 25}%`,
+            }}
+            animate={{
+              opacity: [0.3, 0.8, 0.3],
+              scale: [1, 1.5, 1],
+            }}
+            transition={{
+              duration: 3 + i * 0.5,
+              delay: i * 0.3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const [, navigate] = useLocation();
 
@@ -19,8 +107,9 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 px-6">
-        <div className="max-w-6xl mx-auto">
+      <section className="relative py-20 md:py-32 px-6 overflow-hidden">
+        <AnimatedBackground />
+        <div className="relative z-10 max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             {/* Left content */}
             <motion.div
