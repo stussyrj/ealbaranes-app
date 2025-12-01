@@ -371,55 +371,65 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Modal */}
+      {/* Preview Modal - Simple Overlay */}
       {previewModalOpen && previewImage && (
-        <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
-          <DialogContent className="max-w-sm max-h-[90vh] overflow-hidden w-screen sm:w-full h-screen sm:h-auto p-0 sm:p-0 sm:rounded-lg rounded-none flex flex-col bg-background border-0 sm:border">
-            <div className="flex-1 overflow-hidden flex flex-col bg-black/90 sm:bg-background">
-              <div className="flex-1 flex items-center justify-center p-2 bg-black">
-                <img src={previewImage} alt="Albarán" className="w-auto h-auto max-w-full max-h-[80vh] object-contain" />
-              </div>
-              <div className="flex-shrink-0 bg-background border-t border-border p-2 space-y-2">
-                <div className="flex gap-1 flex-col sm:flex-row">
+        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-2 sm:p-4">
+          <div className="w-full max-w-lg h-full sm:h-auto sm:max-h-[90vh] flex flex-col bg-background sm:rounded-lg overflow-hidden">
+            <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
+              <img src={previewImage} alt="Albarán" className="w-auto h-auto max-w-full max-h-full object-contain" />
+            </div>
+            <div className="flex-shrink-0 bg-background border-t border-border p-2 space-y-2">
+              <div className="flex gap-1 flex-col sm:flex-row">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => {
+                    window.open(previewImage, "_blank");
+                  }}
+                  data-testid="button-open-preview"
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  Abrir
+                </Button>
+                {navigator.share && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex-1 text-xs"
                     onClick={() => {
-                      window.open(previewImage, "_blank");
+                      fetch(previewImage)
+                        .then(res => res.blob())
+                        .then(blob => {
+                          const file = new File([blob], "alaban.png", { type: "image/png" });
+                          navigator.share({ files: [file], title: "Albarán" });
+                        });
                     }}
-                    data-testid="button-open-preview"
+                    data-testid="button-share-preview"
                   >
-                    <Download className="w-3 h-3 mr-1" />
-                    Abrir
+                    <Share2 className="w-3 h-3 mr-1" />
+                    Compartir
                   </Button>
-                  {navigator.share && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-xs"
-                      onClick={() => {
-                        fetch(previewImage)
-                          .then(res => res.blob())
-                          .then(blob => {
-                            const file = new File([blob], "alaban.png", { type: "image/png" });
-                            navigator.share({ files: [file], title: "Albarán" });
-                          });
-                      }}
-                      data-testid="button-share-preview"
-                    >
-                      <Share2 className="w-3 h-3 mr-1" />
-                      Compartir
-                    </Button>
-                  )}
-                </div>
-                <p className="text-[10px] text-muted-foreground text-center">
-                  Click derecho → Guardar imagen como
-                </p>
+                )}
               </div>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => setPreviewModalOpen(false)}
+                  data-testid="button-close-preview"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Cerrar
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">
+                Click derecho → Guardar imagen como
+              </p>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       )}
     </div>
   );
