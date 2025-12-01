@@ -775,42 +775,35 @@ export default function WorkerDashboard() {
                 onClick={async () => {
                   if (!selectedNoteForPhoto || !capturedPhoto) return;
                   try {
+                    const now = new Date().toISOString();
                     const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ photo: capturedPhoto }),
+                      body: JSON.stringify({ 
+                        photo: capturedPhoto,
+                        status: "confirmado",
+                        signedAt: now
+                      }),
                       credentials: "include",
                     });
                     
                     if (response.ok) {
-                      const updatedNote = await response.json();
+                      const noteWithSignature = await response.json();
                       
-                      // Update status to "confirmado" now that photo exists
-                      const patchResponse = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ status: "confirmado" }),
-                        credentials: "include",
-                      });
+                      // Update cache
+                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                      const adminKey = ["/api/delivery-notes"];
                       
-                      if (patchResponse.ok) {
-                        const noteWithStatus = await patchResponse.json();
-                        
-                        // Update cache
-                        const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
-                        const adminKey = ["/api/delivery-notes"];
-                        
-                        const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
-                        const updatedWorkerNotes = workerNotes.map(n => n.id === noteWithStatus.id ? noteWithStatus : n);
-                        queryClient.setQueryData(workerKey, updatedWorkerNotes);
-                        
-                        const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
-                        const updatedAllNotes = allNotes.map(n => n.id === noteWithStatus.id ? noteWithStatus : n);
-                        queryClient.setQueryData(adminKey, updatedAllNotes);
-                        
-                        await queryClient.invalidateQueries({ queryKey: workerKey });
-                        await queryClient.invalidateQueries({ queryKey: adminKey });
-                      }
+                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                      const updatedWorkerNotes = workerNotes.map(n => n.id === noteWithSignature.id ? noteWithSignature : n);
+                      queryClient.setQueryData(workerKey, updatedWorkerNotes);
+                      
+                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                      const updatedAllNotes = allNotes.map(n => n.id === noteWithSignature.id ? noteWithSignature : n);
+                      queryClient.setQueryData(adminKey, updatedAllNotes);
+                      
+                      await queryClient.invalidateQueries({ queryKey: workerKey });
+                      await queryClient.invalidateQueries({ queryKey: adminKey });
                       
                       setCapturePhotoOpen(false);
                       setCapturedPhoto(null);
