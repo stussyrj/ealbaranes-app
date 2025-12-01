@@ -7,11 +7,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
-import { Home, FileText } from "lucide-react";
+import { Home, FileText, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Quote, DeliveryNote } from "@shared/schema";
+
+const WORKERS = [
+  { id: "worker-jose", name: "José", email: "jose@directtransports.com", description: "Trabajador de transporte" },
+  { id: "worker-luis", name: "Luis", email: "luis@directtransports.com", description: "Especialista en entregas" },
+  { id: "worker-miguel", name: "Miguel", email: "miguel@directtransports.com", description: "Coordinador de rutas" },
+];
 
 export default function WorkerDashboard() {
   const { user, setUser } = useAuth();
@@ -29,11 +35,58 @@ export default function WorkerDashboard() {
     observations: "",
   });
 
+  const handleSelectWorker = (workerId: string) => {
+    if (user) {
+      setUser({ ...user, workerId });
+    }
+  };
+
   const handleBackToSelection = () => {
     if (user) {
       setUser({ ...user, workerId: undefined });
     }
   };
+
+  // Si no hay workerId, mostrar selección de trabajador
+  if (!user?.workerId) {
+    return (
+      <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6">
+        <AnimatedPageBackground />
+        <div className="relative z-10 w-full max-w-sm sm:max-w-2xl">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Selecciona tu Perfil</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground px-2">Elige cuál trabajador eres</p>
+          </div>
+
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+            {WORKERS.map((worker) => (
+              <Card key={worker.id} className="hover-elevate cursor-pointer transition-all active:scale-95" onClick={() => handleSelectWorker(worker.id)}>
+                <CardHeader className="pb-2 sm:pb-3">
+                  <CardTitle className="text-lg sm:text-xl">{worker.name}</CardTitle>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{worker.email}</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{worker.description}</p>
+                  <Button
+                    onClick={() => handleSelectWorker(worker.id)}
+                    className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white text-xs sm:text-sm"
+                    data-testid={`button-select-worker-${worker.id}`}
+                  >
+                    {worker.name}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const { data: orders = [] } = useQuery<Quote[]>({
     queryKey: ["/api/workers", user?.workerId || "", "orders"],
