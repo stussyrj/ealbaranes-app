@@ -100,7 +100,14 @@ export function AppSidebar() {
         role: newRole,
       };
       setUser(newUser);
-      // Navigate to home of the new role instead of full reload
+      navigate("/");
+    }
+  };
+
+  const switchWorker = () => {
+    if (user && user.role === "worker") {
+      const updatedUser: User = { ...user, workerId: undefined };
+      setUser(updatedUser);
       navigate("/");
     }
   };
@@ -150,20 +157,33 @@ export function AppSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{username}</p>
             <p className="text-xs text-muted-foreground truncate">
-              {isAdmin ? "Administrador" : "Cliente"}
+              {isAdmin ? "Administrador" : user.role === "worker" ? "Trabajador" : "Cliente"}
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={switchRole}
-          className="w-full justify-start"
-          data-testid="button-switch-role"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Cambiar a {isAdmin ? "Cliente" : "Admin"}
-        </Button>
+        {user.role === "worker" ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={switchWorker}
+            className="w-full justify-start text-xs"
+            data-testid="button-switch-worker"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Cambiar Trabajador
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={switchRole}
+            className="w-full justify-start text-xs"
+            data-testid="button-switch-role"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Cambiar a {isAdmin ? "Cliente" : "Admin"}
+          </Button>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

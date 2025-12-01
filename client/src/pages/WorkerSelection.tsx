@@ -39,52 +39,50 @@ export default function WorkerSelection() {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6">
       <AnimatedPageBackground />
-      <div className="relative z-10 container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              </div>
+      <div className="relative z-10 w-full max-w-sm sm:max-w-2xl">
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
-            <h1 className="text-3xl font-bold mb-2">Selecciona tu Perfil de Trabajador</h1>
-            <p className="text-muted-foreground">
-              Elige cuál trabajador eres para acceder a tu dashboard y servicios asignados
-            </p>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Selecciona tu Perfil</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground px-2">
+            Elige cuál trabajador eres
+          </p>
+        </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {WORKERS.map((worker) => (
-              <Card key={worker.id} className="hover-elevate cursor-pointer transition-all" onClick={() => handleSelectWorker(worker.id)}>
-                <CardHeader>
-                  <CardTitle className="text-xl">{worker.name}</CardTitle>
-                  <CardDescription className="text-sm">{worker.email}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">{worker.description}</p>
-                  <Button
-                    onClick={() => handleSelectWorker(worker.id)}
-                    className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white px-4 py-2 rounded-lg backdrop-blur-sm border border-purple-500/40"
-                    data-testid={`button-select-worker-${worker.id}`}
-                  >
-                    Acceder como {worker.name}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+          {WORKERS.map((worker) => (
+            <Card key={worker.id} className="hover-elevate cursor-pointer transition-all active:scale-95" onClick={() => handleSelectWorker(worker.id)}>
+              <CardHeader className="pb-2 sm:pb-3">
+                <CardTitle className="text-lg sm:text-xl">{worker.name}</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">{worker.email}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{worker.description}</p>
+                <Button
+                  onClick={() => handleSelectWorker(worker.id)}
+                  className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2 rounded-lg backdrop-blur-sm border border-purple-500/40"
+                  data-testid={`button-select-worker-${worker.id}`}
+                >
+                  {worker.name}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-            <h2 className="font-semibold mb-2">¿Cómo funciona?</h2>
-            <ul className="text-sm space-y-2 text-muted-foreground">
-              <li>✓ Selecciona el perfil del trabajador que eres</li>
-              <li>✓ Accederás a tu dashboard personalizado con tus servicios asignados</li>
-              <li>✓ Verás el historial de servicios (pendientes, firmados, entregados)</li>
-              <li>✓ Podrás generar albaranes digitales con firma del cliente</li>
-            </ul>
-          </div>
+        <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
+          <h2 className="font-semibold mb-3 text-sm sm:text-base">¿Cómo funciona?</h2>
+          <ul className="text-xs sm:text-sm space-y-2 text-muted-foreground">
+            <li>→ Selecciona tu perfil de trabajador</li>
+            <li>→ Accede a tu dashboard personalizado</li>
+            <li>→ Ve tus servicios (pendientes, firmados, entregados)</li>
+            <li>→ Genera albaranes digitales con firma</li>
+          </ul>
         </div>
       </div>
     </div>
