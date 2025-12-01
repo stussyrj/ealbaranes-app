@@ -338,8 +338,31 @@ export default function DashboardPage() {
                             clonedElement.style.top = "-9999px";
                             document.body.appendChild(clonedElement);
                             
-                            const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+                            const rect = clonedElement.getBoundingClientRect();
+                            const size = Math.max(rect.width, rect.height) + 20;
+                            
+                            const squareContainer = document.createElement("div");
+                            squareContainer.style.position = "fixed";
+                            squareContainer.style.left = "-9999px";
+                            squareContainer.style.top = "-9999px";
+                            squareContainer.style.width = size + "px";
+                            squareContainer.style.height = size + "px";
+                            squareContainer.style.backgroundColor = "#ffffff";
+                            squareContainer.style.display = "flex";
+                            squareContainer.style.alignItems = "center";
+                            squareContainer.style.justifyContent = "center";
+                            squareContainer.style.padding = "10px";
+                            squareContainer.style.boxSizing = "border-box";
+                            
                             document.body.removeChild(clonedElement);
+                            clonedElement.style.position = "static";
+                            clonedElement.style.left = "auto";
+                            clonedElement.style.top = "auto";
+                            squareContainer.appendChild(clonedElement);
+                            document.body.appendChild(squareContainer);
+                            
+                            const canvas = await html2canvas(squareContainer, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+                            document.body.removeChild(squareContainer);
                             
                             const blob = await new Promise<Blob>((resolve) => {
                               canvas.toBlob((b) => resolve(b as Blob), "image/png");
