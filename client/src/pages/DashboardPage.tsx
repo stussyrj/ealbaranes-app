@@ -36,32 +36,23 @@ export default function DashboardPage() {
         return;
       }
 
-      const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff" });
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
       
-      // Usar toBlob para mejor compatibilidad y tamaño más pequeño
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          toast({ title: "Error", description: "No se pudo generar la imagen", variant: "destructive" });
-          return;
-        }
-
-        // Crear URL del blob
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        const fileName = `alaban-${note.destination || "entrega"}-${new Date().toISOString().split("T")[0]}.png`;
-        link.download = fileName.replace(/[^a-zA-Z0-9-]/g, "_");
-        
-        // Agregar temporalmente al DOM para que el click funcione
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Liberar el blob URL
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-        
-        toast({ title: "Éxito", description: "Albarán descargado correctamente" });
-      }, "image/png");
+      // Convertir a data URL
+      const imageData = canvas.toDataURL("image/png");
+      
+      // Crear enlace descargable
+      const link = document.createElement("a");
+      link.href = imageData;
+      const fileName = `alaban-${note.destination || "entrega"}-${new Date().toISOString().split("T")[0]}.png`.replace(/[^a-zA-Z0-9-_.]/g, "_");
+      link.download = fileName;
+      
+      // Click para descargar
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({ title: "Éxito", description: "Albarán descargado correctamente" });
     } catch (error) {
       console.error("Error capturing delivery note:", error);
       toast({ title: "Error", description: "Error al descargar el albarán", variant: "destructive" });
