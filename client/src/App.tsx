@@ -1,4 +1,5 @@
 import { Switch, Route } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -20,6 +21,11 @@ import AdminVehiclesPage from "@/pages/AdminVehiclesPage";
 
 function Router() {
   const { user } = useAuth();
+  
+  // Clear animation flag when role changes to ensure welcome animation shows
+  useEffect(() => {
+    sessionStorage.removeItem("hasSeenClientAnimation");
+  }, [user?.role]);
   
   if (!user) {
     return <NotFound />;
