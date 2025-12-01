@@ -2,9 +2,9 @@
 
 ## Overview
 
-DirectTransports es una aplicación B2B SaaS para calcular presupuestos de transporte basados en distancia de ruta, tipo de vehículo y reglas de precios basadas en zonas. El sistema se integra con OpenRouteService para cálculo de distancia en tiempo real y proporciona a los administradores herramientas para gestionar zonas de precios, tipos de vehículos, historial de presupuestos, y ahora incluye un sistema de tres roles: clientes, administradores y trabajadores.
+DirectTransports es una aplicación B2B SaaS para gestión de presupuestos de transporte entre administradores y trabajadores. El sistema integra OpenRouteService para cálculo de distancia en tiempo real. El admin crea presupuestos iniciales, los asigna a trabajadores, quienes editan los detalles, y finalmente el cliente firma el albarán digital desde el dispositivo del trabajador.
 
-**Propuesta de Valor Principal**: Generación automática de presupuestos usando datos de enrutamiento real, eliminando errores en estimación de distancias y cálculos de precios. Sistema completo de asignación de trabajadores y albaranes digitales con firma.
+**Propuesta de Valor Principal**: Workflow completo de presupuestos con firma digital, desde creación por admin hasta entrega confirmada con firma de cliente.
 
 **Tech Stack Resumen**:
 - Frontend: React + TypeScript con Vite
@@ -12,175 +12,112 @@ DirectTransports es una aplicación B2B SaaS para calcular presupuestos de trans
 - Base de datos: PostgreSQL via Neon con Drizzle ORM
 - API de Enrutamiento: OpenRouteService
 - UI Framework: shadcn/ui con Tailwind CSS
-- Sistema de tres roles: Cliente, Admin, Trabajador
+- Sistema de dos roles: Admin, Worker
 
 ## Preferencias del Usuario
 
 - Estilo de comunicación preferido: Lenguaje simple y cotidiano
 - Idioma: Español (todo en español)
 - Características: Toggle tema oscuro/claro (activado)
-- Arquitectura: Control de acceso basado en roles (admin, customer, worker)
+- Arquitectura: Control de acceso basado en dos roles (admin, worker)
 - Admin: Daniel (email: daniel@directtransports.com)
 - Nombre de app: DirectTransports
 - Modelo de precios: Precio por km + precio mínimo
-- Opción de urgencia: Recargo del 25% disponible en calculadora
-- Nuevos trabajadores: José, Luis, Miguel (cada uno solo ve sus pedidos asignados)
+- Opción de urgencia: Recargo del 25% disponible
 
-## Arquitectura del Sistema
+## Arquitectura del Sistema (V3.0 - REDISEÑO)
 
-### Estructura de la Aplicación
+### Roles de Usuario (V3.0)
+- **Administrador (Daniel)**: Crea presupuestos, asigna a trabajadores, revisa albaranes firmados
+- **Trabajador (José/Luis/Miguel)**: Recibe presupuestos, edita detalles, genera albaranes, captura firma del cliente
 
-**Organización Monorepo**:
-- `/client` - SPA React frontend
-- `/server` - REST API backend Express
-- `/shared` - Esquemas TypeScript compartidos y tipos (esquemas Drizzle, validadores Zod)
-- `/migrations` - Migraciones de base de datos generadas por Drizzle Kit
+### Nuevo Flujo Completo
 
-**Roles de Usuario (V2.5 - Nuevo)**:
-- **Cliente**: Acceso a calculadora de presupuestos, historial de pedidos, contacto
-- **Administrador (Daniel)**: Dashboard, gestión de reglas de precios, tipos de vehículos, asignación de trabajadores
-- **Trabajador (José/Luis/Miguel)**: Dashboard aislado con solo pedidos asignados, generador de albaranes digitales, captura de firma
+**1. Admin Crea Presupuesto**
+- Ingresa: origen, destino, datos del cliente (nombre, teléfono)
+- Selecciona: tipo de vehículo, urgencia
+- Sistema calcula: distancia, precio
+- Estado: "pending"
 
-### Nuevas Tablas de Base de Datos (V2.5)
+**2. Admin Asigna a Trabajador**
+- Botón "Asignar Trabajador" en cada presupuesto
+- Estado cambia a: "assigned"
 
-**Workers Table**:
-- `id`: UUID único para cada trabajador
-- `name`: Nombre del trabajador
-- `email`: Email único para el trabajador
-- `phone`: Teléfono de contacto
-- `isActive`: Flag para desactivar sin perder datos
-- `createdAt`: Timestamp de creación
+**3. Trabajador Edita Presupuesto**
+- Ve presupuestos asignados
+- Puede ajustar: horario recogida, observaciones
+- Confirma detalles
+- Estado: "confirmed"
 
-**Quotes Table (Actualizada)**:
-- Nuevo campo: `assignedWorkerId` - Referencia al trabajador asignado
-- Nuevo campo: `status` - puede ser "pending", "confirmed", "approved", "assigned", "rejected", "canceled"
+**4. Trabajador Genera Albarán Digital**
+- El CLIENTE firma directamente en la app del trabajador (en tablet/teléfono)
+- Sistema captura: firma en canvas + datos cliente
+- Estado: "signed"
 
-**DeliveryNotes Table**:
-- `id`: UUID único
-- `quoteId`: Referencia al presupuesto
-- `workerId`: Referencia al trabajador que generó el albarán
-- `status`: "pending", "signed", "delivered"
-- `signature`: Datos de firma en base64 (canvas)
-- `signedAt`: Timestamp de firma
-- `notes`: Notas del servicio
-- `createdAt`: Timestamp de creación
+**5. Admin Revisa Albaranes Firmados**
+- Dashboard muestra albaranes con firmas
+- Confirmación de entrega
+- Prueba de firma digitalmente
 
-### Frontend Architecture (V2.5 - Actualizado)
+### Base de Datos
 
-**Sistema de Tres Roles**:
-- `/` (cliente) → LandingPage / QuoteCalculator
-- `/admin/*` (administrador) → Dashboard / Pricing / Vehicles + Asignación de Trabajadores
-- `/worker/*` (trabajador) → WorkerDashboard / Pedidos / Albaranes
+**Tablas existentes sin cambios**:
+- `users` - Autenticación
+- `workers` - José, Luis, Miguel (predefinidos)
+- `vehicle_types` - Moto, Furgoneta, Furgón, Carrozado
+- `quotes` - Presupuestos (admin crea)
+- `delivery_notes` - Albaranes con firmas
 
-**Nuevos Componentes**:
-- **WorkerDashboard**: Muestra solo pedidos asignados al trabajador actual
-- **WorkerAssignmentModal**: Modal para que admin asigne pedidos a trabajadores
-- **DeliveryNoteGenerator**: Generador de albaranes con captura de firma canvas
-- **WorkerRouter**: Enrutador protegido para trabajadores
+**Campos clave en quotes**:
+- `status`: "pending" → "assigned" → "confirmed" → "signed"
+- `customerName`, `phoneNumber` - Datos del cliente
+- `assignedWorkerId` - Trabajador asignado
 
-**Flujo de Trabajador**:
-1. Trabajador inicia sesión (roles: worker con workerId)
-2. Ve solo sus pedidos asignados en WorkerDashboard
-3. Para cada pedido, puede generar un albarán digital
-4. Captura firma del cliente en canvas
-5. Envía albarán firmado al backend que lo almacena
+### Frontend Architecture (V3.0)
 
-**Flujo de Admin para Asignar Trabajador**:
-1. Admin ve solicitud pendiente/confirmada
-2. Hace clic en "Asignar Trabajador"
-3. Modal muestra lista de José, Luis, Miguel
-4. Admin selecciona trabajador
-5. Sistema envía `PATCH /api/quotes/{id}/assign-worker` con workerId
-6. Pedido aparece en dashboard del trabajador seleccionado
+**Rutas**:
+- `/` (admin) → DashboardPage (crear/revisar presupuestos)
+- `/admin/pricing` → AdminPricingPage
+- `/admin/vehicles` → AdminVehiclesPage
+- `/` (worker) → WorkerDashboard (editar presupuestos)
 
-### Backend Architecture (V2.5 - Actualizado)
+**Componentes principales**:
+- **DashboardPage**: Admin crea presupuestos con formulario, ve estado, asigna trabajadores, revisa albaranes
+- **WorkerDashboard**: Worker ve presupuestos asignados, edita detalles, genera albaranes
+- **DeliveryNoteGenerator**: Modal para capturar firma del cliente + datos
 
-**Nuevos Endpoints**:
-- `GET /api/workers` - Lista todos los trabajadores activos
-- `PATCH /api/quotes/:id/assign-worker` - Asigna trabajador a un presupuesto
-- `GET /api/workers/:workerId/orders` - Pedidos asignados a un trabajador
-- `POST /api/delivery-notes` - Crear albarán digital
-- `GET /api/delivery-notes/:id` - Obtener albarán específico
-- `PATCH /api/delivery-notes/:id` - Actualizar albarán (añadir firma)
-- `GET /api/workers/:workerId/delivery-notes` - Albaranes de un trabajador
+### Backend (Sin cambios en endpoints principales)
 
-**Almacenamiento Actualizado**:
-- Interfaz `IStorage` ahora incluye métodos para workers y delivery notes
-- Métodos: `getWorkers()`, `getWorker()`, `createWorker()`, `updateWorker()`
-- Métodos: `getDeliveryNotes()`, `createDeliveryNote()`, `updateDeliveryNote()`
-- Método: `assignQuoteToWorker()` para asignar pedidos
+Endpoints existentes funcionan igual:
+- `GET /api/quotes` - Lista presupuestos
+- `PATCH /api/quotes/:id/status` - Actualiza estado
+- `PATCH /api/quotes/:id/assign-worker` - Asigna a trabajador
+- `POST /api/delivery-notes` - Crea albarán
+- `PATCH /api/delivery-notes/:id` - Actualiza albarán (añade firma)
 
-### Autenticación (V2.5)
+## Cambios V3.0
 
-**Sistema de Tres Roles en Frontend**:
-- AuthContext ampliado para soportar roles "customer", "admin", "worker"
-- Campo `workerId` en User para identificar al trabajador
-- Router condicional según role del usuario en App.tsx
+### Eliminado
+- Perfil de "cliente" - NO existe más
+- Páginas: LandingPage, QuotePage, HistoryPage, ContactPage
+- Sistema de calculadora de presupuestos autocalculados
 
-**Trabajadores Predefinidos**:
-- José: worker-jose
-- Luis: worker-luis
-- Miguel: worker-miguel
+### Nuevo
+- Admin CREA presupuestos (no se calculan automáticamente)
+- DeliveryNoteGenerator integra captura de datos del cliente + firma
+- Nueva sección de albaranes en admin dashboard
 
-## Cambios Recientes (V2.5 - Sistema de Tres Roles)
-
-### 2025-12-01 Sistema de Trabajadores y Albaranes
-
-**Agregado**:
-- Tabla `workers` en base de datos con tres trabajadores predefinidos
-- Tabla `delivery_notes` para almacenar albaranes digitales con firmas
-- Campo `assignedWorkerId` en tabla `quotes` para asignaciones
-- Nuevos endpoints en backend para gestión de trabajadores y albaranes
-- Modal `WorkerAssignmentModal` para que admin asigne pedidos
-- Componente `DeliveryNoteGenerator` con captura de firma canvas
-- Página `WorkerDashboard` para visualizar solo pedidos asignados
-- Botón "Asignar Trabajador" en dashboard de admin (color morado)
-- Método `assignQuoteToWorker` en IStorage para asignar pedidos
-
-**Frontend**:
-- App.tsx ahora soporta routing para tres roles diferentes
-- AuthContext.tsx actualizado con tipos de rol expandidos
-- WorkerDashboard.tsx: Panel para trabajadores con pedidos asignados
-- WorkerAssignmentModal.tsx: Modal de selección de trabajador
-- DeliveryNoteGenerator.tsx: Generador de albaranes con firma digital
-- DashboardPage.tsx: Nuevo botón "Asignar Trabajador" (morado) en cada pedido
-
-**Backend**:
-- shared/schema.ts: Nuevas tablas Worker, DeliveryNote
-- server/storage.ts: Métodos para CRUD de trabajadores y albaranes
-- server/routes.ts: Nuevos endpoints para API de trabajadores
-- Método IStorage.assignQuoteToWorker() para asignación de pedidos
-
-**Características de Albarán**:
-- Canvas para firma del cliente (firma manual)
-- Campo de notas del servicio
-- Almacenamiento de firma en base64
-- Timestamp de firma automático
-- Estado: pending → signed → delivered
-
-**Aislamiento de Datos por Trabajador**:
-- Cada trabajador solo ve sus pedidos asignados
-- Sistema rechaza acceso a pedidos de otros trabajadores
-- Los tres trabajadores nunca ven pedidos entre ellos
-- Solo admin puede ver todos los pedidos y realizar asignaciones
-
-## Características Plaqueadas
-
-- [ ] Notificaciones en tiempo real para trabajadores (WebSocket)
-- [ ] Auto-envío de albaranes firmados a dashboard admin
-- [ ] Historial de albaranes por trabajador
-- [ ] Integración con email para enviar albaranes PDF
-
-## Limitaciones Actuales
-
-- Sistema de notificaciones requiere implementación (WebSockets)
-- Albaranes se almacenan pero no se envían automáticamente
-- No hay descarga de PDF de albaranes
-- Interface de usuario simple (sin UI enriquecida para firma)
+### Flujo de Firmas
+- Trabajador accede a tablet/teléfono del cliente
+- Abre albarán en app
+- Cliente ve detalles y firma en canvas
+- Sistema captura firma base64 + timestamp
+- Admin recibe albarán firmado como prueba
 
 ## Notas Técnicas
 
-- Firma se captura en canvas HTML5 y se convierte a base64
-- Trabajadores se pre-cargan en almacenamiento (no requieren creación manual)
-- Sistema de asignación es atómico: un pedido solo puede tener un trabajador
-- Cambiar trabajador asignado sobrescribe la asignación anterior
+- Dos roles únicamente: admin, worker
+- Admin crea presupuestos manualmente
+- Cliente firma directamente en dispositivo del trabajador (no tiene cuenta)
+- Albaranes firmados = prueba de entrega
+- Datos cliente se capturan en momento de firma en albarán

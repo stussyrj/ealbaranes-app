@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, TrendingUp, MapPin, Truck, Search, Users } from "lucide-react";
+import { TrendingUp, MapPin, Truck, Users, Plus } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { WorkerManagementModal } from "@/components/WorkerManagementModal";
+import { CreateQuoteModal } from "@/components/CreateQuoteModal";
+import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -19,6 +21,7 @@ export default function DashboardPage() {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
+  const [createQuoteOpen, setCreateQuoteOpen] = useState(false);
 
   useEffect(() => {
     const hasSeenAnimation = sessionStorage.getItem("hasSeenAdminAnimation");
@@ -26,44 +29,6 @@ export default function DashboardPage() {
       setShowAnimation(false);
     }
   }, []);
-
-  return (
-    <div className="relative">
-      <AnimatedPageBackground />
-      <DashboardContent
-        quotes={quotes}
-        setQuotes={setQuotes}
-        loading={loading}
-        setLoading={setLoading}
-        searchNumber={searchNumber}
-        setSearchNumber={setSearchNumber}
-        showAnimation={showAnimation}
-        setShowAnimation={setShowAnimation}
-        toast={toast}
-        workerManagementOpen={workerManagementOpen}
-        setWorkerManagementOpen={setWorkerManagementOpen}
-      />
-    </div>
-  );
-}
-
-interface DashboardContentProps {
-  quotes: any[];
-  setQuotes: (quotes: any[]) => void;
-  loading: boolean;
-  setLoading: (loading: boolean) => void;
-  searchNumber: string;
-  setSearchNumber: (search: string) => void;
-  showAnimation: boolean;
-  setShowAnimation: (show: boolean) => void;
-  toast: any;
-  workerManagementOpen: boolean;
-  setWorkerManagementOpen: (open: boolean) => void;
-}
-
-function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber, setSearchNumber, showAnimation, setShowAnimation, toast, workerManagementOpen, setWorkerManagementOpen }: DashboardContentProps) {
-  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
-  const [selectedQuote, setSelectedQuote] = useState<any>(null);
 
   if (!loading && quotes.length === 0) {
     setLoading(true);
@@ -76,187 +41,69 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
       .catch(() => setLoading(false));
   }
 
-  const handleApprove = async (id: string) => {
-    const res = await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "approved" }), credentials: "include" });
-    const data = await res.json();
-    if (!res.ok) {
-      toast({ title: "No se puede aprobar", description: data.error, variant: "destructive" });
-      return;
-    }
-    setQuotes(quotes.map((q: any) => q.id === id ? { ...q, status: "approved" } : q));
-    toast({ title: "Aprobado", description: "Presupuesto aprobado correctamente", variant: "default" });
-  };
-
-  const handleReject = async (id: string) => {
-    await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "rejected" }), credentials: "include" });
-    setQuotes(quotes.map((q: any) => q.id === id ? { ...q, status: "rejected" } : q));
-  };
-
-  const handleCancel = async (id: string) => {
-    await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "canceled" }), credentials: "include" });
-    setQuotes(quotes.map((q: any) => q.id === id ? { ...q, status: "canceled" } : q));
-  };
-
   const handleAssignWorker = (quote: any) => {
     setSelectedQuote(quote);
     setAssignmentModalOpen(true);
   };
 
-  const pendingQuotes = quotes.filter((q: any) => q.status === "pending");
-  const confirmedQuotes = quotes.filter((q: any) => q.status === "confirmed");
-  const approvedQuotes = quotes.filter((q: any) => q.status === "approved");
-  const rejectedQuotes = quotes.filter((q: any) => q.status === "rejected");
-  const canceledQuotes = quotes.filter((q: any) => q.status === "canceled");
-  const totalDistance = approvedQuotes.reduce((sum: number, q: any) => sum + (q.distance || 0), 0);
-  const avgDistance = approvedQuotes.length > 0 ? (totalDistance / approvedQuotes.length).toFixed(1) : "0";
-  const totalRevenue = approvedQuotes.reduce((sum: number, q: any) => sum + (q.totalPrice || 0), 0);
+  const assignedQuotes = quotes.filter((q: any) => q.assignedWorkerId);
+  const signedQuotes = quotes.filter((q: any) => q.status === "signed");
+  const pendingQuotes = quotes.filter((q: any) => !q.assignedWorkerId && q.status !== "signed");
 
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
-  const filteredConfirmedQuotes = confirmedQuotes.filter((q: any) => 
-    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
-  );
-
-  const filteredPendingQuotes = pendingQuotes.filter((q: any) => 
-    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
-  );
-
-  const filteredApprovedQuotes = approvedQuotes.filter((q: any) => 
-    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
-  );
-
-  const filteredRejectedQuotes = rejectedQuotes.filter((q: any) => 
-    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
-  );
-
-  const filteredCanceledQuotes = canceledQuotes.filter((q: any) => 
-    searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
-  );
-
-  const renderQuoteCard = (quote: any, showActions = false) => (
-    <div key={quote.id} className="border rounded p-4 bg-slate-50 dark:bg-slate-900">
-      <div className="flex justify-between items-start mb-3">
-        <div className="text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
-          Nº {getQuoteNumber(quote.id)}
-        </div>
-        {quote.isUrgent && <div className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-1 rounded">Urgente (+25%)</div>}
-      </div>
-      
-      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
-        <p className="text-xs text-muted-foreground mb-2 font-semibold">SOLICITUD</p>
-        {quote.createdAt && (
-          <p className="text-xs"><span className="text-muted-foreground">Fecha y hora: </span><span className="font-mono font-medium">{new Date(quote.createdAt).toLocaleString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</span></p>
-        )}
-      </div>
-      
-      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
-        <p className="text-xs text-muted-foreground mb-2 font-semibold">RECOGIDA SOLICITADA</p>
-        {quote.pickupTime && (
-          <p className="text-xs"><span className="text-muted-foreground">Fecha y hora: </span><span className="font-mono font-medium">{quote.pickupTime}</span></p>
-        )}
-      </div>
-      
-      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
-        <p className="text-xs text-muted-foreground mb-2 font-semibold">RUTA</p>
-        <div className="grid grid-cols-2 gap-2 mb-2">
+  const renderQuoteCard = (quote: any, showAssignBtn = false) => (
+    <Card key={quote.id} className="hover-elevate">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
           <div>
-            <p className="text-xs text-muted-foreground">Origen</p>
-            <p className="text-sm font-medium">{quote.origin}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Destino</p>
-            <p className="text-sm font-medium">{quote.destination}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div>
-            <p className="text-muted-foreground">Distancia</p>
-            <p className="font-medium">{(quote.distance || 0).toFixed(1)} km</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Duración</p>
-            <p className="font-medium">{quote.duration || 0} min</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Vehículo</p>
-            <p className="font-medium">{quote.vehicleTypeName}</p>
-          </div>
-        </div>
-      </div>
-      
-      <div className="mb-3 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
-        <p className="text-xs text-muted-foreground mb-2 font-semibold">PRECIO</p>
-        <div className="space-y-1 text-xs">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Distancia ({(quote.distance || 0).toFixed(1)} km × {(quote.distanceCost / quote.distance).toFixed(2)}€):</span>
-            <span className="font-mono">{(quote.distanceCost || 0).toFixed(2)}€</span>
-          </div>
-          {quote.directionCost > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Dirección:</span>
-              <span className="font-mono">{(quote.directionCost || 0).toFixed(2)}€</span>
+            <div className="text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded mb-2 w-fit">
+              Nº {getQuoteNumber(quote.id)}
             </div>
-          )}
-          <div className="flex justify-between border-t pt-1">
-            <span className="text-muted-foreground">Subtotal:</span>
-            <span className="font-mono font-medium">{((quote.distanceCost || 0) + (quote.directionCost || 0)).toFixed(2)}€</span>
+            <p className="font-semibold">{quote.origin} → {quote.destination}</p>
           </div>
-          {quote.isUrgent && (
-            <div className="flex justify-between text-orange-600 dark:text-orange-400">
-              <span>Con urgencia (+25%):</span>
-              <span className="font-mono font-medium">{(quote.totalPrice || 0).toFixed(2)}€</span>
-            </div>
-          )}
-          {!quote.isUrgent && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total:</span>
-              <span className="font-mono font-medium text-green-600 dark:text-green-400">{(quote.totalPrice || 0).toFixed(2)}€</span>
-            </div>
-          )}
-          {quote.isUrgent && (
-            <div className="flex justify-between border-t pt-1 text-green-600 dark:text-green-400">
-              <span className="font-semibold">TOTAL A PAGAR:</span>
-              <span className="font-mono font-bold">{(quote.totalPrice || 0).toFixed(2)}€</span>
-            </div>
-          )}
+          <div className="flex gap-2">
+            {quote.isUrgent && (
+              <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
+                Urgente
+              </Badge>
+            )}
+            <Badge className={quote.status === "signed" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300"}>
+              {quote.status === "signed" ? "Firmado" : quote.status === "assigned" ? "Asignado" : "Pendiente"}
+            </Badge>
+          </div>
         </div>
-      </div>
-      
-      <div className="border-t pt-3 mb-3 space-y-2">
-        {quote.customerName && (
-          <p className="text-sm"><span className="text-muted-foreground">Cliente: </span><span className="font-medium">{quote.customerName}</span></p>
-        )}
-        {quote.phoneNumber && (
-          <p className="text-sm"><span className="text-muted-foreground">Teléfono: </span><a href={`tel:${quote.phoneNumber}`} className="text-blue-600 dark:text-blue-400 hover:underline">{quote.phoneNumber}</a></p>
-        )}
-        {quote.observations && (
-          <p className="text-sm"><span className="text-muted-foreground">Observaciones: </span><span className="text-xs">{quote.observations}</span></p>
-        )}
-      </div>
-      {showActions && (
-        <div className="flex gap-2 flex-wrap">
-          <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-green-500/40" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
-          <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-red-600/85 hover:bg-red-700/85 dark:bg-red-600/85 dark:hover:bg-red-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-red-500/40" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
-          <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600/85 hover:bg-blue-700/85 dark:bg-blue-600/85 dark:hover:bg-blue-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-blue-500/40" data-testid={`button-call-${quote.id}`}>Llamar</Button>
-          <Button onClick={() => handleAssignWorker(quote)} className="flex-1 bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-purple-500/40" data-testid={`button-assign-worker-${quote.id}`}>Asignar Trabajador</Button>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+          <div>
+            <p className="text-muted-foreground text-xs">Distancia</p>
+            <p className="font-semibold">{(quote.distance || 0).toFixed(1)} km</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-xs">Precio</p>
+            <p className="font-semibold">{(quote.totalPrice || 0).toFixed(2)}€</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-xs">Cliente</p>
+            <p className="font-semibold text-xs">{quote.customerName}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-xs">Teléfono</p>
+            <p className="font-semibold text-xs">{quote.phoneNumber}</p>
+          </div>
         </div>
-      )}
-      {quote.status === "approved" && !showActions && (
-        <div className="flex gap-2 mt-3">
-          <div className="flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs md:text-sm p-2 rounded text-center font-medium">Aprobada</div>
-          <Button onClick={() => handleCancel(quote.id)} className="bg-gray-600/85 hover:bg-gray-700/85 dark:bg-gray-600/85 dark:hover:bg-gray-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-gray-500/40" data-testid={`button-cancel-${quote.id}`}>Cancelar</Button>
-        </div>
-      )}
-      {quote.status === "approved" && showActions && (
-        <div className="mt-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm p-2 rounded text-center font-medium">Aprobada</div>
-      )}
-      {quote.status === "rejected" && (
-        <div className="mt-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm p-2 rounded text-center font-medium">Rechazada</div>
-      )}
-      {quote.status === "canceled" && (
-        <div className="mt-3 bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300 text-sm p-2 rounded text-center font-medium">Cancelada</div>
-      )}
-    </div>
+        {showAssignBtn && !quote.assignedWorkerId && (
+          <Button
+            onClick={() => handleAssignWorker(quote)}
+            className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white px-4 py-2 rounded-lg backdrop-blur-sm border border-purple-500/40"
+            data-testid={`button-assign-worker-${quote.id}`}
+          >
+            Asignar Trabajador
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 
   if (showAnimation) {
@@ -271,104 +118,90 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
   }
 
   return (
-    <div className="space-y-4 p-3 md:space-y-6 md:p-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
-        <h1 className="text-2xl md:text-3xl font-semibold">Dashboard</h1>
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            type="text" 
-            placeholder="Buscar por nº presupuesto..." 
-            value={searchNumber} 
-            onChange={(e) => setSearchNumber(e.target.value)}
-            className="pl-10"
-            data-testid="input-search-quote"
-          />
+    <div className="relative">
+      <AnimatedPageBackground />
+      <div className="relative z-10 space-y-6 p-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-semibold">Dashboard Presupuestos</h1>
+          <Button
+            onClick={() => setCreateQuoteOpen(true)}
+            className="gap-2 bg-blue-600/85 hover:bg-blue-700/85 dark:bg-blue-600/85 dark:hover:bg-blue-700/85 text-white"
+            data-testid="button-create-quote"
+          >
+            <Plus className="h-4 w-4" />
+            Crear Presupuesto
+          </Button>
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-5">
-        <StatCard title="Ingresos" value={`${totalRevenue.toFixed(2)}€`} subtitle="Aprobados" icon={Truck} />
-        <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
-        <StatCard title="En revisión" value={confirmedQuotes.length.toString()} subtitle="Pendientes" icon={TrendingUp} />
-        <StatCard title="Aprobados" value={approvedQuotes.length.toString()} subtitle="Confirmados" icon={Calculator} />
-        <button
-          onClick={() => setWorkerManagementOpen(true)}
-          className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left transition-all hover-elevate"
-          data-testid="button-manage-workers"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Administrar</p>
-              <h3 className="text-lg md:text-xl font-bold mt-1">Trabajadores</h3>
+
+        <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-5">
+          <StatCard title="Pendientes" value={pendingQuotes.length.toString()} subtitle="Sin asignar" icon={TrendingUp} />
+          <StatCard title="Asignados" value={assignedQuotes.length.toString()} subtitle="A trabajadores" icon={Users} />
+          <StatCard title="Firmados" value={signedQuotes.length.toString()} subtitle="Completados" icon={MapPin} />
+          <button
+            onClick={() => setWorkerManagementOpen(true)}
+            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left transition-all hover-elevate"
+            data-testid="button-manage-workers"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Administrar</p>
+                <h3 className="text-lg md:text-xl font-bold mt-1">Trabajadores</h3>
+              </div>
+              <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
             </div>
-            <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
-          </div>
-        </button>
+          </button>
+        </div>
+
+        {pendingQuotes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {assignedQuotes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Asignados a Trabajadores ({assignedQuotes.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {assignedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {signedQuotes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Albaranes Firmados ({signedQuotes.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {(filteredConfirmedQuotes.length > 0 || filteredPendingQuotes.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Solicitudes Pendientes de Revisión ({(filteredConfirmedQuotes.length + filteredPendingQuotes.length).toString()})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredConfirmedQuotes.length > 0 && (
-                <>
-                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Por revisar ({filteredConfirmedQuotes.length})</div>
-                  {filteredConfirmedQuotes.map((quote: any) => renderQuoteCard(quote, true))}
-                </>
-              )}
-              {filteredPendingQuotes.length > 0 && (
-                <>
-                  {filteredConfirmedQuotes.length > 0 && <div className="border-t my-4"></div>}
-                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Solicitudes para revisar ({filteredPendingQuotes.length})</div>
-                  {filteredPendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <WorkerAssignmentModal open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen} quote={selectedQuote} />
-      <WorkerManagementModal open={workerManagementOpen} onOpenChange={setWorkerManagementOpen} />
-
-      {(filteredApprovedQuotes.length > 0 || filteredRejectedQuotes.length > 0 || filteredCanceledQuotes.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Historial de Solicitudes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {filteredApprovedQuotes.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-green-600 dark:text-green-400 mb-3">Aprobadas ({filteredApprovedQuotes.length})</h3>
-                <div className="space-y-3">
-                  {filteredApprovedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
-                </div>
-              </div>
-            )}
-            {filteredRejectedQuotes.length > 0 && (
-              <div>
-                {filteredApprovedQuotes.length > 0 && <div className="border-t my-4"></div>}
-                <h3 className="font-semibold text-red-600 dark:text-red-400 mb-3">Rechazadas ({filteredRejectedQuotes.length})</h3>
-                <div className="space-y-3">
-                  {filteredRejectedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
-                </div>
-              </div>
-            )}
-            {filteredCanceledQuotes.length > 0 && (
-              <div>
-                {(filteredApprovedQuotes.length > 0 || filteredRejectedQuotes.length > 0) && <div className="border-t my-4"></div>}
-                <h3 className="font-semibold text-gray-600 dark:text-gray-400 mb-3">Canceladas ({filteredCanceledQuotes.length})</h3>
-                <div className="space-y-3">
-                  {filteredCanceledQuotes.map((quote: any) => renderQuoteCard(quote, false))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      <WorkerAssignmentModal
+        open={assignmentModalOpen}
+        onOpenChange={setAssignmentModalOpen}
+        quote={selectedQuote}
+      />
+      
+      <WorkerManagementModal
+        open={workerManagementOpen}
+        onOpenChange={setWorkerManagementOpen}
+      />
     </div>
   );
 }
