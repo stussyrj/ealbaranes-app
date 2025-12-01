@@ -10,18 +10,11 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* Navigation bar */}
       <nav className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/95 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center">
           <div className="flex items-center gap-2">
             <Truck className="w-6 h-6 text-blue-900 dark:text-blue-500" />
             <span className="text-xl font-bold text-blue-900 dark:text-blue-400">DirectTransports</span>
           </div>
-          <Button
-            onClick={() => navigate("/quote")}
-            className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
-            data-testid="button-nav-quote"
-          >
-            Solicitar Presupuesto
-          </Button>
         </div>
       </nav>
 
