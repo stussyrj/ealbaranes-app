@@ -196,11 +196,11 @@ export default function QuotePage() {
             <div className="space-y-4">
               <div className="flex justify-center">
                 <div className="truck-animation">
-                  <Truck className="w-16 h-16 text-green-500" />
+                  <Truck className="w-16 h-16 text-slate-600 dark:text-slate-400" />
                 </div>
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">¡Confirmado!</h2>
+                <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-300">¡Confirmado!</h2>
                 <p className="text-foreground">Hemos recibido tu solicitud</p>
                 <p className="text-foreground">Te confirmaremos lo antes posible</p>
                 <p className="text-sm text-muted-foreground">Número: {quoteId.slice(0, 8)}</p>
