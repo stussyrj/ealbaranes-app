@@ -121,3 +121,13 @@ Endpoints existentes funcionan igual:
 - Cliente firma directamente en dispositivo del trabajador (no tiene cuenta)
 - Albaranes firmados = prueba de entrega
 - Datos cliente se capturan en momento de firma en albarán
+
+## ISSUE CRÍTICO PENDIENTE - TURN 9
+
+**Problema**: React app no renderiza UI completo cuando se importan todos los componentes/contextos de App.tsx
+- El app mínimal (sin contextos) renderiza correctamente
+- La versión completa con AuthProvider, ThemeProvider, SidebarProvider genera error silencioso de compilación en Vite HMR
+- Error: "[hmr] Failed to reload /src/App.tsx - importing non-existent modules"
+- **Solución temporal**: App.tsx está simplificado a versión mínimalista que renderiza
+- **ACCIÓN REQUERIDA**: Debuggear por qué los imports complejos fallan en Vite (posible circular dependency o problema de compilación de módulos)
+
