@@ -46,10 +46,14 @@ export default function DashboardPage() {
     setAssignmentModalOpen(true);
   };
 
-  const assignedQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => q.assignedWorkerId) : [];
   const signedQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => q.status === "signed") : [];
   const pendingQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => !q.assignedWorkerId && q.status !== "signed") : [];
-  const totalDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes.length : 0;
+  
+  const signedDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes.filter((n: any) => n.photo) : [];
+  const pendingDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes.filter((n: any) => !n.photo) : [];
+  
+  const totalSignedCount = signedQuotes.length + signedDeliveryNotes.length;
+  const totalPendingCount = pendingQuotes.length + pendingDeliveryNotes.length;
 
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
@@ -126,11 +130,9 @@ export default function DashboardPage() {
           <h1 className="text-2xl md:text-3xl font-semibold">Dashboard Presupuestos</h1>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-5">
-          <StatCard title="Pendientes" value={pendingQuotes.length.toString()} subtitle="Sin asignar" icon={TrendingUp} />
-          <StatCard title="Asignados" value={assignedQuotes.length.toString()} subtitle="A trabajadores" icon={Users} />
-          <StatCard title="Firmados" value={signedQuotes.length.toString()} subtitle="Completados" icon={MapPin} />
-          <StatCard title="Albaranes" value={totalDeliveryNotes.toString()} subtitle="Generados" icon={Truck} />
+        <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <StatCard title="Pendientes" value={totalPendingCount.toString()} subtitle="Sin asignar" icon={TrendingUp} />
+          <StatCard title="Firmados" value={totalSignedCount.toString()} subtitle="Completados" icon={MapPin} />
           <button
             onClick={() => setWorkerManagementOpen(true)}
             className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left transition-all hover-elevate"
@@ -146,40 +148,66 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {pendingQuotes.length > 0 && (
+        {(pendingQuotes.length > 0 || pendingDeliveryNotes.length > 0) && (
           <Card>
             <CardHeader>
-              <CardTitle>Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
+              <CardTitle>Pendientes ({totalPendingCount})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
                 {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
+                {pendingDeliveryNotes.map((note: any) => (
+                  <Card key={note.id} className="hover-elevate">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">{note.destination || 'Sin destino'}</p>
+                          <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                        </div>
+                        <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">Pendiente</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                      <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
+                      <div>{note.date && <span>{new Date(note.date).toLocaleDateString('es-ES')}</span>}</div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
 
-        {assignedQuotes.length > 0 && (
+        {(signedQuotes.length > 0 || signedDeliveryNotes.length > 0) && (
           <Card>
             <CardHeader>
-              <CardTitle>Asignados a Trabajadores ({assignedQuotes.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {assignedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {signedQuotes.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Albaranes Firmados ({signedQuotes.length})</CardTitle>
+              <CardTitle>Firmados ({totalSignedCount})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
                 {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
+                {signedDeliveryNotes.map((note: any) => (
+                  <Card key={note.id} className="hover-elevate">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">{note.destination || 'Sin destino'}</p>
+                          <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                        </div>
+                        <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">✓ Firmado</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                      <div>{note.vehicleType && <span>{note.vehicleType}</span>}</div>
+                      <div>{note.signedAt && <span>Firmado: {new Date(note.signedAt).toLocaleString('es-ES')}</span>}</div>
+                      {note.photo && (
+                        <div className="pt-2">
+                          <img src={note.photo} alt="Albarán" className="w-full rounded-lg max-h-40 object-cover" />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>
