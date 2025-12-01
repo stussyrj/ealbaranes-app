@@ -33,7 +33,8 @@ const adminNavItems = [
 ];
 
 const customerNavItems = [
-  { title: "Calcular Presupuesto", url: "/", icon: Calculator },
+  { title: "Inicio", url: "/", icon: LayoutDashboard },
+  { title: "Calcular Presupuesto", url: "/quote", icon: Calculator },
   { title: "Historial", url: "/history", icon: History },
   { title: "Contacto", url: "/contact", icon: Phone },
 ];

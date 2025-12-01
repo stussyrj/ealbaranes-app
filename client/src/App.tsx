@@ -12,6 +12,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import NotFound from "@/pages/not-found";
 import DashboardPage from "@/pages/DashboardPage";
 import QuotePage from "@/pages/QuotePage";
+import LandingPage from "@/pages/LandingPage";
 import HistoryPage from "@/pages/HistoryPage";
 import ContactPage from "@/pages/ContactPage";
 import AdminPricingPage from "@/pages/AdminPricingPage";
@@ -37,7 +38,8 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={QuotePage} />
+      <Route path="/" component={LandingPage} />
+      <Route path="/quote" component={QuotePage} />
       <Route path="/history" component={HistoryPage} />
       <Route path="/contact" component={ContactPage} />
       <Route component={NotFound} />
