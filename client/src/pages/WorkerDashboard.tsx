@@ -454,9 +454,14 @@ export default function WorkerDashboard() {
               <Button
                 onClick={async () => {
                   try {
+                    if (!user?.workerId) {
+                      console.error("No workerId available:", { userId: user?.id, workerId: user?.workerId });
+                      return;
+                    }
+
                     const deliveryNoteData = {
                       quoteId: `custom-${Date.now()}`,
-                      workerId: user?.workerId,
+                      workerId: user.workerId,
                       clientName: formData.clientName,
                       pickupOrigin: formData.pickupOrigin,
                       destination: formData.destination,
@@ -467,6 +472,8 @@ export default function WorkerDashboard() {
                       status: "signed",
                       signedAt: new Date().toISOString(),
                     };
+                    
+                    console.log("Saving delivery note with:", deliveryNoteData);
 
                     const response = await fetch("/api/delivery-notes", {
                       method: "POST",

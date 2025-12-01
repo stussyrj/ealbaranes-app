@@ -56,22 +56,27 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
   };
 
   const handleSubmit = async () => {
-    if (!quote || !workerId || !signatureCanvas) return;
+    if (!quote || !workerId || !signatureCanvas) {
+      console.error("Missing required fields:", { quote: !!quote, workerId, signatureCanvas: !!signatureCanvas });
+      return;
+    }
 
     const signatureData = signatureCanvas.toDataURL();
+    const payload = {
+      quoteId: quote.id,
+      workerId,
+      status: "signed",
+      signature: signatureData,
+      signedAt: new Date().toISOString(),
+      notes,
+    };
+    console.log("Payload to send:", payload);
 
     try {
       const response = await fetch("/api/delivery-notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quoteId: quote.id,
-          workerId,
-          status: "signed",
-          signature: signatureData,
-          signedAt: new Date(),
-          notes,
-        }),
+        body: JSON.stringify(payload),
         credentials: "include",
       });
 

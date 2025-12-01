@@ -368,6 +368,12 @@ export async function registerRoutes(
   app.post("/api/delivery-notes", async (req, res) => {
     try {
       const data = req.body;
+      
+      // Validate required fields
+      if (!data.workerId || !data.quoteId) {
+        return res.status(400).json({ error: "workerId y quoteId son requeridos" });
+      }
+      
       // Convert signedAt string to Date if present
       const noteData = {
         ...data,
