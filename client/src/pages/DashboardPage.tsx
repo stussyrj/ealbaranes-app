@@ -138,14 +138,8 @@ export default function DashboardPage() {
   );
 
   if (showAnimation) {
-    return (
-      <DriverDoorAnimation
-        onComplete={() => {
-          sessionStorage.setItem("hasSeenAdminAnimation", "true");
-          setShowAnimation(false);
-        }}
-      />
-    );
+    sessionStorage.setItem("hasSeenAdminAnimation", "true");
+    setShowAnimation(false);
   }
 
   return (
