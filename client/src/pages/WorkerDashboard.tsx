@@ -186,16 +186,16 @@ export default function WorkerDashboard() {
     <div className="relative">
       <AnimatedPageBackground />
       <div className="relative z-10 space-y-6 p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
           <div>
-            <h1 className="text-3xl font-semibold">Mis Servicios</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold">Mis Servicios</h1>
             <p className="text-sm text-muted-foreground mt-1">Trabajador: {user?.username}</p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleBackToSelection}
-            className="gap-2"
+            className="gap-2 w-full md:w-auto"
             data-testid="button-back-to-worker-selection"
           >
             <Home className="h-4 w-4" />
