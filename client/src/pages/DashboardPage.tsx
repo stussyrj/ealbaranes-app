@@ -206,15 +206,15 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
       </div>
       {showActions && (
         <div className="flex gap-2">
-          <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white text-sm px-4 py-2 rounded-lg backdrop-blur-sm border border-green-500/40" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
-          <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-red-600/85 hover:bg-red-700/85 dark:bg-red-600/85 dark:hover:bg-red-700/85 text-white text-sm px-4 py-2 rounded-lg backdrop-blur-sm border border-red-500/40" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
-          <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600/85 hover:bg-blue-700/85 dark:bg-blue-600/85 dark:hover:bg-blue-700/85 text-white text-sm px-4 py-2 rounded-lg backdrop-blur-sm border border-blue-500/40" data-testid={`button-call-${quote.id}`}>Llamar</Button>
+          <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-green-500/40" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
+          <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-red-600/85 hover:bg-red-700/85 dark:bg-red-600/85 dark:hover:bg-red-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-red-500/40" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
+          <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600/85 hover:bg-blue-700/85 dark:bg-blue-600/85 dark:hover:bg-blue-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-blue-500/40" data-testid={`button-call-${quote.id}`}>Llamar</Button>
         </div>
       )}
       {quote.status === "approved" && !showActions && (
         <div className="flex gap-2 mt-3">
-          <div className="flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm p-2 rounded text-center font-medium">Aprobada</div>
-          <Button onClick={() => handleCancel(quote.id)} className="bg-gray-600/85 hover:bg-gray-700/85 dark:bg-gray-600/85 dark:hover:bg-gray-700/85 text-white text-sm px-4 py-2 rounded-lg backdrop-blur-sm border border-gray-500/40" data-testid={`button-cancel-${quote.id}`}>Cancelar</Button>
+          <div className="flex-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs md:text-sm p-2 rounded text-center font-medium">Aprobada</div>
+          <Button onClick={() => handleCancel(quote.id)} className="bg-gray-600/85 hover:bg-gray-700/85 dark:bg-gray-600/85 dark:hover:bg-gray-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-gray-500/40" data-testid={`button-cancel-${quote.id}`}>Cancelar</Button>
         </div>
       )}
       {quote.status === "approved" && showActions && (
