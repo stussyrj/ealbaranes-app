@@ -334,29 +334,6 @@ export default function DashboardPage() {
             </div>
             <div className="flex-shrink-0 bg-background border-t border-border p-2 space-y-2">
               <div className="flex gap-1 flex-col sm:flex-row">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs"
-                  onClick={() => {
-                    fetch(previewImage)
-                      .then(res => res.blob())
-                      .then(blob => {
-                        const url = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `alaban-${new Date().toISOString().split('T')[0]}.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(url);
-                      });
-                  }}
-                  data-testid="button-download-preview"
-                >
-                  <Download className="w-3 h-3 mr-1" />
-                  Descargar
-                </Button>
                 {navigator.share && (
                   <Button
                     variant="outline"
@@ -376,8 +353,6 @@ export default function DashboardPage() {
                     Compartir
                   </Button>
                 )}
-              </div>
-              <div className="flex gap-1">
                 <Button
                   variant="outline"
                   size="sm"
