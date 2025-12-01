@@ -368,7 +368,12 @@ export async function registerRoutes(
   app.post("/api/delivery-notes", async (req, res) => {
     try {
       const data = req.body;
-      const note = await storage.createDeliveryNote(data);
+      // Convert signedAt string to Date if present
+      const noteData = {
+        ...data,
+        signedAt: data.signedAt ? new Date(data.signedAt) : new Date(),
+      };
+      const note = await storage.createDeliveryNote(noteData);
       res.status(201).json(note);
     } catch (error) {
       console.error("Error creating delivery note:", error);
