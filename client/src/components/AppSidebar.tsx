@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ const customerNavItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, setUser } = useAuth();
+  const { setOpen } = useSidebar();
 
   if (!user) {
     return null;
@@ -54,6 +56,10 @@ export function AppSidebar() {
   const initials = String(username || "U").slice(0, 2).toUpperCase();
 
   const [, navigate] = useLocation();
+
+  const handleNavClick = () => {
+    setOpen(false);
+  };
 
   const switchRole = () => {
     if (user) {
@@ -97,6 +103,7 @@ export function AppSidebar() {
                     asChild
                     isActive={location === item.url}
                     data-testid={`nav-${item.title.toLowerCase().replace(/\s/g, "-")}`}
+                    onClick={handleNavClick}
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
