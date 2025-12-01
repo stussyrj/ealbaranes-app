@@ -123,6 +123,12 @@ export function AppSidebar() {
         role: role,
       };
       setUser(newUser);
+      // Close sidebar immediately
+      if (isMobile) {
+        setOpenMobile(false);
+      } else {
+        setOpen(false);
+      }
       navigate("/");
     }
   };
