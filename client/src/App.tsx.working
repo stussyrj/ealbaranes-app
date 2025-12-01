@@ -35,6 +35,7 @@ function Router() {
   }
 
   if (user.role === "worker") {
+    // If no workerId selected yet, show selection page
     if (!user.workerId) {
       return (
         <Switch>
@@ -43,6 +44,7 @@ function Router() {
         </Switch>
       );
     }
+    // Otherwise show worker dashboard
     return (
       <Switch>
         <Route path="/" component={WorkerDashboard} />
