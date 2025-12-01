@@ -284,12 +284,10 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Observaciones */}
-                  {note.observations && (
-                    <div className="bg-muted/30 rounded p-3">
-                      <p className="text-xs text-muted-foreground font-semibold mb-1">OBSERVACIONES</p>
-                      <p className="text-sm">{note.observations}</p>
-                    </div>
-                  )}
+                  <div className="bg-muted/30 rounded p-3">
+                    <p className="text-xs text-muted-foreground font-semibold mb-1">OBSERVACIONES</p>
+                    <p className="text-sm">{note.observations || 'Sin observaciones'}</p>
+                  </div>
 
                   {/* Firma */}
                   {deliveryNotesType === "signed" && note.signedAt && (
