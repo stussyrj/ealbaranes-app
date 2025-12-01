@@ -265,28 +265,35 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - `esbuild` - Production server bundling
 - `drizzle-kit` - Database migration tool
 
-## Recent Changes (v2.3 - Address Autocomplete Improvements)
+## Recent Changes (v2.4 - Sidebar Auto-Close & Address Autocomplete)
 
-### 2025-12-01 Address Suggestions Enhancement
+### 2025-12-01 Sidebar Auto-Close & Address Suggestions
 
 **Added**:
+- Sidebar auto-closes when clicking navigation items (both mobile and desktop)
 - Fallback option: Users can use any address they type, even if not in suggestions
-- Auto-hide functionality: Suggestions disappear after 2 seconds of inactivity
+- Auto-hide functionality: Address suggestions disappear after 2 seconds of inactivity
 - Enter key support: Press Enter to confirm custom address
 - Manual selection: Click "Usar: [dirección]" option when no suggestions match
 - Limited suggestions: Max 3 address suggestions with postal codes
+
+**Fixed**:
+- Sidebar now closes automatically when navigating between pages (mobile + desktop)
+- Proper handling of `setOpenMobile` for mobile sidebar closure
+- Navigation links trigger sidebar close on click via `NavLink` component
 
 **Integrated**:
 - Google Places API service (experimental, for future precision enhancement)
 - Postal code display in all address suggestions
 - Manual entry flow for complex or uncommon addresses
 
-**Frontend Changes** (`QuotePage.tsx`):
+**Frontend Changes** (`AppSidebar.tsx` & `QuotePage.tsx`):
+- Added `NavLink` wrapper component that handles sidebar closure
+- Checks `isMobile` state to close appropriate sidebar context
+- Sidebar closes immediately on click for better UX
 - Added `hideSuggestionsTimer` state for 2-second auto-hide
 - Suggestions appear when user starts typing (min 2 characters)
 - Dropdown shows either API suggestions or "Usar: [typed address]" fallback option
-- Auto-hide mechanism: suggestions disappear 2 seconds after being fetched
-- Enter key closes suggestions dropdown for quick confirmation
 
 **Backend Changes** (`routes.ts` & `openrouteservice.ts`):
 - Limited address suggestions to 3 results maximum
@@ -295,6 +302,7 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Error logging for debugging
 
 **Design Rationale**:
+- Mobile users expect sidebar to close after selecting a page
 - Users expect autocomplete but many addresses are complex/custom
 - Fallback option ensures no dead ends in form flow
 - 2-second auto-hide keeps UI clean while giving time to choose
@@ -306,11 +314,9 @@ DirectTransports is a B2B SaaS application for calculating transportation quotes
 - Google Places API available but not active (can be enabled if needed)
 - Complex addresses may require manual entry fallback
 
-**Next Steps for Future Sessions**:
-- Test with more complex address scenarios (rural areas, new developments)
-- Consider enabling Google Places integration if precision becomes critical
-- Add caching layer for frequently searched addresses
-- Implement address history for repeat customers
+**Button Format**:
+- Maintained existing button design and styling throughout
+- No breaking changes to UI components
 
 ## v2.2 - Pricing & Urgency Updates (Previous)
 
