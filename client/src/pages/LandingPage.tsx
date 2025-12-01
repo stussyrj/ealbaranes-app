@@ -66,7 +66,7 @@ export default function LandingPage() {
             >
               {[
                 { number: "100%", label: "Rutas reales" },
-                { number: "Presupuestos en", label: "30 segundos" },
+                { number: "30", textAbove: "Presupuestos en", textBelow: "segundos" },
                 { number: "24/7", label: "Disponible" },
                 { number: "∞", label: "Flexible" },
               ].map((stat, i) => (
@@ -74,12 +74,23 @@ export default function LandingPage() {
                   key={i}
                   className="bg-slate-50 dark:bg-slate-900 p-6 rounded-lg border border-slate-200 dark:border-slate-800"
                 >
+                  {stat.textAbove && (
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                      {stat.textAbove}
+                    </div>
+                  )}
                   <div className="text-3xl font-bold text-blue-900 dark:text-blue-400">
                     {stat.number}
                   </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                    {stat.label}
-                  </div>
+                  {stat.textBelow ? (
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                      {stat.textBelow}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                      {stat.label}
+                    </div>
+                  )}
                 </div>
               ))}
             </motion.div>
