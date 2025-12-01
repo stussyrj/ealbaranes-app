@@ -27,6 +27,7 @@ export default function WorkerDashboard() {
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
   const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
   const [selectedNoteForPhoto, setSelectedNoteForPhoto] = useState<DeliveryNote | null>(null);
+  const [selectedNoteDetail, setSelectedNoteDetail] = useState<DeliveryNote | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [showCameraPreview, setShowCameraPreview] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -653,65 +654,66 @@ export default function WorkerDashboard() {
 
             <TabsContent value="albaranes" className="space-y-6">
               {/* Albaranes Pendientes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Albaranes Pendientes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {deliveryNotes.filter(n => !n.photo).length === 0 ? (
-                    <p className="text-muted-foreground text-center py-6">No hay albaranes pendientes</p>
-                  ) : (
-                    <Tabs defaultValue="list-pending" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 mb-4">
-                        <TabsTrigger value="list-pending">Lista</TabsTrigger>
-                        <TabsTrigger value="detail-pending">Detalles</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="list-pending" className="space-y-2">
-                        {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
-                          <div key={note.id} className="p-3 border rounded-lg hover:bg-accent/50 cursor-pointer transition" onClick={() => setSelectedNoteForPhoto(note)}>
-                            <p className="font-semibold text-sm line-clamp-1">{note.destination || 'Sin destino'}</p>
-                            <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Albaranes Pendientes</h2>
+                {deliveryNotes.filter(n => !n.photo).length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-6 text-center">
+                      <p className="text-muted-foreground">No hay albaranes pendientes</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                    {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
+                      <Card key={note.id} className="hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
+                        <CardContent className="pt-4">
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-semibold line-clamp-1">{note.destination || 'Sin destino'}</p>
+                              <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                            </div>
+                            <div className="flex gap-2 flex-wrap text-xs">
+                              {note.vehicleType && <Badge variant="outline">{note.vehicleType}</Badge>}
+                              <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">Pendiente</Badge>
+                            </div>
                           </div>
-                        ))}
-                      </TabsContent>
-                      <TabsContent value="detail-pending" className="space-y-3">
-                        {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => renderDeliveryNoteCard(note))}
-                      </TabsContent>
-                    </Tabs>
-                  )}
-                </CardContent>
-              </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Albaranes Firmados */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Albaranes Firmados</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {deliveryNotes.filter(n => n.photo).length === 0 ? (
-                    <p className="text-muted-foreground text-center py-6">No hay albaranes firmados</p>
-                  ) : (
-                    <Tabs defaultValue="list-signed" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 mb-4">
-                        <TabsTrigger value="list-signed">Lista</TabsTrigger>
-                        <TabsTrigger value="detail-signed">Detalles</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="list-signed" className="space-y-2">
-                        {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => (
-                          <div key={note.id} className="p-3 border rounded-lg hover:bg-green-50 dark:hover:bg-green-950/20 cursor-pointer transition">
-                            <p className="font-semibold text-sm line-clamp-1">{note.destination || 'Sin destino'}</p>
-                            <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Firmado</p>
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Albaranes Firmados</h2>
+                {deliveryNotes.filter(n => n.photo).length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-6 text-center">
+                      <p className="text-muted-foreground">No hay albaranes firmados</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                    {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => (
+                      <Card key={note.id} className="hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
+                        <CardContent className="pt-4">
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-semibold line-clamp-1">{note.destination || 'Sin destino'}</p>
+                              <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
+                            </div>
+                            <div className="flex gap-2 flex-wrap text-xs">
+                              {note.vehicleType && <Badge variant="outline">{note.vehicleType}</Badge>}
+                              <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">✓ Firmado</Badge>
+                            </div>
                           </div>
-                        ))}
-                      </TabsContent>
-                      <TabsContent value="detail-signed" className="space-y-3">
-                        {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => renderDeliveryNoteCard(note))}
-                      </TabsContent>
-                    </Tabs>
-                  )}
-                </CardContent>
-              </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         )}
@@ -875,6 +877,80 @@ export default function WorkerDashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalles del Albarán */}
+      <Dialog open={!!selectedNoteDetail} onOpenChange={() => setSelectedNoteDetail(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalles del Albarán</DialogTitle>
+          </DialogHeader>
+          {selectedNoteDetail && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Cliente</p>
+                  <p className="font-semibold">{selectedNoteDetail.clientName || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Vehículo</p>
+                  <p className="font-semibold">{selectedNoteDetail.vehicleType || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Fecha</p>
+                  <p className="font-semibold">{selectedNoteDetail.date ? new Date(selectedNoteDetail.date).toLocaleDateString('es-ES') : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Hora</p>
+                  <p className="font-semibold">{selectedNoteDetail.time || '-'}</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-xs text-muted-foreground mb-2">Recogida</p>
+                <p className="text-sm">{selectedNoteDetail.pickupOrigin || '-'}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-xs text-muted-foreground mb-2">Entrega</p>
+                <p className="text-sm">{selectedNoteDetail.destination || '-'}</p>
+              </div>
+
+              {selectedNoteDetail.observations && (
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground mb-2">Observaciones</p>
+                  <p className="text-sm">{selectedNoteDetail.observations}</p>
+                </div>
+              )}
+
+              {selectedNoteDetail.photo && (
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground mb-2">Fotografía</p>
+                  <img src={selectedNoteDetail.photo} alt="Foto del albarán" className="w-full rounded-lg max-h-64 object-cover" />
+                </div>
+              )}
+
+              {selectedNoteDetail.signedAt && (
+                <div className="border-t pt-4 bg-green-50 dark:bg-green-950/20 p-3 rounded">
+                  <p className="text-xs text-green-600 dark:text-green-400">✓ Firmado el {new Date(selectedNoteDetail.signedAt).toLocaleString('es-ES')}</p>
+                </div>
+              )}
+
+              {!selectedNoteDetail.photo && (
+                <Button
+                  onClick={() => {
+                    setSelectedNoteForPhoto(selectedNoteDetail);
+                    setCapturePhotoOpen(true);
+                    setSelectedNoteDetail(null);
+                  }}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  Agregar Fotografía
+                </Button>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
