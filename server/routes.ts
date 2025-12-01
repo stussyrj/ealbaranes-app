@@ -7,6 +7,7 @@ import {
   calculateRouteFromAddresses,
   getAddressSuggestions,
 } from "./services/openrouteservice";
+import { getAddressSuggestionsGoogle } from "./services/googleplaces";
 import {
   geocodeRequestSchema,
   routeRequestSchema,
@@ -25,7 +26,8 @@ export async function registerRoutes(
       if (!text) {
         return res.json([]);
       }
-      const suggestions = await getAddressSuggestions(text);
+      // Use Google Places for address suggestions with precision (max 3 results)
+      const suggestions = await getAddressSuggestionsGoogle(text);
       res.json(suggestions);
     } catch (error) {
       console.error("Error fetching address suggestions:", error);

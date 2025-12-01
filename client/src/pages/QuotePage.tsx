@@ -124,7 +124,7 @@ export default function QuotePage() {
   };
 
   const fetchAddressSuggestions = async (input: string, type: "origin" | "destination") => {
-    if (!input || input.length < 1) {
+    if (!input || input.length < 2) {
       if (type === "origin") {
         setOriginSuggestions([]);
         setShowOriginSuggestions(false);
@@ -138,12 +138,14 @@ export default function QuotePage() {
     try {
       const res = await fetch(`/api/address-suggestions?q=${encodeURIComponent(input)}`, { credentials: "include" });
       const suggestions = await res.json();
+      // Limit to 3 suggestions with postal codes
+      const limited = Array.isArray(suggestions) ? suggestions.slice(0, 3) : [];
       if (type === "origin") {
-        setOriginSuggestions(suggestions);
-        setShowOriginSuggestions(suggestions.length > 0);
+        setOriginSuggestions(limited);
+        setShowOriginSuggestions(limited.length > 0);
       } else {
-        setDestSuggestions(suggestions);
-        setShowDestSuggestions(suggestions.length > 0);
+        setDestSuggestions(limited);
+        setShowDestSuggestions(limited.length > 0);
       }
     } catch (error) {
       console.error("Error fetching suggestions:", error);
