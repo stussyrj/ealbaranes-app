@@ -284,15 +284,11 @@ export default function QuotePage() {
             <Label>Vehículo</Label>
             <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full px-3 py-2 border rounded bg-white dark:bg-slate-900 text-black dark:text-white border-gray-300 dark:border-gray-600" data-testid="select-vehicle">
               <option value="">Selecciona</option>
-              {vehicles.map((v) => {
-                const isCarrozadoBlocked = v.id === "carrozado" && carrozadoUnavailableUntil && new Date() < carrozadoUnavailableUntil ? true : false;
-                return (
-                  <option key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`} disabled={isCarrozadoBlocked}>
-                    {v.name} - {v.capacity}
-                    {isCarrozadoBlocked ? " (No disponible)" : ""}
-                  </option>
-                );
-              })}
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id} data-testid={`option-vehicle-${v.id}`}>
+                  {v.name} - {v.capacity}
+                </option>
+              ))}
             </select>
           </div>
           <div>
