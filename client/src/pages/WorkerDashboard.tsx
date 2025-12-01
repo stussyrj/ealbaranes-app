@@ -650,8 +650,7 @@ export default function WorkerDashboard() {
                       date: formData.date,
                       time: formData.time,
                       observations: formData.observations,
-                      status: "signed",
-                      signedAt: new Date().toISOString(),
+                      status: "pending",
                     };
                     
                     console.log("Saving delivery note with:", deliveryNoteData);

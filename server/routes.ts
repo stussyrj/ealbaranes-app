@@ -374,7 +374,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "workerId y quoteId son requeridos" });
       }
       
-      // Convert signedAt string to Date if present and map camelCase to snake_case for DB columns
+      // Map camelCase to snake_case for DB columns
       const noteData = {
         quoteId: data.quoteId,
         workerId: data.workerId,
@@ -388,7 +388,7 @@ export async function registerRoutes(
         photo: data.photo || null,
         status: data.status || "pending",
         signature: data.signature || null,
-        signedAt: data.signedAt ? new Date(data.signedAt) : new Date(),
+        signedAt: data.signedAt ? new Date(data.signedAt) : null,
         notes: data.notes || null,
       };
       const note = await storage.createDeliveryNote(noteData);
