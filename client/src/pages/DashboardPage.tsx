@@ -43,7 +43,22 @@ export default function DashboardPage() {
   );
 }
 
-function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber, setSearchNumber, showAnimation, setShowAnimation, toast }: any) {
+interface DashboardContentProps {
+  quotes: any[];
+  setQuotes: (quotes: any[]) => void;
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+  searchNumber: string;
+  setSearchNumber: (search: string) => void;
+  showAnimation: boolean;
+  setShowAnimation: (show: boolean) => void;
+  toast: any;
+}
+
+function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber, setSearchNumber, showAnimation, setShowAnimation, toast }: DashboardContentProps) {
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any>(null);
+
   if (!loading && quotes.length === 0) {
     setLoading(true);
     fetch("/api/quotes", { credentials: "include" })
@@ -62,18 +77,18 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
       toast({ title: "No se puede aprobar", description: data.error, variant: "destructive" });
       return;
     }
-    setQuotes(quotes.map(q => q.id === id ? { ...q, status: "approved" } : q));
+    setQuotes(quotes.map((q: any) => q.id === id ? { ...q, status: "approved" } : q));
     toast({ title: "Aprobado", description: "Presupuesto aprobado correctamente", variant: "default" });
   };
 
   const handleReject = async (id: string) => {
     await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "rejected" }), credentials: "include" });
-    setQuotes(quotes.map(q => q.id === id ? { ...q, status: "rejected" } : q));
+    setQuotes(quotes.map((q: any) => q.id === id ? { ...q, status: "rejected" } : q));
   };
 
   const handleCancel = async (id: string) => {
     await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "canceled" }), credentials: "include" });
-    setQuotes(quotes.map(q => q.id === id ? { ...q, status: "canceled" } : q));
+    setQuotes(quotes.map((q: any) => q.id === id ? { ...q, status: "canceled" } : q));
   };
 
   const handleAssignWorker = (quote: any) => {
@@ -81,34 +96,34 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
     setAssignmentModalOpen(true);
   };
 
-  const pendingQuotes = quotes.filter((q) => q.status === "pending");
-  const confirmedQuotes = quotes.filter((q) => q.status === "confirmed");
-  const approvedQuotes = quotes.filter((q) => q.status === "approved");
-  const rejectedQuotes = quotes.filter((q) => q.status === "rejected");
-  const canceledQuotes = quotes.filter((q) => q.status === "canceled");
-  const totalDistance = approvedQuotes.reduce((sum, q) => sum + (q.distance || 0), 0);
+  const pendingQuotes = quotes.filter((q: any) => q.status === "pending");
+  const confirmedQuotes = quotes.filter((q: any) => q.status === "confirmed");
+  const approvedQuotes = quotes.filter((q: any) => q.status === "approved");
+  const rejectedQuotes = quotes.filter((q: any) => q.status === "rejected");
+  const canceledQuotes = quotes.filter((q: any) => q.status === "canceled");
+  const totalDistance = approvedQuotes.reduce((sum: number, q: any) => sum + (q.distance || 0), 0);
   const avgDistance = approvedQuotes.length > 0 ? (totalDistance / approvedQuotes.length).toFixed(1) : "0";
-  const totalRevenue = approvedQuotes.reduce((sum, q) => sum + (q.totalPrice || 0), 0);
+  const totalRevenue = approvedQuotes.reduce((sum: number, q: any) => sum + (q.totalPrice || 0), 0);
 
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
-  const filteredConfirmedQuotes = confirmedQuotes.filter(q => 
+  const filteredConfirmedQuotes = confirmedQuotes.filter((q: any) => 
     searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
   );
 
-  const filteredPendingQuotes = pendingQuotes.filter(q => 
+  const filteredPendingQuotes = pendingQuotes.filter((q: any) => 
     searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
   );
 
-  const filteredApprovedQuotes = approvedQuotes.filter(q => 
+  const filteredApprovedQuotes = approvedQuotes.filter((q: any) => 
     searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
   );
 
-  const filteredRejectedQuotes = rejectedQuotes.filter(q => 
+  const filteredRejectedQuotes = rejectedQuotes.filter((q: any) => 
     searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
   );
 
-  const filteredCanceledQuotes = canceledQuotes.filter(q => 
+  const filteredCanceledQuotes = canceledQuotes.filter((q: any) => 
     searchNumber === "" || getQuoteNumber(q.id).includes(searchNumber.toUpperCase())
   );
 
@@ -213,10 +228,11 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
         )}
       </div>
       {showActions && (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button onClick={() => handleApprove(quote.id)} className="flex-1 bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-green-500/40" data-testid={`button-approve-${quote.id}`}>Aprobar</Button>
           <Button onClick={() => handleReject(quote.id)} className="flex-1 bg-red-600/85 hover:bg-red-700/85 dark:bg-red-600/85 dark:hover:bg-red-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-red-500/40" data-testid={`button-reject-${quote.id}`}>Rechazar</Button>
           <Button onClick={() => window.location.href = `tel:${quote.phoneNumber}`} className="flex-1 bg-blue-600/85 hover:bg-blue-700/85 dark:bg-blue-600/85 dark:hover:bg-blue-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-blue-500/40" data-testid={`button-call-${quote.id}`}>Llamar</Button>
+          <Button onClick={() => handleAssignWorker(quote)} className="flex-1 bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white text-xs md:text-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg backdrop-blur-sm border border-purple-500/40" data-testid={`button-assign-worker-${quote.id}`}>Asignar Trabajador</Button>
         </div>
       )}
       {quote.status === "approved" && !showActions && (
@@ -282,20 +298,22 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
               {filteredConfirmedQuotes.length > 0 && (
                 <>
                   <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Por revisar ({filteredConfirmedQuotes.length})</div>
-                  {filteredConfirmedQuotes.map((quote) => renderQuoteCard(quote, true))}
+                  {filteredConfirmedQuotes.map((quote: any) => renderQuoteCard(quote, true))}
                 </>
               )}
               {filteredPendingQuotes.length > 0 && (
                 <>
                   {filteredConfirmedQuotes.length > 0 && <div className="border-t my-4"></div>}
                   <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Solicitudes para revisar ({filteredPendingQuotes.length})</div>
-                  {filteredPendingQuotes.map((quote) => renderQuoteCard(quote, true))}
+                  {filteredPendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
                 </>
               )}
             </div>
           </CardContent>
         </Card>
       )}
+
+      <WorkerAssignmentModal open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen} quote={selectedQuote} />
 
       {(filteredApprovedQuotes.length > 0 || filteredRejectedQuotes.length > 0 || filteredCanceledQuotes.length > 0) && (
         <Card>
@@ -307,7 +325,7 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
               <div>
                 <h3 className="font-semibold text-green-600 dark:text-green-400 mb-3">Aprobadas ({filteredApprovedQuotes.length})</h3>
                 <div className="space-y-3">
-                  {filteredApprovedQuotes.map((quote) => renderQuoteCard(quote, false))}
+                  {filteredApprovedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
                 </div>
               </div>
             )}
@@ -316,7 +334,7 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
                 {filteredApprovedQuotes.length > 0 && <div className="border-t my-4"></div>}
                 <h3 className="font-semibold text-red-600 dark:text-red-400 mb-3">Rechazadas ({filteredRejectedQuotes.length})</h3>
                 <div className="space-y-3">
-                  {filteredRejectedQuotes.map((quote) => renderQuoteCard(quote, false))}
+                  {filteredRejectedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
                 </div>
               </div>
             )}
@@ -325,7 +343,7 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
                 {(filteredApprovedQuotes.length > 0 || filteredRejectedQuotes.length > 0) && <div className="border-t my-4"></div>}
                 <h3 className="font-semibold text-gray-600 dark:text-gray-400 mb-3">Canceladas ({filteredCanceledQuotes.length})</h3>
                 <div className="space-y-3">
-                  {filteredCanceledQuotes.map((quote) => renderQuoteCard(quote, false))}
+                  {filteredCanceledQuotes.map((quote: any) => renderQuoteCard(quote, false))}
                 </div>
               </div>
             )}

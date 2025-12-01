@@ -8,7 +8,7 @@ import type { Quote } from "@shared/schema";
 export default function WorkerDashboard() {
   const { user } = useAuth();
 
-  const { data: orders = [] } = useQuery({
+  const { data: orders = [] } = useQuery<Quote[]>({
     queryKey: ["/api/workers", user?.workerId || "", "orders"],
     enabled: !!user?.workerId,
   });
@@ -22,7 +22,7 @@ export default function WorkerDashboard() {
           <p className="text-muted-foreground">Trabajador: {user?.username}</p>
         </div>
 
-        {orders.length === 0 ? (
+        {(orders as Quote[]).length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-muted-foreground">No hay pedidos asignados</p>
@@ -30,7 +30,7 @@ export default function WorkerDashboard() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {(orders as Quote[]).map((order) => (
+            {orders.map((order: Quote) => (
               <Card key={order.id} className="hover-elevate">
                 <CardHeader>
                   <CardTitle className="text-lg">
