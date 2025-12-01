@@ -326,7 +326,7 @@ export default function DashboardPage() {
 
       {/* Preview Modal - Simple Overlay */}
       {previewModalOpen && previewImage && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-2 sm:p-4">
           <div className="w-full max-w-lg h-full sm:h-auto sm:max-h-[90vh] flex flex-col bg-background sm:rounded-lg overflow-hidden">
             <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
               <img src={previewImage} alt="Albarán" className="w-auto h-auto max-w-full max-h-full object-contain" />
