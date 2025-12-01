@@ -244,6 +244,7 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 <div className="text-sm space-y-2">
+                  <div><span className="text-muted-foreground">Trabajador:</span> {(note as any).workerName || 'Desconocido'}</div>
                   <div><span className="text-muted-foreground">Origen:</span> {note.pickupOrigin || 'N/A'}</div>
                   <div><span className="text-muted-foreground">Vehículo:</span> {note.vehicleType || 'N/A'}</div>
                   <div><span className="text-muted-foreground">Fecha:</span> {note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</div>

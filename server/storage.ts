@@ -360,7 +360,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getDeliveryNotes(quoteId?: string, workerId?: string): Promise<DeliveryNote[]> {
+  async getDeliveryNotes(quoteId?: string, workerId?: string): Promise<(DeliveryNote & { workerName?: string })[]> {
     try {
       let notes: DeliveryNote[] = [];
       
@@ -377,7 +377,16 @@ export class MemStorage implements IStorage {
         notes = await db.select().from(deliveryNotesTable);
       }
       
-      return notes.sort((a, b) => {
+      // Enrich notes with worker names
+      const notesWithWorkerNames = await Promise.all(notes.map(async (note) => {
+        const worker = await this.getWorker(note.workerId);
+        return {
+          ...note,
+          workerName: worker?.name || 'Desconocido'
+        };
+      }));
+      
+      return notesWithWorkerNames.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
