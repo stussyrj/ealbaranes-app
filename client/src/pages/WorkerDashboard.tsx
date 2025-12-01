@@ -47,6 +47,16 @@ export default function WorkerDashboard() {
     }
   };
 
+  const { data: orders = [] } = useQuery<Quote[]>({
+    queryKey: ["/api/workers", user?.workerId || "", "orders"],
+    enabled: !!user?.workerId,
+  });
+
+  const { data: deliveryNotes = [] } = useQuery<DeliveryNote[]>({
+    queryKey: ["/api/workers", user?.workerId || "", "delivery-notes"],
+    enabled: !!user?.workerId,
+  });
+
   // Si no hay workerId, mostrar selección de trabajador
   if (!user?.workerId) {
     return (
@@ -87,16 +97,6 @@ export default function WorkerDashboard() {
       </div>
     );
   }
-
-  const { data: orders = [] } = useQuery<Quote[]>({
-    queryKey: ["/api/workers", user?.workerId || "", "orders"],
-    enabled: !!user?.workerId,
-  });
-
-  const { data: deliveryNotes = [] } = useQuery<DeliveryNote[]>({
-    queryKey: ["/api/workers", user?.workerId || "", "delivery-notes"],
-    enabled: !!user?.workerId,
-  });
 
   const getDeliveryNoteStatus = (quoteId: string) => {
     const note = deliveryNotes.find((n: DeliveryNote) => n.quoteId === quoteId);
