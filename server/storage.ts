@@ -9,8 +9,11 @@ import {
   type InsertWorker,
   type DeliveryNote,
   type InsertDeliveryNote,
+  deliveryNotes as deliveryNotesTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -358,50 +361,61 @@ export class MemStorage implements IStorage {
   }
 
   async getDeliveryNotes(quoteId?: string, workerId?: string): Promise<DeliveryNote[]> {
-    const allNotes = Array.from(this.deliveryNotes.values());
-    let filtered = allNotes;
-    
-    if (quoteId) {
-      filtered = filtered.filter((n) => n.quoteId === quoteId);
+    try {
+      let notes: DeliveryNote[] = [];
+      
+      if (quoteId && workerId) {
+        notes = await db.select().from(deliveryNotesTable)
+          .where(and(eq(deliveryNotesTable.quoteId, quoteId), eq(deliveryNotesTable.workerId, workerId)));
+      } else if (quoteId) {
+        notes = await db.select().from(deliveryNotesTable)
+          .where(eq(deliveryNotesTable.quoteId, quoteId));
+      } else if (workerId) {
+        notes = await db.select().from(deliveryNotesTable)
+          .where(eq(deliveryNotesTable.workerId, workerId));
+      } else {
+        notes = await db.select().from(deliveryNotesTable);
+      }
+      
+      return notes.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    } catch (error) {
+      console.error("Error fetching delivery notes from DB:", error);
+      return [];
     }
-    
-    if (workerId) {
-      filtered = filtered.filter((n) => n.workerId === workerId);
-    }
-    
-    return filtered.sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    });
   }
 
   async getDeliveryNote(id: string): Promise<DeliveryNote | undefined> {
-    return this.deliveryNotes.get(id);
+    try {
+      const result = await db.select().from(deliveryNotesTable).where(eq(deliveryNotesTable.id, id));
+      return result[0];
+    } catch (error) {
+      console.error("Error fetching delivery note from DB:", error);
+      return undefined;
+    }
   }
 
   async createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote> {
-    const id = randomUUID();
-    const newNote: DeliveryNote = {
-      id,
-      quoteId: note.quoteId,
-      workerId: note.workerId,
-      status: note.status ?? "pending",
-      signature: note.signature ?? null,
-      signedAt: note.signedAt ?? null,
-      notes: note.notes ?? null,
-      createdAt: new Date(),
-    };
-    this.deliveryNotes.set(id, newNote);
-    return newNote;
+    try {
+      const result = await db.insert(deliveryNotesTable).values(note).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating delivery note in DB:", error);
+      throw error;
+    }
   }
 
   async updateDeliveryNote(id: string, updates: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined> {
-    const existing = this.deliveryNotes.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.deliveryNotes.set(id, updated);
-    return updated;
+    try {
+      const result = await db.update(deliveryNotesTable).set(updates).where(eq(deliveryNotesTable.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating delivery note in DB:", error);
+      return undefined;
+    }
   }
 }
 
