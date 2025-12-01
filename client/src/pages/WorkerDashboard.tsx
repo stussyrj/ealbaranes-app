@@ -7,13 +7,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
-import { Home } from "lucide-react";
+import { Home, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Quote, DeliveryNote } from "@shared/schema";
 
 export default function WorkerDashboard() {
   const { user, setUser } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    clientName: "",
+    pickupOrigin: "",
+    destination: "",
+    vehicleType: "Furgoneta",
+    date: new Date().toISOString().split("T")[0],
+    time: "09:00",
+    observations: "",
+  });
 
   const handleBackToSelection = () => {
     if (user) {
@@ -219,24 +233,21 @@ export default function WorkerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover-elevate">
+          <Card className="hover-elevate cursor-pointer" onClick={() => setCreateDeliveryOpen(true)}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground">Hora en Ruta Total</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Hacer Albarán
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Hoy</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {formatDuration(getTodayRouteMinutes())}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Total Mes</p>
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {formatDuration(totalRouteMinutes)}
-                  </p>
-                </div>
+            <CardContent>
+              <div className="flex items-center justify-center min-h-24">
+                <Button
+                  className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white"
+                  onClick={() => setCreateDeliveryOpen(true)}
+                >
+                  Crear Nuevo Albarán
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -328,6 +339,96 @@ export default function WorkerDashboard() {
         quote={selectedOrder}
         workerId={user?.workerId}
       />
+
+      <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Albarán</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Nombre del Cliente</label>
+              <Input
+                placeholder="Ej: Juan García"
+                value={formData.clientName}
+                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Origen (Recogida)</label>
+              <Input
+                placeholder="Ej: Calle Principal, 123"
+                value={formData.pickupOrigin}
+                onChange={(e) => setFormData({ ...formData, pickupOrigin: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Destino</label>
+              <Input
+                placeholder="Ej: Avenida Central, 456"
+                value={formData.destination}
+                onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Tipo de Vehículo</label>
+              <Select value={formData.vehicleType} onValueChange={(value) => setFormData({ ...formData, vehicleType: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Moto">Moto</SelectItem>
+                  <SelectItem value="Furgoneta">Furgoneta</SelectItem>
+                  <SelectItem value="Furgón">Furgón</SelectItem>
+                  <SelectItem value="Carrozado">Carrozado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">Fecha</label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Hora</label>
+                <Input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Observaciones</label>
+              <Textarea
+                placeholder="Notas adicionales sobre el albarán..."
+                value={formData.observations}
+                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setCreateDeliveryOpen(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  // Aquí iría la lógica para guardar el albarán
+                  console.log("Albarán creado:", formData);
+                  setCreateDeliveryOpen(false);
+                }}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                Guardar Albarán
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
