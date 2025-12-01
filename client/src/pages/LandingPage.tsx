@@ -36,11 +36,11 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 dark:from-blue-950 dark:via-slate-900 dark:to-orange-950 overflow-hidden">
       {/* Animated background elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          className="absolute top-10 left-10 w-20 h-20 rounded-full bg-blue-200 dark:bg-blue-900/30"
+          className="absolute top-10 left-10 w-20 h-20 rounded-full bg-blue-900/20 dark:bg-blue-600/30"
           animate={{
             y: [0, -20, 0],
             opacity: [0.3, 0.6, 0.3],
@@ -48,7 +48,7 @@ export default function LandingPage() {
           transition={{ duration: 4, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-20 right-10 w-32 h-32 rounded-full bg-cyan-200 dark:bg-cyan-900/20"
+          className="absolute bottom-20 right-10 w-32 h-32 rounded-full bg-orange-400/20 dark:bg-orange-600/20"
           animate={{
             y: [0, 20, 0],
             opacity: [0.2, 0.5, 0.2],
@@ -56,7 +56,7 @@ export default function LandingPage() {
           transition={{ duration: 6, repeat: Infinity }}
         />
         <motion.div
-          className="absolute top-1/2 right-20 w-16 h-16 rounded-full bg-emerald-200 dark:bg-emerald-900/30"
+          className="absolute top-1/2 right-20 w-16 h-16 rounded-full bg-blue-800/20 dark:bg-blue-500/30"
           animate={{
             x: [0, 15, 0],
             opacity: [0.25, 0.5, 0.25],
@@ -82,9 +82,9 @@ export default function LandingPage() {
                 }}
                 transition={{ duration: 4, repeat: Infinity }}
               >
-                <Truck className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                <Truck className="w-12 h-12 text-orange-600 dark:text-orange-500" />
               </motion.div>
-              <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-orange-600 dark:from-blue-400 dark:to-orange-500 bg-clip-text text-transparent">
                 DirectTransports
               </h1>
             </div>
@@ -94,7 +94,7 @@ export default function LandingPage() {
           <motion.div variants={itemVariants} className="space-y-4">
             <h2 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
               Tu solución de{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-orange-600 to-orange-500 dark:from-orange-400 dark:to-orange-300 bg-clip-text text-transparent">
                 transporte rápido
               </span>
             </h2>
@@ -137,11 +137,11 @@ export default function LandingPage() {
             ].map((feature, i) => (
               <motion.div
                 key={i}
-                className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow border border-slate-200 dark:border-slate-700"
+                className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow border-2 border-blue-900/20 dark:border-blue-600/30 hover:border-orange-500/40 dark:hover:border-orange-500/50 transition-colors"
                 whileHover={{ translateY: -8 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <feature.icon className="w-10 h-10 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
+                <feature.icon className="w-10 h-10 text-orange-600 dark:text-orange-500 mx-auto mb-3" />
                 <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
                   {feature.title}
                 </h4>
@@ -160,7 +160,7 @@ export default function LandingPage() {
           >
             <Button
               onClick={() => navigate("/quote")}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 dark:from-blue-500 dark:to-cyan-500 dark:hover:from-blue-600 dark:hover:to-cyan-600 text-white text-lg px-12 py-7 rounded-lg shadow-xl"
+              className="bg-gradient-to-r from-blue-900 to-orange-600 hover:from-blue-950 hover:to-orange-700 dark:from-blue-700 dark:to-orange-600 dark:hover:from-blue-800 dark:hover:to-orange-700 text-white text-lg px-12 py-7 rounded-lg shadow-xl"
               data-testid="button-request-quote"
             >
               Solicitar Presupuesto
