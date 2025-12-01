@@ -43,9 +43,19 @@ const customerNavItems = [
 
 function NavLink({ href, icon: Icon, title }: any) {
   const [location] = useLocation();
+  const { setOpen, setOpenMobile, isMobile } = useSidebar();
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Close sidebar immediately on click
+    if (isMobile) {
+      setOpenMobile(false);
+    } else {
+      setOpen(false);
+    }
+  };
 
   return (
-    <Link href={href}>
+    <Link href={href} onClick={handleClick}>
       <SidebarMenuButton isActive={location === href}>
         <Icon className="h-4 w-4" />
         <span>{title}</span>
@@ -57,12 +67,16 @@ function NavLink({ href, icon: Icon, title }: any) {
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, setUser } = useAuth();
-  const { setOpen } = useSidebar();
+  const { setOpen, setOpenMobile, isMobile } = useSidebar();
 
   // Close sidebar when location changes
   useEffect(() => {
-    setOpen(false);
-  }, [location, setOpen]);
+    if (isMobile) {
+      setOpenMobile(false);
+    } else {
+      setOpen(false);
+    }
+  }, [location, setOpen, setOpenMobile, isMobile]);
 
   if (!user) {
     return null;
