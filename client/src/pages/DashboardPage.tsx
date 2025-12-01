@@ -24,29 +24,17 @@ export default function DashboardPage() {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
-  const [deliveryNotesModalOpen, setDeliveryNotesModalOpen] = useState(false);
-  const [deliveryNotesType, setDeliveryNotesType] = useState<"pending" | "signed">("pending");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  const captureAndPreviewDeliveryNote = async (note: any) => {
-    try {
-      const element = deliveryNoteRefs.current[note.id];
-      if (!element) {
-        toast({ title: "Error", description: "No se pudo capturar el albarán", variant: "destructive" });
-        return;
-      }
-
-      const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-      const imageData = canvas.toDataURL("image/png");
-      setPreviewImage(imageData);
-      setDeliveryNotesModalOpen(false);
-      setPreviewModalOpen(true);
-    } catch (error) {
-      console.error("Error capturing delivery note:", error);
-      toast({ title: "Error", description: "Error al capturar el albarán", variant: "destructive" });
+  const previewDeliveryNote = (photo: string) => {
+    if (!photo) {
+      toast({ title: "Error", description: "No hay foto disponible", variant: "destructive" });
+      return;
     }
+    setPreviewImage(photo);
+    setPreviewModalOpen(true);
   };
 
   useEffect(() => {
@@ -190,17 +178,22 @@ export default function DashboardPage() {
               </div>
               {pendingDeliveryNotes.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
-                  <Button
-                    onClick={() => {
-                      setDeliveryNotesType("pending");
-                      setDeliveryNotesModalOpen(true);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                    data-testid="button-view-pending-albaranes"
-                  >
-                    Ver {pendingDeliveryNotes.length} Albarán{pendingDeliveryNotes.length !== 1 ? "es" : ""} Pendiente{pendingDeliveryNotes.length !== 1 ? "s" : ""}
-                  </Button>
+                  <p className="text-xs text-muted-foreground mb-2">Pendientes: {pendingDeliveryNotes.length}</p>
+                  <div className="space-y-2">
+                    {pendingDeliveryNotes.map((note: any) => (
+                      <Button
+                        key={note.id}
+                        onClick={() => note.photo && previewDeliveryNote(note.photo)}
+                        variant="outline"
+                        className="w-full text-xs h-8 justify-start"
+                        data-testid={`button-view-pending-${note.id}`}
+                        disabled={!note.photo}
+                      >
+                        <MapPin className="w-3 h-3 mr-2" />
+                        {note.destination}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -218,17 +211,22 @@ export default function DashboardPage() {
               </div>
               {signedDeliveryNotes.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
-                  <Button
-                    onClick={() => {
-                      setDeliveryNotesType("signed");
-                      setDeliveryNotesModalOpen(true);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                    data-testid="button-view-signed-albaranes"
-                  >
-                    Ver {signedDeliveryNotes.length} Albarán{signedDeliveryNotes.length !== 1 ? "es" : ""} Firmado{signedDeliveryNotes.length !== 1 ? "s" : ""}
-                  </Button>
+                  <p className="text-xs text-muted-foreground mb-2">Firmados: {signedDeliveryNotes.length}</p>
+                  <div className="space-y-2">
+                    {signedDeliveryNotes.map((note: any) => (
+                      <Button
+                        key={note.id}
+                        onClick={() => note.photo && previewDeliveryNote(note.photo)}
+                        variant="outline"
+                        className="w-full text-xs h-8 justify-start"
+                        data-testid={`button-view-signed-${note.id}`}
+                        disabled={!note.photo}
+                      >
+                        <MapPin className="w-3 h-3 mr-2" />
+                        {note.destination}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -247,129 +245,6 @@ export default function DashboardPage() {
         onOpenChange={setWorkerManagementOpen}
       />
 
-      <Dialog open={deliveryNotesModalOpen} onOpenChange={setDeliveryNotesModalOpen}>
-        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
-          <DialogHeader className="pb-1 sticky top-0 bg-background z-10">
-            <DialogTitle className="text-base sm:text-lg">
-              Albaranes {deliveryNotesType === "pending" ? "Pendientes" : "Firmados"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            {(deliveryNotesType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
-              <div key={note.id} ref={(el) => { deliveryNoteRefs.current[note.id] = el; }} className="rounded-lg border border-border bg-card overflow-hidden">
-                {/* Header - Compacto */}
-                <div className="flex justify-between items-start p-1.5 sm:p-2 border-b border-border/50 gap-1">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-xs sm:text-sm truncate">{note.destination || 'Sin destino'}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{note.clientName || 'Sin cliente'}</p>
-                  </div>
-                  <Badge className={`text-[10px] flex-shrink-0 h-5 ${deliveryNotesType === "pending" ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"}`}>
-                    {deliveryNotesType === "pending" ? "Pte." : "✓"}
-                  </Badge>
-                </div>
-
-                {/* Content - Compacto */}
-                <div className="p-1.5 sm:p-2 space-y-1">
-                  {/* Foto PRIMERO - Grande */}
-                  {note.photo && (
-                    <div className="mb-1.5">
-                      <img src={note.photo} alt="Albarán" className="w-full rounded max-h-40 object-cover" />
-                    </div>
-                  )}
-
-                  {/* Trabajador */}
-                  <div className="bg-muted/30 rounded p-1.5">
-                    <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">TRABAJADOR</p>
-                    <p className="font-medium text-[11px]">{(note as any).workerName || 'Desconocido'}</p>
-                  </div>
-
-                  {/* Ruta - Compacto */}
-                  <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-1">
-                    <div className="bg-muted/30 rounded p-1.5">
-                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">ORIGEN</p>
-                      <p className="font-medium text-[11px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-1.5">
-                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">DESTINO</p>
-                      <p className="font-medium text-[11px] line-clamp-1">{note.destination || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  {/* Vehículo y Fecha - Compacto */}
-                  <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-1">
-                    <div className="bg-muted/30 rounded p-1.5">
-                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">VEHÍCULO</p>
-                      <p className="font-medium text-[11px]">{note.vehicleType || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-1.5">
-                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">FECHA</p>
-                      <p className="font-medium text-[11px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  {/* Hora y Observaciones - Compacto */}
-                  <div className="space-y-1 sm:grid sm:grid-cols-2 sm:gap-1">
-                    <div className="bg-muted/30 rounded p-1.5">
-                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">HORA</p>
-                      <p className="font-medium text-[11px]">{note.time || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-1.5">
-                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">OBS.</p>
-                      <p className="text-[11px] line-clamp-1">{note.observations || '-'}</p>
-                    </div>
-                  </div>
-
-                  {/* Firma */}
-                  {deliveryNotesType === "signed" && note.signedAt && (
-                    <div className="bg-muted/30 rounded p-1.5">
-                      <p className="text-[9px] text-muted-foreground font-semibold mb-0.5">FIRMADO</p>
-                      <p className="font-medium text-[10px]">{new Date(note.signedAt).toLocaleString('es-ES')}</p>
-                    </div>
-                  )}
-
-                  {/* Share buttons - Solo para albaranes firmados */}
-                  {deliveryNotesType === "signed" && note.photo && (
-                    <div className="border-t border-border/30 pt-1 mt-1 flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 text-[10px] h-7"
-                        onClick={() => captureAndPreviewDeliveryNote(note)}
-                        data-testid={`button-download-delivery-note-${note.id}`}
-                      >
-                        <Download className="w-2.5 h-2.5 mr-0.5" />
-                        Ver
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 text-[10px] h-7"
-                        onClick={() => {
-                          const element = deliveryNoteRefs.current[note.id];
-                          if (element && navigator.share) {
-                            html2canvas(element, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
-                              canvas.toBlob(blob => {
-                                const file = new File([blob!], `alban-${note.destination}.png`, { type: "image/png" });
-                                navigator.share({ files: [file], title: `Albarán - ${note.destination}` });
-                              });
-                            });
-                          } else {
-                            toast({ title: "Info", description: "La función compartir no está disponible en tu navegador" });
-                          }
-                        }}
-                        data-testid={`button-share-delivery-note-${note.id}`}
-                      >
-                        <Share2 className="w-2.5 h-2.5 mr-0.5" />
-                        Compartir
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Preview Modal - Simple Overlay */}
       {previewModalOpen && previewImage && (
