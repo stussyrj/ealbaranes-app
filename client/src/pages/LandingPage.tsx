@@ -209,6 +209,7 @@ export default function LandingPage() {
               >
                 <Button
                   onClick={() => {
+                    setIsAutoScroll(false);
                     sessionStorage.removeItem("hasSeenClientAnimation");
                     navigate("/quote");
                   }}
@@ -485,6 +486,7 @@ export default function LandingPage() {
             >
               <Button
                 onClick={() => {
+                  setIsAutoScroll(false);
                   sessionStorage.removeItem("hasSeenClientAnimation");
                   navigate("/quote");
                 }}
