@@ -248,7 +248,7 @@ export default function DashboardPage() {
           </DialogHeader>
           <div className="space-y-2">
             {(albaranesModalType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
-              <Card key={note.id} className="p-2 overflow-hidden">
+              <Card key={note.id} className="p-2 overflow-hidden" ref={(el) => { deliveryNoteRefs.current[note.id] = el; }}>
                 <div className="space-y-1.5">
                   {/* Photo on top - compact */}
                   {note.photo && (
@@ -305,19 +305,53 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {/* View button if photo exists */}
-                  {note.photo && (
+                  {/* Action Buttons */}
+                  <div className="flex gap-1 mt-1">
+                    {note.photo && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-7"
+                        onClick={() => previewDeliveryNote(note.photo)}
+                        data-testid={`button-view-photo-${note.id}`}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Ver foto
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full text-xs h-7 mt-1"
-                      onClick={() => previewDeliveryNote(note.photo)}
-                      data-testid={`button-view-photo-${note.id}`}
+                      className="flex-1 text-xs h-7"
+                      onClick={async () => {
+                        const element = deliveryNoteRefs.current[note.id];
+                        if (element) {
+                          try {
+                            const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+                            const blob = await new Promise<Blob>((resolve) => {
+                              canvas.toBlob((b) => resolve(b as Blob), "image/png");
+                            });
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `alaban-${note.destination || 'alaban'}-${new Date().toISOString().split('T')[0]}.png`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                            toast({ title: "Éxito", description: "Albarán descargado" });
+                          } catch (error) {
+                            console.error("Download error:", error);
+                            toast({ title: "Error", description: "No se pudo descargar el albarán", variant: "destructive" });
+                          }
+                        }
+                      }}
+                      data-testid={`button-download-albarane-${note.id}`}
                     >
                       <Download className="w-3 h-3 mr-1" />
-                      Ver foto
+                      Descargar
                     </Button>
-                  )}
+                  </div>
                 </div>
               </Card>
             ))}
