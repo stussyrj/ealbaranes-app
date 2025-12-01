@@ -272,6 +272,56 @@ export default function WorkerDashboard() {
     );
   };
 
+  const renderDeliveryNoteCard = (note: DeliveryNote) => {
+    const getStatusColor = (status?: string | null) => {
+      switch (status) {
+        case "signed":
+          return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300";
+        case "delivered":
+          return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300";
+        default:
+          return "bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300";
+      }
+    };
+
+    return (
+      <Card key={note.id} className="hover-elevate">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-lg">{note.quoteId}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Nº {note.id.slice(0, 8).toUpperCase()}
+              </p>
+            </div>
+            <Badge className={`${getStatusColor(note.status)}`}>
+              {note.status === "signed" && "Firmado"}
+              {note.status === "delivered" && "Entregado"}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-sm space-y-2">
+            {note.signedAt && (
+              <>
+                <p className="text-muted-foreground">
+                  Fecha: <span className="font-semibold text-foreground">
+                    {new Date(note.signedAt).toLocaleDateString('es-ES')}
+                  </span>
+                </p>
+                <p className="text-muted-foreground">
+                  Hora: <span className="font-semibold text-foreground">
+                    {new Date(note.signedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </p>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="relative">
       <AnimatedPageBackground />
@@ -337,36 +387,48 @@ export default function WorkerDashboard() {
           </Card>
         </div>
 
-        {orders.length === 0 ? (
+        {orders.length === 0 && deliveryNotes.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-muted-foreground">No hay servicios asignados</p>
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="pending" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="pending" className="relative">
-                Pendientes
-                {pendingOrders.length > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {pendingOrders.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="signed">
-                Firmados
-                {signedOrders.length > 0 && (
-                  <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {signedOrders.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="delivered">
-                Entregados
-                {deliveredOrders.length > 0 && (
-                  <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {deliveredOrders.length}
+          <Tabs defaultValue={orders.length > 0 ? "pending" : "albaranes"} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6">
+              {orders.length > 0 && (
+                <>
+                  <TabsTrigger value="pending" className="relative">
+                    Pendientes
+                    {pendingOrders.length > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {pendingOrders.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="signed">
+                    Firmados
+                    {signedOrders.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {signedOrders.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="delivered">
+                    Entregados
+                    {deliveredOrders.length > 0 && (
+                      <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {deliveredOrders.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                </>
+              )}
+              <TabsTrigger value="albaranes">
+                Albaranes
+                {deliveryNotes.length > 0 && (
+                  <span className="ml-2 bg-purple-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {deliveryNotes.length}
                   </span>
                 )}
               </TabsTrigger>
@@ -410,6 +472,20 @@ export default function WorkerDashboard() {
               ) : (
                 <div className="grid gap-4">
                   {deliveredOrders.map((order: Quote) => renderOrderCard(order, false))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="albaranes" className="space-y-4">
+              {deliveryNotes.length === 0 ? (
+                <Card>
+                  <CardContent className="pt-6 text-center">
+                    <p className="text-muted-foreground">No hay albaranes creados</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  {deliveryNotes.map((note: DeliveryNote) => renderDeliveryNoteCard(note))}
                 </div>
               )}
             </TabsContent>
