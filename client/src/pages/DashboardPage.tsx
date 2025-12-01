@@ -331,25 +331,24 @@ export default function DashboardPage() {
                             const blob = await new Promise<Blob>((resolve) => {
                               canvas.toBlob((b) => resolve(b as Blob), "image/png");
                             });
-                            const url = window.URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.download = `alaban-${note.destination || 'alaban'}-${new Date().toISOString().split('T')[0]}.png`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
-                            toast({ title: "Éxito", description: "Albarán descargado" });
-                          } catch (error) {
-                            console.error("Download error:", error);
-                            toast({ title: "Error", description: "No se pudo descargar el albarán", variant: "destructive" });
+                            const file = new File([blob], `alaban-${note.destination || 'alaban'}-${new Date().toISOString().split('T')[0]}.png`, { type: "image/png" });
+                            if (navigator.share) {
+                              await navigator.share({ files: [file], title: "Albarán" });
+                              toast({ title: "Éxito", description: "Albarán compartido" });
+                            } else {
+                              toast({ title: "Error", description: "Compartir no disponible en este navegador", variant: "destructive" });
+                            }
+                          } catch (error: any) {
+                            if (error.name !== "AbortError") {
+                              toast({ title: "Error", description: "No se pudo compartir el albarán", variant: "destructive" });
+                            }
                           }
                         }
                       }}
-                      data-testid={`button-download-albarane-${note.id}`}
+                      data-testid={`button-share-albarane-${note.id}`}
                     >
-                      <Download className="w-3 h-3 mr-1" />
-                      Descargar
+                      <Share2 className="w-3 h-3 mr-1" />
+                      Compartir
                     </Button>
                   </div>
                 </div>
