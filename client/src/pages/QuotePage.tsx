@@ -70,7 +70,7 @@ export default function QuotePage() {
     return () => {
       if (recalculateTimer) clearTimeout(recalculateTimer);
     };
-  }, [origin, destination, vehicleId, isUrgent, pickupTime, observations, result, lastCalculatedData, pickupTimeError, name, phoneNumber]);
+  }, [origin, destination, vehicleId, isUrgent, pickupTime, observations, result, lastCalculatedData, selectedDate, selectedHour, selectedMinute, name, phoneNumber]);
 
   if (vehicles.length === 0 && !loading) {
     setLoading(true);
@@ -139,8 +139,13 @@ export default function QuotePage() {
       toast({ title: "Campo requerido", description: "Por favor, selecciona un vehículo", variant: "destructive" });
       return;
     }
-    if (pickupTimeError) {
-      toast({ title: "Error en horario", description: pickupTimeError, variant: "destructive" });
+    if (!selectedDate) {
+      toast({ title: "Campo requerido", description: "Por favor, selecciona una fecha", variant: "destructive" });
+      return;
+    }
+    const timeError = validatePickupTime(selectedDate, selectedHour, selectedMinute);
+    if (timeError) {
+      toast({ title: "Error en horario", description: timeError, variant: "destructive" });
       return;
     }
 
