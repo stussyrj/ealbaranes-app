@@ -173,7 +173,6 @@ export default function QuotePage() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-3xl mb-4">Nuevo Presupuesto</h1>
       <Card className="mb-6">
         <CardHeader><CardTitle>Solicitar Presupuesto</CardTitle></CardHeader>
         <CardContent className="space-y-4">
