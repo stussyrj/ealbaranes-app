@@ -173,10 +173,8 @@ export class MemStorage implements IStorage {
   }
 
   async getVehicleTypes(): Promise<VehicleType[]> {
-    const { isBlocked } = this.getCarrozadoAvailability();
     return Array.from(this.vehicleTypes.values()).filter((v) => {
       if (!v.isActive) return false;
-      if (v.id === "carrozado" && isBlocked) return false;
       return true;
     });
   }
