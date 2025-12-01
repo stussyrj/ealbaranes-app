@@ -53,6 +53,8 @@ export function AppSidebar() {
   const email = user.email || "";
   const initials = String(username || "U").slice(0, 2).toUpperCase();
 
+  const [, navigate] = useLocation();
+
   const switchRole = () => {
     if (user) {
       const newRole: "customer" | "admin" = isAdmin ? "customer" : "admin";
@@ -63,10 +65,8 @@ export function AppSidebar() {
         role: newRole,
       };
       setUser(newUser);
-      // Reload page after state update to avoid HMR conflicts
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Navigate to home of the new role instead of full reload
+      navigate("/");
     }
   };
 
