@@ -82,6 +82,43 @@ export class MemStorage implements IStorage {
     defaultVehicleTypes.forEach((vehicle) => this.vehicleTypes.set(vehicle.id, vehicle));
   }
 
+  isCarrozadoAvailableAtDateTime(pickupTimeStr: string): boolean {
+    if (!pickupTimeStr) return true;
+    
+    const confirmedQuotes = Array.from(this.quotes.values()).filter(
+      q => q.status === "confirmed" && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration
+    );
+
+    // Parse requested pickupTime: "YYYY-MM-DD HH:MM"
+    const pickupDateTime = pickupTimeStr.split(" ");
+    if (pickupDateTime.length !== 2) return true;
+    
+    const [year, month, day] = pickupDateTime[0].split("-").map(Number);
+    const [hours, minutes] = pickupDateTime[1].split(":").map(Number);
+    const requestedTime = new Date(year, month - 1, day, hours, minutes, 0);
+
+    // Check if requested time conflicts with any confirmed carrozado trip
+    for (const quote of confirmedQuotes) {
+      if (!quote.pickupTime || !quote.duration) continue;
+      
+      const confirmedDateTime = quote.pickupTime.split(" ");
+      if (confirmedDateTime.length !== 2) continue;
+      
+      const [qYear, qMonth, qDay] = confirmedDateTime[0].split("-").map(Number);
+      const [qHours, qMinutes] = confirmedDateTime[1].split(":").map(Number);
+      
+      const confirmedPickupTime = new Date(qYear, qMonth - 1, qDay, qHours, qMinutes, 0);
+      const confirmedEndTime = new Date(confirmedPickupTime.getTime() + (quote.duration * 2 + 30) * 60000);
+      
+      // Check if requested time falls within the confirmed trip duration
+      if (requestedTime >= confirmedPickupTime && requestedTime < confirmedEndTime) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   getCarrozadoAvailability(): { isBlocked: boolean; unavailableUntil: Date | null } {
     const confirmedQuotes = Array.from(this.quotes.values()).filter(
       q => q.status === "confirmed" && q.vehicleTypeId === "carrozado" && q.pickupTime && q.duration

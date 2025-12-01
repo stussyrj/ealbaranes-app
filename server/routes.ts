@@ -103,9 +103,30 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/check-carrozado-availability", async (req, res) => {
+    try {
+      const { vehicleTypeId, pickupTime } = req.body;
+      if (vehicleTypeId !== "carrozado" || !pickupTime) {
+        return res.json({ available: true });
+      }
+      const available = storage.isCarrozadoAvailableAtDateTime(pickupTime);
+      res.json({ available });
+    } catch (error) {
+      console.error("Error checking carrozado availability:", error);
+      res.status(400).json({ error: "Error al verificar disponibilidad" });
+    }
+  });
+
   app.post("/api/calculate-quote", async (req, res) => {
     try {
       const data = calculateQuoteRequestSchema.parse(req.body);
+      
+      // Check if carrozado is available at requested time
+      if (data.vehicleTypeId === "carrozado" && data.pickupTime) {
+        if (!storage.isCarrozadoAvailableAtDateTime(data.pickupTime)) {
+          return res.status(400).json({ error: "El carrozado no está disponible en el horario solicitado" });
+        }
+      }
       
       const routeInfo = await calculateRouteFromAddresses(data.origin, data.destination);
       

@@ -149,6 +149,23 @@ export default function QuotePage() {
       return;
     }
 
+    // Check carrozado availability
+    if (vehicleId === "carrozado") {
+      const dateStr = selectedDate.toISOString().split("T")[0];
+      const timeStr = `${selectedHour}:${selectedMinute}`;
+      const availRes = await fetch("/api/check-carrozado-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vehicleTypeId: vehicleId, pickupTime: `${dateStr} ${timeStr}` }),
+        credentials: "include",
+      });
+      const availData = await availRes.json();
+      if (!availData.available) {
+        toast({ title: "No disponible", description: "El carrozado no está disponible en el horario solicitado", variant: "destructive" });
+        return;
+      }
+    }
+
     const res = await fetch("/api/calculate-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
