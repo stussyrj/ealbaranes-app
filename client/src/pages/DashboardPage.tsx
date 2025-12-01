@@ -35,10 +35,12 @@ export default function DashboardPage() {
   const handleApprove = async (id: string) => {
     const res = await fetch(`/api/quotes/${id}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "approved" }), credentials: "include" });
     const data = await res.json();
-    if (data.warning) {
-      toast({ title: "Aviso", description: data.warning, variant: "destructive" });
+    if (!res.ok) {
+      toast({ title: "No se puede aprobar", description: data.error, variant: "destructive" });
+      return;
     }
     setQuotes(quotes.map(q => q.id === id ? { ...q, status: "approved" } : q));
+    toast({ title: "Aprobado", description: "Presupuesto aprobado correctamente", variant: "default" });
   };
 
   const handleReject = async (id: string) => {
