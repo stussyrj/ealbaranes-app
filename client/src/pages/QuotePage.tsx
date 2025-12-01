@@ -575,7 +575,7 @@ function QuotePageContent({
           </div>
           <Button 
             onClick={handleCalculate} 
-            className="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white" 
+            className="w-full bg-blue-900 hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 text-white text-base px-6 py-3 rounded-lg" 
             data-testid="button-calculate" 
             disabled={!!pickupTimeError}
           >
@@ -607,7 +607,7 @@ function QuotePageContent({
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleReset} className="w-full" data-testid="button-new-quote">Nueva Solicitud</Button>
-              <Button onClick={handleConfirm} className="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white" data-testid="button-confirm-quote">Solicitar</Button>
+              <Button onClick={handleConfirm} className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white text-base px-6 py-3 rounded-lg" data-testid="button-confirm-quote">Solicitar</Button>
             </div>
           </CardContent>
         </Card>
