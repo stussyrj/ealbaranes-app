@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, TrendingUp, MapPin, Truck, Search } from "lucide-react";
+import { Calculator, TrendingUp, MapPin, Truck, Search, Users } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
+import { WorkerManagementModal } from "@/components/WorkerManagementModal";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
+  const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
 
   useEffect(() => {
     const hasSeenAnimation = sessionStorage.getItem("hasSeenAdminAnimation");
@@ -38,6 +40,8 @@ export default function DashboardPage() {
         showAnimation={showAnimation}
         setShowAnimation={setShowAnimation}
         toast={toast}
+        workerManagementOpen={workerManagementOpen}
+        setWorkerManagementOpen={setWorkerManagementOpen}
       />
     </div>
   );
@@ -53,9 +57,11 @@ interface DashboardContentProps {
   showAnimation: boolean;
   setShowAnimation: (show: boolean) => void;
   toast: any;
+  workerManagementOpen: boolean;
+  setWorkerManagementOpen: (open: boolean) => void;
 }
 
-function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber, setSearchNumber, showAnimation, setShowAnimation, toast }: DashboardContentProps) {
+function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber, setSearchNumber, showAnimation, setShowAnimation, toast, workerManagementOpen, setWorkerManagementOpen }: DashboardContentProps) {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
 
@@ -285,7 +291,19 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
         <StatCard title="Dist. Media" value={`${avgDistance} km`} subtitle="Por presupuesto" icon={MapPin} />
         <StatCard title="En revisión" value={confirmedQuotes.length.toString()} subtitle="Pendientes" icon={TrendingUp} />
         <StatCard title="Aprobados" value={approvedQuotes.length.toString()} subtitle="Confirmados" icon={Calculator} />
-        <StatCard title="Presupuestos" value={quotes.length.toString()} subtitle="Totales" icon={Calculator} />
+        <button
+          onClick={() => setWorkerManagementOpen(true)}
+          className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left transition-all hover-elevate"
+          data-testid="button-manage-workers"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Administrar</p>
+              <h3 className="text-lg md:text-xl font-bold mt-1">Trabajadores</h3>
+            </div>
+            <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
+          </div>
+        </button>
       </div>
 
       {(filteredConfirmedQuotes.length > 0 || filteredPendingQuotes.length > 0) && (
@@ -314,6 +332,7 @@ function DashboardContent({ quotes, setQuotes, loading, setLoading, searchNumber
       )}
 
       <WorkerAssignmentModal open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen} quote={selectedQuote} />
+      <WorkerManagementModal open={workerManagementOpen} onOpenChange={setWorkerManagementOpen} />
 
       {(filteredApprovedQuotes.length > 0 || filteredRejectedQuotes.length > 0 || filteredCanceledQuotes.length > 0) && (
         <Card>

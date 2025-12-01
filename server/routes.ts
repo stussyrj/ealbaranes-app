@@ -302,6 +302,35 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/workers", async (req, res) => {
+    try {
+      const { name, email, phone } = req.body;
+      if (!name || !email) {
+        return res.status(400).json({ error: "Nombre y email son requeridos" });
+      }
+      const worker = await storage.createWorker({ name, email, phone: phone || "" });
+      res.status(201).json(worker);
+    } catch (error) {
+      console.error("Error creating worker:", error);
+      res.status(400).json({ error: "Error al crear trabajador" });
+    }
+  });
+
+  app.patch("/api/workers/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const worker = await storage.updateWorker(id, updates);
+      if (!worker) {
+        return res.status(404).json({ error: "Trabajador no encontrado" });
+      }
+      res.json(worker);
+    } catch (error) {
+      console.error("Error updating worker:", error);
+      res.status(400).json({ error: "Error al actualizar trabajador" });
+    }
+  });
+
   // Assign quote to worker
   app.patch("/api/quotes/:id/assign-worker", async (req, res) => {
     try {
