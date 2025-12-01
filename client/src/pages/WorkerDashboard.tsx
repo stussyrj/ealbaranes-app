@@ -30,7 +30,9 @@ export default function WorkerDashboard() {
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [showCameraPreview, setShowCameraPreview] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
+  const frameIdRef = useRef<number | null>(null);
   const [formData, setFormData] = useState({
     clientName: "",
     pickupOrigin: "",
@@ -62,17 +64,31 @@ export default function WorkerDashboard() {
     };
   }, []);
 
-  // Get stream and render to canvas when preview is shown
+  // Setup camera and render to canvas
   useEffect(() => {
-    if (!showCameraPreview) return;
+    if (!showCameraPreview) {
+      // Stop camera when preview is hidden
+      if (videoElementRef.current) {
+        videoElementRef.current.pause();
+        videoElementRef.current.srcObject = null;
+      }
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
+      }
+      return;
+    }
 
     let isMounted = true;
-    let frameIntervalId: NodeJS.Timeout | null = null;
     
     const setupCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment" } 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "environment"
+          }
         });
         
         if (!isMounted) {
@@ -82,36 +98,43 @@ export default function WorkerDashboard() {
         
         setCameraStream(stream);
         
-        // Create a hidden video element to play the stream
-        const videoElement = document.createElement('video');
-        videoElement.srcObject = stream;
-        videoElement.play().catch(err => console.log("Play error:", err));
-        
-        // Use canvas to display frames
-        if (videoRef.current) {
-          const canvas = videoRef.current as any;
-          const ctx = canvas.getContext('2d');
-          
-          const renderFrame = () => {
-            if (!isMounted || videoElement.paused || videoElement.ended) return;
-            
-            try {
-              if (videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                ctx.drawImage(videoElement, 0, 0);
-              }
-            } catch (e) {
-              console.log("Frame render error:", e);
-            }
-            
-            frameIntervalId = setTimeout(renderFrame, 50); // ~20fps
-          };
-          
-          videoElement.onloadedmetadata = () => {
-            renderFrame();
-          };
+        // Create and setup video element
+        if (!videoElementRef.current) {
+          const videoEl = document.createElement('video');
+          videoEl.autoplay = true;
+          videoEl.playsInline = true;
+          videoEl.muted = true;
+          videoElementRef.current = videoEl;
         }
+        
+        videoElementRef.current.srcObject = stream;
+        await videoElementRef.current.play();
+        
+        // Start rendering frames to canvas
+        const renderFrame = () => {
+          if (!isMounted || !videoElementRef.current || !canvasRef.current) return;
+          
+          const video = videoElementRef.current;
+          const canvas = canvasRef.current;
+          
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              // Set canvas size to match video
+              if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+              }
+              // Draw frame
+              ctx.drawImage(video, 0, 0);
+            }
+          }
+          
+          frameIdRef.current = requestAnimationFrame(renderFrame);
+        };
+        
+        frameIdRef.current = requestAnimationFrame(renderFrame);
+        
       } catch (error) {
         if (isMounted) {
           console.error("Error accediendo a la cámara:", error);
@@ -125,19 +148,24 @@ export default function WorkerDashboard() {
     
     return () => {
       isMounted = false;
-      if (frameIntervalId) clearTimeout(frameIntervalId);
     };
   }, [showCameraPreview]);
 
-  // Cleanup when preview is hidden
+  // Cleanup camera stream on component unmount
   useEffect(() => {
     return () => {
-      if (!showCameraPreview && cameraStream) {
+      if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
         setCameraStream(null);
       }
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+      }
+      if (videoElementRef.current) {
+        videoElementRef.current.srcObject = null;
+      }
     };
-  }, [showCameraPreview]);
+  }, [cameraStream]);
 
   const { data: orders = [] } = useQuery<Quote[]>({
     queryKey: ["/api/workers", user?.workerId || "", "orders"],
@@ -816,16 +844,15 @@ export default function WorkerDashboard() {
 
             {showCameraPreview && !capturedPhoto && (
               <div className="space-y-4">
-                <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-lg overflow-hidden border-2 border-gray-700">
+                <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-lg overflow-hidden border-2 border-gray-700 aspect-video">
                   <canvas
-                    ref={videoRef}
-                    className="w-full h-80 display-block"
+                    ref={canvasRef}
+                    className="w-full h-full"
                     style={{ 
                       display: 'block',
-                      width: '100%',
-                      height: '320px',
+                      transform: 'scaleX(-1)',
                       WebkitTransform: 'scaleX(-1)',
-                      transform: 'scaleX(-1)'
+                      backgroundColor: '#000000'
                     }}
                     data-testid="video-camera-preview"
                   />
@@ -839,26 +866,31 @@ export default function WorkerDashboard() {
                 <Button
                   type="button"
                   onClick={() => {
-                    if (videoRef.current && videoRef.current.width > 0) {
-                      const photoData = videoRef.current.toDataURL("image/jpeg", 0.8);
-                      if (photoData) {
-                        if (cameraStream) {
-                          cameraStream.getTracks().forEach(track => track.stop());
-                          setCameraStream(null);
+                    if (canvasRef.current && canvasRef.current.width > 0 && canvasRef.current.height > 0) {
+                      try {
+                        const photoData = canvasRef.current.toDataURL("image/jpeg", 0.8);
+                        if (photoData && photoData !== "data:image/jpeg;base64,") {
+                          if (cameraStream) {
+                            cameraStream.getTracks().forEach(track => track.stop());
+                            setCameraStream(null);
+                          }
+                          setShowCameraPreview(false);
+                          setCapturedPhoto(photoData);
+                        } else {
+                          alert("Error al capturar la foto. Intenta de nuevo.");
                         }
-                        setShowCameraPreview(false);
-                        setCapturedPhoto(photoData);
-                      } else {
+                      } catch (err) {
+                        console.error("Error capturando foto:", err);
                         alert("Error al capturar la foto. Intenta de nuevo.");
                       }
                     } else {
                       alert("La cámara no está lista. Espera un momento e intenta de nuevo.");
                     }
                   }}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full"
                   data-testid="button-take-photo"
                 >
-                  📸 Tomar Foto
+                  Tomar Foto
                 </Button>
               </div>
             )}
