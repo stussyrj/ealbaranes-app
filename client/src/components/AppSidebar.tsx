@@ -42,13 +42,6 @@ const adminNavItems = [
   { title: "Tipos de Vehículo", url: "/admin/vehicles", icon: TruckIcon },
 ];
 
-const customerNavItems = [
-  { title: "Inicio", url: "/", icon: LayoutDashboard },
-  { title: "Calcular Presupuesto", url: "/quote", icon: Calculator },
-  { title: "Historial", url: "/history", icon: History },
-  { title: "Contacto", url: "/contact", icon: Phone },
-];
-
 const workerNavItems = [
   { title: "Mis Servicios", url: "/", icon: LayoutDashboard },
 ];
@@ -96,22 +89,19 @@ export function AppSidebar() {
 
   const isAdmin = user.role === "admin";
   const isWorker = user.role === "worker";
-  const navItems = isAdmin ? adminNavItems : isWorker ? workerNavItems : customerNavItems;
+  const navItems = isAdmin ? adminNavItems : workerNavItems;
   const username = user.username || "Usuario";
   const email = user.email || "";
   const initials = String(username || "U").slice(0, 2).toUpperCase();
 
   const [, navigate] = useLocation();
 
-  const switchToRole = (role: "customer" | "admin" | "worker") => {
+  const switchToRole = (role: "admin" | "worker") => {
     if (user) {
-      let newUsername = "Cliente Demo";
-      let newEmail = "cliente@demo.com";
+      let newUsername = "Daniel";
+      let newEmail = "daniel@directtransports.com";
 
-      if (role === "admin") {
-        newUsername = "Daniel";
-        newEmail = "daniel@directtransports.com";
-      } else if (role === "worker") {
+      if (role === "worker") {
         newUsername = "Trabajador";
         newEmail = "trabajador@directtransports.com";
       }
@@ -186,7 +176,7 @@ export function AppSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{username}</p>
             <p className="text-xs text-muted-foreground truncate">
-              {isAdmin ? "Administrador" : user.role === "worker" ? "Trabajador" : "Cliente"}
+              {isAdmin ? "Administrador" : "Trabajador"}
             </p>
           </div>
         </div>
@@ -207,12 +197,6 @@ export function AppSidebar() {
           </DropdownMenuTrigger>
           <DropdownMenuPortal>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={() => switchToRole("customer")}
-                data-testid="menu-switch-to-customer"
-              >
-                Cliente
-              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => switchToRole("admin")}
                 data-testid="menu-switch-to-admin"

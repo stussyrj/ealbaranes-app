@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
-export type UserRole = "admin" | "customer" | "worker";
+export type UserRole = "admin" | "worker";
 
 export interface User {
   id: string;
@@ -32,12 +32,12 @@ const getInitialUser = (): User => {
       }
     }
   }
-  // Default to customer
+  // Default to admin
   return {
-    id: "2",
-    username: "Cliente Demo",
-    email: "cliente@demo.com",
-    role: "customer",
+    id: "1",
+    username: "Daniel",
+    email: "daniel@directtransports.com",
+    role: "admin",
   };
 };
 
