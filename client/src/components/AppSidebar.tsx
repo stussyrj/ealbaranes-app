@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Calculator,
@@ -41,11 +42,10 @@ const customerNavItems = [
 ];
 
 function NavLink({ href, icon: Icon, title }: any) {
-  const { setOpen } = useSidebar();
   const [location] = useLocation();
 
   return (
-    <Link href={href} onClick={() => setOpen(false)}>
+    <Link href={href}>
       <SidebarMenuButton isActive={location === href}>
         <Icon className="h-4 w-4" />
         <span>{title}</span>
@@ -58,6 +58,11 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { user, setUser } = useAuth();
   const { setOpen } = useSidebar();
+
+  // Close sidebar when location changes
+  useEffect(() => {
+    setOpen(false);
+  }, [location, setOpen]);
 
   if (!user) {
     return null;
