@@ -276,15 +276,10 @@ export default function WorkerDashboard() {
   };
 
   const renderDeliveryNoteCard = (note: DeliveryNote) => {
-    const getStatusColor = (status?: string | null) => {
-      switch (status) {
-        case "signed":
-          return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300";
-        case "delivered":
-          return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300";
-        default:
-          return "bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300";
-      }
+    const getStatusColor = (hasPhoto?: boolean) => {
+      return hasPhoto 
+        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+        : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300";
     };
 
     return (
@@ -299,9 +294,8 @@ export default function WorkerDashboard() {
                 {note.clientName && `Cliente: ${note.clientName}`}
               </p>
             </div>
-            <Badge className={`${getStatusColor(note.status)}`}>
-              {note.status === "signed" && "Firmado"}
-              {note.status === "delivered" && "Entregado"}
+            <Badge className={`${getStatusColor(!!note.photo)}`} data-testid={`badge-status-${note.id}`}>
+              {note.photo ? "✓ Firmado" : "Pendiente"}
             </Badge>
           </div>
         </CardHeader>
@@ -791,20 +785,32 @@ export default function WorkerDashboard() {
                     if (response.ok) {
                       const updatedNote = await response.json();
                       
-                      // Update cache
-                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
-                      const adminKey = ["/api/delivery-notes"];
+                      // Update status to "confirmado" now that photo exists
+                      const patchResponse = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: "confirmado" }),
+                        credentials: "include",
+                      });
                       
-                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
-                      const updatedWorkerNotes = workerNotes.map(n => n.id === updatedNote.id ? updatedNote : n);
-                      queryClient.setQueryData(workerKey, updatedWorkerNotes);
-                      
-                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
-                      const updatedAllNotes = allNotes.map(n => n.id === updatedNote.id ? updatedNote : n);
-                      queryClient.setQueryData(adminKey, updatedAllNotes);
-                      
-                      await queryClient.invalidateQueries({ queryKey: workerKey });
-                      await queryClient.invalidateQueries({ queryKey: adminKey });
+                      if (patchResponse.ok) {
+                        const noteWithStatus = await patchResponse.json();
+                        
+                        // Update cache
+                        const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                        const adminKey = ["/api/delivery-notes"];
+                        
+                        const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                        const updatedWorkerNotes = workerNotes.map(n => n.id === noteWithStatus.id ? noteWithStatus : n);
+                        queryClient.setQueryData(workerKey, updatedWorkerNotes);
+                        
+                        const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                        const updatedAllNotes = allNotes.map(n => n.id === noteWithStatus.id ? noteWithStatus : n);
+                        queryClient.setQueryData(adminKey, updatedAllNotes);
+                        
+                        await queryClient.invalidateQueries({ queryKey: workerKey });
+                        await queryClient.invalidateQueries({ queryKey: adminKey });
+                      }
                       
                       setCapturePhotoOpen(false);
                       setCapturedPhoto(null);
