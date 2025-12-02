@@ -27,6 +27,8 @@ export default function WorkerDashboard() {
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
   const [editDeliveryOpen, setEditDeliveryOpen] = useState(false);
   const [selectedNoteToEdit, setSelectedNoteToEdit] = useState<DeliveryNote | null>(null);
+  const [albaranesModalOpen, setAlbaranesModalOpen] = useState(false);
+  const [albaranesModalType, setAlbaranesModalType] = useState<"pending" | "signed">("pending");
   const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
   const [selectedNoteForPhoto, setSelectedNoteForPhoto] = useState<DeliveryNote | null>(null);
   const [selectedNoteDetail, setSelectedNoteDetail] = useState<DeliveryNote | null>(null);
@@ -654,134 +656,94 @@ export default function WorkerDashboard() {
               )}
             </TabsContent>
 
-            <TabsContent value="albaranes">
-              {deliveryNotes.length === 0 ? (
-                <Card>
-                  <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground">No hay albaranes</p>
+            <TabsContent value="albaranes" className="space-y-4">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                      {deliveryNotes.filter(n => !n.photo).length}
+                    </div>
+                    <Button className="w-full" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+                      Ver {deliveryNotes.filter(n => !n.photo).length} Albaranes Pendientes
+                    </Button>
                   </CardContent>
                 </Card>
-              ) : (
-                <Tabs defaultValue="pending-notes" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="pending-notes" className="relative">
-                      Pendientes
-                      {deliveryNotes.filter(n => !n.photo).length > 0 && (
-                        <span className="ml-2 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {deliveryNotes.filter(n => !n.photo).length}
-                        </span>
-                      )}
-                    </TabsTrigger>
-                    <TabsTrigger value="signed-notes" className="relative">
-                      Firmados
-                      {deliveryNotes.filter(n => n.photo).length > 0 && (
-                        <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {deliveryNotes.filter(n => n.photo).length}
-                        </span>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
 
-                  <TabsContent value="pending-notes" className="space-y-3">
-                    {deliveryNotes.filter(n => !n.photo).length === 0 ? (
-                      <Card>
-                        <CardContent className="pt-6 text-center">
-                          <p className="text-muted-foreground">No hay albaranes pendientes</p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-                        {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
-                          <Card key={note.id} className="p-2">
-                            <div className="space-y-1.5">
-                              <div className="grid grid-cols-2 gap-1 text-[10px]">
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
-                                  <p className="font-medium text-[10px] line-clamp-1">{note.destination || 'N/A'}</p>
-                                </div>
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
-                                  <p className="font-medium text-[10px] line-clamp-1">{note.clientName || 'N/A'}</p>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-3 gap-1 text-[10px]">
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
-                                  <p className="font-medium text-[10px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
-                                </div>
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
-                                  <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
-                                </div>
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
-                                  <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES', { month: '2-digit', day: '2-digit' }) : 'N/A'}</p>
-                                </div>
-                              </div>
-                              <div className="flex gap-1 text-xs mt-2">
-                                <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteToEdit(note); setFormData({ clientName: note.clientName || "", pickupOrigin: note.pickupOrigin || "", destination: note.destination || "", vehicleType: note.vehicleType || "Furgoneta", date: note.date || new Date().toISOString().split("T")[0], time: note.time || "09:00", observations: note.observations || "" }); setEditDeliveryOpen(true); }}>Editar</Button>
-                                <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteForPhoto(note); setCapturePhotoOpen(true); }}>📸</Button>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="signed-notes" className="space-y-3">
-                    {deliveryNotes.filter(n => n.photo).length === 0 ? (
-                      <Card>
-                        <CardContent className="pt-6 text-center">
-                          <p className="text-muted-foreground">No hay albaranes firmados</p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-                        {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => (
-                          <Card key={note.id} className="p-2 hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
-                            <div className="space-y-1.5">
-                              {note.photo && (
-                                <div className="mb-1.5 -m-2 mb-2">
-                                  <img src={note.photo} alt="Albarán" className="w-full rounded max-h-20 object-cover" />
-                                </div>
-                              )}
-                              <div className="grid grid-cols-2 gap-1 text-[10px]">
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
-                                  <p className="font-medium text-[10px] line-clamp-1">{note.destination || 'N/A'}</p>
-                                </div>
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
-                                  <p className="font-medium text-[10px] line-clamp-1">{note.clientName || 'N/A'}</p>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-3 gap-1 text-[10px]">
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
-                                  <p className="font-medium text-[10px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
-                                </div>
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
-                                  <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
-                                </div>
-                                <div className="bg-muted/30 rounded p-1">
-                                  <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
-                                  <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              )}
+                <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {deliveryNotes.filter(n => n.photo).length}
+                    </div>
+                    <Button className="w-full" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+                      Ver {deliveryNotes.filter(n => n.photo).length} Albaranes Firmados
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         )}
       </div>
+
+      {/* Albaranes Modal */}
+      <Dialog open={albaranesModalOpen} onOpenChange={setAlbaranesModalOpen}>
+        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base sm:text-lg">
+              Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {(albaranesModalType === "pending" ? deliveryNotes.filter(n => !n.photo) : deliveryNotes.filter(n => n.photo)).map((note: DeliveryNote) => (
+              <Card key={note.id} className="p-2 overflow-hidden">
+                <div className="space-y-1.5">
+                  {note.photo && (
+                    <div className="mb-1.5 -m-2 mb-2">
+                      <img src={note.photo} alt="Albarán" className="w-full rounded-t max-h-32 object-cover" />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
+                      <p className="font-medium text-[10px]">{note.destination || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
+                      <p className="font-medium text-[10px]">{note.clientName || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 text-[10px]">
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
+                      <p className="font-medium text-[10px]">{note.pickupOrigin || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
+                      <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
+                      <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                    </div>
+                  </div>
+                  {albaranesModalType === "pending" && (
+                    <div className="flex gap-1 text-xs mt-2">
+                      <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteToEdit(note); setFormData({ clientName: note.clientName || "", pickupOrigin: note.pickupOrigin || "", destination: note.destination || "", vehicleType: note.vehicleType || "Furgoneta", date: note.date || new Date().toISOString().split("T")[0], time: note.time || "09:00", observations: note.observations || "" }); setEditDeliveryOpen(true); }}>Editar</Button>
+                      <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteForPhoto(note); setCapturePhotoOpen(true); }}>📸</Button>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <DeliveryNoteGenerator
         open={deliveryModalOpen}
