@@ -348,6 +348,14 @@ export default function DashboardPage() {
                               (el as HTMLElement).style.display = 'block';
                             });
                             
+                            // Fix image proportions - remove max-height and use contain
+                            const img = clonedElement.querySelector('img');
+                            if (img) {
+                              img.style.maxHeight = 'none';
+                              img.style.height = 'auto';
+                              img.style.objectFit = 'contain';
+                            }
+                            
                             // Get original element dimensions
                             const originalRect = element.getBoundingClientRect();
                             
