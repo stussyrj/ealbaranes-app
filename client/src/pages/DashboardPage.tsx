@@ -149,68 +149,55 @@ export default function DashboardPage() {
     <div className="relative">
       <AnimatedPageBackground />
       <div className="relative z-10 space-y-4 sm:space-y-6 p-4 sm:p-6">
-        {/* Header */}
-        <div className="text-center sm:text-left">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Panel de Empresa</h1>
-          <p className="text-sm text-muted-foreground mt-1 hidden sm:block">Resumen de tu actividad</p>
-        </div>
-
-        {/* Estadísticas principales - Grid compacto en móvil */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm">
-            <div className="text-2xl sm:text-3xl font-bold text-orange-600 dark:text-orange-400">{totalPendingCount}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Pendientes</p>
-          </div>
-          <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm">
-            <div className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">{totalSignedCount}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Firmados</p>
+        {/* Header con botón de descarga */}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Panel de Empresa</h1>
+            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">Resumen de tu actividad</p>
           </div>
           <button
             onClick={() => setDownloadModalOpen(true)}
-            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate"
+            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate flex-shrink-0"
             data-testid="button-download-albaranes"
           >
-            <FileDown className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 mx-auto" />
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Descargar</p>
+            <FileDown className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
           </button>
         </div>
 
-        {/* Albaranes - Tarjetas compactas clicables */}
-        {(pendingDeliveryNotes.length > 0 || signedDeliveryNotes.length > 0) && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <button
-              onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
-              data-testid="button-view-pending-albaranes"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{pendingDeliveryNotes.length}</div>
-                  <p className="text-xs text-muted-foreground truncate">Pendientes</p>
-                </div>
+        {/* Albaranes - Tarjetas clicables que abren detalles */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <button
+            onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
+            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+            data-testid="button-view-pending-albaranes"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
               </div>
-            </button>
+              <div className="min-w-0">
+                <div className="text-xl sm:text-2xl font-bold">{pendingDeliveryNotes.length}</div>
+                <p className="text-xs text-muted-foreground truncate">Pendientes</p>
+              </div>
+            </div>
+          </button>
 
-            <button
-              onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
-              data-testid="button-view-signed-albaranes"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{signedDeliveryNotes.length}</div>
-                  <p className="text-xs text-muted-foreground truncate">Firmados</p>
-                </div>
+          <button
+            onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
+            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+            data-testid="button-view-signed-albaranes"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
               </div>
-            </button>
-          </div>
-        )}
+              <div className="min-w-0">
+                <div className="text-xl sm:text-2xl font-bold">{signedDeliveryNotes.length}</div>
+                <p className="text-xs text-muted-foreground truncate">Firmados</p>
+              </div>
+            </div>
+          </button>
+        </div>
 
         {/* Presupuestos Pendientes */}
         {pendingQuotes.length > 0 && (
