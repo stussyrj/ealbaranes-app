@@ -710,35 +710,35 @@ export default function WorkerDashboard() {
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight">ORIGEN</span>
-                      <span className="font-medium text-[10px] leading-tight">{note.pickupOrigin || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">ORIGEN</span>
+                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.pickupOrigin || 'N/A'}</span>
                     </div>
-                    <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight">DESTINO</span>
-                      <span className="font-medium text-[10px] leading-tight">{note.destination || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">DESTINO</span>
+                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.destination || 'N/A'}</span>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight">CLIENTE</span>
-                      <span className="font-medium text-[10px] leading-tight">{note.clientName || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">CLIENTE</span>
+                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.clientName || 'N/A'}</span>
                     </div>
-                    <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight">VEHÍCULO</span>
-                      <span className="font-medium text-[10px] leading-tight">{note.vehicleType || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">VEHÍCULO</span>
+                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.vehicleType || 'N/A'}</span>
                     </div>
-                    <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight">FECHA</span>
-                      <span className="font-medium text-[10px] leading-tight">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</span>
+                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">FECHA</span>
+                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</span>
                     </div>
-                    <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight">HORA</span>
-                      <span className="font-medium text-[10px] leading-tight">{note.time || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">HORA</span>
+                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.time || 'N/A'}</span>
                     </div>
-                    <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight">OBS.</span>
-                      <span className="font-medium text-[10px] leading-tight line-clamp-1">{note.observations || 'Sin observaciones'}</span>
+                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">OBS.</span>
+                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none line-clamp-1">{note.observations || 'Sin observaciones'}</span>
                     </div>
                   </div>
                   
@@ -746,15 +746,15 @@ export default function WorkerDashboard() {
                   {((note as any).waitTime || (albaranesModalType === "signed" && note.signedAt)) && (
                     <div className="grid grid-cols-2 gap-1 text-[10px]">
                       {(note as any).waitTime ? (
-                        <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                          <span className="text-muted-foreground text-[9px] font-semibold leading-tight">ESPERA</span>
-                          <span className="font-medium text-[10px] leading-tight">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</span>
+                        <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                          <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">ESPERA</span>
+                          <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</span>
                         </div>
                       ) : null}
                       {albaranesModalType === "signed" && note.signedAt && (
-                        <div className="bg-muted/30 rounded px-2 grid min-h-[40px] place-content-center text-center gap-0.5">
-                          <span className="text-muted-foreground text-[9px] font-semibold leading-tight">FIRMADO</span>
-                          <span className="font-medium text-[9px] leading-tight">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
+                          <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">FIRMADO</span>
+                          <span className="inline-flex items-center justify-center font-medium text-[9px] leading-none">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       )}
                     </div>
