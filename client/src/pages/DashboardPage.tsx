@@ -295,7 +295,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="bg-muted/30 rounded p-1">
                       <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
-                      <p className="font-medium text-[10px] line-clamp-1">{note.observations || '-'}</p>
+                      <p className="font-medium text-[10px] line-clamp-1">{note.observations || 'Sin observaciones'}</p>
                     </div>
                     {(note as any).waitTime ? (
                       <div className="bg-muted/30 rounded p-1">
