@@ -418,6 +418,17 @@ export async function registerRoutes(
       const { id } = req.params;
       const data = req.body;
       
+      // Get existing note to check if it's signed
+      const existingNote = await storage.getDeliveryNote(id);
+      if (!existingNote) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      
+      // Check if note is already signed (has signature or photo)
+      if (existingNote.signedAt || existingNote.photo) {
+        return res.status(403).json({ error: "No se pueden editar albaranes firmados" });
+      }
+      
       // Convert signedAt string to Date if present
       if (data.signedAt && typeof data.signedAt === 'string') {
         data.signedAt = new Date(data.signedAt);

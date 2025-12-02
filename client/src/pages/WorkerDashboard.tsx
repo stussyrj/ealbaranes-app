@@ -893,6 +893,11 @@ export default function WorkerDashboard() {
                       credentials: "include",
                     });
 
+                    if (response.status === 403) {
+                      alert("No se pueden editar albaranes firmados");
+                      return;
+                    }
+
                     if (response.ok) {
                       const updatedNote = await response.json();
                       const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
@@ -909,9 +914,12 @@ export default function WorkerDashboard() {
                       
                       setEditDeliveryOpen(false);
                       setSelectedNoteToEdit(null);
+                    } else {
+                      alert("Error al actualizar el albarán");
                     }
                   } catch (error) {
                     console.error("Error updating albarán:", error);
+                    alert("Error al actualizar el albarán");
                   }
                 }}
                 className="flex-1"
