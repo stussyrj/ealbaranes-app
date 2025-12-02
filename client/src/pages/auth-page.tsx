@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Truck, Lock, User } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function AuthPage() {
   const { user, login, isLoginPending } = useAuth();
@@ -24,7 +25,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative">
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 shadow-sm">
           <div className="flex flex-col space-y-1.5 p-6 text-center">
