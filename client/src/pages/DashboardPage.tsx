@@ -339,41 +339,28 @@ export default function DashboardPage() {
                               buttonsDiv.remove();
                             }
                             
-                            clonedElement.style.position = "fixed";
-                            clonedElement.style.left = "-9999px";
-                            clonedElement.style.top = "-9999px";
-                            document.body.appendChild(clonedElement);
+                            const container = document.createElement("div");
+                            container.style.position = "fixed";
+                            container.style.left = "-9999px";
+                            container.style.top = "-9999px";
+                            container.style.width = "400px";
+                            container.style.backgroundColor = "#1a1a2e";
+                            container.style.padding = "16px";
+                            container.style.borderRadius = "12px";
+                            container.style.boxSizing = "border-box";
                             
-                            const rect = clonedElement.getBoundingClientRect();
-                            const size = Math.max(rect.width, rect.height) + 20;
-                            
-                            const squareContainer = document.createElement("div");
-                            squareContainer.style.position = "fixed";
-                            squareContainer.style.left = "-9999px";
-                            squareContainer.style.top = "-9999px";
-                            squareContainer.style.width = size + "px";
-                            squareContainer.style.height = size + "px";
-                            squareContainer.style.backgroundColor = "#ffffff";
-                            squareContainer.style.display = "flex";
-                            squareContainer.style.alignItems = "center";
-                            squareContainer.style.justifyContent = "center";
-                            squareContainer.style.padding = "10px";
-                            squareContainer.style.boxSizing = "border-box";
-                            
-                            document.body.removeChild(clonedElement);
                             clonedElement.style.position = "static";
-                            clonedElement.style.left = "auto";
-                            clonedElement.style.top = "auto";
-                            squareContainer.appendChild(clonedElement);
-                            document.body.appendChild(squareContainer);
+                            clonedElement.style.width = "100%";
+                            container.appendChild(clonedElement);
+                            document.body.appendChild(container);
                             
-                            const canvas = await html2canvas(squareContainer, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-                            document.body.removeChild(squareContainer);
+                            const canvas = await html2canvas(container, { scale: 3, backgroundColor: "#1a1a2e", useCORS: true, logging: false });
+                            document.body.removeChild(container);
                             
                             const blob = await new Promise<Blob>((resolve) => {
                               canvas.toBlob((b) => resolve(b as Blob), "image/png");
                             });
-                            const file = new File([blob], `alaban-${note.destination || 'alaban'}-${new Date().toISOString().split('T')[0]}.png`, { type: "image/png" });
+                            const file = new File([blob], `albaran-${note.destination || 'albaran'}-${new Date().toISOString().split('T')[0]}.png`, { type: "image/png" });
                             if (navigator.share) {
                               await navigator.share({ files: [file], title: "Albarán" });
                               toast({ title: "Éxito", description: "Albarán compartido" });
