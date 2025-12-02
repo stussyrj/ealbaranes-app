@@ -96,6 +96,7 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - Terminología actualizada: Admin → Empresa
 - Página de login con fondo animado y toggle de tema
 - Descarga de albaranes para seguridad (fotos firmados / CSV pendientes)
+- Sesiones persistentes en PostgreSQL (no requiere re-login al recargar)
 
 ## Preferencias Usuario
 

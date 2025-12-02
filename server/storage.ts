@@ -16,9 +16,10 @@ import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and, sql, max } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
+import { Pool } from "@neondatabase/serverless";
 
-const MemoryStore = createMemoryStore(session);
+const PgStore = connectPgSimple(session);
 
 export interface IStorage {
   sessionStore: session.Store;
@@ -147,8 +148,15 @@ export class MemStorage implements IStorage {
     this.vehicleTypes = new Map();
     this.quotes = new Map();
     this.deliveryNotes = new Map();
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+    
+    this.sessionStore = new PgStore({
+      pool: pool as any,
+      tableName: "user_sessions",
+      createTableIfMissing: true,
     });
     
     defaultVehicleTypes.forEach((vehicle) => this.vehicleTypes.set(vehicle.id, vehicle));
