@@ -7,20 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
-import { Home, FileText, Users } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Quote, DeliveryNote } from "@shared/schema";
 
-const WORKERS = [
-  { id: "worker-jose", name: "José", email: "jose@directtransports.com", description: "Trabajador de transporte" },
-  { id: "worker-luis", name: "Luis", email: "luis@directtransports.com", description: "Especialista en entregas" },
-  { id: "worker-miguel", name: "Miguel", email: "miguel@directtransports.com", description: "Coordinador de rutas" },
-];
-
 export default function WorkerDashboard() {
-  const { user, setUser } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
@@ -50,17 +44,8 @@ export default function WorkerDashboard() {
     waitTime: 0,
   });
 
-  const handleSelectWorker = (workerId: string) => {
-    if (user) {
-      setUser({ ...user, workerId });
-    }
-  };
-
-  const handleBackToSelection = () => {
-    if (user) {
-      setUser({ ...user, workerId: undefined });
-    }
-  };
+  // Use workerId if available, otherwise use user.id as the worker identifier
+  const effectiveWorkerId = user?.workerId || user?.id;
 
   // Cleanup on unmount
   useEffect(() => {
@@ -180,55 +165,14 @@ export default function WorkerDashboard() {
   }, [cameraStream]);
 
   const { data: orders = [] } = useQuery<Quote[]>({
-    queryKey: ["/api/workers", user?.workerId || "", "orders"],
-    enabled: !!user?.workerId,
+    queryKey: ["/api/workers", effectiveWorkerId || "", "orders"],
+    enabled: !!effectiveWorkerId,
   });
 
   const { data: deliveryNotes = [] } = useQuery<DeliveryNote[]>({
-    queryKey: ["/api/workers", user?.workerId || "", "delivery-notes"],
-    enabled: !!user?.workerId,
+    queryKey: ["/api/workers", effectiveWorkerId || "", "delivery-notes"],
+    enabled: !!effectiveWorkerId,
   });
-
-  // Si no hay workerId, mostrar selección de trabajador
-  if (!user?.workerId) {
-    return (
-      <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6">
-        <AnimatedPageBackground />
-        <div className="relative z-10 w-full max-w-sm sm:max-w-2xl">
-          <div className="text-center mb-8 sm:mb-12">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Selecciona tu Perfil</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground px-2">Elige cuál trabajador eres</p>
-          </div>
-
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
-            {WORKERS.map((worker) => (
-              <Card key={worker.id} className="hover-elevate cursor-pointer transition-all active:scale-95 bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => handleSelectWorker(worker.id)}>
-                <CardHeader className="pb-2 sm:pb-3">
-                  <CardTitle className="text-lg sm:text-xl">{worker.name}</CardTitle>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{worker.email}</p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{worker.description}</p>
-                  <Button
-                    onClick={() => handleSelectWorker(worker.id)}
-                    className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white text-xs sm:text-sm"
-                    data-testid={`button-select-worker-${worker.id}`}
-                  >
-                    {worker.name}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const getDeliveryNoteStatus = (quoteId: string) => {
     const note = deliveryNotes.find((n: DeliveryNote) => n.quoteId === quoteId);
@@ -512,16 +456,6 @@ export default function WorkerDashboard() {
             <h1 className="text-2xl md:text-3xl font-semibold">Mis Servicios</h1>
             <p className="text-sm text-muted-foreground mt-1">Trabajador: {user?.username}</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleBackToSelection}
-            className="gap-2 w-full md:w-auto"
-            data-testid="button-back-to-worker-selection"
-          >
-            <Home className="h-4 w-4" />
-            Inicio
-          </Button>
         </div>
 
         {/* Estadísticas */}
@@ -791,7 +725,7 @@ export default function WorkerDashboard() {
         open={deliveryModalOpen}
         onOpenChange={setDeliveryModalOpen}
         quote={selectedOrder}
-        workerId={user?.workerId}
+        workerId={effectiveWorkerId}
       />
 
       {/* Edit Delivery Dialog */}
@@ -923,7 +857,7 @@ export default function WorkerDashboard() {
 
                     if (response.ok) {
                       const updatedNote = await response.json();
-                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                      const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
                       const adminKey = ["/api/delivery-notes"];
                       
                       const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
@@ -1037,14 +971,14 @@ export default function WorkerDashboard() {
               <Button
                 onClick={async () => {
                   try {
-                    if (!user?.workerId) {
-                      console.error("No workerId available:", { userId: user?.id, workerId: user?.workerId });
+                    if (!effectiveWorkerId) {
+                      console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
                       return;
                     }
 
                     const deliveryNoteData = {
                       quoteId: `custom-${Date.now()}`,
-                      workerId: user.workerId,
+                      workerId: effectiveWorkerId,
                       clientName: formData.clientName,
                       pickupOrigin: formData.pickupOrigin,
                       destination: formData.destination,
@@ -1069,7 +1003,7 @@ export default function WorkerDashboard() {
                       console.log("Albarán guardado:", newDeliveryNote);
                       
                       // Update both caches immediately with the new delivery note
-                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                      const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
                       const adminKey = ["/api/delivery-notes"];
                       
                       // Add to worker's delivery notes
@@ -1284,7 +1218,7 @@ export default function WorkerDashboard() {
                       
                       if (response.ok) {
                         const noteWithSignature = await response.json();
-                        const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                        const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
                         const adminKey = ["/api/delivery-notes"];
                         
                         const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
