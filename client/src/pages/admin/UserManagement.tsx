@@ -15,13 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Plus, Key, Trash2, Users, Shield, User } from "lucide-react";
 
 interface UserData {
@@ -33,13 +26,6 @@ interface UserData {
   createdAt: string;
 }
 
-interface WorkerData {
-  id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-}
-
 export default function UserManagement() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -49,19 +35,14 @@ export default function UserManagement() {
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
   const [changePassword, setChangePassword] = useState("");
 
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<UserData[]>({
     queryKey: ["/api/admin/users"],
   });
 
-  const { data: workers = [] } = useQuery<WorkerData[]>({
-    queryKey: ["/api/workers"],
-  });
-
   const createUserMutation = useMutation({
-    mutationFn: async (data: { username: string; displayName: string; password: string; workerId: string | null }) => {
+    mutationFn: async (data: { username: string; displayName: string; password: string }) => {
       const res = await apiRequest("POST", "/api/admin/create-user", data);
       if (!res.ok) {
         const errorData = await res.json();
@@ -75,7 +56,6 @@ export default function UserManagement() {
       setNewDisplayName("");
       setNewUsername("");
       setNewPassword("");
-      setSelectedWorkerId("");
       toast({
         title: "Usuario creado",
         description: "El usuario se ha creado correctamente",
@@ -147,7 +127,6 @@ export default function UserManagement() {
       username: newUsername,
       displayName: newDisplayName.trim() || newUsername,
       password: newPassword,
-      workerId: selectedWorkerId && selectedWorkerId !== "none" ? selectedWorkerId : null,
     });
   };
 
@@ -169,12 +148,6 @@ export default function UserManagement() {
     if (confirm(`¿Estás seguro de eliminar al usuario "${user.username}"?`)) {
       deleteUserMutation.mutate(user.id);
     }
-  };
-
-  const getWorkerName = (workerId: string | null) => {
-    if (!workerId) return "Sin asignar";
-    const worker = workers.find(w => w.id === workerId);
-    return worker?.name || workerId;
   };
 
   const nonAdminUsers = users.filter(u => !u.isAdmin);
@@ -244,25 +217,6 @@ export default function UserManagement() {
                   placeholder="Contraseña segura"
                   data-testid="input-new-password"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="worker">Trabajador asignado (opcional)</Label>
-                <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
-                  <SelectTrigger data-testid="select-worker">
-                    <SelectValue placeholder="Seleccionar trabajador..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin asignar</SelectItem>
-                    {workers.map((worker) => (
-                      <SelectItem key={worker.id} value={worker.id}>
-                        {worker.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Vincula este usuario a un perfil de trabajador existente
-                </p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
