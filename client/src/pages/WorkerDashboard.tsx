@@ -652,68 +652,126 @@ export default function WorkerDashboard() {
               )}
             </TabsContent>
 
-            <TabsContent value="albaranes" className="space-y-6">
-              {/* Albaranes Pendientes */}
-              <div>
-                <h2 className="text-lg font-semibold mb-3">Albaranes Pendientes</h2>
-                {deliveryNotes.filter(n => !n.photo).length === 0 ? (
-                  <Card>
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground">No hay albaranes pendientes</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-                    {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
-                      <Card key={note.id} className="hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
-                        <CardContent className="pt-4">
-                          <div className="space-y-2">
-                            <div>
-                              <p className="text-sm font-semibold line-clamp-1">{note.destination || 'Sin destino'}</p>
-                              <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                            </div>
-                            <div className="flex gap-2 flex-wrap text-xs">
-                              {note.vehicleType && <Badge variant="outline">{note.vehicleType}</Badge>}
-                              <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">Pendiente</Badge>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <TabsContent value="albaranes">
+              {deliveryNotes.length === 0 ? (
+                <Card>
+                  <CardContent className="pt-6 text-center">
+                    <p className="text-muted-foreground">No hay albaranes</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Tabs defaultValue="pending-notes" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="pending-notes" className="relative">
+                      Pendientes
+                      {deliveryNotes.filter(n => !n.photo).length > 0 && (
+                        <span className="ml-2 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {deliveryNotes.filter(n => !n.photo).length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="signed-notes" className="relative">
+                      Firmados
+                      {deliveryNotes.filter(n => n.photo).length > 0 && (
+                        <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {deliveryNotes.filter(n => n.photo).length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
 
-              {/* Albaranes Firmados */}
-              <div>
-                <h2 className="text-lg font-semibold mb-3">Albaranes Firmados</h2>
-                {deliveryNotes.filter(n => n.photo).length === 0 ? (
-                  <Card>
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground">No hay albaranes firmados</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-                    {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => (
-                      <Card key={note.id} className="hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
-                        <CardContent className="pt-4">
-                          <div className="space-y-2">
-                            <div>
-                              <p className="text-sm font-semibold line-clamp-1">{note.destination || 'Sin destino'}</p>
-                              <p className="text-xs text-muted-foreground">{note.clientName || 'Sin cliente'}</p>
-                            </div>
-                            <div className="flex gap-2 flex-wrap text-xs">
-                              {note.vehicleType && <Badge variant="outline">{note.vehicleType}</Badge>}
-                              <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">✓ Firmado</Badge>
-                            </div>
-                          </div>
+                  <TabsContent value="pending-notes" className="space-y-3">
+                    {deliveryNotes.filter(n => !n.photo).length === 0 ? (
+                      <Card>
+                        <CardContent className="pt-6 text-center">
+                          <p className="text-muted-foreground">No hay albaranes pendientes</p>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    ) : (
+                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                        {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
+                          <Card key={note.id} className="p-2 hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
+                            <div className="space-y-1.5">
+                              <div className="grid grid-cols-2 gap-1 text-[10px]">
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
+                                  <p className="font-medium text-[10px] line-clamp-1">{note.destination || 'N/A'}</p>
+                                </div>
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
+                                  <p className="font-medium text-[10px] line-clamp-1">{note.clientName || 'N/A'}</p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1 text-[10px]">
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
+                                  <p className="font-medium text-[10px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
+                                </div>
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
+                                  <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
+                                </div>
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
+                                  <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES', { month: '2-digit', day: '2-digit' }) : 'N/A'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="signed-notes" className="space-y-3">
+                    {deliveryNotes.filter(n => n.photo).length === 0 ? (
+                      <Card>
+                        <CardContent className="pt-6 text-center">
+                          <p className="text-muted-foreground">No hay albaranes firmados</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                        {deliveryNotes.filter(n => n.photo).map((note: DeliveryNote) => (
+                          <Card key={note.id} className="p-2 hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
+                            <div className="space-y-1.5">
+                              {note.photo && (
+                                <div className="mb-1.5 -m-2 mb-2">
+                                  <img src={note.photo} alt="Albarán" className="w-full rounded max-h-20 object-cover" />
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 gap-1 text-[10px]">
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
+                                  <p className="font-medium text-[10px] line-clamp-1">{note.destination || 'N/A'}</p>
+                                </div>
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
+                                  <p className="font-medium text-[10px] line-clamp-1">{note.clientName || 'N/A'}</p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1 text-[10px]">
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
+                                  <p className="font-medium text-[10px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
+                                </div>
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
+                                  <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
+                                </div>
+                                <div className="bg-muted/30 rounded p-1">
+                                  <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
+                                  <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              )}
             </TabsContent>
           </Tabs>
         )}
