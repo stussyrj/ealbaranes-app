@@ -80,7 +80,7 @@ export default function DashboardPage() {
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
   const renderQuoteCard = (quote: any, showAssignBtn = false) => (
-    <Card key={quote.id} className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
+    <Card key={quote.id} className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
           <StatCard title="Firmados" value={totalSignedCount.toString()} subtitle="Completados" icon={MapPin} />
           <button
             onClick={() => setWorkerManagementOpen(true)}
-            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate"
+            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate shadow-sm"
             data-testid="button-manage-workers"
           >
             <div className="flex items-center justify-between">
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         </div>
 
         {pendingQuotes.length > 0 && (
-          <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
+          <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
             <CardHeader className="py-3 sm:py-4">
               <CardTitle className="text-base sm:text-lg">Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
             </CardHeader>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
         )}
 
         {signedQuotes.length > 0 && (
-          <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
+          <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
             <CardHeader className="py-3 sm:py-4">
               <CardTitle className="text-base sm:text-lg">Presupuestos Firmados ({signedQuotes.length})</CardTitle>
             </CardHeader>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
 
         {(pendingDeliveryNotes.length > 0 || signedDeliveryNotes.length > 0) && (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
               </CardHeader>
@@ -212,7 +212,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
               </CardHeader>
