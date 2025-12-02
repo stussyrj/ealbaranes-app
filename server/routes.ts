@@ -424,14 +424,19 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
       
-      // Check if note is already signed (has photo = signed)
-      if (existingNote.photo) {
+      // Check if note is already signed (status is not pending)
+      if (existingNote.status !== "pending") {
         return res.status(403).json({ error: "No se pueden editar albaranes firmados" });
       }
       
       // Convert signedAt string to Date if present
       if (data.signedAt && typeof data.signedAt === 'string') {
         data.signedAt = new Date(data.signedAt);
+      }
+      
+      // When adding photo, mark as signed
+      if (data.photo && !existingNote.photo) {
+        data.status = "signed";
       }
       
       const note = await storage.updateDeliveryNote(id, data);
