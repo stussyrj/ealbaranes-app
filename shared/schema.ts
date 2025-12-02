@@ -98,6 +98,7 @@ export const deliveryNotes = pgTable("delivery_notes", {
   date: text("date"),
   time: text("time"),
   observations: text("observations"),
+  waitTime: integer("wait_time"),
   photo: text("photo"),
   distance: real("distance"),
   status: text("status").default("pending"),

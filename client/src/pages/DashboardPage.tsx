@@ -297,6 +297,12 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
                       <p className="font-medium text-[10px] line-clamp-1">{note.observations || '-'}</p>
                     </div>
+                    {(note as any).waitTime ? (
+                      <div className="bg-muted/30 rounded p-1">
+                        <p className="text-muted-foreground text-[9px] font-semibold">ESPERA</p>
+                        <p className="font-medium text-[10px]">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
+                      </div>
+                    ) : null}
                     {albaranesModalType === "signed" && note.signedAt && (
                       <div className="bg-muted/30 rounded p-1">
                         <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>

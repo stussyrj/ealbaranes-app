@@ -47,6 +47,7 @@ export default function WorkerDashboard() {
     date: new Date().toISOString().split("T")[0],
     time: "09:00",
     observations: "",
+    waitTime: 0,
   });
 
   const handleSelectWorker = (workerId: string) => {
@@ -739,10 +740,16 @@ export default function WorkerDashboard() {
                       <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
                       <p className="font-medium text-[10px] line-clamp-1">{note.observations || '-'}</p>
                     </div>
+                    {(note as any).waitTime ? (
+                      <div className="bg-muted/30 rounded p-1">
+                        <p className="text-muted-foreground text-[9px] font-semibold">ESPERA</p>
+                        <p className="font-medium text-[10px]">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
+                      </div>
+                    ) : null}
                   </div>
                   {albaranesModalType === "pending" && (
                     <div className="flex gap-1 text-xs mt-2">
-                      <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteToEdit(note); setFormData({ clientName: note.clientName || "", pickupOrigin: note.pickupOrigin || "", destination: note.destination || "", vehicleType: note.vehicleType || "Furgoneta", date: note.date || new Date().toISOString().split("T")[0], time: note.time || "09:00", observations: note.observations || "" }); setEditDeliveryOpen(true); }}>Editar</Button>
+                      <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteToEdit(note); setFormData({ clientName: note.clientName || "", pickupOrigin: note.pickupOrigin || "", destination: note.destination || "", vehicleType: note.vehicleType || "Furgoneta", date: note.date || new Date().toISOString().split("T")[0], time: note.time || "09:00", observations: note.observations || "", waitTime: (note as any).waitTime || 0 }); setEditDeliveryOpen(true); }}>Editar</Button>
                       <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteForPhoto(note); setCapturePhotoOpen(true); }}>📸</Button>
                     </div>
                   )}
@@ -837,6 +844,24 @@ export default function WorkerDashboard() {
                 rows={3}
               />
             </div>
+            <div>
+              <label className="text-sm font-medium">Tiempo de Espera</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max="300"
+                  value={formData.waitTime}
+                  onChange={(e) => setFormData({ ...formData, waitTime: Math.min(300, Math.max(0, parseInt(e.target.value) || 0)) })}
+                  placeholder="Minutos"
+                  className="flex-1"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {Math.floor(formData.waitTime / 60)}h {formData.waitTime % 60}m
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Máximo 5 horas (300 minutos)</p>
+            </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setEditDeliveryOpen(false)} className="flex-1">
                 Cancelar
@@ -854,6 +879,7 @@ export default function WorkerDashboard() {
                       date: formData.date,
                       time: formData.time,
                       observations: formData.observations,
+                      waitTime: formData.waitTime || null,
                     };
 
                     const response = await fetch(`/api/delivery-notes/${selectedNoteToEdit.id}`, {
@@ -1040,6 +1066,7 @@ export default function WorkerDashboard() {
                         date: new Date().toISOString().split("T")[0],
                         time: "09:00",
                         observations: "",
+                        waitTime: 0,
                       });
                     }
                   } catch (error) {
