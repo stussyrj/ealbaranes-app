@@ -710,35 +710,35 @@ export default function WorkerDashboard() {
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                      <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
-                      <p className="font-medium text-[10px]">{note.pickupOrigin || 'N/A'}</p>
+                    <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                      <p className="text-muted-foreground text-[9px] font-semibold leading-none">ORIGEN</p>
+                      <p className="font-medium text-[10px] leading-none">{note.pickupOrigin || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                      <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
-                      <p className="font-medium text-[10px]">{note.destination || 'N/A'}</p>
+                    <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                      <p className="text-muted-foreground text-[9px] font-semibold leading-none">DESTINO</p>
+                      <p className="font-medium text-[10px] leading-none">{note.destination || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                      <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
-                      <p className="font-medium text-[10px]">{note.clientName || 'N/A'}</p>
+                    <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                      <p className="text-muted-foreground text-[9px] font-semibold leading-none">CLIENTE</p>
+                      <p className="font-medium text-[10px] leading-none">{note.clientName || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                      <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
-                      <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
+                    <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                      <p className="text-muted-foreground text-[9px] font-semibold leading-none">VEHÍCULO</p>
+                      <p className="font-medium text-[10px] leading-none">{note.vehicleType || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                      <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
-                      <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                    <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                      <p className="text-muted-foreground text-[9px] font-semibold leading-none">FECHA</p>
+                      <p className="font-medium text-[10px] leading-none">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                      <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
-                      <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
+                    <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                      <p className="text-muted-foreground text-[9px] font-semibold leading-none">HORA</p>
+                      <p className="font-medium text-[10px] leading-none">{note.time || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                      <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
-                      <p className="font-medium text-[10px] line-clamp-1">{note.observations || 'Sin observaciones'}</p>
+                    <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                      <p className="text-muted-foreground text-[9px] font-semibold leading-none">OBS.</p>
+                      <p className="font-medium text-[10px] leading-none line-clamp-1">{note.observations || 'Sin observaciones'}</p>
                     </div>
                   </div>
                   
@@ -746,15 +746,15 @@ export default function WorkerDashboard() {
                   {((note as any).waitTime || (albaranesModalType === "signed" && note.signedAt)) && (
                     <div className="grid grid-cols-2 gap-1 text-[10px]">
                       {(note as any).waitTime ? (
-                        <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                          <p className="text-muted-foreground text-[9px] font-semibold">ESPERA</p>
-                          <p className="font-medium text-[10px]">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
+                        <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                          <p className="text-muted-foreground text-[9px] font-semibold leading-none">ESPERA</p>
+                          <p className="font-medium text-[10px] leading-none">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
                         </div>
                       ) : null}
                       {albaranesModalType === "signed" && note.signedAt && (
-                        <div className="bg-muted/30 rounded py-3 px-2 text-center flex flex-col justify-center items-center">
-                          <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
-                          <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
+                        <div className="bg-muted/30 rounded py-2 px-2 text-center flex flex-col justify-center items-center gap-0.5">
+                          <p className="text-muted-foreground text-[9px] font-semibold leading-none">FIRMADO</p>
+                          <p className="font-medium text-[9px] leading-none">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                       )}
                     </div>
