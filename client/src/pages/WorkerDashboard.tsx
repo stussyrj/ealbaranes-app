@@ -548,21 +548,18 @@ export default function WorkerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => setCreateDeliveryOpen(true)}>
+          <Card className="bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white border-muted-foreground/10 shadow-sm" onClick={() => setCreateDeliveryOpen(true)} data-testid="button-create-albaran">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-sm text-white/80 flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Hacer Albarán
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center min-h-24">
-                <Button
-                  className="w-full bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white"
-                  onClick={() => setCreateDeliveryOpen(true)}
-                >
+                <span className="w-full text-center font-medium">
                   Crear Nuevo Albarán
-                </Button>
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -659,7 +656,7 @@ export default function WorkerDashboard() {
 
             <TabsContent value="albaranes" className="space-y-4">
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+                <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }} data-testid="button-view-pending-albaranes-worker">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
                   </CardHeader>
@@ -667,13 +664,13 @@ export default function WorkerDashboard() {
                     <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                       {deliveryNotes.filter(n => n.status === "pending").length}
                     </div>
-                    <Button className="w-full" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+                    <div className="w-full text-center text-sm font-medium">
                       Ver {deliveryNotes.filter(n => n.status === "pending").length} Albaranes Pendientes
-                    </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+                <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }} data-testid="button-view-signed-albaranes-worker">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
                   </CardHeader>
@@ -681,9 +678,9 @@ export default function WorkerDashboard() {
                     <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                       {deliveryNotes.filter(n => n.status !== "pending").length}
                     </div>
-                    <Button className="w-full" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+                    <div className="w-full text-center text-sm font-medium">
                       Ver {deliveryNotes.filter(n => n.status !== "pending").length} Albaranes Firmados
-                    </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -702,7 +699,7 @@ export default function WorkerDashboard() {
           </DialogHeader>
           <div className="space-y-2">
             {(albaranesModalType === "pending" ? deliveryNotes.filter(n => n.status === "pending") : deliveryNotes.filter(n => n.status !== "pending")).map((note: DeliveryNote) => (
-              <Card key={note.id} className="p-2 overflow-hidden">
+              <div key={note.id} className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 text-left shadow-sm w-full p-2">
                 <div className="space-y-1.5">
                   {note.photo && (
                     <div className="mb-1.5 -m-2 mb-2">
@@ -784,7 +781,7 @@ export default function WorkerDashboard() {
                     </div>
                   )}
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </DialogContent>

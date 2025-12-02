@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [albaranesModalOpen, setAlbaranesModalOpen] = useState(false);
   const [albaranesModalType, setAlbaranesModalType] = useState<"pending" | "signed">("pending");
-  const deliveryNoteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const deliveryNoteRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   const previewDeliveryNote = (photo: string) => {
     if (!photo) {
@@ -198,7 +198,7 @@ export default function DashboardPage() {
 
         {(pendingDeliveryNotes.length > 0 || signedDeliveryNotes.length > 0) && (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+            <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }} data-testid="button-view-pending-albaranes">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
               </CardHeader>
@@ -206,13 +206,13 @@ export default function DashboardPage() {
                 <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                   {pendingDeliveryNotes.length}
                 </div>
-                <Button className="w-full" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }} data-testid="button-view-pending-albaranes">
+                <div className="w-full text-center text-sm font-medium">
                   Ver {pendingDeliveryNotes.length} Albarán{pendingDeliveryNotes.length !== 1 ? "es" : ""} Pendiente{pendingDeliveryNotes.length !== 1 ? "s" : ""}
-                </Button>
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+            <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }} data-testid="button-view-signed-albaranes">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
               </CardHeader>
@@ -220,9 +220,9 @@ export default function DashboardPage() {
                 <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                   {signedDeliveryNotes.length}
                 </div>
-                <Button className="w-full" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }} data-testid="button-view-signed-albaranes">
+                <div className="w-full text-center text-sm font-medium">
                   Ver {signedDeliveryNotes.length} Albarán{signedDeliveryNotes.length !== 1 ? "es" : ""} Firmado{signedDeliveryNotes.length !== 1 ? "s" : ""}
-                </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
           </DialogHeader>
           <div className="space-y-2">
             {(albaranesModalType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
-              <Card key={note.id} className="p-2 overflow-hidden" ref={(el) => { deliveryNoteRefs.current[note.id] = el; }}>
+              <div key={note.id} className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 text-left shadow-sm w-full p-2" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
                 <div className="space-y-1.5">
                   {/* Photo on top - compact */}
                   {note.photo && (
@@ -420,7 +420,7 @@ export default function DashboardPage() {
                     </Button>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </DialogContent>

@@ -3,13 +3,13 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, ...props }, ref) => (
-  <div
+  <button
     ref={ref}
     className={cn(
-      "shadcn-card relative overflow-hidden rounded-md border bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 text-card-foreground shadow-sm transition-all",
+      "group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 text-left transition-all hover-elevate shadow-sm w-full",
       className
     )}
     {...props}
