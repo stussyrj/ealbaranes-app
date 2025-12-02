@@ -293,17 +293,16 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground text-[9px] font-semibold">TRABAJADOR</p>
                       <p className="font-medium text-[10px] line-clamp-1">{note.workerName || 'Desconocido'}</p>
                     </div>
-                    {albaranesModalType === "signed" && note.signedAt ? (
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
+                      <p className="font-medium text-[10px] line-clamp-1">{note.observations || '-'}</p>
+                    </div>
+                    {albaranesModalType === "signed" && note.signedAt && (
                       <div className="bg-muted/30 rounded p-1">
                         <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
                         <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
-                    ) : note.observations ? (
-                      <div className="bg-muted/30 rounded p-1">
-                        <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
-                        <p className="font-medium text-[10px] line-clamp-1">{note.observations}</p>
-                      </div>
-                    ) : null}
+                    )}
                   </div>
 
                   {/* Action Buttons */}

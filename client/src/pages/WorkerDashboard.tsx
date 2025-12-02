@@ -731,6 +731,14 @@ export default function WorkerDashboard() {
                       <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
                       <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
                     </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
+                      <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
+                      <p className="font-medium text-[10px] line-clamp-1">{note.observations || '-'}</p>
+                    </div>
                   </div>
                   {albaranesModalType === "pending" && (
                     <div className="flex gap-1 text-xs mt-2">
