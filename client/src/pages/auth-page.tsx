@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Truck, Lock, User } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 
 export default function AuthPage() {
   const { user, login, isLoginPending } = useAuth();
@@ -25,17 +26,18 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex relative">
-      <div className="absolute top-4 right-4 z-10">
+    <div className="min-h-screen flex relative bg-background">
+      <AnimatedPageBackground />
+      <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 shadow-sm">
+      <div className="flex-1 flex items-center justify-center p-8 relative z-10">
+        <div className="w-full max-w-md rounded-lg border border-border/50 bg-card/95 dark:bg-card/90 backdrop-blur-sm shadow-lg">
           <div className="flex flex-col space-y-1.5 p-6 text-center">
             <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
               <Lock className="h-6 w-6 text-primary" />
             </div>
-            <h2 className="text-2xl font-semibold leading-none tracking-tight">Iniciar Sesión</h2>
+            <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Iniciar Sesión</h2>
             <p className="text-sm text-muted-foreground">
               Ingresa tus credenciales para acceder al sistema
             </p>
@@ -43,7 +45,7 @@ export default function AuthPage() {
           <div className="p-6 pt-0">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Usuario</Label>
+                <Label htmlFor="username" className="text-foreground">Usuario</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -59,7 +61,7 @@ export default function AuthPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password" className="text-foreground">Contraseña</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -87,7 +89,7 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <div className="hidden lg:flex flex-1 bg-primary items-center justify-center p-8">
+      <div className="hidden lg:flex flex-1 bg-primary relative z-10 items-center justify-center p-8">
         <div className="max-w-md text-center text-primary-foreground">
           <div className="mx-auto mb-8 h-20 w-20 rounded-full bg-primary-foreground/10 flex items-center justify-center">
             <Truck className="h-10 w-10" />

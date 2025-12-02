@@ -4,11 +4,11 @@ export function AnimatedPageBackground() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
       {/* Main gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 via-white/20 to-orange-50/30 dark:from-blue-950/20 dark:via-slate-950/10 dark:to-orange-950/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 via-white/20 to-orange-50/30 dark:from-purple-950/30 dark:via-slate-950/20 dark:to-orange-950/20" />
       
       {/* Large left circle - hidden on mobile, visible on desktop */}
       <motion.div
-        className="absolute hidden md:block rounded-full border-2 border-blue-300 dark:border-blue-800/50 opacity-20 dark:opacity-15"
+        className="absolute hidden md:block rounded-full border-2 border-blue-300 dark:border-purple-600/50 opacity-20 dark:opacity-25"
         style={{
           width: 350,
           height: 350,
@@ -27,7 +27,7 @@ export function AnimatedPageBackground() {
 
       {/* Large right circle - hidden on mobile, visible on desktop */}
       <motion.div
-        className="absolute hidden md:block rounded-full border-2 border-orange-300 dark:border-orange-800/50 opacity-20 dark:opacity-15"
+        className="absolute hidden md:block rounded-full border-2 border-orange-300 dark:border-orange-500/50 opacity-20 dark:opacity-25"
         style={{
           width: 300,
           height: 300,
@@ -47,7 +47,7 @@ export function AnimatedPageBackground() {
 
       {/* Small center circles visible on all sizes */}
       <motion.div
-        className="absolute rounded-full border border-blue-300/50 dark:border-blue-800/30 opacity-20 dark:opacity-10"
+        className="absolute rounded-full border border-blue-300/50 dark:border-purple-500/40 opacity-20 dark:opacity-20"
         style={{
           width: 120,
           height: 120,
@@ -65,7 +65,7 @@ export function AnimatedPageBackground() {
       />
 
       <motion.div
-        className="absolute rounded-full border border-orange-300/50 dark:border-orange-800/30 opacity-20 dark:opacity-10"
+        className="absolute rounded-full border border-orange-300/50 dark:border-orange-500/40 opacity-20 dark:opacity-20"
         style={{
           width: 100,
           height: 100,
@@ -88,7 +88,7 @@ export function AnimatedPageBackground() {
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={`dot-${i}`}
-            className="absolute rounded-full bg-gradient-to-r from-blue-500 to-orange-500"
+            className="absolute rounded-full bg-gradient-to-r from-blue-500 to-orange-500 dark:from-purple-500 dark:to-orange-500"
             style={{
               width: 2,
               height: 2,
