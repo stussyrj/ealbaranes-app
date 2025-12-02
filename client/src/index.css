@@ -39,41 +39,41 @@
   --ring: 217 91% 48%;
 }
 
-.dark {
+.spooky {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
-  --background: 220 15% 8%;
-  --foreground: 220 10% 92%;
-  --border: 220 14% 16%;
-  --card: 220 14% 10%;
-  --card-foreground: 220 10% 92%;
-  --card-border: 220 14% 13%;
-  --sidebar: 220 14% 12%;
-  --sidebar-foreground: 220 10% 92%;
-  --sidebar-border: 220 14% 15%;
-  --sidebar-primary: 217 91% 55%;
-  --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 220 14% 16%;
-  --sidebar-accent-foreground: 220 10% 90%;
-  --sidebar-ring: 217 91% 55%;
-  --popover: 220 14% 14%;
-  --popover-foreground: 220 10% 92%;
-  --popover-border: 220 14% 18%;
-  --primary: 217 91% 55%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 220 14% 18%;
-  --secondary-foreground: 220 10% 90%;
-  --muted: 220 14% 16%;
-  --muted-foreground: 220 10% 65%;
-  --accent: 220 13% 15%;
-  --accent-foreground: 220 10% 90%;
+  --background: 280 15% 6%;
+  --foreground: 45 10% 92%;
+  --border: 280 20% 15%;
+  --card: 280 18% 9%;
+  --card-foreground: 45 10% 92%;
+  --card-border: 280 18% 12%;
+  --sidebar: 280 20% 8%;
+  --sidebar-foreground: 45 10% 92%;
+  --sidebar-border: 280 18% 14%;
+  --sidebar-primary: 24 85% 53%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 280 30% 18%;
+  --sidebar-accent-foreground: 45 10% 92%;
+  --sidebar-ring: 24 85% 53%;
+  --popover: 280 20% 10%;
+  --popover-foreground: 45 10% 92%;
+  --popover-border: 280 18% 16%;
+  --primary: 24 85% 53%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 270 40% 25%;
+  --secondary-foreground: 45 10% 95%;
+  --muted: 280 20% 14%;
+  --muted-foreground: 45 10% 60%;
+  --accent: 270 35% 20%;
+  --accent-foreground: 45 10% 92%;
   --destructive: 0 84% 48%;
   --destructive-foreground: 0 0% 98%;
-  --input: 220 14% 30%;
-  --ring: 217 91% 55%;
+  --input: 280 18% 25%;
+  --ring: 24 85% 53%;
 }
 
 @layer base {
@@ -120,15 +120,15 @@
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.08);
   }
 
-  .dark button:not(:disabled) {
+  .spooky button:not(:disabled) {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
-  .dark button:not(:disabled):hover {
+  .spooky button:not(:disabled):hover {
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6), 0 6px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
-  .dark button:not(:disabled):active {
+  .spooky button:not(:disabled):active {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 }
