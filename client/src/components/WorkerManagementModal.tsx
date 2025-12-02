@@ -26,7 +26,12 @@ export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementMo
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+    queryKey: ["/api/workers", { includeInactive: true }],
+    queryFn: async () => {
+      const response = await fetch("/api/workers?includeInactive=true");
+      if (!response.ok) throw new Error("Error al obtener trabajadores");
+      return response.json();
+    },
     enabled: open,
   });
 
@@ -36,6 +41,7 @@ export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementMo
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workers", { includeInactive: true }] });
       toast({ title: "Trabajador creado", description: "Nuevo trabajador agregado correctamente" });
       setFormData({ name: "", email: "", phone: "" });
       setShowCreateForm(false);
@@ -51,6 +57,7 @@ export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementMo
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workers", { includeInactive: true }] });
       const action = variables.isActive ? "desactivado" : "activado";
       toast({ title: "Actualizado", description: `Trabajador ${action} correctamente` });
     },
@@ -65,6 +72,7 @@ export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementMo
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workers", { includeInactive: true }] });
       toast({ title: "Eliminado", description: "Trabajador eliminado permanentemente" });
       setConfirmDeleteId(null);
     },

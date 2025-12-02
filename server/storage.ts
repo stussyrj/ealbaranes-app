@@ -20,7 +20,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  getWorkers(): Promise<Worker[]>;
+  getWorkers(includeInactive?: boolean): Promise<Worker[]>;
   getWorker(id: string): Promise<Worker | undefined>;
   createWorker(worker: InsertWorker): Promise<Worker>;
   updateWorker(id: string, worker: Partial<InsertWorker>): Promise<Worker | undefined>;
@@ -221,8 +221,12 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getWorkers(): Promise<Worker[]> {
-    return Array.from(this.workers.values()).filter(w => w.isActive);
+  async getWorkers(includeInactive: boolean = false): Promise<Worker[]> {
+    const allWorkers = Array.from(this.workers.values());
+    if (includeInactive) {
+      return allWorkers;
+    }
+    return allWorkers.filter(w => w.isActive);
   }
 
   async getWorker(id: string): Promise<Worker | undefined> {

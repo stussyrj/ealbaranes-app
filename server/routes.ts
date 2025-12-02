@@ -294,7 +294,8 @@ export async function registerRoutes(
   // Workers endpoints
   app.get("/api/workers", async (req, res) => {
     try {
-      const workers = await storage.getWorkers();
+      const includeInactive = req.query.includeInactive === "true";
+      const workers = await storage.getWorkers(includeInactive);
       res.json(workers);
     } catch (error) {
       console.error("Error fetching workers:", error);
