@@ -710,44 +710,44 @@ export default function WorkerDashboard() {
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded p-1">
+                    <div className="bg-muted/30 rounded p-1 text-center">
                       <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
                       <p className="font-medium text-[10px]">{note.pickupOrigin || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded p-1">
+                    <div className="bg-muted/30 rounded p-1 text-center">
                       <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
                       <p className="font-medium text-[10px]">{note.destination || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded p-1">
+                    <div className="bg-muted/30 rounded p-1 text-center">
                       <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
                       <p className="font-medium text-[10px]">{note.clientName || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded p-1">
+                    <div className="bg-muted/30 rounded p-1 text-center">
                       <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
                       <p className="font-medium text-[10px]">{note.vehicleType || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded p-1">
+                    <div className="bg-muted/30 rounded p-1 text-center">
                       <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
                       <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded p-1">
+                    <div className="bg-muted/30 rounded p-1 text-center">
                       <p className="text-muted-foreground text-[9px] font-semibold">HORA</p>
                       <p className="font-medium text-[10px]">{note.time || 'N/A'}</p>
                     </div>
-                    <div className="bg-muted/30 rounded p-1">
+                    <div className="bg-muted/30 rounded p-1 text-center">
                       <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
                       <p className="font-medium text-[10px] line-clamp-1">{note.observations || 'Sin observaciones'}</p>
                     </div>
                     {(note as any).waitTime ? (
-                      <div className="bg-muted/30 rounded p-1">
+                      <div className="bg-muted/30 rounded p-1 text-center">
                         <p className="text-muted-foreground text-[9px] font-semibold">ESPERA</p>
                         <p className="font-medium text-[10px]">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
                       </div>
                     ) : null}
                     {albaranesModalType === "signed" && note.signedAt && (
-                      <div className="bg-muted/30 rounded p-1">
+                      <div className="bg-muted/30 rounded p-1 text-center">
                         <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
                         <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
