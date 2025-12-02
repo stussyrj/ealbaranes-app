@@ -1,15 +1,10 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  Calculator,
-  History,
-  Settings,
   DollarSign,
   Truck as TruckIcon,
-  Phone,
   LayoutDashboard,
   LogOut,
-  ChevronDown,
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,15 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import type { User } from "@/contexts/AuthContext";
 
 const adminNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -69,8 +56,8 @@ function NavLink({ href, icon: Icon, title }: any) {
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user, setUser } = useAuth();
-  const { setOpen, setOpenMobile, isMobile } = useSidebar();
+  const { user, logout, isLogoutPending } = useAuth();
+  const { setOpenMobile, isMobile } = useSidebar();
 
   // Close sidebar only on mobile when location changes
   useEffect(() => {
@@ -84,47 +71,12 @@ export function AppSidebar() {
   }
 
   const isAdmin = user.role === "admin";
-  const isWorker = user.role === "worker";
   const navItems = isAdmin ? adminNavItems : workerNavItems;
   const username = user.username || "Usuario";
-  const email = user.email || "";
   const initials = String(username || "U").slice(0, 2).toUpperCase();
 
-  const [, navigate] = useLocation();
-
-  const switchToRole = (role: "admin" | "worker") => {
-    if (user) {
-      let newUsername = "Daniel";
-      let newEmail = "daniel@directtransports.com";
-
-      if (role === "worker") {
-        newUsername = "Trabajador";
-        newEmail = "trabajador@directtransports.com";
-      }
-
-      const newUser: User = {
-        id: user.id,
-        username: newUsername,
-        email: newEmail,
-        role: role,
-      };
-      setUser(newUser);
-      // Close sidebar immediately
-      if (isMobile) {
-        setOpenMobile(false);
-      } else {
-        setOpen(false);
-      }
-      navigate("/");
-    }
-  };
-
-  const switchWorker = () => {
-    if (user && user.role === "worker") {
-      const updatedUser: User = { ...user, workerId: undefined };
-      setUser(updatedUser);
-      navigate("/");
-    }
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -176,38 +128,17 @@ export function AppSidebar() {
             </p>
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-between text-xs"
-              data-testid="button-switch-role"
-            >
-              <span className="flex items-center gap-1">
-                <LogOut className="h-4 w-4" />
-                Cambiar Rol
-              </span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={() => switchToRole("admin")}
-                data-testid="menu-switch-to-admin"
-              >
-                Administrador
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => switchToRole("worker")}
-                data-testid="menu-switch-to-worker"
-              >
-                Trabajador
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenuPortal>
-        </DropdownMenu>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-center text-xs"
+          onClick={handleLogout}
+          disabled={isLogoutPending}
+          data-testid="button-logout"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          {isLogoutPending ? "Cerrando..." : "Cerrar Sesión"}
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
