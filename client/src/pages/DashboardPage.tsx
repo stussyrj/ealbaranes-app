@@ -339,22 +339,32 @@ export default function DashboardPage() {
                               buttonsDiv.remove();
                             }
                             
+                            // Remove line-clamp classes so text shows fully
+                            clonedElement.querySelectorAll('.line-clamp-1, .line-clamp-2').forEach((el) => {
+                              el.classList.remove('line-clamp-1', 'line-clamp-2');
+                              (el as HTMLElement).style.overflow = 'visible';
+                              (el as HTMLElement).style.textOverflow = 'clip';
+                              (el as HTMLElement).style.whiteSpace = 'normal';
+                              (el as HTMLElement).style.display = 'block';
+                            });
+                            
                             const container = document.createElement("div");
                             container.style.position = "fixed";
                             container.style.left = "-9999px";
                             container.style.top = "-9999px";
-                            container.style.width = "400px";
+                            container.style.width = "420px";
                             container.style.backgroundColor = "#1a1a2e";
-                            container.style.padding = "16px";
-                            container.style.borderRadius = "12px";
+                            container.style.padding = "20px";
+                            container.style.borderRadius = "16px";
                             container.style.boxSizing = "border-box";
+                            container.style.fontFamily = "system-ui, -apple-system, sans-serif";
                             
                             clonedElement.style.position = "static";
                             clonedElement.style.width = "100%";
                             container.appendChild(clonedElement);
                             document.body.appendChild(container);
                             
-                            const canvas = await html2canvas(container, { scale: 3, backgroundColor: "#1a1a2e", useCORS: true, logging: false });
+                            const canvas = await html2canvas(container, { scale: 3, backgroundColor: "#1a1a2e", useCORS: true, allowTaint: true, logging: false });
                             document.body.removeChild(container);
                             
                             const blob = await new Promise<Blob>((resolve) => {
