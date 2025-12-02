@@ -350,25 +350,17 @@ export default function DashboardPage() {
                             
                             // Get original element dimensions
                             const originalRect = element.getBoundingClientRect();
-                            const aspectRatio = originalRect.width / originalRect.height;
                             
-                            const container = document.createElement("div");
-                            container.style.position = "fixed";
-                            container.style.left = "-9999px";
-                            container.style.top = "-9999px";
-                            container.style.width = originalRect.width + "px";
-                            container.style.backgroundColor = "#1a1a2e";
-                            container.style.padding = "16px";
-                            container.style.borderRadius = "12px";
-                            container.style.boxSizing = "border-box";
+                            // Position cloned element off-screen with exact same dimensions
+                            clonedElement.style.position = "fixed";
+                            clonedElement.style.left = "-9999px";
+                            clonedElement.style.top = "-9999px";
+                            clonedElement.style.width = originalRect.width + "px";
+                            clonedElement.style.backgroundColor = "#0f172a";
+                            document.body.appendChild(clonedElement);
                             
-                            clonedElement.style.position = "static";
-                            clonedElement.style.width = "100%";
-                            container.appendChild(clonedElement);
-                            document.body.appendChild(container);
-                            
-                            const canvas = await html2canvas(container, { scale: 2, backgroundColor: "#1a1a2e", useCORS: true, allowTaint: true, logging: false });
-                            document.body.removeChild(container);
+                            const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#0f172a", useCORS: true, allowTaint: true, logging: false });
+                            document.body.removeChild(clonedElement);
                             
                             const blob = await new Promise<Blob>((resolve) => {
                               canvas.toBlob((b) => resolve(b as Blob), "image/png");
