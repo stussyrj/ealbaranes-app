@@ -710,35 +710,49 @@ export default function WorkerDashboard() {
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">ORIGEN</span>
-                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.pickupOrigin || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                      <div className="flex flex-col items-center translate-y-[2px]">
+                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">ORIGEN</span>
+                        <span className="font-medium text-[10px] leading-none mt-1">{note.pickupOrigin || 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">DESTINO</span>
-                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.destination || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                      <div className="flex flex-col items-center translate-y-[2px]">
+                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">DESTINO</span>
+                        <span className="font-medium text-[10px] leading-none mt-1">{note.destination || 'N/A'}</span>
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">CLIENTE</span>
-                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.clientName || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                      <div className="flex flex-col items-center translate-y-[2px]">
+                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">CLIENTE</span>
+                        <span className="font-medium text-[10px] leading-none mt-1">{note.clientName || 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">VEHÍCULO</span>
-                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.vehicleType || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                      <div className="flex flex-col items-center translate-y-[2px]">
+                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">VEHÍCULO</span>
+                        <span className="font-medium text-[10px] leading-none mt-1">{note.vehicleType || 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">FECHA</span>
-                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</span>
+                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                      <div className="flex flex-col items-center translate-y-[2px]">
+                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">FECHA</span>
+                        <span className="font-medium text-[10px] leading-none mt-1">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">HORA</span>
-                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{note.time || 'N/A'}</span>
+                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                      <div className="flex flex-col items-center translate-y-[2px]">
+                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">HORA</span>
+                        <span className="font-medium text-[10px] leading-none mt-1">{note.time || 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                      <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">OBS.</span>
-                      <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none line-clamp-1">{note.observations || 'Sin observaciones'}</span>
+                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                      <div className="flex flex-col items-center translate-y-[2px]">
+                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">OBS.</span>
+                        <span className="font-medium text-[10px] leading-none mt-1 line-clamp-1">{note.observations || 'Sin observaciones'}</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -746,15 +760,19 @@ export default function WorkerDashboard() {
                   {((note as any).waitTime || (albaranesModalType === "signed" && note.signedAt)) && (
                     <div className="grid grid-cols-2 gap-1 text-[10px]">
                       {(note as any).waitTime ? (
-                        <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                          <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">ESPERA</span>
-                          <span className="inline-flex items-center justify-center font-medium text-[10px] leading-none">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</span>
+                        <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                          <div className="flex flex-col items-center translate-y-[2px]">
+                            <span className="text-muted-foreground text-[9px] font-semibold leading-none">ESPERA</span>
+                            <span className="font-medium text-[10px] leading-none mt-1">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</span>
+                          </div>
                         </div>
                       ) : null}
                       {albaranesModalType === "signed" && note.signedAt && (
-                        <div className="bg-muted/30 rounded grid min-h-[44px] grid-rows-[1fr_1fr] px-2">
-                          <span className="inline-flex items-center justify-center text-muted-foreground text-[9px] font-semibold leading-none">FIRMADO</span>
-                          <span className="inline-flex items-center justify-center font-medium text-[9px] leading-none">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
+                          <div className="flex flex-col items-center translate-y-[2px]">
+                            <span className="text-muted-foreground text-[9px] font-semibold leading-none">FIRMADO</span>
+                            <span className="font-medium text-[9px] leading-none mt-1">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
                         </div>
                       )}
                     </div>
