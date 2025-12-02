@@ -148,85 +148,96 @@ export default function DashboardPage() {
   return (
     <div className="relative">
       <AnimatedPageBackground />
-      <div className="relative z-10 space-y-3 sm:space-y-6 p-3 sm:p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 sm:gap-3">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Dashboard Presupuestos</h1>
+      <div className="relative z-10 space-y-4 sm:space-y-6 p-4 sm:p-6">
+        {/* Header */}
+        <div className="text-center sm:text-left">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Panel de Empresa</h1>
+          <p className="text-sm text-muted-foreground mt-1 hidden sm:block">Resumen de tu actividad</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3">
-          <StatCard title="Pendientes" value={totalPendingCount.toString()} subtitle="Sin asignar" icon={TrendingUp} />
-          <StatCard title="Firmados" value={totalSignedCount.toString()} subtitle="Completados" icon={MapPin} />
+        {/* Estadísticas principales - Grid compacto en móvil */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm">
+            <div className="text-2xl sm:text-3xl font-bold text-orange-600 dark:text-orange-400">{totalPendingCount}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Pendientes</p>
+          </div>
+          <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm">
+            <div className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">{totalSignedCount}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Firmados</p>
+          </div>
           <button
             onClick={() => setDownloadModalOpen(true)}
-            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate shadow-sm"
+            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate"
             data-testid="button-download-albaranes"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Seguridad</p>
-                <h3 className="text-base sm:text-lg md:text-xl font-bold mt-1">Descargar</h3>
-              </div>
-              <FileDown className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-green-500 opacity-70" />
-            </div>
+            <FileDown className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 mx-auto" />
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Descargar</p>
           </button>
         </div>
 
+        {/* Albaranes - Tarjetas compactas clicables */}
+        {(pendingDeliveryNotes.length > 0 || signedDeliveryNotes.length > 0) && (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <button
+              onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-pending-albaranes"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{pendingDeliveryNotes.length}</div>
+                  <p className="text-xs text-muted-foreground truncate">Pendientes</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-signed-albaranes"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{signedDeliveryNotes.length}</div>
+                  <p className="text-xs text-muted-foreground truncate">Firmados</p>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* Presupuestos Pendientes */}
         {pendingQuotes.length > 0 && (
           <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
-            <CardHeader className="py-3 sm:py-4">
-              <CardTitle className="text-base sm:text-lg">Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
+            <CardHeader className="py-3 px-4 sm:py-4 sm:px-6">
+              <CardTitle className="text-sm sm:text-base">Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <div className="grid gap-3 sm:gap-4">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="space-y-3">
                 {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
               </div>
             </CardContent>
           </Card>
         )}
 
+        {/* Presupuestos Firmados */}
         {signedQuotes.length > 0 && (
           <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
-            <CardHeader className="py-3 sm:py-4">
-              <CardTitle className="text-base sm:text-lg">Presupuestos Firmados ({signedQuotes.length})</CardTitle>
+            <CardHeader className="py-3 px-4 sm:py-4 sm:px-6">
+              <CardTitle className="text-sm sm:text-base">Presupuestos Firmados ({signedQuotes.length})</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <div className="grid gap-3 sm:gap-4">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="space-y-3">
                 {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {(pendingDeliveryNotes.length > 0 || signedDeliveryNotes.length > 0) && (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }} data-testid="button-view-pending-albaranes">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                  {pendingDeliveryNotes.length}
-                </div>
-                <div className="w-full text-center text-sm font-medium">
-                  Ver {pendingDeliveryNotes.length} Albarán{pendingDeliveryNotes.length !== 1 ? "es" : ""} Pendiente{pendingDeliveryNotes.length !== 1 ? "s" : ""}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }} data-testid="button-view-signed-albaranes">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {signedDeliveryNotes.length}
-                </div>
-                <div className="w-full text-center text-sm font-medium">
-                  Ver {signedDeliveryNotes.length} Albarán{signedDeliveryNotes.length !== 1 ? "es" : ""} Firmado{signedDeliveryNotes.length !== 1 ? "s" : ""}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         )}
       </div>
 
