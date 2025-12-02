@@ -170,60 +170,62 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {(pendingQuotes.length > 0 || pendingDeliveryNotes.length > 0) && (
+        {pendingQuotes.length > 0 && (
           <Card>
             <CardHeader className="py-3 sm:py-4">
-              <CardTitle className="text-base sm:text-lg">Pendientes ({totalPendingCount})</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-6">
               <div className="grid gap-3 sm:gap-4">
                 {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
               </div>
-              {pendingDeliveryNotes.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <Button
-                    onClick={() => {
-                      setAlbaranesModalType("pending");
-                      setAlbaranesModalOpen(true);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                    data-testid="button-view-pending-albaranes"
-                  >
-                    Ver {pendingDeliveryNotes.length} Albarán{pendingDeliveryNotes.length !== 1 ? "es" : ""} Pendiente{pendingDeliveryNotes.length !== 1 ? "s" : ""}
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
 
-        {(signedQuotes.length > 0 || signedDeliveryNotes.length > 0) && (
+        {signedQuotes.length > 0 && (
           <Card>
             <CardHeader className="py-3 sm:py-4">
-              <CardTitle className="text-base sm:text-lg">Firmados ({totalSignedCount})</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Presupuestos Firmados ({signedQuotes.length})</CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-6">
               <div className="grid gap-3 sm:gap-4">
                 {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
               </div>
-              {signedDeliveryNotes.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <Button
-                    onClick={() => {
-                      setAlbaranesModalType("signed");
-                      setAlbaranesModalOpen(true);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                    data-testid="button-view-signed-albaranes"
-                  >
-                    Ver {signedDeliveryNotes.length} Albarán{signedDeliveryNotes.length !== 1 ? "es" : ""} Firmado{signedDeliveryNotes.length !== 1 ? "s" : ""}
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
+        )}
+
+        {(pendingDeliveryNotes.length > 0 || signedDeliveryNotes.length > 0) && (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                  {pendingDeliveryNotes.length}
+                </div>
+                <Button className="w-full" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }} data-testid="button-view-pending-albaranes">
+                  Ver {pendingDeliveryNotes.length} Albarán{pendingDeliveryNotes.length !== 1 ? "es" : ""} Pendiente{pendingDeliveryNotes.length !== 1 ? "s" : ""}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {signedDeliveryNotes.length}
+                </div>
+                <Button className="w-full" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }} data-testid="button-view-signed-albaranes">
+                  Ver {signedDeliveryNotes.length} Albarán{signedDeliveryNotes.length !== 1 ? "es" : ""} Firmado{signedDeliveryNotes.length !== 1 ? "s" : ""}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 
