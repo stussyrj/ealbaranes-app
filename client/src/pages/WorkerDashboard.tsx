@@ -740,19 +740,25 @@ export default function WorkerDashboard() {
                       <p className="text-muted-foreground text-[9px] font-semibold">OBS.</p>
                       <p className="font-medium text-[10px] line-clamp-1">{note.observations || 'Sin observaciones'}</p>
                     </div>
-                    {(note as any).waitTime ? (
-                      <div className="bg-muted/30 rounded p-1 text-center">
-                        <p className="text-muted-foreground text-[9px] font-semibold">ESPERA</p>
-                        <p className="font-medium text-[10px]">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
-                      </div>
-                    ) : null}
-                    {albaranesModalType === "signed" && note.signedAt && (
-                      <div className="bg-muted/30 rounded p-1 text-center">
-                        <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
-                        <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
-                      </div>
-                    )}
                   </div>
+                  
+                  {/* Optional fields - separate 2-column grid for balanced layout */}
+                  {((note as any).waitTime || (albaranesModalType === "signed" && note.signedAt)) && (
+                    <div className="grid grid-cols-2 gap-1 text-[10px]">
+                      {(note as any).waitTime ? (
+                        <div className="bg-muted/30 rounded p-1 text-center">
+                          <p className="text-muted-foreground text-[9px] font-semibold">ESPERA</p>
+                          <p className="font-medium text-[10px]">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
+                        </div>
+                      ) : null}
+                      {albaranesModalType === "signed" && note.signedAt && (
+                        <div className="bg-muted/30 rounded p-1 text-center">
+                          <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
+                          <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {albaranesModalType === "pending" && (
                     <div className="flex gap-1 text-xs mt-2">
                       <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteToEdit(note); setFormData({ clientName: note.clientName || "", pickupOrigin: note.pickupOrigin || "", destination: note.destination || "", vehicleType: note.vehicleType || "Furgoneta", date: note.date || new Date().toISOString().split("T")[0], time: note.time || "09:00", observations: note.observations || "", waitTime: (note as any).waitTime || 0 }); setEditDeliveryOpen(true); }}>Editar</Button>
