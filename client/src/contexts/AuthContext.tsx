@@ -1,75 +1,106 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { User } from "@shared/schema";
 
 export type UserRole = "admin" | "worker";
 
-export interface User {
+export interface AuthUser {
   id: string;
   username: string;
   email?: string;
   role: UserRole;
-  workerId?: string;
+  workerId?: string | null;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
-  setUser: (user: User | null) => void;
-  login: () => void;
+  setUser: (user: AuthUser | null) => void;
+  login: (username: string, password: string) => void;
   logout: () => void;
+  isLoginPending: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const getInitialUser = (): User => {
-  try {
-    if (typeof window !== "undefined") {
-      const saved = localStorage?.getItem("user");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.id) return parsed;
-      }
-    }
-  } catch (e) {
-    console.error("Failed to get initial user:", e);
-  }
-  return {
-    id: "1",
-    username: "Daniel",
-    email: "daniel@directtransports.com",
-    role: "admin",
-  };
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUserState] = useState<User | null>(() => getInitialUser());
+  const { toast } = useToast();
 
-  const setUser = (newUser: User | null) => {
-    setUserState(newUser);
-    sessionStorage.removeItem("hasSeenClientAnimation");
-    sessionStorage.removeItem("hasSeenAdminAnimation");
+  const { data: serverUser, isLoading } = useQuery<User | null>({
+    queryKey: ["/api/user"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+
+  const user: AuthUser | null = serverUser ? {
+    id: serverUser.id,
+    username: serverUser.username,
+    role: serverUser.isAdmin ? "admin" : "worker",
+    workerId: serverUser.workerId,
+    isAdmin: serverUser.isAdmin ?? false,
+  } : null;
+
+  const loginMutation = useMutation({
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const res = await apiRequest("POST", "/api/login", { username, password });
+      return await res.json();
+    },
+    onSuccess: (userData: User) => {
+      queryClient.setQueryData(["/api/user"], userData);
+      toast({
+        title: "Bienvenido",
+        description: `Sesión iniciada como ${userData.username}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error de acceso",
+        description: "Usuario o contraseña incorrectos",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/logout");
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(["/api/user"], null);
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión correctamente",
+      });
+    },
+  });
+
+  const setUser = (newUser: AuthUser | null) => {
     if (newUser) {
-      try {
-        localStorage.setItem("user", JSON.stringify(newUser));
-      } catch (e) {
-        console.error("Failed to save user:", e);
-      }
+      queryClient.setQueryData(["/api/user"], newUser);
     } else {
-      try {
-        localStorage.removeItem("user");
-      } catch (e) {
-        console.error("Failed to remove user:", e);
-      }
+      logoutMutation.mutate();
     }
+  };
+
+  const login = (username: string, password: string) => {
+    loginMutation.mutate({ username, password });
+  };
+
+  const logout = () => {
+    logoutMutation.mutate();
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading: false,
+        isLoading,
         setUser,
-        login: () => {},
-        logout: () => {},
+        login,
+        logout,
+        isLoginPending: loginMutation.isPending,
       }}
     >
       {children}
@@ -86,6 +117,7 @@ export function useAuth() {
       setUser: () => {},
       login: () => {},
       logout: () => {},
+      isLoginPending: false,
     };
   }
   return context;

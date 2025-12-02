@@ -10,15 +10,25 @@ import {
   type DeliveryNote,
   type InsertDeliveryNote,
   deliveryNotes as deliveryNotesTable,
+  users as usersTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
+  sessionStore: session.Store;
+  
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserPassword(id: string, password: string): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   
   getWorkers(includeInactive?: boolean): Promise<Worker[]>;
   getWorker(id: string): Promise<Worker | undefined>;
@@ -121,6 +131,7 @@ export class MemStorage implements IStorage {
   private vehicleTypes: Map<string, VehicleType>;
   private quotes: Map<string, Quote>;
   private deliveryNotes: Map<string, DeliveryNote>;
+  sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -128,6 +139,9 @@ export class MemStorage implements IStorage {
     this.vehicleTypes = new Map();
     this.quotes = new Map();
     this.deliveryNotes = new Map();
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000,
+    });
     
     defaultVehicleTypes.forEach((vehicle) => this.vehicleTypes.set(vehicle.id, vehicle));
     defaultWorkers.forEach((worker) => this.workers.set(worker.id, worker));
@@ -216,9 +230,32 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id, isAdmin: false };
+    const user: User = { 
+      id, 
+      username: insertUser.username,
+      password: insertUser.password,
+      isAdmin: insertUser.isAdmin ?? false, 
+      workerId: insertUser.workerId ?? null,
+      createdAt: new Date(),
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, password };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
   }
 
   async getWorkers(includeInactive: boolean = false): Promise<Worker[]> {
