@@ -259,15 +259,15 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Header - Destination and Client */}
+                  {/* Header - Origin and Destination */}
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <div className="bg-muted/30 rounded p-1">
+                      <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
+                      <p className="font-medium text-[10px]">{note.pickupOrigin || 'N/A'}</p>
+                    </div>
                     <div className="bg-muted/30 rounded p-1">
                       <p className="text-muted-foreground text-[9px] font-semibold">DESTINO</p>
                       <p className="font-medium text-[10px]">{note.destination || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded p-1">
-                      <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
-                      <p className="font-medium text-[10px]">{note.clientName || 'N/A'}</p>
                     </div>
                   </div>
 
