@@ -155,9 +155,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
           <StatCard title="Pendientes" value={totalPendingCount.toString()} subtitle="Sin asignar" icon={TrendingUp} />
           <StatCard title="Firmados" value={totalSignedCount.toString()} subtitle="Completados" icon={MapPin} />
-          <div
+          <button
             onClick={() => setWorkerManagementOpen(true)}
-            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate shadow-sm cursor-pointer"
+            className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate shadow-sm"
             data-testid="button-manage-workers"
           >
             <div className="flex items-center justify-between">
@@ -167,7 +167,7 @@ export default function DashboardPage() {
               </div>
               <Users className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
             </div>
-          </div>
+          </button>
         </div>
 
         {pendingQuotes.length > 0 && (

@@ -14,7 +14,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon: Icon, trend }: StatCardProps) {
   return (
-    <div className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate shadow-sm">
+    <button className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{title}</p>
@@ -34,6 +34,6 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend }: StatCard
           <Icon className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
         </div>
       </div>
-    </div>
+    </button>
   );
 }
