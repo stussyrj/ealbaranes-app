@@ -424,8 +424,8 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
       
-      // Check if note is already signed (has signature or photo)
-      if (existingNote.signedAt || existingNote.photo) {
+      // Check if note is already signed (has photo = signed)
+      if (existingNote.photo) {
         return res.status(403).json({ error: "No se pueden editar albaranes firmados" });
       }
       
