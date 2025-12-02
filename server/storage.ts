@@ -28,6 +28,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserPassword(id: string, password: string): Promise<User | undefined>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   
   getWorkers(includeInactive?: boolean): Promise<Worker[]>;
@@ -64,7 +65,8 @@ const defaultVehicleTypes: VehicleType[] = [
     pricePerKm: 0.54,
     directionPrice: 3.70,
     minimumPrice: 3.70,
-    isActive: true 
+    isActive: true,
+    tenantId: null,
   },
   { 
     id: "furgoneta", 
@@ -74,7 +76,8 @@ const defaultVehicleTypes: VehicleType[] = [
     pricePerKm: 0.55,
     directionPrice: 5.15,
     minimumPrice: 7.50,
-    isActive: true 
+    isActive: true,
+    tenantId: null,
   },
   { 
     id: "furgon", 
@@ -84,7 +87,8 @@ const defaultVehicleTypes: VehicleType[] = [
     pricePerKm: 0.65,
     directionPrice: 6.00,
     minimumPrice: 9.00,
-    isActive: true 
+    isActive: true,
+    tenantId: null,
   },
   { 
     id: "carrozado", 
@@ -94,7 +98,8 @@ const defaultVehicleTypes: VehicleType[] = [
     pricePerKm: 0.75,
     directionPrice: 7.00,
     minimumPrice: 10.00,
-    isActive: true 
+    isActive: true,
+    tenantId: null,
   },
 ];
 
@@ -105,6 +110,7 @@ const defaultWorkers: Worker[] = [
     email: "jose@directtransports.com",
     phone: "600000001",
     isActive: true,
+    tenantId: null,
     createdAt: new Date(),
   },
   {
@@ -113,6 +119,7 @@ const defaultWorkers: Worker[] = [
     email: "luis@directtransports.com",
     phone: "600000002",
     isActive: true,
+    tenantId: null,
     createdAt: new Date(),
   },
   {
@@ -121,6 +128,7 @@ const defaultWorkers: Worker[] = [
     email: "miguel@directtransports.com",
     phone: "600000003",
     isActive: true,
+    tenantId: null,
     createdAt: new Date(),
   },
 ];
@@ -237,6 +245,7 @@ export class MemStorage implements IStorage {
       password: insertUser.password,
       isAdmin: insertUser.isAdmin ?? false, 
       workerId: insertUser.workerId ?? null,
+      tenantId: insertUser.tenantId ?? null,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -259,6 +268,14 @@ export class MemStorage implements IStorage {
     return this.users.delete(id);
   }
 
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...updates };
+    this.users.set(id, updated);
+    return updated;
+  }
+
   async getWorkers(includeInactive: boolean = false): Promise<Worker[]> {
     const allWorkers = Array.from(this.workers.values());
     if (includeInactive) {
@@ -279,6 +296,7 @@ export class MemStorage implements IStorage {
       email: worker.email,
       phone: worker.phone ?? null,
       isActive: worker.isActive ?? true,
+      tenantId: worker.tenantId ?? null,
       createdAt: new Date(),
     };
     this.workers.set(id, newWorker);
@@ -320,6 +338,7 @@ export class MemStorage implements IStorage {
       directionPrice: vehicle.directionPrice ?? 0,
       minimumPrice: vehicle.minimumPrice,
       isActive: vehicle.isActive ?? true,
+      tenantId: vehicle.tenantId ?? null,
     };
     this.vehicleTypes.set(id, newVehicle);
     return newVehicle;
@@ -385,6 +404,7 @@ export class MemStorage implements IStorage {
       assignedWorkerId: quote.assignedWorkerId ?? null,
       confirmedAt: quote.confirmedAt ?? null,
       carrozadoUnavailableUntil: quote.carrozadoUnavailableUntil ?? null,
+      tenantId: quote.tenantId ?? null,
       createdAt: new Date(),
     };
     this.quotes.set(id, newQuote);

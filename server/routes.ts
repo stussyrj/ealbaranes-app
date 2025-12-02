@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, initializeAdminUser } from "./auth";
@@ -14,7 +14,12 @@ import {
   routeRequestSchema,
   calculateQuoteRequestSchema,
   insertVehicleTypeSchema,
+  tenants,
 } from "@shared/schema";
+import { stripeService } from "./stripeService";
+import { get[REDACTED-STRIPE] } from "./stripeClient";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -554,6 +559,175 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error seeding delivery notes:", error);
       res.status(400).json({ error: "Error al generar albaranes de prueba" });
+    }
+  });
+
+  // ========== STRIPE SUBSCRIPTION ROUTES ==========
+
+  // Get [REDACTED-STRIPE] publishable key for frontend
+  app.get("/api/stripe/config", async (req, res) => {
+    try {
+      const publishableKey = await get[REDACTED-STRIPE]
+      res.json({ publishableKey });
+    } catch (error) {
+      console.error("Error getting [REDACTED-STRIPE] config:", error);
+      res.status(500).json({ error: "Error al obtener configuración de [REDACTED-STRIPE] });
+    }
+  });
+
+  // Get available subscription products
+  app.get("/api/stripe/products", async (req, res) => {
+    try {
+      const products = await stripeService.getProductsWithPrices();
+      res.json({ products });
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ error: "Error al obtener productos" });
+    }
+  });
+
+  // Get tenant subscription status
+  app.get("/api/subscription", async (req: any, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+
+      const user = req.user;
+      
+      // Find tenant for this user
+      let tenant = null;
+      if (user.tenantId) {
+        const [foundTenant] = await db.select().from(tenants).where(eq(tenants.id, user.tenantId));
+        tenant = foundTenant;
+      } else if (user.isAdmin) {
+        // Admin without tenant - check if they have one
+        const [foundTenant] = await db.select().from(tenants).where(eq(tenants.adminUserId, user.id));
+        tenant = foundTenant;
+      }
+
+      if (!tenant) {
+        return res.json({ 
+          subscription: null,
+          status: 'no_subscription',
+          message: 'No tienes una suscripción activa'
+        });
+      }
+
+      let stripeSubscription = null;
+      if (tenant.stripeSubscriptionId) {
+        stripeSubscription = await stripeService.getSubscription(tenant.stripeSubscriptionId);
+      }
+
+      res.json({
+        subscription: stripeSubscription,
+        status: tenant.subscriptionStatus,
+        currentPeriodEnd: tenant.currentPeriodEnd,
+        graceUntil: tenant.graceUntil,
+        companyName: tenant.companyName,
+      });
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      res.status(500).json({ error: "Error al obtener suscripción" });
+    }
+  });
+
+  // Create checkout session for subscription
+  app.post("/api/stripe/checkout", async (req: any, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+
+      if (!req.user.isAdmin) {
+        return res.status(403).json({ error: "Solo administradores pueden suscribirse" });
+      }
+
+      const { priceId, companyName } = req.body;
+      if (!priceId) {
+        return res.status(400).json({ error: "priceId es requerido" });
+      }
+
+      const user = req.user;
+      
+      // Find or create tenant
+      let [tenant] = await db.select().from(tenants).where(eq(tenants.adminUserId, user.id));
+      
+      if (!tenant) {
+        // Create new tenant
+        const [newTenant] = await db.insert(tenants).values({
+          adminUserId: user.id,
+          companyName: companyName || `Empresa de ${user.displayName || user.username}`,
+          subscriptionStatus: 'active', // Will be updated by webhook
+        }).returning();
+        tenant = newTenant;
+        
+        // Update user with tenantId
+        await storage.updateUser(user.id, { tenantId: tenant.id });
+      }
+
+      // Create or get [REDACTED-STRIPE] customer
+      let customerId = tenant.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripeService.createCustomer(
+          user.username + '@directtransports.com',
+          tenant.id,
+          tenant.companyName || undefined
+        );
+        customerId = customer.id;
+        
+        await db.update(tenants).set({ 
+          stripeCustomerId: customerId,
+          updatedAt: new Date()
+        }).where(eq(tenants.id, tenant.id));
+      }
+
+      // Create checkout session
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const session = await stripeService.createCheckoutSession(
+        customerId,
+        priceId,
+        `${baseUrl}/subscription/success`,
+        `${baseUrl}/subscription/cancel`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ error: "Error al crear sesión de pago" });
+    }
+  });
+
+  // Create customer portal session
+  app.post("/api/stripe/portal", async (req: any, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+
+      if (!req.user.isAdmin) {
+        return res.status(403).json({ error: "Solo administradores pueden gestionar suscripciones" });
+      }
+
+      const user = req.user;
+      
+      // Find tenant
+      const [tenant] = await db.select().from(tenants).where(eq(tenants.adminUserId, user.id));
+      
+      if (!tenant || !tenant.stripeCustomerId) {
+        return res.status(400).json({ error: "No tienes una suscripción activa" });
+      }
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const session = await stripeService.createCustomerPortalSession(
+        tenant.stripeCustomerId,
+        `${baseUrl}/admin/subscription`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating portal session:", error);
+      res.status(500).json({ error: "Error al crear portal de gestión" });
     }
   });
 
