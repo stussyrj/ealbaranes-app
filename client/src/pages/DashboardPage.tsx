@@ -355,63 +355,62 @@ export default function DashboardPage() {
                       size="sm"
                       variant="outline"
                       className="flex-1 text-xs h-7"
-                      onClick={async () => {
+                      onClick={() => {
                         const element = deliveryNoteRefs.current[note.id];
                         if (element) {
-                          try {
-                            const clonedElement = element.cloneNode(true) as HTMLElement;
-                            const buttonsDiv = clonedElement.querySelector(`[data-testid="buttons-${note.id}"]`);
-                            if (buttonsDiv) {
-                              buttonsDiv.remove();
-                            }
-                            
-                            // Remove line-clamp classes so text shows fully
-                            clonedElement.querySelectorAll('.line-clamp-1, .line-clamp-2').forEach((el) => {
-                              el.classList.remove('line-clamp-1', 'line-clamp-2');
-                              (el as HTMLElement).style.overflow = 'visible';
-                              (el as HTMLElement).style.textOverflow = 'clip';
-                              (el as HTMLElement).style.whiteSpace = 'normal';
-                              (el as HTMLElement).style.display = 'block';
-                            });
-                            
-                            // Fix image proportions - remove max-height and use contain
-                            const img = clonedElement.querySelector('img');
-                            if (img) {
-                              img.style.maxHeight = 'none';
-                              img.style.height = 'auto';
-                              img.style.objectFit = 'contain';
-                            }
-                            
-                            // Get original element dimensions
-                            const originalRect = element.getBoundingClientRect();
-                            
-                            // Position cloned element off-screen with exact same dimensions
-                            clonedElement.style.position = "fixed";
-                            clonedElement.style.left = "-9999px";
-                            clonedElement.style.top = "-9999px";
-                            clonedElement.style.width = originalRect.width + "px";
-                            clonedElement.style.backgroundColor = "#0f172a";
-                            document.body.appendChild(clonedElement);
-                            
-                            const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#0f172a", useCORS: true, allowTaint: true, logging: false });
-                            document.body.removeChild(clonedElement);
-                            
-                            const blob = await new Promise<Blob>((resolve) => {
-                              canvas.toBlob((b) => resolve(b as Blob), "image/png");
-                            });
-                            const file = new File([blob], `albaran-${note.destination || 'albaran'}-${new Date().toISOString().split('T')[0]}.png`, { type: "image/png" });
-                            if (navigator.share) {
-                              await navigator.share({ files: [file], title: "Albarán" });
-                              toast({ title: "Éxito", description: "Albarán compartido" });
-                            } else {
-                              toast({ title: "Error", description: "Compartir no disponible en este navegador", variant: "destructive" });
-                            }
-                          } catch (error: any) {
-                            console.error("Share error:", error);
-                            if (error.name !== "AbortError") {
-                              toast({ title: "Error", description: "No se pudo compartir el albarán", variant: "destructive" });
-                            }
+                          const clonedElement = element.cloneNode(true) as HTMLElement;
+                          const buttonsDiv = clonedElement.querySelector(`[data-testid="buttons-${note.id}"]`);
+                          if (buttonsDiv) {
+                            buttonsDiv.remove();
                           }
+                          
+                          clonedElement.querySelectorAll('.line-clamp-1, .line-clamp-2').forEach((el) => {
+                            el.classList.remove('line-clamp-1', 'line-clamp-2');
+                            (el as HTMLElement).style.overflow = 'visible';
+                            (el as HTMLElement).style.textOverflow = 'clip';
+                            (el as HTMLElement).style.whiteSpace = 'normal';
+                            (el as HTMLElement).style.display = 'block';
+                          });
+                          
+                          const img = clonedElement.querySelector('img');
+                          if (img) {
+                            img.style.maxHeight = 'none';
+                            img.style.height = 'auto';
+                            img.style.objectFit = 'contain';
+                          }
+                          
+                          const originalRect = element.getBoundingClientRect();
+                          clonedElement.style.position = "fixed";
+                          clonedElement.style.left = "-9999px";
+                          clonedElement.style.top = "-9999px";
+                          clonedElement.style.width = originalRect.width + "px";
+                          clonedElement.style.backgroundColor = "#0f172a";
+                          document.body.appendChild(clonedElement);
+                          
+                          const noteDestination = note.destination;
+                          
+                          setAlbaranesModalOpen(false);
+                          toast({ title: "Procesando...", description: "Preparando imagen para compartir" });
+                          
+                          setTimeout(async () => {
+                            try {
+                              const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#0f172a", useCORS: true, allowTaint: true, logging: false });
+                              document.body.removeChild(clonedElement);
+                              
+                              const blob = await new Promise<Blob>((resolve) => {
+                                canvas.toBlob((b) => resolve(b as Blob), "image/png");
+                              });
+                              const file = new File([blob], `albaran-${noteDestination || 'albaran'}-${new Date().toISOString().split('T')[0]}.png`, { type: "image/png" });
+                              if (navigator.share) {
+                                await navigator.share({ files: [file], title: "Albarán" });
+                              }
+                            } catch (error: any) {
+                              console.error("Share error:", error);
+                              if (error.name !== "AbortError") {
+                                toast({ title: "Error", description: "No se pudo compartir el albarán", variant: "destructive" });
+                              }
+                            }
+                          }, 100);
                         }
                       }}
                       data-testid={`button-share-albarane-${note.id}`}
