@@ -132,6 +132,7 @@ export type Quote = typeof quotes.$inferSelect;
 
 export const deliveryNotes = pgTable("delivery_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  noteNumber: integer("note_number").notNull(),
   quoteId: varchar("quote_id").notNull(),
   workerId: varchar("worker_id").notNull(),
   clientName: text("client_name"),
@@ -154,6 +155,7 @@ export const deliveryNotes = pgTable("delivery_notes", {
 
 export const insertDeliveryNoteSchema = createInsertSchema(deliveryNotes).omit({
   id: true,
+  noteNumber: true,
   createdAt: true,
 });
 

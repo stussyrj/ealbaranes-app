@@ -252,9 +252,16 @@ export default function DashboardPage() {
             {(albaranesModalType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
               <div key={note.id} className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 text-left shadow-sm w-full p-2" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
                 <div className="space-y-1.5">
+                  {/* Note Number Badge */}
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded" data-testid={`note-number-${note.id}`}>
+                      Albarán #{note.noteNumber || '—'}
+                    </span>
+                  </div>
+                  
                   {/* Photo on top - compact */}
                   {note.photo && (
-                    <div className="mb-1.5 -m-2 mb-2">
+                    <div className="mb-1.5 -m-2 mb-2 mt-1">
                       <img src={note.photo} alt="Albarán" className="w-full rounded-t max-h-32 object-cover cursor-pointer hover:opacity-90" onClick={() => previewDeliveryNote(note.photo)} />
                     </div>
                   )}

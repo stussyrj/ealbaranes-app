@@ -360,6 +360,14 @@ export default function WorkerDashboard() {
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded" data-testid={`note-number-${note.id}`}>
+                  Albarán #{(note as any).noteNumber || '—'}
+                </span>
+                <Badge className={`${getStatusColor(!!note.photo)}`} data-testid={`badge-status-${note.id}`}>
+                  {note.photo ? "✓ Firmado" : "Pendiente"}
+                </Badge>
+              </div>
               <CardTitle className="text-lg line-clamp-2">
                 {note.pickupOrigin && note.destination ? `${note.pickupOrigin} → ${note.destination}` : note.quoteId}
               </CardTitle>
@@ -367,9 +375,6 @@ export default function WorkerDashboard() {
                 {note.clientName && `Cliente: ${note.clientName}`}
               </p>
             </div>
-            <Badge className={`${getStatusColor(!!note.photo)}`} data-testid={`badge-status-${note.id}`}>
-              {note.photo ? "✓ Firmado" : "Pendiente"}
-            </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -635,8 +640,15 @@ export default function WorkerDashboard() {
             {(albaranesModalType === "pending" ? deliveryNotes.filter(n => n.status === "pending") : deliveryNotes.filter(n => n.status !== "pending")).map((note: DeliveryNote) => (
               <div key={note.id} className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 text-left shadow-sm w-full p-2">
                 <div className="space-y-1.5">
+                  {/* Note Number Badge */}
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded" data-testid={`modal-note-number-${note.id}`}>
+                      Albarán #{(note as any).noteNumber || '—'}
+                    </span>
+                  </div>
+                  
                   {note.photo && (
-                    <div className="mb-1.5 -m-2 mb-2">
+                    <div className="mb-1.5 -m-2 mb-2 mt-1">
                       <img src={note.photo} alt="Albarán" className="w-full rounded-t max-h-32 object-cover" />
                     </div>
                   )}

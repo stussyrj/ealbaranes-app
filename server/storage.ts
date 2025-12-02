@@ -14,7 +14,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql, max } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -475,13 +475,29 @@ export class MemStorage implements IStorage {
   }
 
   async createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote> {
-    try {
-      const result = await db.insert(deliveryNotesTable).values(note).returning();
-      return result[0];
-    } catch (error) {
-      console.error("Error creating delivery note in DB:", error);
-      throw error;
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const maxResult = await db
+          .select({ maxNumber: max(deliveryNotesTable.noteNumber) })
+          .from(deliveryNotesTable);
+        const nextNumber = (maxResult[0]?.maxNumber ?? 0) + 1;
+        
+        const result = await db
+          .insert(deliveryNotesTable)
+          .values({ ...note, noteNumber: nextNumber })
+          .returning();
+        return result[0];
+      } catch (error: any) {
+        if (error?.code === '23505' && attempt < maxRetries) {
+          console.log(`Conflicto de noteNumber, reintentando (${attempt}/${maxRetries})...`);
+          continue;
+        }
+        console.error("Error creating delivery note in DB:", error);
+        throw error;
+      }
     }
+    throw new Error("No se pudo crear el albarán después de múltiples intentos");
   }
 
   async updateDeliveryNote(id: string, updates: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined> {
