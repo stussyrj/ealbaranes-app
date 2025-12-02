@@ -139,7 +139,7 @@ export default function UserManagement() {
     createUserMutation.mutate({
       username: newUsername,
       password: newPassword,
-      workerId: selectedWorkerId || null,
+      workerId: selectedWorkerId && selectedWorkerId !== "none" ? selectedWorkerId : null,
     });
   };
 
