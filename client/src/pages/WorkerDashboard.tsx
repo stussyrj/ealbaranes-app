@@ -665,10 +665,10 @@ export default function WorkerDashboard() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                      {deliveryNotes.filter(n => !n.photo).length}
+                      {deliveryNotes.filter(n => n.status === "pending").length}
                     </div>
                     <Button className="w-full" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
-                      Ver {deliveryNotes.filter(n => !n.photo).length} Albaranes Pendientes
+                      Ver {deliveryNotes.filter(n => n.status === "pending").length} Albaranes Pendientes
                     </Button>
                   </CardContent>
                 </Card>
@@ -679,10 +679,10 @@ export default function WorkerDashboard() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                      {deliveryNotes.filter(n => n.photo).length}
+                      {deliveryNotes.filter(n => n.status !== "pending").length}
                     </div>
                     <Button className="w-full" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
-                      Ver {deliveryNotes.filter(n => n.photo).length} Albaranes Firmados
+                      Ver {deliveryNotes.filter(n => n.status !== "pending").length} Albaranes Firmados
                     </Button>
                   </CardContent>
                 </Card>
@@ -701,7 +701,7 @@ export default function WorkerDashboard() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            {(albaranesModalType === "pending" ? deliveryNotes.filter(n => !n.photo) : deliveryNotes.filter(n => n.photo)).map((note: DeliveryNote) => (
+            {(albaranesModalType === "pending" ? deliveryNotes.filter(n => n.status === "pending") : deliveryNotes.filter(n => n.status !== "pending")).map((note: DeliveryNote) => (
               <Card key={note.id} className="p-2 overflow-hidden">
                 <div className="space-y-1.5">
                   {note.photo && (
