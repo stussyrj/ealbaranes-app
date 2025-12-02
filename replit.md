@@ -1,58 +1,78 @@
 # DirectTransports - Transportation Quote SaaS
 
-## Status: OPERATIONAL - App Rendering
+## Status: OPERATIONAL - Multi-tenant SaaS con Suscripciones
 
-**El app está funcionando y renderizando correctamente.**
+**Sistema de suscripciones implementado. La aplicación está funcionando correctamente.**
 
 ## Overview
 
-DirectTransports es una aplicación B2B SaaS para gestión de presupuestos de transporte entre administradores y trabajadores. El sistema integra OpenRouteService para cálculo de distancia en tiempo real.
+DirectTransports es una aplicación B2B SaaS multi-tenant para gestión de presupuestos de transporte. Cada empresa (tenant) tiene su propia cuenta administrada con suscripción mensual/anual vía [REDACTED-STRIPE]
 
 **Tech Stack Resumen**:
-- Frontend: React + TypeScript con Vite (Funcionando)
-- Backend: Express + TypeScript (Operativo)
-- Base de datos: PostgreSQL via Neon con Drizzle ORM (Inicializado)
+- Frontend: React + TypeScript con Vite
+- Backend: Express + TypeScript
+- Base de datos: PostgreSQL via Neon con Drizzle ORM
+- Pagos: [REDACTED-STRIPE] (suscripciones)
 - API de Enrutamiento: OpenRouteService
 - UI Framework: shadcn/ui con Tailwind CSS
 
-## Roles del Sistema
+## Sistema Multi-Tenant
 
-- **Administrador (Daniel)**: Crea presupuestos, asigna a trabajadores, revisa albaranes
-- **Trabajadores (José/Luis/Miguel)**: Reciben presupuestos, editan detalles, generan albaranes con firmas
+### Modelo de Negocio
+- **Administradores**: Pagan suscripción mensual (29€) o anual (290€)
+- **Trabajadores**: Acceso gratuito (invitados por su admin)
+- **Período de gracia**: 30 días después de cancelación (solo lectura)
+- **Retención de datos**: 90 días después de cancelación antes de eliminación
 
-## Endpoints Backend Operativos
+### Rutas Públicas
+- `/pricing` - Página de precios
+- `/register` - Registro de empresa (crea tenant + cliente [REDACTED-STRIPE]
 
-- `GET /api/quotes` - Lista presupuestos
-- `GET /api/workers` - Lista trabajadores
+### Rutas Protegidas
+- `/admin/subscription` - Gestión de suscripción (solo admin)
+- `/admin/users` - Gestión de usuarios
+
+## Endpoints Backend
+
+### Autenticación
+- `POST /api/register` - Registro de admin (crea tenant + [REDACTED-STRIPE] customer)
+- `POST /api/login` - Login
+- `POST /api/logout` - Logout
+- `GET /api/user` - Usuario actual
+
+### [REDACTED-STRIPE]
+- `GET /api/stripe/products` - Lista productos disponibles
+- `POST /api/stripe/checkout` - Crear sesión de checkout
+- `POST /api/stripe/portal` - Portal de gestión de suscripción
+- `GET /api/stripe/subscription` - Estado de suscripción
+
+### Presupuestos y Albaranes
+- `GET /api/quotes` - Lista presupuestos (filtrado por tenant)
+- `POST /api/quotes` - Crear presupuesto
 - `PATCH /api/quotes/:id/status` - Actualiza estado
 - `PATCH /api/quotes/:id/assign-worker` - Asigna a trabajador
+- `GET /api/delivery-notes` - Lista albaranes
 - `POST /api/delivery-notes` - Crea albarán
 - `PATCH /api/delivery-notes/:id` - Actualiza albarán
 
 ## Estado Actual
 
 ### ✅ Completado
-- Backend Express configurado y operativo
-- Base de datos PostgreSQL inicializada con tablas
-- Autenticación básica (dos roles)
-- API REST completa funcional
-- Frontend React renderiza correctamente
-- Tema oscuro/claro implementado
+- Sistema multi-tenant con aislamiento de datos
+- Registro de empresas con creación automática de tenant
+- Integración [REDACTED-STRIPE] para suscripciones
+- Middleware de acceso por tenant con verificación de suscripción
+- Período de gracia (30 días) y retención de datos (90 días)
+- Webhooks [REDACTED-STRIPE] para gestión de estados
+- Páginas de pricing, registro y gestión de suscripción
+- Frontend React con rutas públicas y protegidas
+- Tema oscuro/claro
 - Sidebar con navegación
 
-### ⚠️ Pendiente - Contextos Complejos
-- Integración completa de AuthContext + ThemeProvider + SidebarProvider en App.tsx
-- Importación de componentes de página (DashboardPage, WorkerDashboard, etc.)
-- **Causa**: Error silencioso de Vite HMR al cargar múltiples contextos juntos
-- **Solución temporal**: App.tsx simplificado pero funcional
-
-### 🔧 Próximos Pasos Recomendados
-
-1. **Debuggear Vite Hot Reload** - Resolver error de importación de módulos
-2. **Integrar Autenticación** - Agregar contexto de usuario
-3. **Agregar Rutas** - Implementar navegación con wouter
-4. **Interfaces Admin/Worker** - Crear dashboards separados
-5. **Firma Digital** - Implementar canvas de firma para albaranes
+### ⚠️ Problema Actual
+- **API Key de [REDACTED-STRIPE] Expirada**: Necesita actualizar la clave en el panel de [REDACTED-STRIPE]
+  - El servidor funciona pero sin integración de pagos activa
+  - Una vez actualizada la clave, la sincronización será automática
 
 ## Preferencias Usuario
 
@@ -62,10 +82,7 @@ DirectTransports es una aplicación B2B SaaS para gestión de presupuestos de tr
 - Modelo de precios: Precio por km + precio mínimo
 - Opción urgencia: Recargo 25%
 
-## Notas Técnicas
+## Credenciales de Desarrollo
 
-- Vite está compilando correctamente
-- Express sirve API en puerto 5000
-- React renderiza sin errores
-- Problema actual: Error silencioso al importar múltiples contextos (circular dependency o problema de módulos)
-- Solución: Necesita debugging profundo de imports de Vite
+- Usuario admin por defecto: `admin` / `admin123`
+- Solo para desarrollo local

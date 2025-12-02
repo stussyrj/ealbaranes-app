@@ -2,9 +2,25 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@shared/schema";
 
 export type UserRole = "admin" | "worker";
+
+export interface SubscriptionInfo {
+  status: string;
+  isInGrace?: boolean;
+  isReadOnly?: boolean;
+}
+
+interface ServerUser {
+  id: string;
+  username: string;
+  displayName?: string | null;
+  isAdmin?: boolean;
+  workerId?: string | null;
+  tenantId?: string | null;
+  createdAt?: string;
+  subscription?: SubscriptionInfo | null;
+}
 
 export interface AuthUser {
   id: string;
@@ -14,6 +30,7 @@ export interface AuthUser {
   role: UserRole;
   workerId?: string | null;
   isAdmin?: boolean;
+  subscription?: SubscriptionInfo;
 }
 
 interface AuthContextType {
@@ -22,6 +39,7 @@ interface AuthContextType {
   setUser: (user: AuthUser | null) => void;
   login: (username: string, password: string) => void;
   logout: () => void;
+  refetchUser: () => Promise<void>;
   isLoginPending: boolean;
   isLogoutPending: boolean;
 }
@@ -31,10 +49,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
-  const { data: serverUser, isLoading } = useQuery<User | null>({
+  const { data: serverUser, isLoading, refetch } = useQuery<ServerUser | null>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+
+  const refetchUser = async () => {
+    await refetch();
+  };
 
   const user: AuthUser | null = serverUser ? {
     id: serverUser.id,
@@ -43,6 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: serverUser.isAdmin ? "admin" : "worker",
     workerId: serverUser.workerId,
     isAdmin: serverUser.isAdmin ?? false,
+    subscription: serverUser.subscription ? {
+      status: serverUser.subscription.status,
+      isInGrace: serverUser.subscription.isInGrace,
+      isReadOnly: serverUser.subscription.isReadOnly,
+    } : undefined,
   } : null;
 
   const loginMutation = useMutation({
@@ -50,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", { username, password });
       return await res.json();
     },
-    onSuccess: (userData: User) => {
+    onSuccess: (userData: ServerUser) => {
       queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Bienvenido",
@@ -103,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser,
         login,
         logout,
+        refetchUser,
         isLoginPending: loginMutation.isPending,
         isLogoutPending: logoutMutation.isPending,
       }}
@@ -121,6 +149,7 @@ export function useAuth() {
       setUser: () => {},
       login: () => {},
       logout: () => {},
+      refetchUser: async () => {},
       isLoginPending: false,
       isLogoutPending: false,
     };
