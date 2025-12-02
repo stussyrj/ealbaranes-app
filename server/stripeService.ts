@@ -25,8 +25,8 @@ export class [REDACTED-STRIPE] {
     console.log('[stripe] Creating subscription products...');
 
     const product = await stripe.products.create({
-      name: 'DirectTransports Pro',
-      description: 'Gestión completa de presupuestos y albaranes de transporte',
+      name: 'eAlbarán Pro',
+      description: 'Gestión completa de albaranes digitales de transporte',
       metadata: { type: 'subscription' },
     });
 

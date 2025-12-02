@@ -51,12 +51,12 @@ export default function PricingPage() {
   };
 
   const features = [
-    "Gestión ilimitada de presupuestos",
-    "Asignación de trabajadores",
-    "Albaranes digitales con firma",
-    "Cálculo automático de distancias",
-    "Múltiples tipos de vehículo",
-    "Recargo por urgencia",
+    "Albaranes digitales ilimitados",
+    "Firmas electrónicas en dispositivo",
+    "Fotos adjuntas a cada albarán",
+    "Gestión de trabajadores",
+    "Panel de control de empresa",
+    "Numeración única automática",
     "Exportar albaranes como imagen",
     "Soporte por email",
   ];
@@ -76,9 +76,9 @@ export default function PricingPage() {
           <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
             <Truck className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">DirectTransports Pro</h1>
+          <h1 className="text-4xl font-bold mb-4">eAlbarán Pro</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Gestiona tus presupuestos y albaranes de transporte de forma profesional
+            Gestiona tus albaranes digitales de transporte de forma profesional
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export default function PricingPage() {
         ) : (
           <Card className="max-w-md mx-auto">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">DirectTransports Pro</CardTitle>
+              <CardTitle className="text-2xl">eAlbarán Pro</CardTitle>
               <CardDescription>Plan de suscripción empresarial</CardDescription>
               <div className="mt-4">
                 <span className="text-4xl font-bold">

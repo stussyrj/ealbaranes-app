@@ -88,9 +88,9 @@ export function AppSidebar() {
             <TruckIcon className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-semibold text-lg">DirectTransports</h1>
+            <h1 className="font-semibold text-lg">eAlbarán</h1>
             <p className="text-xs text-muted-foreground">
-              {isAdmin ? "Administración" : "Área de Cliente"}
+              {isAdmin ? "Panel de Empresa" : "Panel de Trabajador"}
             </p>
           </div>
         </div>
@@ -98,7 +98,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isAdmin ? "Administración" : "Principal"}</SidebarGroupLabel>
+          <SidebarGroupLabel>{isAdmin ? "Gestión" : "Principal"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -125,7 +125,7 @@ export function AppSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{displayName}</p>
             <p className="text-xs text-muted-foreground truncate">
-              {isAdmin ? "Administrador" : "Trabajador"}
+              {isAdmin ? "Empresa" : "Trabajador"}
             </p>
           </div>
         </div>

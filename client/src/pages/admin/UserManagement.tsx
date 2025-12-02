@@ -160,7 +160,7 @@ export default function UserManagement() {
     if (user.isAdmin) {
       toast({
         title: "Error",
-        description: "No puedes eliminar un usuario administrador",
+        description: "No puedes eliminar la cuenta de empresa",
         variant: "destructive",
       });
       return;
@@ -291,10 +291,10 @@ export default function UserManagement() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
-                Administradores
+                Cuenta de Empresa
               </CardTitle>
               <CardDescription>
-                Usuarios con acceso completo al sistema
+                Usuario con acceso completo al sistema
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -314,7 +314,7 @@ export default function UserManagement() {
                         <p className="text-xs text-muted-foreground">@{user.username}</p>
                       </div>
                     </div>
-                    <Badge variant="secondary">Admin</Badge>
+                    <Badge variant="secondary">Empresa</Badge>
                   </div>
                 ))}
               </div>

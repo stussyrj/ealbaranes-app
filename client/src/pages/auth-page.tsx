@@ -88,16 +88,16 @@ export default function AuthPage() {
           <div className="mx-auto mb-8 h-20 w-20 rounded-full bg-primary-foreground/10 flex items-center justify-center">
             <Truck className="h-10 w-10" />
           </div>
-          <h1 className="text-3xl font-bold mb-4">DirectTransports</h1>
+          <h1 className="text-3xl font-bold mb-4">eAlbarán</h1>
           <p className="text-lg opacity-90 mb-6">
-            Sistema de gestión de presupuestos y albaranes de transporte
+            Sistema de gestión de albaranes digitales de transporte
           </p>
           <div className="space-y-3 text-left bg-primary-foreground/10 rounded-lg p-4">
             <p className="text-sm">
-              <strong>Administradores:</strong> Gestiona presupuestos, asigna trabajadores y revisa albaranes
+              <strong>Empresas:</strong> Supervisa albaranes, gestiona trabajadores y controla tu negocio
             </p>
             <p className="text-sm">
-              <strong>Trabajadores:</strong> Recibe pedidos, crea albaranes y obtén firmas de clientes
+              <strong>Trabajadores:</strong> Crea albaranes digitales con fotos y firmas electrónicas
             </p>
           </div>
         </div>

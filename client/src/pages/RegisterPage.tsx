@@ -41,7 +41,7 @@ export default function RegisterPage() {
       await refetchUser();
       toast({
         title: "Cuenta creada",
-        description: "Tu cuenta ha sido creada exitosamente. Bienvenido a DirectTransports!",
+        description: "Tu cuenta ha sido creada exitosamente. Bienvenido a eAlbarán!",
       });
       setLocation("/");
     },
@@ -225,19 +225,19 @@ export default function RegisterPage() {
           <div className="mx-auto mb-8 h-20 w-20 rounded-full bg-primary-foreground/10 flex items-center justify-center">
             <Truck className="h-10 w-10" />
           </div>
-          <h1 className="text-3xl font-bold mb-4">DirectTransports</h1>
+          <h1 className="text-3xl font-bold mb-4">eAlbarán</h1>
           <p className="text-lg opacity-90 mb-6">
-            Sistema profesional de gestión de presupuestos y albaranes de transporte
+            Sistema profesional de gestión de albaranes digitales de transporte
           </p>
           <div className="space-y-3 text-left bg-primary-foreground/10 rounded-lg p-4">
             <p className="text-sm">
-              <strong>Presupuestos automáticos:</strong> Cálculo de distancias y precios en tiempo real
+              <strong>Albaranes digitales:</strong> Crea albaranes con fotos y firmas electrónicas
             </p>
             <p className="text-sm">
-              <strong>Albaranes digitales:</strong> Firmas electrónicas y exportación como imagen
+              <strong>Control total:</strong> Supervisa todos los albaranes de tu empresa
             </p>
             <p className="text-sm">
-              <strong>Gestión de equipo:</strong> Asigna trabajos y controla el estado de cada envío
+              <strong>Gestión de equipo:</strong> Crea trabajadores y asigna servicios
             </p>
           </div>
         </div>

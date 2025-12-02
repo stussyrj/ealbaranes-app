@@ -670,7 +670,7 @@ export async function registerRoutes(
       let customerId = tenant.stripeCustomerId;
       if (!customerId) {
         const customer = await stripeService.createCustomer(
-          user.username + '@directtransports.com',
+          user.email || user.username + '@ealbaran.app',
           tenant.id,
           tenant.companyName || undefined
         );

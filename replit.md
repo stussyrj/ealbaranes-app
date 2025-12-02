@@ -1,4 +1,4 @@
-# DirectTransports - Gestión de Albaranes Digitales
+# eAlbarán - Gestión Digital de Albaranes de Transporte
 
 ## Status: OPERATIONAL - Multi-tenant SaaS con Suscripciones
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-DirectTransports es una aplicación B2B SaaS multi-tenant para **gestión de albaranes digitales de transporte**. Los trabajadores crean albaranes digitales con fotos/firmas, y los empresarios (administradores) tienen acceso completo para gestionar y controlar esos albaranes.
+eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes digitales de transporte**. Los trabajadores crean albaranes digitales con fotos/firmas, y las empresas tienen acceso completo para gestionar y controlar esos albaranes.
 
 **Tech Stack**:
 - Frontend: React + TypeScript con Vite
@@ -15,25 +15,42 @@ DirectTransports es una aplicación B2B SaaS multi-tenant para **gestión de alb
 - Pagos: [REDACTED-STRIPE] (suscripciones)
 - UI Framework: shadcn/ui con Tailwind CSS
 
+## Modelo de Usuarios
+
+La aplicación tiene dos tipos de usuarios claramente diferenciados:
+
+### Empresa (antes "admin")
+- Pagan suscripción mensual (29€) o anual (290€)
+- Panel de Empresa con acceso completo
+- Gestionan trabajadores y supervisan albaranes
+- Acceden a: Dashboard, Gestión de Usuarios, Suscripción
+
+### Trabajador
+- Acceso gratuito (creados por su empresa)
+- Panel de Trabajador con funciones limitadas
+- Crean albaranes digitales con fotos y firmas
+- Solo ven sus propios albaranes
+
 ## Sistema Multi-Tenant
 
 ### Modelo de Negocio
-- **Administradores (empresarios)**: Pagan suscripción mensual (29€) o anual (290€)
-- **Trabajadores**: Acceso gratuito (invitados por su admin)
+- **Empresa**: Paga suscripción mensual (29€) o anual (290€)
+- **Trabajadores**: Acceso gratuito (invitados por su empresa)
 - **Período de gracia**: 30 días después de cancelación (solo lectura)
 - **Retención de datos**: 90 días después de cancelación antes de eliminación
 
 ### Flujo de Uso
-1. **Empresario** se registra y paga suscripción
-2. **Empresario** crea trabajadores desde el panel
+1. **Empresa** se registra y paga suscripción
+2. **Empresa** crea trabajadores desde el panel
 3. **Trabajadores** crean albaranes digitales con fotos/firmas
-4. **Empresario** gestiona y supervisa todos los albaranes
+4. **Empresa** gestiona y supervisa todos los albaranes
 
 ### Rutas Públicas
 - `/pricing` - Página de precios
 - `/register` - Registro de empresa (crea tenant + cliente [REDACTED-STRIPE]
+- `/login` - Inicio de sesión
 
-### Rutas Protegidas (Admin)
+### Rutas Protegidas (Empresa)
 - `/` - Dashboard con resumen de albaranes
 - `/admin/subscription` - Gestión de suscripción
 - `/admin/users` - Gestión de trabajadores
@@ -44,7 +61,7 @@ DirectTransports es una aplicación B2B SaaS multi-tenant para **gestión de alb
 ## Endpoints Backend
 
 ### Autenticación
-- `POST /api/register` - Registro de admin (crea tenant + [REDACTED-STRIPE] customer)
+- `POST /api/register` - Registro de empresa (crea tenant + [REDACTED-STRIPE] customer)
 - `POST /api/login` - Login
 - `POST /api/logout` - Logout
 - `GET /api/user` - Usuario actual
@@ -57,7 +74,7 @@ DirectTransports es una aplicación B2B SaaS multi-tenant para **gestión de alb
 
 ### Albaranes
 - `GET /api/delivery-notes` - Lista albaranes (filtrado por tenant)
-- `POST /api/delivery-notes` - Crea albarán
+- `POST /api/delivery-notes` - Crea albarán (genera noteNumber único automáticamente)
 - `PATCH /api/delivery-notes/:id` - Actualiza albarán (añadir firma/foto)
 
 ## Estado Actual
@@ -72,8 +89,11 @@ DirectTransports es una aplicación B2B SaaS multi-tenant para **gestión de alb
 - Páginas de pricing, registro y gestión de suscripción
 - Frontend React con rutas públicas y protegidas
 - Tema oscuro/claro
-- Sidebar simplificado (Dashboard + Gestión de Usuarios)
+- Sidebar simplificado (Dashboard + Gestión de Usuarios + Suscripción)
 - Panel de trabajador para albaranes
+- Números de albarán únicos (Albarán #X) con generación automática
+- Renombrado de app: DirectTransports → eAlbarán
+- Terminología actualizada: Admin → Empresa
 
 ## Preferencias Usuario
 
@@ -83,5 +103,5 @@ DirectTransports es una aplicación B2B SaaS multi-tenant para **gestión de alb
 
 ## Credenciales de Desarrollo
 
-- Usuario admin por defecto: `admin` / `admin123`
+- Usuario empresa por defecto: `admin` / `admin123`
 - Solo para desarrollo local

@@ -57,7 +57,7 @@ async function init[REDACTED-STRIPE] {
         `${webhookBaseUrl}/api/stripe/webhook`,
         {
           enabled_events: ['*'],
-          description: 'DirectTransports subscription webhook',
+          description: 'eAlbarán subscription webhook',
         }
       );
       log(`Webhook configured: ${webhook.url}`, 'stripe');

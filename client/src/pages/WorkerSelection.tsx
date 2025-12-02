@@ -9,19 +9,19 @@ const WORKERS = [
   {
     id: "worker-jose",
     name: "José",
-    email: "jose@directtransports.com",
+    email: "jose@empresa.com",
     description: "Trabajador de transporte de carga general",
   },
   {
     id: "worker-luis",
     name: "Luis",
-    email: "luis@directtransports.com",
+    email: "luis@empresa.com",
     description: "Especialista en entregas urgentes",
   },
   {
     id: "worker-miguel",
     name: "Miguel",
-    email: "miguel@directtransports.com",
+    email: "miguel@empresa.com",
     description: "Coordinador de rutas y logística",
   },
 ];

@@ -72,7 +72,7 @@ export default function SubscriptionPage() {
           <CardHeader>
             <CardTitle>Acceso Restringido</CardTitle>
             <CardDescription>
-              Solo los administradores pueden gestionar la suscripción.
+              Solo la cuenta de empresa puede gestionar la suscripción.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -100,7 +100,7 @@ export default function SubscriptionPage() {
                       Tu Suscripción
                     </CardTitle>
                     <CardDescription>
-                      Estado actual de tu plan DirectTransports Pro
+                      Estado actual de tu plan eAlbarán Pro
                     </CardDescription>
                   </div>
                   {user.subscription && getStatusBadge(user.subscription.status)}
@@ -133,7 +133,7 @@ export default function SubscriptionPage() {
                           Cuenta en modo de solo lectura
                         </p>
                         <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                          No puedes crear nuevos presupuestos ni albaranes. Reactiva tu suscripción
+                          No puedes crear nuevos albaranes. Reactiva tu suscripción
                           para continuar usando todas las funciones.
                         </p>
                       </div>
@@ -144,7 +144,7 @@ export default function SubscriptionPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-muted/50 rounded-lg p-4">
                     <p className="text-sm text-muted-foreground">Plan</p>
-                    <p className="font-medium">DirectTransports Pro</p>
+                    <p className="font-medium">eAlbarán Pro</p>
                   </div>
                   <div className="bg-muted/50 rounded-lg p-4">
                     <p className="text-sm text-muted-foreground">Estado</p>

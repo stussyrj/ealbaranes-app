@@ -107,7 +107,7 @@ const defaultWorkers: Worker[] = [
   {
     id: "worker-jose",
     name: "José",
-    email: "jose@directtransports.com",
+    email: "jose@empresa.com",
     phone: "600000001",
     isActive: true,
     tenantId: null,
@@ -116,7 +116,7 @@ const defaultWorkers: Worker[] = [
   {
     id: "worker-luis",
     name: "Luis",
-    email: "luis@directtransports.com",
+    email: "luis@empresa.com",
     phone: "600000002",
     isActive: true,
     tenantId: null,
@@ -125,7 +125,7 @@ const defaultWorkers: Worker[] = [
   {
     id: "worker-miguel",
     name: "Miguel",
-    email: "miguel@directtransports.com",
+    email: "miguel@empresa.com",
     phone: "600000003",
     isActive: true,
     tenantId: null,

@@ -37,7 +37,7 @@ export function VanDoorsAnimation({ onComplete }: { onComplete: () => void }) {
           transition={{ duration: 0.8, delay: 0.5 }}
         >
           <h1 className="text-slate-900 dark:text-white text-4xl font-light tracking-wide">Bienvenido</h1>
-          <p className="text-slate-600 dark:text-slate-300 text-sm mt-4 font-light">DirectTransports</p>
+          <p className="text-slate-600 dark:text-slate-300 text-sm mt-4 font-light">eAlbarán</p>
         </motion.div>
       </motion.div>
 
