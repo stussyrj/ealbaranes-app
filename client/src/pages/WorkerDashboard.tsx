@@ -746,6 +746,12 @@ export default function WorkerDashboard() {
                         <p className="font-medium text-[10px]">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</p>
                       </div>
                     ) : null}
+                    {albaranesModalType === "signed" && note.signedAt && (
+                      <div className="bg-muted/30 rounded p-1">
+                        <p className="text-muted-foreground text-[9px] font-semibold">FIRMADO</p>
+                        <p className="font-medium text-[9px]">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    )}
                   </div>
                   {albaranesModalType === "pending" && (
                     <div className="flex gap-1 text-xs mt-2">
