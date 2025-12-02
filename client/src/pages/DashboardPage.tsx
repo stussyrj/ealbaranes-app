@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, Users, X, Download, Share2 } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
-import { WorkerManagementModal } from "@/components/WorkerManagementModal";
 import { Badge } from "@/components/ui/badge";
 import html2canvas from "html2canvas";
 import {
@@ -16,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 export default function DashboardPage() {
@@ -23,11 +23,12 @@ export default function DashboardPage() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
-  const [workerManagementOpen, setWorkerManagementOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [albaranesModalOpen, setAlbaranesModalOpen] = useState(false);
   const [albaranesModalType, setAlbaranesModalType] = useState<"pending" | "signed">("pending");
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   const previewDeliveryNote = (photo: string) => {
@@ -152,20 +153,20 @@ export default function DashboardPage() {
           <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Dashboard Presupuestos</h1>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-3">
           <StatCard title="Pendientes" value={totalPendingCount.toString()} subtitle="Sin asignar" icon={TrendingUp} />
           <StatCard title="Firmados" value={totalSignedCount.toString()} subtitle="Completados" icon={MapPin} />
           <button
-            onClick={() => setWorkerManagementOpen(true)}
+            onClick={() => setDownloadModalOpen(true)}
             className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-left transition-all hover-elevate shadow-sm"
-            data-testid="button-manage-workers"
+            data-testid="button-download-albaranes"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">Administrar</p>
-                <h3 className="text-base sm:text-lg md:text-xl font-bold mt-1">Trabajadores</h3>
+                <p className="text-xs font-medium text-muted-foreground">Seguridad</p>
+                <h3 className="text-base sm:text-lg md:text-xl font-bold mt-1">Descargar</h3>
               </div>
-              <Users className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-blue-500 opacity-70" />
+              <FileDown className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-green-500 opacity-70" />
             </div>
           </button>
         </div>
@@ -234,11 +235,131 @@ export default function DashboardPage() {
         onOpenChange={setAssignmentModalOpen}
         quote={selectedQuote}
       />
-      
-      <WorkerManagementModal
-        open={workerManagementOpen}
-        onOpenChange={setWorkerManagementOpen}
-      />
+
+      {/* Modal de Descarga de Albaranes */}
+      <Dialog open={downloadModalOpen} onOpenChange={setDownloadModalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-lg flex items-center gap-2">
+              <FileDown className="h-5 w-5 text-green-500" />
+              Descargar Albaranes
+            </DialogTitle>
+            <DialogDescription>
+              Selecciona el tipo de albaranes que quieres descargar para tu respaldo de seguridad.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4 px-4"
+              disabled={isDownloading || signedDeliveryNotes.filter((n: any) => n.photo).length === 0}
+              onClick={async () => {
+                const notesWithPhotos = signedDeliveryNotes.filter((n: any) => n.photo);
+                if (notesWithPhotos.length === 0) {
+                  toast({ title: "Sin fotos", description: "No hay albaranes firmados con foto para descargar", variant: "destructive" });
+                  return;
+                }
+                setIsDownloading(true);
+                toast({ title: "Preparando descarga...", description: `Descargando ${notesWithPhotos.length} foto(s)` });
+                try {
+                  for (const note of notesWithPhotos) {
+                    const response = await fetch(note.photo);
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `albaran-${note.noteNumber || note.id}-firmado-${note.destination || 'destino'}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                  }
+                  toast({ title: "Descarga completada", description: `Se descargaron ${notesWithPhotos.length} foto(s) de albaranes firmados` });
+                } catch (error) {
+                  console.error("Download error:", error);
+                  toast({ title: "Error", description: "No se pudieron descargar los albaranes", variant: "destructive" });
+                } finally {
+                  setIsDownloading(false);
+                  setDownloadModalOpen(false);
+                }
+              }}
+              data-testid="button-download-signed"
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold">Albaranes Firmados</p>
+                  <p className="text-xs text-muted-foreground">{signedDeliveryNotes.filter((n: any) => n.photo).length} foto(s) disponible(s)</p>
+                </div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4 px-4"
+              disabled={isDownloading || pendingDeliveryNotes.length === 0}
+              onClick={async () => {
+                if (pendingDeliveryNotes.length === 0) {
+                  toast({ title: "Sin albaranes", description: "No hay albaranes pendientes para descargar", variant: "destructive" });
+                  return;
+                }
+                setIsDownloading(true);
+                toast({ title: "Preparando descarga...", description: `Generando ${pendingDeliveryNotes.length} albarán(es) pendiente(s)` });
+                try {
+                  const pendingData = pendingDeliveryNotes.map((note: any) => ({
+                    numeroAlbaran: note.noteNumber || '-',
+                    origen: note.pickupOrigin || 'N/A',
+                    destino: note.destination || 'N/A',
+                    cliente: note.clientName || 'N/A',
+                    vehiculo: note.vehicleType || 'N/A',
+                    fecha: note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A',
+                    hora: note.time || 'N/A',
+                    trabajador: note.workerName || 'Desconocido',
+                    observaciones: note.observations || 'Sin observaciones'
+                  }));
+                  const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Nº Albarán,Origen,Destino,Cliente,Vehículo,Fecha,Hora,Trabajador,Observaciones\n"
+                    + pendingData.map((row: any) => Object.values(row).map(v => `"${v}"`).join(",")).join("\n");
+                  const encodedUri = encodeURI(csvContent);
+                  const link = document.createElement("a");
+                  link.setAttribute("href", encodedUri);
+                  link.setAttribute("download", `albaranes-pendientes-${new Date().toISOString().split('T')[0]}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  toast({ title: "Descarga completada", description: `Se descargó el listado de ${pendingDeliveryNotes.length} albarán(es) pendiente(s)` });
+                } catch (error) {
+                  console.error("Download error:", error);
+                  toast({ title: "Error", description: "No se pudo generar el archivo", variant: "destructive" });
+                } finally {
+                  setIsDownloading(false);
+                  setDownloadModalOpen(false);
+                }
+              }}
+              data-testid="button-download-pending"
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold">Albaranes Pendientes</p>
+                  <p className="text-xs text-muted-foreground">{pendingDeliveryNotes.length} albarán(es) disponible(s)</p>
+                </div>
+              </div>
+            </Button>
+          </div>
+          {isDownloading && (
+            <div className="flex items-center justify-center py-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <span className="ml-2 text-sm text-muted-foreground">Descargando...</span>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Albaranes List Modal */}
       <Dialog open={albaranesModalOpen} onOpenChange={setAlbaranesModalOpen}>
