@@ -851,7 +851,7 @@ export default function WorkerDashboard() {
                   type="number"
                   min="0"
                   max="300"
-                  value={formData.waitTime}
+                  value={formData.waitTime > 0 ? formData.waitTime : ""}
                   onChange={(e) => setFormData({ ...formData, waitTime: Math.min(300, Math.max(0, parseInt(e.target.value) || 0)) })}
                   placeholder="Minutos"
                   className="flex-1"
