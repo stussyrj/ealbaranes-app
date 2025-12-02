@@ -207,7 +207,7 @@ export default function WorkerDashboard() {
 
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
             {WORKERS.map((worker) => (
-              <Card key={worker.id} className="hover-elevate cursor-pointer transition-all active:scale-95" onClick={() => handleSelectWorker(worker.id)}>
+              <Card key={worker.id} className="hover-elevate cursor-pointer transition-all active:scale-95 bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => handleSelectWorker(worker.id)}>
                 <CardHeader className="pb-2 sm:pb-3">
                   <CardTitle className="text-lg sm:text-xl">{worker.name}</CardTitle>
                   <p className="text-xs sm:text-sm text-muted-foreground">{worker.email}</p>
@@ -325,7 +325,7 @@ export default function WorkerDashboard() {
     };
 
     return (
-      <Card key={order.id} className="hover-elevate">
+      <Card key={order.id} className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start">
             <div>
@@ -412,7 +412,7 @@ export default function WorkerDashboard() {
     };
 
     return (
-      <Card key={note.id} className="hover-elevate">
+      <Card key={note.id} className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1">
@@ -526,7 +526,7 @@ export default function WorkerDashboard() {
 
         {/* Estadísticas */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-6">
-          <Card className="hover-elevate">
+          <Card className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-muted-foreground">Albaranes Totales</CardTitle>
             </CardHeader>
@@ -548,7 +548,7 @@ export default function WorkerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover-elevate cursor-pointer" onClick={() => setCreateDeliveryOpen(true)}>
+          <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => setCreateDeliveryOpen(true)}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4" />
@@ -569,7 +569,7 @@ export default function WorkerDashboard() {
         </div>
 
         {orders.length === 0 && deliveryNotes.length === 0 ? (
-          <Card>
+          <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
             <CardContent className="pt-6 text-center">
               <p className="text-muted-foreground">No hay servicios asignados</p>
             </CardContent>
@@ -617,7 +617,7 @@ export default function WorkerDashboard() {
 
             <TabsContent value="pending" className="space-y-4">
               {pendingOrders.length === 0 ? (
-                <Card>
+                <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
                   <CardContent className="pt-6 text-center">
                     <p className="text-muted-foreground">No hay servicios pendientes</p>
                   </CardContent>
@@ -631,7 +631,7 @@ export default function WorkerDashboard() {
 
             <TabsContent value="signed" className="space-y-4">
               {signedOrders.length === 0 ? (
-                <Card>
+                <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
                   <CardContent className="pt-6 text-center">
                     <p className="text-muted-foreground">No hay servicios firmados</p>
                   </CardContent>
@@ -645,7 +645,7 @@ export default function WorkerDashboard() {
 
             <TabsContent value="delivered" className="space-y-4">
               {deliveredOrders.length === 0 ? (
-                <Card>
+                <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
                   <CardContent className="pt-6 text-center">
                     <p className="text-muted-foreground">No hay servicios entregados</p>
                   </CardContent>
@@ -659,7 +659,7 @@ export default function WorkerDashboard() {
 
             <TabsContent value="albaranes" className="space-y-4">
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+                <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
                   </CardHeader>
@@ -673,7 +673,7 @@ export default function WorkerDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+                <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
                   </CardHeader>

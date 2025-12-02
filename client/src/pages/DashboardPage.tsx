@@ -80,7 +80,7 @@ export default function DashboardPage() {
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
   const renderQuoteCard = (quote: any, showAssignBtn = false) => (
-    <Card key={quote.id} className="hover-elevate">
+    <Card key={quote.id} className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         </div>
 
         {pendingQuotes.length > 0 && (
-          <Card>
+          <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
             <CardHeader className="py-3 sm:py-4">
               <CardTitle className="text-base sm:text-lg">Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
             </CardHeader>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
         )}
 
         {signedQuotes.length > 0 && (
-          <Card>
+          <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
             <CardHeader className="py-3 sm:py-4">
               <CardTitle className="text-base sm:text-lg">Presupuestos Firmados ({signedQuotes.length})</CardTitle>
             </CardHeader>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
 
         {(pendingDeliveryNotes.length > 0 || signedDeliveryNotes.length > 0) && (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
+            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-muted-foreground">Albaranes Pendientes</CardTitle>
               </CardHeader>
@@ -212,7 +212,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="hover-elevate cursor-pointer" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
+            <Card className="hover-elevate cursor-pointer bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10" onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
               </CardHeader>

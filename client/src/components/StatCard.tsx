@@ -14,7 +14,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon: Icon, trend }: StatCardProps) {
   return (
-    <Card className="hover-elevate">
+    <Card className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10">
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
