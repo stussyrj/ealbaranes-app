@@ -331,6 +331,20 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/workers/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteWorker(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Trabajador no encontrado" });
+      }
+      res.json({ success: true, message: "Trabajador eliminado permanentemente" });
+    } catch (error) {
+      console.error("Error deleting worker:", error);
+      res.status(400).json({ error: "Error al eliminar trabajador" });
+    }
+  });
+
   // Assign quote to worker
   app.patch("/api/quotes/:id/assign-worker", async (req, res) => {
     try {

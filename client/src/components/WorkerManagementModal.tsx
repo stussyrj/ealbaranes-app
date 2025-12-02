@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, Plus, Trash2 } from "lucide-react";
+import { Phone, Mail, Plus, Power, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Worker } from "@shared/schema";
@@ -18,6 +18,7 @@ interface WorkerManagementModalProps {
 export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementModalProps) {
   const { toast } = useToast();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -48,12 +49,27 @@ export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementMo
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       return apiRequest("PATCH", `/api/workers/${id}`, { isActive: !isActive });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
-      toast({ title: "Actualizado", description: "Estado del trabajador actualizado" });
+      const action = variables.isActive ? "desactivado" : "activado";
+      toast({ title: "Actualizado", description: `Trabajador ${action} correctamente` });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "No se pudo actualizar el trabajador", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/workers/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      toast({ title: "Eliminado", description: "Trabajador eliminado permanentemente" });
+      setConfirmDeleteId(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "No se pudo eliminar el trabajador", variant: "destructive" });
     },
   });
 
@@ -65,76 +81,138 @@ export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementMo
     createMutation.mutate(formData);
   };
 
+  const handleDeleteWorker = (id: string) => {
+    if (confirmDeleteId === id) {
+      deleteMutation.mutate(id);
+    } else {
+      setConfirmDeleteId(id);
+      setTimeout(() => setConfirmDeleteId(null), 3000);
+    }
+  };
+
+  const activeWorkers = workers.filter((w) => w.isActive);
+  const inactiveWorkers = workers.filter((w) => !w.isActive);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Administrar Trabajadores</DialogTitle>
+          <DialogDescription>
+            Gestiona el equipo de trabajadores: activa, desactiva o elimina permanentemente.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Lista de trabajadores */}
+          {/* Lista de trabajadores activos */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-sm">Trabajadores Activos ({workers.filter((w) => w.isActive).length})</h3>
+            <h3 className="font-semibold text-sm text-green-600 dark:text-green-400">
+              Trabajadores Activos ({activeWorkers.length})
+            </h3>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {workers.filter((w) => w.isActive).map((worker) => (
+              {activeWorkers.map((worker) => (
                 <Card key={worker.id} className="hover-elevate">
                   <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{worker.name}</p>
-                        <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{worker.name}</p>
+                        <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {worker.email}
+                            <Mail className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{worker.email}</span>
                           </span>
                           {worker.phone && (
                             <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
+                              <Phone className="h-3 w-3 flex-shrink-0" />
                               {worker.phone}
                             </span>
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleActiveMutation.mutate({ id: worker.id, isActive: worker.isActive || false })}
-                        className="text-xs"
-                        data-testid={`button-deactivate-worker-${worker.id}`}
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Desactivar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Trabajadores inactivos */}
-          {workers.filter((w) => !w.isActive).length > 0 && (
-            <div className="space-y-3 mt-6 pt-6 border-t">
-              <h3 className="font-semibold text-sm">Trabajadores Inactivos ({workers.filter((w) => !w.isActive).length})</h3>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {workers.filter((w) => !w.isActive).map((worker) => (
-                  <Card key={worker.id} className="opacity-60">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="font-medium text-sm text-muted-foreground">{worker.name}</p>
-                          <Badge variant="outline" className="text-xs mt-1">Inactivo</Badge>
-                        </div>
+                      <div className="flex gap-1.5 flex-shrink-0">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => toggleActiveMutation.mutate({ id: worker.id, isActive: worker.isActive || false })}
-                          className="text-xs"
-                          data-testid={`button-activate-worker-${worker.id}`}
+                          className="text-xs h-8 px-2 text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-700 dark:hover:bg-orange-950"
+                          disabled={toggleActiveMutation.isPending}
+                          data-testid={`button-deactivate-worker-${worker.id}`}
                         >
-                          Activar
+                          <Power className="h-3 w-3 mr-1" />
+                          Desactivar
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteWorker(worker.id)}
+                          className={`text-xs h-8 px-2 ${
+                            confirmDeleteId === worker.id
+                              ? "bg-red-600 text-white border-red-600 hover:bg-red-700"
+                              : "text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-950"
+                          }`}
+                          disabled={deleteMutation.isPending}
+                          data-testid={`button-delete-worker-${worker.id}`}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          {confirmDeleteId === worker.id ? "Confirmar" : "Borrar"}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {activeWorkers.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No hay trabajadores activos</p>
+              )}
+            </div>
+          </div>
+
+          {/* Trabajadores inactivos */}
+          {inactiveWorkers.length > 0 && (
+            <div className="space-y-3 mt-6 pt-6 border-t">
+              <h3 className="font-semibold text-sm text-muted-foreground">
+                Trabajadores Inactivos ({inactiveWorkers.length})
+              </h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {inactiveWorkers.map((worker) => (
+                  <Card key={worker.id} className="opacity-70 bg-muted/30">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm text-muted-foreground truncate">{worker.name}</p>
+                            <Badge variant="secondary" className="text-xs">Inactivo</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 truncate">{worker.email}</p>
+                        </div>
+                        <div className="flex gap-1.5 flex-shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleActiveMutation.mutate({ id: worker.id, isActive: worker.isActive || false })}
+                            className="text-xs h-8 px-2 text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-950"
+                            disabled={toggleActiveMutation.isPending}
+                            data-testid={`button-activate-worker-${worker.id}`}
+                          >
+                            <Power className="h-3 w-3 mr-1" />
+                            Activar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteWorker(worker.id)}
+                            className={`text-xs h-8 px-2 ${
+                              confirmDeleteId === worker.id
+                                ? "bg-red-600 text-white border-red-600 hover:bg-red-700"
+                                : "text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-950"
+                            }`}
+                            disabled={deleteMutation.isPending}
+                            data-testid={`button-delete-inactive-worker-${worker.id}`}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            {confirmDeleteId === worker.id ? "Confirmar" : "Borrar"}
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -156,7 +234,7 @@ export function WorkerManagementModal({ open, onOpenChange }: WorkerManagementMo
           )}
 
           {showCreateForm && (
-            <Card className="mt-4">
+            <Card className="mt-4 border-primary/30">
               <CardContent className="p-4 space-y-3">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Nombre</label>

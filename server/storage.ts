@@ -24,6 +24,7 @@ export interface IStorage {
   getWorker(id: string): Promise<Worker | undefined>;
   createWorker(worker: InsertWorker): Promise<Worker>;
   updateWorker(id: string, worker: Partial<InsertWorker>): Promise<Worker | undefined>;
+  deleteWorker(id: string): Promise<boolean>;
   
   getVehicleTypes(): Promise<VehicleType[]>;
   getAllVehicleTypes(): Promise<VehicleType[]>;
@@ -248,6 +249,10 @@ export class MemStorage implements IStorage {
     const updated = { ...existing, ...updates };
     this.workers.set(id, updated);
     return updated;
+  }
+
+  async deleteWorker(id: string): Promise<boolean> {
+    return this.workers.delete(id);
   }
 
   async getVehicleTypes(): Promise<VehicleType[]> {
