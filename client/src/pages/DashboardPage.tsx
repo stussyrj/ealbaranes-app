@@ -274,8 +274,8 @@ export default function DashboardPage() {
                   {/* Details Grid - 3 columns for better spacing */}
                   <div className="grid grid-cols-3 gap-1 text-[10px]">
                     <div className="bg-muted/30 rounded p-1">
-                      <p className="text-muted-foreground text-[9px] font-semibold">ORIGEN</p>
-                      <p className="font-medium text-[10px] line-clamp-1">{note.pickupOrigin || 'N/A'}</p>
+                      <p className="text-muted-foreground text-[9px] font-semibold">CLIENTE</p>
+                      <p className="font-medium text-[10px] line-clamp-1">{note.clientName || 'N/A'}</p>
                     </div>
                     <div className="bg-muted/30 rounded p-1">
                       <p className="text-muted-foreground text-[9px] font-semibold">VEHÍCULO</p>
