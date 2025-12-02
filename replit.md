@@ -88,12 +88,14 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - Webhooks [REDACTED-STRIPE] para gestión de estados
 - Páginas de pricing, registro y gestión de suscripción
 - Frontend React con rutas públicas y protegidas
-- Tema oscuro/claro
+- Tema claro/spooky (Halloween: naranja, púrpura, negro)
 - Sidebar simplificado (Dashboard + Gestión de Usuarios + Suscripción)
 - Panel de trabajador para albaranes
 - Números de albarán únicos (Albarán #X) con generación automática
 - Renombrado de app: DirectTransports → eAlbarán
 - Terminología actualizada: Admin → Empresa
+- Página de login con fondo animado y toggle de tema
+- Descarga de albaranes para seguridad (fotos firmados / CSV pendientes)
 
 ## Preferencias Usuario
 
