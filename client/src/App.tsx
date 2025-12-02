@@ -5,12 +5,33 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import DashboardPage from "@/pages/DashboardPage";
 import WorkerDashboard from "@/pages/WorkerDashboard";
+import UserManagement from "@/pages/admin/UserManagement";
 import AuthPage from "@/pages/auth-page";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Loader2 } from "lucide-react";
+import { Switch, Route } from "wouter";
+
+function AdminRoutes() {
+  return (
+    <Switch>
+      <Route path="/" component={DashboardPage} />
+      <Route path="/admin/users" component={UserManagement} />
+      <Route component={DashboardPage} />
+    </Switch>
+  );
+}
+
+function WorkerRoutes() {
+  return (
+    <Switch>
+      <Route path="/" component={WorkerDashboard} />
+      <Route component={WorkerDashboard} />
+    </Switch>
+  );
+}
 
 function MainLayout() {
   const { user, isLoading } = useAuth();
@@ -31,8 +52,6 @@ function MainLayout() {
     return <AuthPage />;
   }
 
-  const currentPage = user.role === "admin" ? <DashboardPage /> : <WorkerDashboard />;
-
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
       <div className="flex min-h-screen w-full">
@@ -45,7 +64,7 @@ function MainLayout() {
             </div>
           </header>
           <main className="flex-1 overflow-auto pb-4 sm:pb-6">
-            {currentPage}
+            {user.role === "admin" ? <AdminRoutes /> : <WorkerRoutes />}
           </main>
         </div>
       </div>

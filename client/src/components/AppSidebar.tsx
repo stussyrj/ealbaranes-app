@@ -5,6 +5,7 @@ import {
   Truck as TruckIcon,
   LayoutDashboard,
   LogOut,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const adminNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Gestión de Usuarios", url: "/admin/users", icon: Users },
   { title: "Reglas de Precios", url: "/admin/pricing", icon: DollarSign },
   { title: "Tipos de Vehículo", url: "/admin/vehicles", icon: TruckIcon },
 ];
