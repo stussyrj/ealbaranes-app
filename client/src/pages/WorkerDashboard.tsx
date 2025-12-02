@@ -25,6 +25,8 @@ export default function WorkerDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
+  const [editDeliveryOpen, setEditDeliveryOpen] = useState(false);
+  const [selectedNoteToEdit, setSelectedNoteToEdit] = useState<DeliveryNote | null>(null);
   const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
   const [selectedNoteForPhoto, setSelectedNoteForPhoto] = useState<DeliveryNote | null>(null);
   const [selectedNoteDetail, setSelectedNoteDetail] = useState<DeliveryNote | null>(null);
@@ -690,7 +692,7 @@ export default function WorkerDashboard() {
                     ) : (
                       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                         {deliveryNotes.filter(n => !n.photo).map((note: DeliveryNote) => (
-                          <Card key={note.id} className="p-2 hover-elevate cursor-pointer" onClick={() => setSelectedNoteDetail(note)}>
+                          <Card key={note.id} className="p-2">
                             <div className="space-y-1.5">
                               <div className="grid grid-cols-2 gap-1 text-[10px]">
                                 <div className="bg-muted/30 rounded p-1">
@@ -715,6 +717,10 @@ export default function WorkerDashboard() {
                                   <p className="text-muted-foreground text-[9px] font-semibold">FECHA</p>
                                   <p className="font-medium text-[10px]">{note.date ? new Date(note.date).toLocaleDateString('es-ES', { month: '2-digit', day: '2-digit' }) : 'N/A'}</p>
                                 </div>
+                              </div>
+                              <div className="flex gap-1 text-xs mt-2">
+                                <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteToEdit(note); setFormData({ clientName: note.clientName || "", pickupOrigin: note.pickupOrigin || "", destination: note.destination || "", vehicleType: note.vehicleType || "Furgoneta", date: note.date || new Date().toISOString().split("T")[0], time: note.time || "09:00", observations: note.observations || "" }); setEditDeliveryOpen(true); }}>Editar</Button>
+                                <Button size="sm" variant="outline" className="flex-1 h-7" onClick={() => { setSelectedNoteForPhoto(note); setCapturePhotoOpen(true); }}>📸</Button>
                               </div>
                             </div>
                           </Card>
@@ -783,6 +789,139 @@ export default function WorkerDashboard() {
         quote={selectedOrder}
         workerId={user?.workerId}
       />
+
+      {/* Edit Delivery Dialog */}
+      <Dialog open={editDeliveryOpen} onOpenChange={setEditDeliveryOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Albarán</DialogTitle>
+            <DialogDescription>
+              Modifica los datos del albarán antes de firmarlo
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Nombre del Cliente</label>
+              <Input
+                placeholder="Ej: Juan García"
+                value={formData.clientName}
+                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Origen (Recogida)</label>
+              <Input
+                placeholder="Ej: Calle Principal, 123"
+                value={formData.pickupOrigin}
+                onChange={(e) => setFormData({ ...formData, pickupOrigin: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Destino</label>
+              <Input
+                placeholder="Ej: Avenida Central, 456"
+                value={formData.destination}
+                onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Tipo de Vehículo</label>
+              <div className="grid grid-cols-2 gap-2">
+                {["Moto", "Furgoneta", "Furgón", "Carrozado"].map((tipo) => (
+                  <Button
+                    key={tipo}
+                    type="button"
+                    variant={formData.vehicleType === tipo ? "default" : "outline"}
+                    onClick={() => setFormData({ ...formData, vehicleType: tipo })}
+                    className="text-xs"
+                  >
+                    {tipo}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">Fecha</label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Hora</label>
+                <Input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Observaciones</label>
+              <Textarea
+                placeholder="Notas adicionales sobre el albarán..."
+                value={formData.observations}
+                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setEditDeliveryOpen(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    if (!selectedNoteToEdit) return;
+                    
+                    const updateData = {
+                      clientName: formData.clientName,
+                      pickupOrigin: formData.pickupOrigin,
+                      destination: formData.destination,
+                      vehicleType: formData.vehicleType,
+                      date: formData.date,
+                      time: formData.time,
+                      observations: formData.observations,
+                    };
+
+                    const response = await fetch(`/api/delivery-notes/${selectedNoteToEdit.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(updateData),
+                      credentials: "include",
+                    });
+
+                    if (response.ok) {
+                      const updatedNote = await response.json();
+                      const workerKey = ["/api/workers", user?.workerId || "", "delivery-notes"];
+                      const adminKey = ["/api/delivery-notes"];
+                      
+                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                      queryClient.setQueryData(workerKey, workerNotes.map(n => n.id === updatedNote.id ? updatedNote : n));
+                      
+                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                      queryClient.setQueryData(adminKey, allNotes.map(n => n.id === updatedNote.id ? updatedNote : n));
+                      
+                      await queryClient.invalidateQueries({ queryKey: workerKey });
+                      await queryClient.invalidateQueries({ queryKey: adminKey });
+                      
+                      setEditDeliveryOpen(false);
+                      setSelectedNoteToEdit(null);
+                    }
+                  } catch (error) {
+                    console.error("Error updating albarán:", error);
+                  }
+                }}
+                className="flex-1"
+              >
+                Guardar Cambios
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
         <DialogContent className="max-w-md">
