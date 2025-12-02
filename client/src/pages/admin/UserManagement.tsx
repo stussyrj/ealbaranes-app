@@ -27,6 +27,7 @@ import { Plus, Key, Trash2, Users, Shield, User } from "lucide-react";
 interface UserData {
   id: string;
   username: string;
+  displayName: string | null;
   isAdmin: boolean;
   workerId: string | null;
   createdAt: string;
@@ -45,6 +46,7 @@ export default function UserManagement() {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   
+  const [newDisplayName, setNewDisplayName] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
@@ -59,13 +61,18 @@ export default function UserManagement() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: async (data: { username: string; password: string; workerId: string | null }) => {
+    mutationFn: async (data: { username: string; displayName: string; password: string; workerId: string | null }) => {
       const res = await apiRequest("POST", "/api/admin/create-user", data);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al crear usuario");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setIsCreateDialogOpen(false);
+      setNewDisplayName("");
       setNewUsername("");
       setNewPassword("");
       setSelectedWorkerId("");
@@ -138,6 +145,7 @@ export default function UserManagement() {
     }
     createUserMutation.mutate({
       username: newUsername,
+      displayName: newDisplayName.trim() || newUsername,
       password: newPassword,
       workerId: selectedWorkerId && selectedWorkerId !== "none" ? selectedWorkerId : null,
     });
@@ -201,7 +209,20 @@ export default function UserManagement() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Nombre de usuario</Label>
+                <Label htmlFor="displayName">Nombre / Apodo</Label>
+                <Input
+                  id="displayName"
+                  value={newDisplayName}
+                  onChange={(e) => setNewDisplayName(e.target.value)}
+                  placeholder="ej: Juan García"
+                  data-testid="input-new-displayname"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Este nombre puede repetirse entre usuarios
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="username">Nombre de usuario (único)</Label>
                 <Input
                   id="username"
                   value={newUsername}
@@ -209,6 +230,9 @@ export default function UserManagement() {
                   placeholder="ej: jose.garcia"
                   data-testid="input-new-username"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Debe ser único en toda la aplicación
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
@@ -286,8 +310,8 @@ export default function UserManagement() {
                         <Shield className="h-4 w-4 text-primary-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium">{user.username}</p>
-                        <p className="text-xs text-muted-foreground">Administrador</p>
+                        <p className="font-medium">{user.displayName || user.username}</p>
+                        <p className="text-xs text-muted-foreground">@{user.username}</p>
                       </div>
                     </div>
                     <Badge variant="secondary">Admin</Badge>
@@ -327,9 +351,9 @@ export default function UserManagement() {
                           <User className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-medium">{user.username}</p>
+                          <p className="font-medium">{user.displayName || user.username}</p>
                           <p className="text-xs text-muted-foreground">
-                            {getWorkerName(user.workerId)}
+                            @{user.username}
                           </p>
                         </div>
                       </div>

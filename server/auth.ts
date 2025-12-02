@@ -102,6 +102,7 @@ export function setupAuth(app: Express) {
     res.json({
       id: user.id,
       username: user.username,
+      displayName: user.displayName,
       isAdmin: user.isAdmin,
       workerId: user.workerId,
       createdAt: user.createdAt,
@@ -113,7 +114,7 @@ export function setupAuth(app: Express) {
       return res.status(403).json({ error: "No autorizado" });
     }
 
-    const { username, password, workerId } = req.body;
+    const { username, displayName, password, workerId } = req.body;
     
     if (!username || !password) {
       return res.status(400).json({ error: "Usuario y contraseña son requeridos" });
@@ -121,11 +122,12 @@ export function setupAuth(app: Express) {
 
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {
-      return res.status(400).json({ error: "El nombre de usuario ya existe" });
+      return res.status(400).json({ error: "Este nombre de usuario ya está en uso. Por favor, elige otro." });
     }
 
     const user = await storage.createUser({
       username,
+      displayName: displayName || null,
       password: await hashPassword(password),
       isAdmin: false,
       workerId: workerId || null,
@@ -133,7 +135,8 @@ export function setupAuth(app: Express) {
 
     res.status(201).json({ 
       id: user.id, 
-      username: user.username, 
+      username: user.username,
+      displayName: user.displayName,
       isAdmin: user.isAdmin,
       workerId: user.workerId 
     });
@@ -148,6 +151,7 @@ export function setupAuth(app: Express) {
     res.json(users.map(u => ({
       id: u.id,
       username: u.username,
+      displayName: u.displayName,
       isAdmin: u.isAdmin,
       workerId: u.workerId,
       createdAt: u.createdAt,

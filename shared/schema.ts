@@ -6,6 +6,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
+  displayName: text("display_name"),
   password: text("password").notNull(),
   isAdmin: boolean("is_admin").default(false),
   workerId: varchar("worker_id"),
@@ -14,6 +15,7 @@ export const users = pgTable("users", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  displayName: true,
   password: true,
   isAdmin: true,
   workerId: true,

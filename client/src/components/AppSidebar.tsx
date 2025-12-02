@@ -74,8 +74,8 @@ export function AppSidebar() {
 
   const isAdmin = user.role === "admin";
   const navItems = isAdmin ? adminNavItems : workerNavItems;
-  const username = user.username || "Usuario";
-  const initials = String(username || "U").slice(0, 2).toUpperCase();
+  const displayName = user.displayName || user.username || "Usuario";
+  const initials = String(displayName || "U").slice(0, 2).toUpperCase();
 
   const handleLogout = () => {
     logout();
@@ -124,7 +124,7 @@ export function AppSidebar() {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{username}</p>
+            <p className="text-sm font-medium truncate">{displayName}</p>
             <p className="text-xs text-muted-foreground truncate">
               {isAdmin ? "Administrador" : "Trabajador"}
             </p>

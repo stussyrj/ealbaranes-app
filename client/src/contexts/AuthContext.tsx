@@ -9,6 +9,7 @@ export type UserRole = "admin" | "worker";
 export interface AuthUser {
   id: string;
   username: string;
+  displayName?: string | null;
   email?: string;
   role: UserRole;
   workerId?: string | null;
@@ -22,6 +23,7 @@ interface AuthContextType {
   login: (username: string, password: string) => void;
   logout: () => void;
   isLoginPending: boolean;
+  isLogoutPending: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -37,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user: AuthUser | null = serverUser ? {
     id: serverUser.id,
     username: serverUser.username,
+    displayName: serverUser.displayName,
     role: serverUser.isAdmin ? "admin" : "worker",
     workerId: serverUser.workerId,
     isAdmin: serverUser.isAdmin ?? false,
@@ -51,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Bienvenido",
-        description: `Sesión iniciada como ${userData.username}`,
+        description: `Sesión iniciada como ${userData.displayName || userData.username}`,
       });
     },
     onError: () => {
@@ -101,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         isLoginPending: loginMutation.isPending,
+        isLogoutPending: logoutMutation.isPending,
       }}
     >
       {children}
@@ -118,6 +122,7 @@ export function useAuth() {
       login: () => {},
       logout: () => {},
       isLoginPending: false,
+      isLogoutPending: false,
     };
   }
   return context;
