@@ -13,6 +13,42 @@ export class [REDACTED-STRIPE] {
     });
   }
 
+  async ensureSubscriptionProducts() {
+    const stripe = await getUncachable[REDACTED-STRIPE]
+    
+    const existingProducts = await this.listProducts(true);
+    if (existingProducts.length > 0) {
+      console.log('[stripe] Subscription products already exist');
+      return;
+    }
+
+    console.log('[stripe] Creating subscription products...');
+
+    const product = await stripe.products.create({
+      name: 'DirectTransports Pro',
+      description: 'Gestión completa de presupuestos y albaranes de transporte',
+      metadata: { type: 'subscription' },
+    });
+
+    await stripe.prices.create({
+      product: product.id,
+      unit_amount: 2900,
+      currency: 'eur',
+      recurring: { interval: 'month' },
+      metadata: { plan: 'monthly' },
+    });
+
+    await stripe.prices.create({
+      product: product.id,
+      unit_amount: 29000,
+      currency: 'eur',
+      recurring: { interval: 'year' },
+      metadata: { plan: 'yearly' },
+    });
+
+    console.log('[stripe] Subscription products created successfully');
+  }
+
   async createCheckoutSession(customerId: string, priceId: string, successUrl: string, cancelUrl: string) {
     const stripe = await getUncachable[REDACTED-STRIPE]
     return await stripe.checkout.sessions.create({

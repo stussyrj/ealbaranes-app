@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { runMigrations } from 'stripe-replit-sync';
 import { get[REDACTED-STRIPE] } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import { stripeService } from './stripeService';
 
 const app = express();
 const httpServer = createServer(app);
@@ -63,8 +64,9 @@ async function init[REDACTED-STRIPE] {
 
       log('Syncing [REDACTED-STRIPE] data in background...', 'stripe');
       stripeSync.syncBackfill()
-        .then(() => {
+        .then(async () => {
           log('[REDACTED-STRIPE] data synced', 'stripe');
+          await stripeService.ensureSubscriptionProducts();
         })
         .catch((err: Error) => {
           log(`Error syncing [REDACTED-STRIPE] data: ${err.message}`, 'stripe');

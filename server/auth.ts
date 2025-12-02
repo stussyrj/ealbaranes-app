@@ -5,7 +5,11 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as SelectUser, tenants } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { stripeService } from "./stripeService";
+import { getTenantForUser } from "./middleware/tenantAccess";
 
 declare global {
   namespace Express {
@@ -96,17 +100,81 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const user = req.user!;
+    
+    const tenantContext = await getTenantForUser(user.id);
+    
     res.json({
       id: user.id,
       username: user.username,
       displayName: user.displayName,
       isAdmin: user.isAdmin,
       workerId: user.workerId,
+      tenantId: user.tenantId,
       createdAt: user.createdAt,
+      subscription: tenantContext ? {
+        status: tenantContext.subscriptionStatus,
+        isReadOnly: tenantContext.isReadOnly,
+        isInGrace: tenantContext.isInGrace,
+      } : null,
     });
+  });
+
+  app.post("/api/register", async (req, res) => {
+    try {
+      const { username, password, email, companyName } = req.body;
+      
+      if (!username || !password || !email) {
+        return res.status(400).json({ error: "Usuario, contraseña y email son requeridos" });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Este nombre de usuario ya está en uso" });
+      }
+
+      const stripeCustomer = await stripeService.createCustomer(email, "", companyName);
+
+      const [tenant] = await db.insert(tenants).values({
+        companyName: companyName || null,
+        stripeCustomerId: stripeCustomer.id,
+        subscriptionStatus: 'active',
+      }).returning();
+
+      const user = await storage.createUser({
+        username,
+        displayName: companyName || username,
+        password: await hashPassword(password),
+        isAdmin: true,
+        workerId: null,
+        tenantId: tenant.id,
+      });
+
+      await db.update(tenants)
+        .set({ adminUserId: user.id })
+        .where(eq(tenants.id, tenant.id));
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error("[auth] Login after register failed:", err);
+          return res.status(500).json({ error: "Error al iniciar sesión" });
+        }
+        
+        res.status(201).json({
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          isAdmin: user.isAdmin,
+          tenantId: user.tenantId,
+          createdAt: user.createdAt,
+        });
+      });
+    } catch (error) {
+      console.error("[auth] Registration error:", error);
+      res.status(500).json({ error: "Error al registrar usuario" });
+    }
   });
 
   app.post("/api/admin/create-user", async (req, res) => {

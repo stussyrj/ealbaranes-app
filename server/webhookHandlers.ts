@@ -73,8 +73,10 @@ export class WebhookHandlers {
         const subscription = data.object;
         const customerId = subscription.customer as string;
         const now = new Date();
-        const graceUntil = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days grace
-        const retentionUntil = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days retention
+        const graceUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days grace period
+        const retentionUntil = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days data retention
+
+        console.log(`[stripe] Subscription canceled for customer ${customerId}. Grace until: ${graceUntil}, Retention until: ${retentionUntil}`);
 
         await db.update(tenants)
           .set({
