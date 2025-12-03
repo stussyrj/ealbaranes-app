@@ -525,19 +525,44 @@ export class MemStorage implements IStorage {
 
   async getDeliveryNotes(quoteId?: string, workerId?: string): Promise<(DeliveryNote & { workerName?: string })[]> {
     try {
-      let notes: DeliveryNote[] = [];
+      // Select only lightweight columns (exclude photo and signature for performance)
+      const selectColumns = {
+        id: deliveryNotesTable.id,
+        noteNumber: deliveryNotesTable.noteNumber,
+        quoteId: deliveryNotesTable.quoteId,
+        workerId: deliveryNotesTable.workerId,
+        creatorType: deliveryNotesTable.creatorType,
+        clientName: deliveryNotesTable.clientName,
+        pickupOrigin: deliveryNotesTable.pickupOrigin,
+        destination: deliveryNotesTable.destination,
+        vehicleType: deliveryNotesTable.vehicleType,
+        date: deliveryNotesTable.date,
+        time: deliveryNotesTable.time,
+        observations: deliveryNotesTable.observations,
+        waitTime: deliveryNotesTable.waitTime,
+        distance: deliveryNotesTable.distance,
+        status: deliveryNotesTable.status,
+        signedAt: deliveryNotesTable.signedAt,
+        notes: deliveryNotesTable.notes,
+        isInvoiced: deliveryNotesTable.isInvoiced,
+        invoicedAt: deliveryNotesTable.invoicedAt,
+        tenantId: deliveryNotesTable.tenantId,
+        createdAt: deliveryNotesTable.createdAt,
+      };
+      
+      let notes: any[] = [];
       
       if (quoteId && workerId) {
-        notes = await db.select().from(deliveryNotesTable)
+        notes = await db.select(selectColumns).from(deliveryNotesTable)
           .where(and(eq(deliveryNotesTable.quoteId, quoteId), eq(deliveryNotesTable.workerId, workerId)));
       } else if (quoteId) {
-        notes = await db.select().from(deliveryNotesTable)
+        notes = await db.select(selectColumns).from(deliveryNotesTable)
           .where(eq(deliveryNotesTable.quoteId, quoteId));
       } else if (workerId) {
-        notes = await db.select().from(deliveryNotesTable)
+        notes = await db.select(selectColumns).from(deliveryNotesTable)
           .where(eq(deliveryNotesTable.workerId, workerId));
       } else {
-        notes = await db.select().from(deliveryNotesTable);
+        notes = await db.select(selectColumns).from(deliveryNotesTable);
       }
       
       // Enrich notes with worker names
