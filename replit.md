@@ -94,9 +94,12 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - Números de albarán únicos (Albarán #X) con generación automática
 - Renombrado de app: DirectTransports → eAlbarán
 - Terminología actualizada: Admin → Empresa
-- Página de login con fondo animado y toggle de tema
+- Página de login con pestañas (Empresa/Trabajador) y toggle de tema
 - Descarga de albaranes para seguridad (fotos firmados / CSV pendientes)
 - Sesiones persistentes en PostgreSQL (no requiere re-login al recargar)
+- Usuarios persistidos en base de datos (consistencia entre reinicios)
+- Login con email O nombre de usuario para empresas
+- Lookup de nombres de trabajador con fallback a tabla de usuarios
 
 ## Preferencias Usuario
 
