@@ -236,60 +236,140 @@ export class MemStorage implements IStorage {
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    // First check in-memory cache
+    const memUser = this.users.get(id);
+    if (memUser) return memUser;
+    
+    // If not in memory, try database
+    try {
+      const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+      if (dbUser) {
+        // Cache it for future lookups
+        this.users.set(id, dbUser);
+      }
+      return dbUser;
+    } catch (error) {
+      console.error("Error fetching user from DB:", error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
+    // First check in-memory cache
+    const memUser = Array.from(this.users.values()).find(
       (user) => user.username === username,
     );
+    if (memUser) return memUser;
+    
+    // If not in memory, try database
+    try {
+      const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.username, username));
+      if (dbUser) {
+        this.users.set(dbUser.id, dbUser);
+      }
+      return dbUser;
+    } catch (error) {
+      console.error("Error fetching user by username from DB:", error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
+    // First check in-memory cache
+    const memUser = Array.from(this.users.values()).find(
       (user) => user.email === email,
     );
+    if (memUser) return memUser;
+    
+    // If not in memory, try database
+    try {
+      const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+      if (dbUser) {
+        this.users.set(dbUser.id, dbUser);
+      }
+      return dbUser;
+    } catch (error) {
+      console.error("Error fetching user by email from DB:", error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { 
-      id, 
-      username: insertUser.username,
-      email: insertUser.email ?? null,
-      displayName: insertUser.displayName ?? null,
-      password: insertUser.password,
-      isAdmin: insertUser.isAdmin ?? false, 
-      workerId: insertUser.workerId ?? null,
-      tenantId: insertUser.tenantId ?? null,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
-    return user;
+    try {
+      const [user] = await db.insert(usersTable).values({
+        username: insertUser.username,
+        email: insertUser.email ?? null,
+        displayName: insertUser.displayName ?? null,
+        password: insertUser.password,
+        isAdmin: insertUser.isAdmin ?? false, 
+        workerId: insertUser.workerId ?? null,
+        tenantId: insertUser.tenantId ?? null,
+      }).returning();
+      
+      // Cache the user
+      this.users.set(user.id, user);
+      return user;
+    } catch (error) {
+      console.error("Error creating user in DB:", error);
+      throw error;
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    try {
+      const dbUsers = await db.select().from(usersTable);
+      // Update cache
+      dbUsers.forEach(user => this.users.set(user.id, user));
+      return dbUsers;
+    } catch (error) {
+      console.error("Error fetching all users from DB:", error);
+      return Array.from(this.users.values());
+    }
   }
 
   async updateUserPassword(id: string, password: string): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    const updated = { ...user, password };
-    this.users.set(id, updated);
-    return updated;
+    try {
+      const [updated] = await db.update(usersTable)
+        .set({ password })
+        .where(eq(usersTable.id, id))
+        .returning();
+      
+      if (updated) {
+        this.users.set(id, updated);
+      }
+      return updated;
+    } catch (error) {
+      console.error("Error updating user password in DB:", error);
+      return undefined;
+    }
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    return this.users.delete(id);
+    try {
+      await db.delete(usersTable).where(eq(usersTable.id, id));
+      this.users.delete(id);
+      return true;
+    } catch (error) {
+      console.error("Error deleting user from DB:", error);
+      return false;
+    }
   }
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    const updated = { ...user, ...updates };
-    this.users.set(id, updated);
-    return updated;
+    try {
+      const [updated] = await db.update(usersTable)
+        .set(updates)
+        .where(eq(usersTable.id, id))
+        .returning();
+      
+      if (updated) {
+        this.users.set(id, updated);
+      }
+      return updated;
+    } catch (error) {
+      console.error("Error updating user in DB:", error);
+      return undefined;
+    }
   }
 
   async getWorkers(includeInactive: boolean = false): Promise<Worker[]> {
@@ -462,11 +542,19 @@ export class MemStorage implements IStorage {
       
       // Enrich notes with worker names
       const notesWithWorkerNames = await Promise.all(notes.map(async (note) => {
+        // First try to find in workers table
         const worker = await this.getWorker(note.workerId);
-        return {
-          ...note,
-          workerName: worker?.name || 'Desconocido'
-        };
+        if (worker?.name) {
+          return { ...note, workerName: worker.name };
+        }
+        
+        // If not found in workers, try to find in users table (for user accounts)
+        const user = await this.getUser(note.workerId);
+        if (user) {
+          return { ...note, workerName: user.displayName || user.username || 'Desconocido' };
+        }
+        
+        return { ...note, workerName: 'Desconocido' };
       }));
       
       return notesWithWorkerNames.sort((a, b) => {
