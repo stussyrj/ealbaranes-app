@@ -10,6 +10,7 @@ import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { stripeService } from "./stripeService";
 import { getTenantForUser } from "./middleware/tenantAccess";
+import { sendWelcomeEmail } from "./email";
 
 declare global {
   namespace Express {
@@ -155,6 +156,11 @@ export function setupAuth(app: Express) {
       await db.update(tenants)
         .set({ adminUserId: user.id })
         .where(eq(tenants.id, tenant.id));
+
+      // Send welcome email (non-blocking)
+      sendWelcomeEmail(email, companyName || username).catch(err => {
+        console.error("[auth] Failed to send welcome email:", err);
+      });
 
       req.login(user, (err) => {
         if (err) {
