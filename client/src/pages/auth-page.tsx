@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, Lock, User, Mail, Building2 } from "lucide-react";
+import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw, Truck } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
-  const { user, login, isLoginPending } = useAuth();
+  const { user, login, isLoginPending, loginError, clearLoginError } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   
   // Empresa form
   const [empresaEmail, setEmpresaEmail] = useState("");
@@ -21,6 +25,30 @@ export default function AuthPage() {
   const [trabajadorUsername, setTrabajadorUsername] = useState("");
   const [trabajadorPassword, setTrabajadorPassword] = useState("");
 
+  const resendMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await apiRequest("POST", "/api/resend-verification", { email });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Error al reenviar");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email enviado",
+        description: "Si el email está registrado, recibirás un nuevo enlace de verificación.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (user) {
       setLocation("/");
@@ -29,12 +57,20 @@ export default function AuthPage() {
 
   const handleEmpresaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    clearLoginError();
     login(empresaEmail, empresaPassword);
   };
 
   const handleTrabajadorSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    clearLoginError();
     login(trabajadorUsername, trabajadorPassword);
+  };
+
+  const handleResendVerification = () => {
+    if (empresaEmail) {
+      resendMutation.mutate(empresaEmail);
+    }
   };
 
   return (
@@ -102,6 +138,43 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
+                  {loginError?.code === "EMAIL_NOT_VERIFIED" && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4" data-testid="alert-email-not-verified">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">
+                            Email no verificado
+                          </p>
+                          <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                            {loginError.message}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleResendVerification}
+                            disabled={resendMutation.isPending || !empresaEmail}
+                            className="gap-2"
+                            data-testid="button-resend-verification"
+                          >
+                            {resendMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Enviando...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-4 w-4" />
+                                Reenviar email de verificación
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <Button 
                     type="submit" 
                     className="w-full" 

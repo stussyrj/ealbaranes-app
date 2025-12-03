@@ -8,6 +8,7 @@ import WorkerDashboard from "@/pages/WorkerDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
 import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/RegisterPage";
+import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import PricingPage from "@/pages/PricingPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ function PublicRoutes() {
     <Switch>
       <Route path="/pricing" component={PricingPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
     </Switch>
   );
 }
@@ -65,6 +67,7 @@ function MainLayout() {
     <Switch>
       <Route path="/pricing" component={PricingPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
       <Route>
         {!user ? (
           <AuthPage />

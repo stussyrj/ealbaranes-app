@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, User, Lock, Mail, Building2, Loader2 } from "lucide-react";
+import { Truck, User, Lock, Mail, Building2, Loader2, CheckCircle, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,8 @@ export default function RegisterPage() {
   const [, setLocation] = useLocation();
   const { refetchUser } = useAuth();
   const { toast } = useToast();
+  
+  const [verificationPending, setVerificationPending] = useState<{email: string; message: string} | null>(null);
   
   const [formData, setFormData] = useState({
     username: "",
@@ -37,13 +39,44 @@ export default function RegisterPage() {
       }
       return response.json();
     },
-    onSuccess: async () => {
-      await refetchUser();
+    onSuccess: async (data) => {
+      if (data.requiresVerification) {
+        setVerificationPending({
+          email: data.email,
+          message: data.message,
+        });
+      } else {
+        await refetchUser();
+        toast({
+          title: "Cuenta creada",
+          description: "Tu cuenta ha sido creada exitosamente. Bienvenido a eAlbarán!",
+        });
+        setLocation("/");
+      }
+    },
+    onError: (error: Error) => {
       toast({
-        title: "Cuenta creada",
-        description: "Tu cuenta ha sido creada exitosamente. Bienvenido a eAlbarán!",
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       });
-      setLocation("/");
+    },
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await apiRequest("POST", "/api/resend-verification", { email });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Error al reenviar");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email enviado",
+        description: "Si el email está registrado, recibirás un nuevo enlace de verificación.",
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -84,6 +117,85 @@ export default function RegisterPage() {
       [e.target.name]: e.target.value,
     }));
   };
+
+  if (verificationPending) {
+    return (
+      <div className="min-h-screen flex">
+        <div className="flex-1 flex items-center justify-center p-8 bg-background">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <Mail className="h-8 w-8 text-green-600 dark:text-green-400" />
+              </div>
+              <CardTitle className="text-2xl" data-testid="text-verification-title">Verifica tu Email</CardTitle>
+              <CardDescription className="text-base">
+                {verificationPending.message}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4 text-center">
+                <p className="text-sm text-muted-foreground mb-1">Hemos enviado un enlace de verificación a:</p>
+                <p className="font-medium" data-testid="text-verification-email">{verificationPending.email}</p>
+              </div>
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>Por favor, revisa tu bandeja de entrada (y la carpeta de spam) y haz click en el enlace para activar tu cuenta.</p>
+                <p>El enlace expira en 24 horas.</p>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => resendMutation.mutate(verificationPending.email)}
+                disabled={resendMutation.isPending}
+                data-testid="button-resend-verification"
+              >
+                {resendMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reenviar email de verificación
+                  </>
+                )}
+              </Button>
+              <Link href="/login" className="w-full">
+                <Button variant="ghost" className="w-full" data-testid="link-go-to-login">
+                  Ir a Iniciar Sesión
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+        </div>
+
+        <div className="hidden lg:flex flex-1 bg-primary items-center justify-center p-8">
+          <div className="max-w-md text-center text-primary-foreground">
+            <div className="mx-auto mb-8 h-20 w-20 rounded-full bg-primary-foreground/10 flex items-center justify-center">
+              <CheckCircle className="h-10 w-10" />
+            </div>
+            <h1 className="text-3xl font-bold mb-4">Casi listo</h1>
+            <p className="text-lg opacity-90 mb-6">
+              Solo falta un paso para empezar a usar eAlbarán
+            </p>
+            <div className="space-y-3 text-left bg-primary-foreground/10 rounded-lg p-4">
+              <p className="text-sm">
+                <strong>Paso 1:</strong> Revisa tu email
+              </p>
+              <p className="text-sm">
+                <strong>Paso 2:</strong> Haz click en el enlace de verificación
+              </p>
+              <p className="text-sm">
+                <strong>Paso 3:</strong> Inicia sesión y empieza a trabajar
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

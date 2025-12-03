@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -42,12 +42,15 @@ interface AuthContextType {
   refetchUser: () => Promise<void>;
   isLoginPending: boolean;
   isLogoutPending: boolean;
+  loginError: { code?: string; message: string } | null;
+  clearLoginError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [loginError, setLoginError] = useState<{ code?: string; message: string } | null>(null);
 
   const { data: serverUser, isLoading, refetch } = useQuery<ServerUser | null>({
     queryKey: ["/api/user"],
@@ -56,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refetchUser = async () => {
     await refetch();
+  };
+
+  const clearLoginError = () => {
+    setLoginError(null);
   };
 
   const user: AuthUser | null = serverUser ? {
@@ -75,21 +82,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
       const res = await apiRequest("POST", "/api/login", { username, password });
-      return await res.json();
+      const data = await res.json();
+      if (!res.ok) {
+        throw data;
+      }
+      return data;
     },
     onSuccess: (userData: ServerUser) => {
+      setLoginError(null);
       queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Bienvenido",
         description: `Sesión iniciada como ${userData.displayName || userData.username}`,
       });
     },
-    onError: () => {
-      toast({
-        title: "Error de acceso",
-        description: "Usuario o contraseña incorrectos",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      const errorCode = error?.code;
+      const errorMessage = error?.error || "Usuario o contraseña incorrectos";
+      
+      setLoginError({ code: errorCode, message: errorMessage });
+      
+      if (errorCode !== "EMAIL_NOT_VERIFIED") {
+        toast({
+          title: "Error de acceso",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -133,6 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refetchUser,
         isLoginPending: loginMutation.isPending,
         isLogoutPending: logoutMutation.isPending,
+        loginError,
+        clearLoginError,
       }}
     >
       {children}
@@ -152,6 +173,8 @@ export function useAuth() {
       refetchUser: async () => {},
       isLoginPending: false,
       isLogoutPending: false,
+      loginError: null,
+      clearLoginError: () => {},
     };
   }
   return context;
