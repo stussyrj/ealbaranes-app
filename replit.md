@@ -85,7 +85,7 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 ### ✅ Completado
 - Sistema multi-tenant con aislamiento de datos
 - Registro de empresas con creación automática de tenant
-- **Verificación de email obligatoria** para empresas (token 24h, rate limit 3 reenvíos/hora)
+- **Verificación de email DESACTIVADA TEMPORALMENTE** - Resend requiere dominio verificado. Reactivar cuando se configure dominio propio.
 - Integración [REDACTED-STRIPE] para suscripciones (pagos activos)
 - Middleware de acceso por tenant con verificación de suscripción
 - Período de gracia (30 días) y retención de datos (90 días)
