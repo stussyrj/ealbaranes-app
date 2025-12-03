@@ -262,69 +262,64 @@ export async function getAdminEmailForTenant(tenantId: string): Promise<string |
 }
 
 export async function sendVerificationEmail(to: string, companyName: string, verificationToken: string, baseUrl: string) {
-  try {
-    const { client, fromEmail } = await getResendClient();
-    const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
-    
-    const { data, error } = await client.emails.send({
-      from: fromEmail || 'eAlbarán <noreply@resend.dev>',
-      to: [to],
-      subject: `Confirma tu email para eAlbarán`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; background: #7c3aed; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; font-size: 16px; }
-            .button:hover { background: #6d28d9; }
-            .link-text { word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px; font-size: 12px; margin: 10px 0; }
-            .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px; }
-            .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 12px; border-radius: 6px; margin-top: 20px; font-size: 13px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Confirma tu email</h1>
+  const { client, fromEmail } = await getResendClient();
+  const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
+  
+  const { data, error } = await client.emails.send({
+    from: fromEmail || 'eAlbarán <noreply@resend.dev>',
+    to: [to],
+    subject: `Confirma tu email para eAlbarán`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; background: #7c3aed; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; font-size: 16px; }
+          .button:hover { background: #6d28d9; }
+          .link-text { word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px; font-size: 12px; margin: 10px 0; }
+          .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px; }
+          .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 12px; border-radius: 6px; margin-top: 20px; font-size: 13px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Confirma tu email</h1>
+          </div>
+          <div class="content">
+            <p>Hola <strong>${companyName}</strong>,</p>
+            <p>¡Gracias por registrarte en eAlbarán! Para activar tu cuenta y poder acceder al sistema, confirma tu email haciendo click en el siguiente botón:</p>
+            
+            <div style="text-align: center;">
+              <a href="${verificationUrl}" class="button" style="color: white;">Confirmar mi email</a>
             </div>
-            <div class="content">
-              <p>Hola <strong>${companyName}</strong>,</p>
-              <p>¡Gracias por registrarte en eAlbarán! Para activar tu cuenta y poder acceder al sistema, confirma tu email haciendo click en el siguiente botón:</p>
-              
-              <div style="text-align: center;">
-                <a href="${verificationUrl}" class="button" style="color: white;">Confirmar mi email</a>
-              </div>
-              
-              <p style="font-size: 13px; color: #6b7280;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-              <div class="link-text">${verificationUrl}</div>
-              
-              <div class="warning">
-                <strong>⚠️ Este enlace expira en 24 horas.</strong> Si no solicitaste esta cuenta, puedes ignorar este mensaje.
-              </div>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} eAlbarán - Gestión Digital de Albaranes</p>
+            
+            <p style="font-size: 13px; color: #6b7280;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+            <div class="link-text">${verificationUrl}</div>
+            
+            <div class="warning">
+              <strong>⚠️ Este enlace expira en 24 horas.</strong> Si no solicitaste esta cuenta, puedes ignorar este mensaje.
             </div>
           </div>
-        </body>
-        </html>
-      `
-    });
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} eAlbarán - Gestión Digital de Albaranes</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  });
 
-    if (error) {
-      console.error('[email] Error sending verification email:', error);
-      return { success: false, error };
-    }
-
-    console.log('[email] Verification email sent to:', to);
-    return { success: true, data };
-  } catch (error) {
+  if (error) {
     console.error('[email] Error sending verification email:', error);
-    return { success: false, error };
+    throw new Error(error.message || 'Failed to send verification email');
   }
+
+  console.log('[email] Verification email sent to:', to);
+  return { success: true, data };
 }
