@@ -408,6 +408,7 @@ export async function registerRoutes(
         quoteId: data.quoteId,
         workerId: data.workerId,
         creatorType: creatorType,
+        tenantId: user?.tenantId || null,
         clientName: data.clientName || null,
         pickupOrigin: data.pickupOrigin || null,
         destination: data.destination || null,
@@ -483,7 +484,8 @@ export async function registerRoutes(
       }
       
       // When adding photo, mark as signed
-      if (data.photo && !existingNote.photo) {
+      const isBeingSigned = data.photo && !existingNote.photo;
+      if (isBeingSigned) {
         data.status = "signed";
       }
       
@@ -491,6 +493,24 @@ export async function registerRoutes(
       if (!note) {
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
+      
+      // Send email notification when note is signed (non-blocking)
+      if (isBeingSigned && existingNote.tenantId) {
+        getAdminEmailForTenant(existingNote.tenantId).then(adminEmail => {
+          if (adminEmail) {
+            sendDeliveryNoteSignedEmail(adminEmail, {
+              noteNumber: note.noteNumber,
+              clientName: note.clientName || undefined,
+              pickupOrigin: note.pickupOrigin || undefined,
+              destination: note.destination || undefined,
+              signedAt: note.signedAt || new Date(),
+            }).catch(err => {
+              console.error("[routes] Failed to send delivery note signed email:", err);
+            });
+          }
+        });
+      }
+      
       res.json(note);
     } catch (error) {
       console.error("Error updating delivery note:", error);
