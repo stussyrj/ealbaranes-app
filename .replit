@@ -100,3 +100,9 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.0", "stripe:1.0.0", "javascript_stripe:1.0.0", "resend:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+TESTING_VITE_STRIPE_PUBLIC_KEY = "pk_test_51Sa1hBPKHG4tnbPjN03TnFIck9c0ojjUVRU1RQQs26uzmgJxYiRIy41dZpBgjZry4my3j0E2vvByZ1TiP39Zaox9000Y2K8ng1"
+TESTING_STRIPE_SECRET_KEY = "[REDACTED-STRIPE]
