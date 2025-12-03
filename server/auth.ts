@@ -146,6 +146,7 @@ export function setupAuth(app: Express) {
 
       const user = await storage.createUser({
         username,
+        email: email,
         displayName: companyName || username,
         password: await hashPassword(password),
         isAdmin: true,

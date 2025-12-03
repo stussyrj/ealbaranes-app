@@ -20,6 +20,7 @@ import { stripeService } from "./stripeService";
 import { get[REDACTED-STRIPE] } from "./stripeClient";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -421,6 +422,24 @@ export async function registerRoutes(
         notes: data.notes || null,
       };
       const note = await storage.createDeliveryNote(noteData);
+      
+      // Send email notification to admin (non-blocking)
+      if (user?.tenantId) {
+        getAdminEmailForTenant(user.tenantId).then(adminEmail => {
+          if (adminEmail) {
+            sendDeliveryNoteCreatedEmail(adminEmail, {
+              noteNumber: note.noteNumber,
+              clientName: note.clientName || undefined,
+              pickupOrigin: note.pickupOrigin || undefined,
+              destination: note.destination || undefined,
+              createdBy: user.isAdmin ? 'Empresa' : (user.displayName || user.username || 'Trabajador'),
+            }).catch(err => {
+              console.error("[routes] Failed to send delivery note created email:", err);
+            });
+          }
+        });
+      }
+      
       res.status(201).json(note);
     } catch (error) {
       console.error("Error creating delivery note:", error);

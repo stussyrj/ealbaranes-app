@@ -38,6 +38,7 @@ export type Tenant = typeof tenants.$inferSelect;
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
+  email: text("email"),
   displayName: text("display_name"),
   password: text("password").notNull(),
   isAdmin: boolean("is_admin").default(false),
@@ -48,6 +49,7 @@ export const users = pgTable("users", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
   displayName: true,
   password: true,
   isAdmin: true,

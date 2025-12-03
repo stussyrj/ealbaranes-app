@@ -1,4 +1,7 @@
 import { Resend } from 'resend';
+import { db } from './db';
+import { tenants, users } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 let connectionSettings: any;
 
@@ -240,5 +243,20 @@ export async function sendDeliveryNoteSignedEmail(to: string, noteData: {
   } catch (error) {
     console.error('[email] Error sending delivery note signed email:', error);
     return { success: false, error };
+  }
+}
+
+export async function getAdminEmailForTenant(tenantId: string): Promise<string | null> {
+  try {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    if (!tenant || !tenant.adminUserId) {
+      return null;
+    }
+    
+    const [adminUser] = await db.select().from(users).where(eq(users.id, tenant.adminUserId));
+    return adminUser?.email || null;
+  } catch (error) {
+    console.error('[email] Error getting admin email for tenant:', error);
+    return null;
   }
 }
