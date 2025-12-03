@@ -1068,8 +1068,7 @@ export default function DashboardPage() {
                     });
 
                     if (response.ok) {
-                      toast({ title: "Albarán creado", description: "El albarán se ha guardado correctamente" });
-                      await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+                      // Close modal first
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
@@ -1080,6 +1079,12 @@ export default function DashboardPage() {
                         time: "09:00",
                         observations: "",
                       });
+                      
+                      // Show success message
+                      toast({ title: "Albarán creado", description: "El albarán se ha guardado correctamente" });
+                      
+                      // Invalidate cache in background
+                      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
                     } else {
                       toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
                     }

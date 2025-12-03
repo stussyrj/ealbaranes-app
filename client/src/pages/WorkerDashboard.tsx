@@ -11,11 +11,13 @@ import { FileText, MapPin, Truck, Clock, Calendar, CheckCircle, Edit2, Camera } 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import type { Quote, DeliveryNote } from "@shared/schema";
 
 export default function WorkerDashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
@@ -917,6 +919,15 @@ export default function WorkerDashboard() {
 
                     if (response.ok) {
                       const updatedNote = await response.json();
+                      
+                      // Close modal first
+                      setEditDeliveryOpen(false);
+                      setSelectedNoteToEdit(null);
+                      
+                      // Show success message
+                      toast({ title: "Albarán actualizado", description: "Los cambios se han guardado correctamente" });
+                      
+                      // Update cache in background
                       const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
                       const adminKey = ["/api/delivery-notes"];
                       
@@ -926,17 +937,14 @@ export default function WorkerDashboard() {
                       const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
                       queryClient.setQueryData(adminKey, allNotes.map(n => n.id === updatedNote.id ? updatedNote : n));
                       
-                      await queryClient.invalidateQueries({ queryKey: workerKey });
-                      await queryClient.invalidateQueries({ queryKey: adminKey });
-                      
-                      setEditDeliveryOpen(false);
-                      setSelectedNoteToEdit(null);
+                      queryClient.invalidateQueries({ queryKey: workerKey });
+                      queryClient.invalidateQueries({ queryKey: adminKey });
                     } else {
-                      alert("Error al actualizar el albarán");
+                      toast({ title: "Error", description: "No se pudo actualizar el albarán", variant: "destructive" });
                     }
                   } catch (error) {
                     console.error("Error updating albarán:", error);
-                    alert("Error al actualizar el albarán");
+                    toast({ title: "Error", description: "No se pudo actualizar el albarán", variant: "destructive" });
                   }
                 }}
                 className="flex-1"
@@ -1060,24 +1068,8 @@ export default function WorkerDashboard() {
 
                     if (response.ok) {
                       const newDeliveryNote = await response.json();
-                      console.log("Albarán guardado:", newDeliveryNote);
                       
-                      // Update both caches immediately with the new delivery note
-                      const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
-                      const adminKey = ["/api/delivery-notes"];
-                      
-                      // Add to worker's delivery notes
-                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
-                      queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
-                      
-                      // Add to admin's delivery notes
-                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
-                      queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
-                      
-                      // Force invalidation to trigger component re-render
-                      await queryClient.invalidateQueries({ queryKey: workerKey });
-                      await queryClient.invalidateQueries({ queryKey: adminKey });
-                      
+                      // Close modal first
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
@@ -1089,9 +1081,28 @@ export default function WorkerDashboard() {
                         observations: "",
                         waitTime: 0,
                       });
+                      
+                      // Show success message
+                      toast({ title: "Albarán creado", description: "El albarán se ha guardado correctamente" });
+                      
+                      // Update caches in background
+                      const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
+                      const adminKey = ["/api/delivery-notes"];
+                      
+                      const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                      queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
+                      
+                      const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                      queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
+                      
+                      queryClient.invalidateQueries({ queryKey: workerKey });
+                      queryClient.invalidateQueries({ queryKey: adminKey });
+                    } else {
+                      toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
                     }
                   } catch (error) {
                     console.error("Error guardando albarán:", error);
+                    toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
                   }
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
