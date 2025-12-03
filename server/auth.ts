@@ -181,7 +181,8 @@ export function setupAuth(app: Express) {
         }).returning();
         tenant = newTenant;
 
-        // Create user
+        // Create user - EMAIL VERIFICATION TEMPORARILY DISABLED
+        // Mark as verified immediately until Resend domain is configured
         user = await storage.createUser({
           username,
           email: email,
@@ -192,35 +193,28 @@ export function setupAuth(app: Express) {
           tenantId: tenant.id,
         });
 
+        // Auto-verify user until Resend domain is configured
+        await db.update(users)
+          .set({ emailVerified: true })
+          .where(eq(users.id, user.id));
+
         // Update tenant with admin user
         await db.update(tenants)
           .set({ adminUserId: user.id })
           .where(eq(tenants.id, tenant.id));
 
-        // Generate verification token (24 hours expiry)
-        verificationToken = randomBytes(32).toString("hex");
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        
-        await db.insert(verificationTokens).values({
-          userId: user.id,
-          token: verificationToken,
-          expiresAt,
-        });
+        // Skip verification email - domain not configured in Resend
+        // TODO: Re-enable when domain is verified in Resend
+        // verificationToken = randomBytes(32).toString("hex");
+        // const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        // await db.insert(verificationTokens).values({...});
+        // await sendVerificationEmail(email, companyName || username, verificationToken, baseUrl);
 
-        // Get base URL for verification link
-        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-        const host = req.headers['host'];
-        const baseUrl = `${protocol}://${host}`;
-
-        // Send verification email - MUST succeed or registration fails
-        await sendVerificationEmail(email, companyName || username, verificationToken, baseUrl);
-
-        // Only return success if email was sent
         res.status(201).json({
           success: true,
-          message: "Cuenta creada. Por favor, revisa tu email y haz click en el enlace de confirmación para activar tu cuenta.",
+          message: "¡Cuenta creada correctamente! Ya puedes iniciar sesión.",
           email: email,
-          requiresVerification: true,
+          requiresVerification: false,
         });
       } catch (emailError: any) {
         // Email failed to send - rollback everything
