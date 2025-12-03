@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,11 +106,17 @@ export default function DashboardPage() {
   const signedDeliveryNotes = allDeliveryNotes.filter((n: any) => n.photo);
   const pendingDeliveryNotes = allDeliveryNotes.filter((n: any) => !n.photo);
   
+  // Facturación: Solo albaranes firmados (con foto)
+  const invoicedNotes = signedDeliveryNotes.filter((n: any) => n.isInvoiced === true);
+  const pendingInvoiceNotes = signedDeliveryNotes.filter((n: any) => !n.isInvoiced);
+  
   const totalSignedCount = signedQuotes.length + signedDeliveryNotes.length;
   const totalPendingCount = pendingQuotes.length + pendingDeliveryNotes.length;
   
   // State for modal type (includes empresa/trabajadores split)
   const [albaranesCreatorType, setAlbaranesCreatorType] = useState<"admin" | "worker">("admin");
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceModalType, setInvoiceModalType] = useState<"invoiced" | "pending">("pending");
 
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
@@ -295,6 +301,49 @@ export default function DashboardPage() {
                 <div className="min-w-0">
                   <div className="text-xl sm:text-2xl font-bold">{trabajadoresSignedNotes.length}</div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Sección Estado de Facturación - Solo albaranes firmados */}
+        <div className="space-y-2">
+          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+            <Receipt className="h-4 w-4" />
+            Estado de Facturación
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {/* Cobrados */}
+            <button
+              onClick={() => { setInvoiceModalType("invoiced"); setInvoiceModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-invoiced"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                  <Banknote className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{invoicedNotes.length}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Cobrados</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Pendientes de cobro */}
+            <button
+              onClick={() => { setInvoiceModalType("pending"); setInvoiceModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-pending-invoice"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{pendingInvoiceNotes.length}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes de cobro</p>
                 </div>
               </div>
             </button>
@@ -1045,6 +1094,215 @@ export default function DashboardPage() {
                 Guardar Albarán
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Facturación */}
+      <Dialog open={invoiceModalOpen} onOpenChange={(open) => {
+        setInvoiceModalOpen(open);
+        if (!open) {
+          setDateFilterStart("");
+          setDateFilterEnd("");
+        }
+      }}>
+        <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base sm:text-lg flex items-center gap-2">
+              {invoiceModalType === "invoiced" ? (
+                <>
+                  <Banknote className="h-5 w-5 text-emerald-500" />
+                  Albaranes Cobrados
+                </>
+              ) : (
+                <>
+                  <Clock className="h-5 w-5 text-amber-500" />
+                  Pendientes de Cobro
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Filtro de fechas */}
+          <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="w-4 h-4" />
+              Filtrar por fechas
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Desde</label>
+                <Input
+                  type="date"
+                  value={dateFilterStart}
+                  onChange={(e) => setDateFilterStart(e.target.value)}
+                  className="h-9 text-sm"
+                  data-testid="input-invoice-date-filter-start"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Hasta</label>
+                <Input
+                  type="date"
+                  value={dateFilterEnd}
+                  onChange={(e) => setDateFilterEnd(e.target.value)}
+                  className="h-9 text-sm"
+                  data-testid="input-invoice-date-filter-end"
+                />
+              </div>
+            </div>
+            {(dateFilterStart || dateFilterEnd) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7 w-full"
+                onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
+                data-testid="button-clear-invoice-date-filter"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Limpiar filtro
+              </Button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {(() => {
+              let notes: any[] = invoiceModalType === "invoiced" ? invoicedNotes : pendingInvoiceNotes;
+              
+              // Aplicar filtro de fechas
+              if (dateFilterStart || dateFilterEnd) {
+                notes = notes.filter((note: any) => {
+                  if (!note.date) return false;
+                  const noteDate = new Date(note.date);
+                  if (dateFilterStart) {
+                    const startDate = new Date(dateFilterStart);
+                    if (noteDate < startDate) return false;
+                  }
+                  if (dateFilterEnd) {
+                    const endDate = new Date(dateFilterEnd);
+                    if (noteDate > endDate) return false;
+                  }
+                  return true;
+                });
+              }
+              
+              return notes.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  {(dateFilterStart || dateFilterEnd) 
+                    ? "No hay albaranes en el rango de fechas seleccionado"
+                    : invoiceModalType === "invoiced" 
+                      ? "No hay albaranes marcados como cobrados"
+                      : "No hay albaranes pendientes de cobro"
+                  }
+                </p>
+              ) : notes.map((note: any) => (
+                <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm">
+                  {note.photo && (
+                    <div className="w-full h-24 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
+                      <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                          Albarán #{note.noteNumber}
+                        </span>
+                        <Badge className={note.isInvoiced ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"}>
+                          {note.isInvoiced ? "Cobrado" : "Pendiente"}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-muted-foreground">Destino</p>
+                          <p className="font-medium truncate">{note.destination || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Calendar className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-muted-foreground">Fecha</p>
+                          <p className="font-medium">{note.date || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 text-xs">
+                      <Truck className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-muted-foreground">Cliente</p>
+                        <p className="font-medium truncate">{note.clientName || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    {note.invoicedAt && (
+                      <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md p-2 text-xs">
+                        <Banknote className="w-3 h-3 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-emerald-700 dark:text-emerald-300">Cobrado el</p>
+                          <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+                            {new Date(note.invoicedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button
+                      size="sm"
+                      variant={note.isInvoiced ? "outline" : "default"}
+                      className={`w-full text-xs h-8 ${!note.isInvoiced ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/delivery-notes/${note.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              isInvoiced: !note.isInvoiced
+                            }),
+                            credentials: "include",
+                          });
+
+                          if (response.ok) {
+                            toast({ 
+                              title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como cobrado",
+                              description: `Albarán #${note.noteNumber} actualizado`
+                            });
+                            await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+                          } else {
+                            const errorData = await response.json().catch(() => ({}));
+                            toast({ 
+                              title: "Error", 
+                              description: errorData.error || "No se pudo actualizar el albarán", 
+                              variant: "destructive" 
+                            });
+                          }
+                        } catch (error) {
+                          console.error("Error actualizando albarán:", error);
+                          toast({ title: "Error", description: "No se pudo actualizar el albarán", variant: "destructive" });
+                        }
+                      }}
+                      data-testid={`button-toggle-invoice-${note.id}`}
+                    >
+                      {note.isInvoiced ? (
+                        <>
+                          <X className="w-3 h-3 mr-1" />
+                          Marcar como pendiente
+                        </>
+                      ) : (
+                        <>
+                          <Banknote className="w-3 h-3 mr-1" />
+                          Marcar como cobrado
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         </DialogContent>
       </Dialog>

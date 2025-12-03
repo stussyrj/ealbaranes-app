@@ -473,14 +473,41 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
       
-      // Check if note is already signed (status is not pending)
-      if (existingNote.status !== "pending") {
-        return res.status(403).json({ error: "No se pueden editar albaranes firmados" });
+      // Check if this is an invoice status update only
+      const isInvoiceUpdate = Object.keys(data).every(key => 
+        key === 'isInvoiced' || key === 'invoicedAt'
+      );
+      
+      // Invoice updates are only allowed on signed notes (those with photo)
+      if (isInvoiceUpdate) {
+        if (!existingNote.photo) {
+          return res.status(403).json({ error: "Solo se pueden facturar albaranes firmados" });
+        }
+        // Validate isInvoiced is boolean
+        if (typeof data.isInvoiced !== 'boolean') {
+          return res.status(400).json({ error: "isInvoiced debe ser un booleano" });
+        }
+        // Auto-set invoicedAt when marking as invoiced
+        if (data.isInvoiced === true && !existingNote.isInvoiced) {
+          data.invoicedAt = new Date();
+        } else if (data.isInvoiced === false) {
+          data.invoicedAt = null;
+        }
+      } else {
+        // Check if note is already signed (status is not pending) for non-invoice updates
+        if (existingNote.status !== "pending") {
+          return res.status(403).json({ error: "No se pueden editar albaranes firmados" });
+        }
       }
       
       // Convert signedAt string to Date if present
       if (data.signedAt && typeof data.signedAt === 'string') {
         data.signedAt = new Date(data.signedAt);
+      }
+      
+      // Convert invoicedAt string to Date if present (for manual override if provided)
+      if (data.invoicedAt && typeof data.invoicedAt === 'string') {
+        data.invoicedAt = new Date(data.invoicedAt);
       }
       
       // When adding photo, mark as signed
