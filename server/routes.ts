@@ -395,6 +395,8 @@ export async function registerRoutes(
       const data = req.body;
       const user = req.user as any;
       
+      console.log("[routes] Creating delivery note. User:", user?.id, "isAdmin:", user?.isAdmin);
+      
       // Validate required fields
       if (!data.workerId || !data.quoteId) {
         return res.status(400).json({ error: "workerId y quoteId son requeridos" });
@@ -402,6 +404,7 @@ export async function registerRoutes(
       
       // Determine creatorType based on authenticated user
       const creatorType = user?.isAdmin ? "admin" : "worker";
+      console.log("[routes] creatorType determined:", creatorType);
       
       // Map camelCase to snake_case for DB columns
       const noteData = {
