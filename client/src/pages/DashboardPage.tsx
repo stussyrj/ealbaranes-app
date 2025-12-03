@@ -87,11 +87,26 @@ export default function DashboardPage() {
   const signedQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => q.status === "signed") : [];
   const pendingQuotes = Array.isArray(quotes) ? quotes.filter((q: any) => !q.assignedWorkerId && q.status !== "signed") : [];
   
-  const signedDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes.filter((n: any) => n.photo) : [];
-  const pendingDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes.filter((n: any) => !n.photo) : [];
+  // Filter delivery notes by creatorType and status
+  const allDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes : [];
+  
+  // Empresa (admin) created notes
+  const empresaPendingNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && !n.photo);
+  const empresaSignedNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && n.photo);
+  
+  // Trabajadores (worker) created notes
+  const trabajadoresPendingNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && !n.photo);
+  const trabajadoresSignedNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && n.photo);
+  
+  // Legacy totals for backwards compatibility
+  const signedDeliveryNotes = allDeliveryNotes.filter((n: any) => n.photo);
+  const pendingDeliveryNotes = allDeliveryNotes.filter((n: any) => !n.photo);
   
   const totalSignedCount = signedQuotes.length + signedDeliveryNotes.length;
   const totalPendingCount = pendingQuotes.length + pendingDeliveryNotes.length;
+  
+  // State for modal type (includes empresa/trabajadores split)
+  const [albaranesCreatorType, setAlbaranesCreatorType] = useState<"admin" | "worker">("admin");
 
   const getQuoteNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
@@ -179,58 +194,107 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Albaranes - Tarjetas clicables */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-          {/* Crear Albarán */}
-          <button
-            onClick={() => setCreateDeliveryOpen(true)}
-            className="rounded-lg bg-purple-600/85 hover:bg-purple-700/85 p-4 text-left shadow-sm text-white"
-            data-testid="button-create-albaran"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+        {/* Sección Empresa - Albaranes creados por la empresa */}
+        <div className="space-y-2">
+          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Mis Albaranes (Empresa)
+          </h2>
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {/* Crear Albarán */}
+            <button
+              onClick={() => setCreateDeliveryOpen(true)}
+              className="rounded-lg bg-purple-600/85 hover:bg-purple-700/85 p-4 text-left shadow-sm text-white"
+              data-testid="button-create-albaran"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm sm:text-base font-bold">Crear</div>
+                  <p className="text-[10px] sm:text-xs text-white/80 truncate">Albarán</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <div className="text-sm sm:text-base font-bold">Crear</div>
-                <p className="text-[10px] sm:text-xs text-white/80 truncate">Albarán</p>
-              </div>
-            </div>
-          </button>
+            </button>
 
-          {/* Pendientes */}
-          <button
-            onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
-            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
-            data-testid="button-view-pending-albaranes"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+            {/* Empresa Pendientes */}
+            <button
+              onClick={() => { setAlbaranesCreatorType("admin"); setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-empresa-pending"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{empresaPendingNotes.length}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-bold">{pendingDeliveryNotes.length}</div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
-              </div>
-            </div>
-          </button>
+            </button>
 
-          {/* Firmados */}
-          <button
-            onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
-            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
-            data-testid="button-view-signed-albaranes"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+            {/* Empresa Firmados */}
+            <button
+              onClick={() => { setAlbaranesCreatorType("admin"); setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-empresa-signed"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{empresaSignedNotes.length}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-bold">{signedDeliveryNotes.length}</div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
+            </button>
+          </div>
+        </div>
+
+        {/* Sección Trabajadores - Albaranes creados por trabajadores */}
+        <div className="space-y-2">
+          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Albaranes de Trabajadores
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {/* Trabajadores Pendientes */}
+            <button
+              onClick={() => { setAlbaranesCreatorType("worker"); setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-trabajadores-pending"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{trabajadoresPendingNotes.length}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+
+            {/* Trabajadores Firmados */}
+            <button
+              onClick={() => { setAlbaranesCreatorType("worker"); setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              data-testid="button-view-trabajadores-signed"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl sm:text-2xl font-bold">{trabajadoresSignedNotes.length}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
+                </div>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Presupuestos Pendientes */}
@@ -398,11 +462,20 @@ export default function DashboardPage() {
         <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base sm:text-lg">
-              Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"}
+              Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"} - {albaranesCreatorType === "admin" ? "Empresa" : "Trabajadores"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            {(albaranesModalType === "pending" ? pendingDeliveryNotes : signedDeliveryNotes).map((note: any) => (
+            {(() => {
+              let notes: any[] = [];
+              if (albaranesCreatorType === "admin") {
+                notes = albaranesModalType === "pending" ? empresaPendingNotes : empresaSignedNotes;
+              } else {
+                notes = albaranesModalType === "pending" ? trabajadoresPendingNotes : trabajadoresSignedNotes;
+              }
+              return notes.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No hay albaranes en esta categoría</p>
+              ) : notes.map((note: any) => (
               <div key={note.id} className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 text-left shadow-sm w-full p-2" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
                 <div className="space-y-1.5">
                   {/* Note Number Badge */}
@@ -581,7 +654,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-            ))}
+            ));
+            })()}
           </div>
         </DialogContent>
       </Dialog>
