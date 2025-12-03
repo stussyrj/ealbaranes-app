@@ -392,16 +392,21 @@ export async function registerRoutes(
   app.post("/api/delivery-notes", async (req, res) => {
     try {
       const data = req.body;
+      const user = req.user as any;
       
       // Validate required fields
       if (!data.workerId || !data.quoteId) {
         return res.status(400).json({ error: "workerId y quoteId son requeridos" });
       }
       
+      // Determine creatorType based on authenticated user
+      const creatorType = user?.isAdmin ? "admin" : "worker";
+      
       // Map camelCase to snake_case for DB columns
       const noteData = {
         quoteId: data.quoteId,
         workerId: data.workerId,
+        creatorType: creatorType,
         clientName: data.clientName || null,
         pickupOrigin: data.pickupOrigin || null,
         destination: data.destination || null,
