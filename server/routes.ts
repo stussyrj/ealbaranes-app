@@ -805,5 +805,76 @@ export async function registerRoutes(
     }
   });
 
+  // Admin endpoint to compress existing large photos
+  app.post("/api/admin/compress-photos", async (req: any, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(401).json({ error: "No autorizado" });
+      }
+
+      const { createCanvas, loadImage } = await import('canvas');
+      
+      // Get all delivery notes with large photos (> 100KB)
+      const notes = await storage.getDeliveryNotes();
+      const largePhotoNotes = notes.filter(n => n.photo && n.photo.length > 100000);
+      
+      let compressed = 0;
+      let totalSaved = 0;
+      
+      for (const note of largePhotoNotes) {
+        if (!note.photo) continue;
+        
+        const originalSize = note.photo.length;
+        
+        try {
+          // Decode base64 image
+          const base64Data = note.photo.replace(/^data:image\/\w+;base64,/, '');
+          const buffer = Buffer.from(base64Data, 'base64');
+          
+          // Load and resize image
+          const img = await loadImage(buffer);
+          const maxWidth = 1200;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          const canvas = createCanvas(width, height);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to JPEG with 70% quality
+          const compressedBuffer = canvas.toBuffer('image/jpeg', { quality: 0.7 });
+          const compressedBase64 = `data:image/jpeg;base64,${compressedBuffer.toString('base64')}`;
+          
+          // Update in database
+          await storage.updateDeliveryNote(note.id, { photo: compressedBase64 });
+          
+          const newSize = compressedBase64.length;
+          totalSaved += originalSize - newSize;
+          compressed++;
+          
+          console.log(`Compressed photo for note ${note.noteNumber}: ${Math.round(originalSize/1024)}KB -> ${Math.round(newSize/1024)}KB`);
+        } catch (err) {
+          console.error(`Error compressing photo for note ${note.id}:`, err);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        compressed, 
+        totalNotes: largePhotoNotes.length,
+        savedBytes: totalSaved,
+        savedMB: Math.round(totalSaved / 1024 / 1024 * 10) / 10
+      });
+    } catch (error) {
+      console.error("Error compressing photos:", error);
+      res.status(500).json({ error: "Error al comprimir fotos" });
+    }
+  });
+
   return httpServer;
 }
