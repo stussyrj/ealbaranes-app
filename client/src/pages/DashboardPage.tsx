@@ -80,6 +80,29 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Load photo from API and preview it
+  const loadAndPreviewPhoto = async (noteId: string) => {
+    try {
+      toast({ title: "Cargando foto..." });
+      const response = await fetch(`/api/delivery-notes/${noteId}`, { credentials: "include" });
+      if (response.ok) {
+        const note = await response.json();
+        if (note.photo) {
+          setPreviewImage(note.photo);
+          setAlbaranesModalOpen(false);
+          setPreviewModalOpen(true);
+        } else {
+          toast({ title: "Sin foto", description: "Este albarán no tiene foto adjunta", variant: "destructive" });
+        }
+      } else {
+        throw new Error("Error al cargar");
+      }
+    } catch (error) {
+      console.error("Error loading photo:", error);
+      toast({ title: "Error", description: "No se pudo cargar la foto", variant: "destructive" });
+    }
+  };
+
   // Save photo and sign the delivery note
   const savePhotoAndSign = async () => {
     if (!selectedNoteForPhoto || !capturedPhoto) return;
@@ -180,17 +203,17 @@ export default function DashboardPage() {
   // Filter delivery notes by creatorType and status
   const allDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes : [];
   
-  // Empresa (admin) created notes
-  const empresaPendingNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && !n.photo);
-  const empresaSignedNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && n.photo);
+  // Empresa (admin) created notes - use signedAt instead of photo (photo excluded from list for performance)
+  const empresaPendingNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && !n.signedAt);
+  const empresaSignedNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && n.signedAt);
   
-  // Trabajadores (worker) created notes
-  const trabajadoresPendingNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && !n.photo);
-  const trabajadoresSignedNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && n.photo);
+  // Trabajadores (worker) created notes - use signedAt instead of photo (photo excluded from list for performance)
+  const trabajadoresPendingNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && !n.signedAt);
+  const trabajadoresSignedNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && n.signedAt);
   
-  // Legacy totals for backwards compatibility
-  const signedDeliveryNotes = allDeliveryNotes.filter((n: any) => n.photo);
-  const pendingDeliveryNotes = allDeliveryNotes.filter((n: any) => !n.photo);
+  // Legacy totals for backwards compatibility - use signedAt instead of photo
+  const signedDeliveryNotes = allDeliveryNotes.filter((n: any) => n.signedAt);
+  const pendingDeliveryNotes = allDeliveryNotes.filter((n: any) => !n.signedAt);
   
   // Facturación: Solo albaranes firmados (con foto)
   const invoicedNotes = signedDeliveryNotes.filter((n: any) => n.isInvoiced === true);
@@ -837,22 +860,16 @@ export default function DashboardPage() {
                 </p>
               ) : notes.map((note: any) => (
               <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
-                {note.photo && (
-                  <div className="w-full h-32 sm:h-40 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
-                    <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
-                  </div>
-                )}
-                
                 <div className="p-3 space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded" data-testid={`note-number-${note.id}`}>
                       Albarán #{note.noteNumber || '—'}
                     </span>
-                    <Badge className={note.photo 
+                    <Badge className={note.signedAt 
                       ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
                       : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
                     }>
-                      {note.photo ? (
+                      {note.signedAt ? (
                         <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
                       ) : (
                         <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
@@ -920,7 +937,7 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {note.signedAt && note.photo && (
+                    {note.signedAt && (
                       <div className="flex items-start gap-2 bg-green-50 dark:bg-green-900/20 rounded-md p-2">
                         <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
@@ -944,12 +961,12 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
-                    {note.photo ? (
+                    {note.signedAt ? (
                       <Button
                         size="sm"
                         variant="outline"
                         className="flex-1 text-xs h-7"
-                        onClick={() => previewDeliveryNote(note.photo)}
+                        onClick={() => loadAndPreviewPhoto(note.id)}
                         data-testid={`button-view-photo-${note.id}`}
                       >
                         <Download className="w-3 h-3 mr-1" />
@@ -1340,9 +1357,15 @@ export default function DashboardPage() {
                 </p>
               ) : notes.map((note: any) => (
                 <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm">
-                  {note.photo && (
-                    <div className="w-full h-24 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
-                      <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                  {note.signedAt && (
+                    <div 
+                      className="w-full h-24 bg-muted cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center"
+                      onClick={() => loadAndPreviewPhoto(note.id)}
+                    >
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="w-6 h-6 mx-auto mb-1" />
+                        <span className="text-xs">Ver foto</span>
+                      </div>
                     </div>
                   )}
                   <div className="p-3 space-y-2">
