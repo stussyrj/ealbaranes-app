@@ -170,6 +170,8 @@ export const deliveryNotes = pgTable("delivery_notes", {
   signature: text("signature"),
   signedAt: timestamp("signed_at"),
   notes: text("notes"),
+  isInvoiced: boolean("is_invoiced").default(false),
+  invoicedAt: timestamp("invoiced_at"),
   tenantId: varchar("tenant_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
