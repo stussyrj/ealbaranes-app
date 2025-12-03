@@ -809,7 +809,7 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {note.observations && (
+                    {note.observations && note.observations.trim() && (
                       <div className="flex items-start gap-2 bg-muted/30 rounded-md p-2">
                         <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
