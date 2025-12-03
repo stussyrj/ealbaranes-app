@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,21 +67,48 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const { data: quotes = [] } = useQuery({
+  const { data: quotes = [], refetch: refetchQuotes } = useQuery({
     queryKey: ["/api/quotes"],
     queryFn: async () => {
       const res = await fetch("/api/quotes", { credentials: "include" });
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("No autorizado");
+        }
+        throw new Error("Error al cargar datos");
+      }
       return res.json();
     },
+    retry: false,
+    staleTime: 0,
   });
 
-  const { data: deliveryNotes = [] } = useQuery({
+  const { data: deliveryNotes = [], refetch: refetchDeliveryNotes, isLoading: isLoadingNotes, error: notesError } = useQuery({
     queryKey: ["/api/delivery-notes"],
     queryFn: async () => {
       const res = await fetch("/api/delivery-notes", { credentials: "include" });
-      return res.json();
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("No autorizado");
+        }
+        throw new Error("Error al cargar albaranes");
+      }
+      const data = await res.json();
+      console.log("Delivery notes loaded:", data?.length || 0, "items");
+      return data;
     },
+    retry: false,
+    staleTime: 0,
   });
+
+  // Refetch data when user changes
+  useEffect(() => {
+    if (user) {
+      console.log("User logged in, refetching data...");
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+    }
+  }, [user, queryClient]);
 
   const handleAssignWorker = (quote: any) => {
     setSelectedQuote(quote);
@@ -189,19 +216,36 @@ export default function DashboardPage() {
     <div className="relative">
       <AnimatedPageBackground />
       <div className="relative z-10 space-y-4 sm:space-y-6 p-4 sm:p-6">
-        {/* Header con botón de descarga */}
+        {/* Header con botón de descarga y refrescar */}
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Panel de Empresa</h1>
             <p className="text-sm text-muted-foreground mt-1 hidden sm:block">Resumen de tu actividad</p>
           </div>
-          <button
-            onClick={() => setDownloadModalOpen(true)}
-            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate flex-shrink-0"
-            data-testid="button-download-albaranes"
-          >
-            <FileDown className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                refetchDeliveryNotes();
+                refetchQuotes();
+                toast({ title: "Actualizando datos..." });
+              }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate flex-shrink-0"
+              data-testid="button-refresh-data"
+            >
+              {isLoadingNotes ? (
+                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary animate-spin" />
+              ) : (
+                <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              )}
+            </button>
+            <button
+              onClick={() => setDownloadModalOpen(true)}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate flex-shrink-0"
+              data-testid="button-download-albaranes"
+            >
+              <FileDown className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+            </button>
+          </div>
         </div>
 
         {/* Sección Empresa - Albaranes creados por la empresa */}
@@ -236,10 +280,16 @@ export default function DashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                  {isLoadingNotes ? (
+                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400 animate-spin" />
+                  ) : (
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                  )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{empresaPendingNotes.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-empresa-pending">
+                    {isLoadingNotes ? "..." : empresaPendingNotes.length}
+                  </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
                 </div>
               </div>
@@ -253,10 +303,16 @@ export default function DashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                  {isLoadingNotes ? (
+                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                  )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{empresaSignedNotes.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-empresa-signed">
+                    {isLoadingNotes ? "..." : empresaSignedNotes.length}
+                  </div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
                 </div>
               </div>
@@ -279,10 +335,14 @@ export default function DashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                  {isLoadingNotes ? (
+                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400 animate-spin" />
+                  ) : (
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                  )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{trabajadoresPendingNotes.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{isLoadingNotes ? "..." : trabajadoresPendingNotes.length}</div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
                 </div>
               </div>
@@ -296,10 +356,14 @@ export default function DashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                  {isLoadingNotes ? (
+                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                  )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{trabajadoresSignedNotes.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{isLoadingNotes ? "..." : trabajadoresSignedNotes.length}</div>
                   <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
                 </div>
               </div>
