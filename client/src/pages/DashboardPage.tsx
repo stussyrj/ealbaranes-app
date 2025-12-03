@@ -8,6 +8,7 @@ import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
+import { DeliveryNoteCard } from "@/components/DeliveryNoteCard";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -465,7 +466,7 @@ export default function DashboardPage() {
               Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"} - {albaranesCreatorType === "admin" ? "Empresa" : "Trabajadores"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {(() => {
               let notes: any[] = [];
               if (albaranesCreatorType === "admin") {
@@ -476,102 +477,114 @@ export default function DashboardPage() {
               return notes.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">No hay albaranes en esta categoría</p>
               ) : notes.map((note: any) => (
-              <div key={note.id} className="group relative overflow-hidden rounded-md border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 text-left shadow-sm w-full p-2" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
-                <div className="space-y-1.5">
-                  {/* Note Number Badge */}
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded" data-testid={`note-number-${note.id}`}>
+              <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
+                {note.photo && (
+                  <div className="w-full h-32 sm:h-40 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
+                    <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                
+                <div className="p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded" data-testid={`note-number-${note.id}`}>
                       Albarán #{note.noteNumber || '—'}
                     </span>
-                  </div>
-                  
-                  {/* Photo on top - compact */}
-                  {note.photo && (
-                    <div className="mb-1.5 -m-2 mb-2 mt-1">
-                      <img src={note.photo} alt="Albarán" className="w-full rounded-t max-h-32 object-cover cursor-pointer hover:opacity-90" onClick={() => previewDeliveryNote(note.photo)} />
-                    </div>
-                  )}
-
-                  {/* Header - Origin and Destination */}
-                  <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">ORIGEN</span>
-                        <span className="font-medium text-[10px] leading-none mt-1">{note.pickupOrigin || 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">DESTINO</span>
-                        <span className="font-medium text-[10px] leading-none mt-1">{note.destination || 'N/A'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Details Grid - 3 columns for better spacing */}
-                  <div className="grid grid-cols-3 gap-1 text-[10px]">
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">CLIENTE</span>
-                        <span className="font-medium text-[10px] leading-none mt-1 line-clamp-1">{note.clientName || 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">VEHÍCULO</span>
-                        <span className="font-medium text-[10px] leading-none mt-1">{note.vehicleType || 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">FECHA</span>
-                        <span className="font-medium text-[10px] leading-none mt-1">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">HORA</span>
-                        <span className="font-medium text-[10px] leading-none mt-1">{note.time || 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">TRABAJADOR</span>
-                        <span className="font-medium text-[10px] leading-none mt-1 line-clamp-1">{note.workerName || 'Desconocido'}</span>
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                      <div className="flex flex-col items-center -translate-y-[7px]">
-                        <span className="text-muted-foreground text-[9px] font-semibold leading-none">OBS.</span>
-                        <span className="font-medium text-[10px] leading-none mt-1 line-clamp-1">{note.observations || 'Sin observaciones'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Optional fields - separate 2-column grid for balanced layout */}
-                  {((note as any).waitTime || (albaranesModalType === "signed" && note.signedAt)) && (
-                    <div className="grid grid-cols-2 gap-1 text-[10px]">
-                      {(note as any).waitTime ? (
-                        <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                          <div className="flex flex-col items-center -translate-y-[7px]">
-                            <span className="text-muted-foreground text-[9px] font-semibold leading-none">ESPERA</span>
-                            <span className="font-medium text-[10px] leading-none mt-1">{Math.floor((note as any).waitTime / 60)}h {(note as any).waitTime % 60}m</span>
-                          </div>
-                        </div>
-                      ) : null}
-                      {albaranesModalType === "signed" && note.signedAt && (
-                        <div className="bg-muted/30 rounded min-h-[44px] px-2 flex items-center justify-center">
-                          <div className="flex flex-col items-center -translate-y-[7px]">
-                            <span className="text-muted-foreground text-[9px] font-semibold leading-none">FIRMADO</span>
-                            <span className="font-medium text-[9px] leading-none mt-1">{new Date(note.signedAt).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                        </div>
+                    <Badge className={note.photo 
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
+                      : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
+                    }>
+                      {note.photo ? (
+                        <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
+                      ) : (
+                        <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
                       )}
-                    </div>
-                  )}
+                    </Badge>
+                  </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-1 mt-1" data-testid={`buttons-${note.id}`}>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground">Origen → Destino</p>
+                        <p className="text-sm font-medium truncate">{note.pickupOrigin || 'N/A'} → {note.destination || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div className="flex items-start gap-2">
+                        <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Cliente</p>
+                          <p className="text-sm font-medium truncate">{note.clientName || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Vehículo</p>
+                          <p className="text-sm font-medium truncate">{note.vehicleType || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Fecha</p>
+                          <p className="text-sm font-medium">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Clock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Hora</p>
+                          <p className="text-sm font-medium">{note.time || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Trabajador</p>
+                        <p className="text-sm font-medium truncate">{note.workerName || 'Desconocido'}</p>
+                      </div>
+                    </div>
+
+                    {note.waitTime && note.waitTime > 0 && (
+                      <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-md p-2">
+                        <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-amber-700 dark:text-amber-300">Tiempo de Espera</p>
+                          <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                            {Math.floor(note.waitTime / 60)}h {note.waitTime % 60}m
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {note.signedAt && note.photo && (
+                      <div className="flex items-start gap-2 bg-green-50 dark:bg-green-900/20 rounded-md p-2">
+                        <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-green-700 dark:text-green-300">Firmado</p>
+                          <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+                            {new Date(note.signedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {note.observations && (
+                      <div className="flex items-start gap-2 bg-muted/30 rounded-md p-2">
+                        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-muted-foreground">Observaciones</p>
+                          <p className="text-sm line-clamp-2">{note.observations}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
                     {note.photo && (
                       <Button
                         size="sm"
