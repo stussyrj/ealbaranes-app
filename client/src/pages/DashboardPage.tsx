@@ -67,18 +67,47 @@ export default function DashboardPage() {
     setPreviewModalOpen(true);
   };
 
-  // Handle file upload for photo
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  // Compress image to reduce size
+  const compressImage = useCallback((file: File, maxWidth: number = 1200, quality: number = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const photoData = event.target?.result as string;
-        setCapturedPhoto(photoData);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedData = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedData);
+          } else {
+            resolve(e.target?.result as string);
+          }
+        };
+        img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
-    }
+    });
   }, []);
+
+  // Handle file upload for photo with compression
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const compressedPhoto = await compressImage(file);
+      setCapturedPhoto(compressedPhoto);
+    }
+  }, [compressImage]);
 
   // Save photo and sign the delivery note
   const savePhotoAndSign = async () => {

@@ -49,6 +49,39 @@ export default function WorkerDashboard() {
   // Use workerId if available, otherwise use user.id as the worker identifier
   const effectiveWorkerId = user?.workerId || user?.id;
 
+  // Compress image to reduce size before upload
+  const compressImage = (file: File, maxWidth: number = 1200, quality: number = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedData = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedData);
+          } else {
+            resolve(e.target?.result as string);
+          }
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -1212,15 +1245,11 @@ export default function WorkerDashboard() {
                   accept="image/*"
                   capture="environment"
                   className="hidden"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        const photoData = event.target?.result as string;
-                        setCapturedPhoto(photoData);
-                      };
-                      reader.readAsDataURL(file);
+                      const compressedPhoto = await compressImage(file);
+                      setCapturedPhoto(compressedPhoto);
                     }
                   }}
                   data-testid="input-file-photo"
