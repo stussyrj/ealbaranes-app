@@ -5,12 +5,14 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser, tenants } from "@shared/schema";
+import { User as SelectUser, tenants, verificationTokens, users } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, gt, isNull } from "drizzle-orm";
 import { stripeService } from "./stripeService";
 import { getTenantForUser } from "./middleware/tenantAccess";
-import { sendWelcomeEmail } from "./email";
+import { sendWelcomeEmail, sendVerificationEmail } from "./email";
+
+const resendLimits = new Map<string, { count: number; resetAt: number }>();
 
 declare global {
   namespace Express {
@@ -74,10 +76,13 @@ export function setupAuth(app: Express) {
         user = await storage.getUserByEmail(username);
       }
       if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
-        return done(null, user);
+        return done(null, false, { message: "Credenciales incorrectas" });
       }
+      // Check email verification only for admin/company users (not workers)
+      if (user.isAdmin && !user.emailVerified) {
+        return done(null, false, { message: "EMAIL_NOT_VERIFIED" });
+      }
+      return done(null, user);
     }),
   );
 
@@ -87,15 +92,29 @@ export function setupAuth(app: Express) {
     done(null, user);
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    const user = req.user!;
-    res.status(200).json({
-      id: user.id,
-      username: user.username,
-      isAdmin: user.isAdmin,
-      workerId: user.workerId,
-      createdAt: user.createdAt,
-    });
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) {
+        if (info?.message === "EMAIL_NOT_VERIFIED") {
+          return res.status(403).json({ 
+            error: "Tu email no ha sido verificado. Revisa tu correo y haz click en el enlace de confirmación.",
+            code: "EMAIL_NOT_VERIFIED"
+          });
+        }
+        return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+      }
+      req.login(user, (loginErr) => {
+        if (loginErr) return next(loginErr);
+        res.status(200).json({
+          id: user.id,
+          username: user.username,
+          isAdmin: user.isAdmin,
+          workerId: user.workerId,
+          createdAt: user.createdAt,
+        });
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
@@ -140,6 +159,12 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Este nombre de usuario ya está en uso" });
       }
 
+      // Check if email is already in use
+      const existingEmailUser = await storage.getUserByEmail(email);
+      if (existingEmailUser) {
+        return res.status(400).json({ error: "Este email ya está registrado" });
+      }
+
       const stripeCustomer = await stripeService.createCustomer(email, "", companyName);
 
       const [tenant] = await db.insert(tenants).values({
@@ -162,29 +187,165 @@ export function setupAuth(app: Express) {
         .set({ adminUserId: user.id })
         .where(eq(tenants.id, tenant.id));
 
-      // Send welcome email (non-blocking)
-      sendWelcomeEmail(email, companyName || username).catch(err => {
-        console.error("[auth] Failed to send welcome email:", err);
+      // Generate verification token (24 hours expiry)
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      
+      await db.insert(verificationTokens).values({
+        userId: user.id,
+        token,
+        expiresAt,
       });
 
-      req.login(user, (err) => {
-        if (err) {
-          console.error("[auth] Login after register failed:", err);
-          return res.status(500).json({ error: "Error al iniciar sesión" });
-        }
-        
-        res.status(201).json({
-          id: user.id,
-          username: user.username,
-          displayName: user.displayName,
-          isAdmin: user.isAdmin,
-          tenantId: user.tenantId,
-          createdAt: user.createdAt,
-        });
+      // Get base URL for verification link
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['host'];
+      const baseUrl = `${protocol}://${host}`;
+
+      // Send verification email (non-blocking)
+      sendVerificationEmail(email, companyName || username, token, baseUrl).catch(err => {
+        console.error("[auth] Failed to send verification email:", err);
+      });
+
+      // Don't auto-login, return success with verification pending message
+      res.status(201).json({
+        success: true,
+        message: "Cuenta creada. Por favor, revisa tu email y haz click en el enlace de confirmación para activar tu cuenta.",
+        email: email,
+        requiresVerification: true,
       });
     } catch (error) {
       console.error("[auth] Registration error:", error);
       res.status(500).json({ error: "Error al registrar usuario" });
+    }
+  });
+
+  // Verify email endpoint
+  app.get("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: "Token de verificación inválido" });
+      }
+
+      // Find the token
+      const [tokenRecord] = await db.select()
+        .from(verificationTokens)
+        .where(and(
+          eq(verificationTokens.token, token),
+          isNull(verificationTokens.usedAt),
+          gt(verificationTokens.expiresAt, new Date())
+        ));
+
+      if (!tokenRecord) {
+        return res.status(400).json({ 
+          error: "El enlace de verificación ha expirado o ya fue utilizado. Por favor, solicita un nuevo enlace.",
+          expired: true
+        });
+      }
+
+      // Mark user as verified
+      await db.update(users)
+        .set({ emailVerified: true })
+        .where(eq(users.id, tokenRecord.userId));
+
+      // Mark token as used
+      await db.update(verificationTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(verificationTokens.id, tokenRecord.id));
+
+      // Invalidate all other tokens for this user
+      await db.update(verificationTokens)
+        .set({ usedAt: new Date() })
+        .where(and(
+          eq(verificationTokens.userId, tokenRecord.userId),
+          isNull(verificationTokens.usedAt)
+        ));
+
+      // Get user for welcome email
+      const user = await storage.getUser(tokenRecord.userId);
+      if (user && user.email) {
+        sendWelcomeEmail(user.email, user.displayName || user.username).catch(err => {
+          console.error("[auth] Failed to send welcome email:", err);
+        });
+      }
+
+      res.json({ success: true, message: "Email verificado correctamente. Ya puedes iniciar sesión." });
+    } catch (error) {
+      console.error("[auth] Email verification error:", error);
+      res.status(500).json({ error: "Error al verificar el email" });
+    }
+  });
+
+  // Resend verification email endpoint
+  app.post("/api/resend-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email es requerido" });
+      }
+
+      // Rate limiting: max 3 resends per hour per email
+      const key = email.toLowerCase();
+      const now = Date.now();
+      const limit = resendLimits.get(key);
+      
+      if (limit) {
+        if (now < limit.resetAt) {
+          if (limit.count >= 3) {
+            const minutesLeft = Math.ceil((limit.resetAt - now) / 60000);
+            return res.status(429).json({ 
+              error: `Has alcanzado el límite de reenvíos. Intenta de nuevo en ${minutesLeft} minutos.`
+            });
+          }
+          limit.count++;
+        } else {
+          resendLimits.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 });
+        }
+      } else {
+        resendLimits.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to avoid email enumeration
+      if (!user || !user.isAdmin || user.emailVerified) {
+        return res.json({ success: true, message: "Si el email está registrado y pendiente de verificación, recibirás un nuevo enlace." });
+      }
+
+      // Invalidate existing tokens
+      await db.update(verificationTokens)
+        .set({ usedAt: new Date() })
+        .where(and(
+          eq(verificationTokens.userId, user.id),
+          isNull(verificationTokens.usedAt)
+        ));
+
+      // Generate new token
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      
+      await db.insert(verificationTokens).values({
+        userId: user.id,
+        token,
+        expiresAt,
+      });
+
+      // Get base URL
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['host'];
+      const baseUrl = `${protocol}://${host}`;
+
+      // Send verification email
+      await sendVerificationEmail(email, user.displayName || user.username, token, baseUrl);
+
+      res.json({ success: true, message: "Si el email está registrado y pendiente de verificación, recibirás un nuevo enlace." });
+    } catch (error) {
+      console.error("[auth] Resend verification error:", error);
+      res.status(500).json({ error: "Error al reenviar el email de verificación" });
     }
   });
 
