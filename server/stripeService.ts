@@ -13,6 +13,11 @@ export class [REDACTED-STRIPE] {
     });
   }
 
+  async deleteCustomer(customerId: string) {
+    const stripe = await getUncachable[REDACTED-STRIPE]
+    return await stripe.customers.del(customerId);
+  }
+
   async ensureSubscriptionProducts() {
     const stripe = await getUncachable[REDACTED-STRIPE]
     

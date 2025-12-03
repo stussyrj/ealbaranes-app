@@ -165,55 +165,96 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Este email ya está registrado" });
       }
 
+      // Create [REDACTED-STRIPE] customer first (outside transaction)
       const stripeCustomer = await stripeService.createCustomer(email, "", companyName);
 
-      const [tenant] = await db.insert(tenants).values({
-        companyName: companyName || null,
-        stripeCustomerId: stripeCustomer.id,
-        subscriptionStatus: 'active',
-      }).returning();
+      let tenant: typeof tenants.$inferSelect | null = null;
+      let user: typeof users.$inferSelect | null = null;
+      let verificationToken: string | null = null;
 
-      const user = await storage.createUser({
-        username,
-        email: email,
-        displayName: companyName || username,
-        password: await hashPassword(password),
-        isAdmin: true,
-        workerId: null,
-        tenantId: tenant.id,
-      });
+      try {
+        // Create tenant
+        const [newTenant] = await db.insert(tenants).values({
+          companyName: companyName || null,
+          stripeCustomerId: stripeCustomer.id,
+          subscriptionStatus: 'active',
+        }).returning();
+        tenant = newTenant;
 
-      await db.update(tenants)
-        .set({ adminUserId: user.id })
-        .where(eq(tenants.id, tenant.id));
+        // Create user
+        user = await storage.createUser({
+          username,
+          email: email,
+          displayName: companyName || username,
+          password: await hashPassword(password),
+          isAdmin: true,
+          workerId: null,
+          tenantId: tenant.id,
+        });
 
-      // Generate verification token (24 hours expiry)
-      const token = randomBytes(32).toString("hex");
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      
-      await db.insert(verificationTokens).values({
-        userId: user.id,
-        token,
-        expiresAt,
-      });
+        // Update tenant with admin user
+        await db.update(tenants)
+          .set({ adminUserId: user.id })
+          .where(eq(tenants.id, tenant.id));
 
-      // Get base URL for verification link
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-      const host = req.headers['host'];
-      const baseUrl = `${protocol}://${host}`;
+        // Generate verification token (24 hours expiry)
+        verificationToken = randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        
+        await db.insert(verificationTokens).values({
+          userId: user.id,
+          token: verificationToken,
+          expiresAt,
+        });
 
-      // Send verification email (non-blocking)
-      sendVerificationEmail(email, companyName || username, token, baseUrl).catch(err => {
-        console.error("[auth] Failed to send verification email:", err);
-      });
+        // Get base URL for verification link
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.headers['host'];
+        const baseUrl = `${protocol}://${host}`;
 
-      // Don't auto-login, return success with verification pending message
-      res.status(201).json({
-        success: true,
-        message: "Cuenta creada. Por favor, revisa tu email y haz click en el enlace de confirmación para activar tu cuenta.",
-        email: email,
-        requiresVerification: true,
-      });
+        // Send verification email - MUST succeed or registration fails
+        await sendVerificationEmail(email, companyName || username, verificationToken, baseUrl);
+
+        // Only return success if email was sent
+        res.status(201).json({
+          success: true,
+          message: "Cuenta creada. Por favor, revisa tu email y haz click en el enlace de confirmación para activar tu cuenta.",
+          email: email,
+          requiresVerification: true,
+        });
+      } catch (emailError: any) {
+        // Email failed to send - rollback everything
+        console.error("[auth] Email sending failed, rolling back registration:", emailError);
+        
+        // Delete verification token if created
+        if (user) {
+          await db.delete(verificationTokens).where(eq(verificationTokens.userId, user.id)).catch(() => {});
+          await db.delete(users).where(eq(users.id, user.id)).catch(() => {});
+        }
+        
+        // Delete tenant if created
+        if (tenant) {
+          await db.delete(tenants).where(eq(tenants.id, tenant.id)).catch(() => {});
+        }
+        
+        // Try to delete [REDACTED-STRIPE] customer (best effort)
+        try {
+          await stripeService.deleteCustomer(stripeCustomer.id);
+        } catch (stripeError) {
+          console.error("[auth] Failed to delete orphaned [REDACTED-STRIPE] customer:", stripeCustomer.id);
+        }
+
+        // Return user-friendly error
+        const errorMessage = emailError?.message || "";
+        if (errorMessage.includes("domain is not verified")) {
+          return res.status(500).json({ 
+            error: "No se pudo enviar el email de verificación. El dominio de email no está configurado correctamente. Por favor, contacta al administrador." 
+          });
+        }
+        return res.status(500).json({ 
+          error: "No se pudo enviar el email de verificación. Por favor, intenta de nuevo más tarde." 
+        });
+      }
     } catch (error) {
       console.error("[auth] Registration error:", error);
       res.status(500).json({ error: "Error al registrar usuario" });
