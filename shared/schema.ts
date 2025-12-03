@@ -42,10 +42,28 @@ export const users = pgTable("users", {
   displayName: text("display_name"),
   password: text("password").notNull(),
   isAdmin: boolean("is_admin").default(false),
+  emailVerified: boolean("email_verified").default(false),
   workerId: varchar("worker_id"),
   tenantId: varchar("tenant_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const verificationTokens = pgTable("verification_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertVerificationTokenSchema = createInsertSchema(verificationTokens).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertVerificationToken = z.infer<typeof insertVerificationTokenSchema>;
+export type VerificationToken = typeof verificationTokens.$inferSelect;
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
