@@ -860,6 +860,11 @@ export default function DashboardPage() {
                 </p>
               ) : notes.map((note: any) => (
               <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
+                {note.photo && (
+                  <div className="w-full h-32 sm:h-40 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
+                    <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                  </div>
+                )}
                 <div className="p-3 space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded" data-testid={`note-number-${note.id}`}>
@@ -961,12 +966,12 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
-                    {note.signedAt ? (
+                    {note.photo ? (
                       <Button
                         size="sm"
                         variant="outline"
                         className="flex-1 text-xs h-7"
-                        onClick={() => loadAndPreviewPhoto(note.id)}
+                        onClick={() => previewDeliveryNote(note.photo)}
                         data-testid={`button-view-photo-${note.id}`}
                       >
                         <Download className="w-3 h-3 mr-1" />
@@ -1357,15 +1362,9 @@ export default function DashboardPage() {
                 </p>
               ) : notes.map((note: any) => (
                 <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm">
-                  {note.signedAt && (
-                    <div 
-                      className="w-full h-24 bg-muted cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center"
-                      onClick={() => loadAndPreviewPhoto(note.id)}
-                    >
-                      <div className="text-center text-muted-foreground">
-                        <Camera className="w-6 h-6 mx-auto mb-1" />
-                        <span className="text-xs">Ver foto</span>
-                      </div>
+                  {note.photo && (
+                    <div className="w-full h-24 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
+                      <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className="p-3 space-y-2">
