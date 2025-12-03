@@ -80,29 +80,6 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Load photo from API and preview it
-  const loadAndPreviewPhoto = async (noteId: string) => {
-    try {
-      toast({ title: "Cargando foto..." });
-      const response = await fetch(`/api/delivery-notes/${noteId}`, { credentials: "include" });
-      if (response.ok) {
-        const note = await response.json();
-        if (note.photo) {
-          setPreviewImage(note.photo);
-          setAlbaranesModalOpen(false);
-          setPreviewModalOpen(true);
-        } else {
-          toast({ title: "Sin foto", description: "Este albarán no tiene foto adjunta", variant: "destructive" });
-        }
-      } else {
-        throw new Error("Error al cargar");
-      }
-    } catch (error) {
-      console.error("Error loading photo:", error);
-      toast({ title: "Error", description: "No se pudo cargar la foto", variant: "destructive" });
-    }
-  };
-
   // Save photo and sign the delivery note
   const savePhotoAndSign = async () => {
     if (!selectedNoteForPhoto || !capturedPhoto) return;
