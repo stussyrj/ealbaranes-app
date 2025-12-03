@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1214,12 +1214,20 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
+                    <div className="flex items-start gap-2 text-xs">
+                      <MapPin className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-muted-foreground">Origen → Destino</p>
+                        <p className="font-medium truncate">{note.pickupOrigin || 'N/A'} → {note.destination || 'N/A'}</p>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <User className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-muted-foreground">Destino</p>
-                          <p className="font-medium truncate">{note.destination || 'N/A'}</p>
+                          <p className="text-muted-foreground">Trabajador</p>
+                          <p className="font-medium truncate">{note.workerName || 'N/A'}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
@@ -1229,14 +1237,22 @@ export default function DashboardPage() {
                           <p className="font-medium">{note.date || 'N/A'}</p>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-xs">
-                      <Truck className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-muted-foreground">Cliente</p>
-                        <p className="font-medium truncate">{note.clientName || 'N/A'}</p>
+                      <div className="flex items-start gap-2">
+                        <Truck className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-muted-foreground">Cliente</p>
+                          <p className="font-medium truncate">{note.clientName || 'N/A'}</p>
+                        </div>
                       </div>
+                      {note.waitTime && note.waitTime > 0 && (
+                        <div className="flex items-start gap-2">
+                          <Hourglass className="w-3 h-3 text-amber-500 mt-0.5 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-muted-foreground">T. Espera</p>
+                            <p className="font-medium text-amber-600 dark:text-amber-400">{note.waitTime} min</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {note.invoicedAt && (
