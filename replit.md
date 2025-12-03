@@ -47,7 +47,8 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 
 ### Rutas Públicas
 - `/pricing` - Página de precios
-- `/register` - Registro de empresa (crea tenant + cliente [REDACTED-STRIPE]
+- `/register` - Registro de empresa (crea tenant + cliente [REDACTED-STRIPE] envía email de verificación)
+- `/verify-email` - Verificación de email (procesa token de verificación)
 - `/login` - Inicio de sesión
 
 ### Rutas Protegidas (Empresa)
@@ -61,8 +62,10 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 ## Endpoints Backend
 
 ### Autenticación
-- `POST /api/register` - Registro de empresa (crea tenant + [REDACTED-STRIPE] customer)
-- `POST /api/login` - Login
+- `POST /api/register` - Registro de empresa (crea tenant + [REDACTED-STRIPE] customer, envía email verificación)
+- `GET /api/verify-email?token=xxx` - Verificar email con token
+- `POST /api/resend-verification` - Reenviar email de verificación (rate limited: 3/hora)
+- `POST /api/login` - Login (bloquea usuarios empresa no verificados)
 - `POST /api/logout` - Logout
 - `GET /api/user` - Usuario actual
 
@@ -82,6 +85,7 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 ### ✅ Completado
 - Sistema multi-tenant con aislamiento de datos
 - Registro de empresas con creación automática de tenant
+- **Verificación de email obligatoria** para empresas (token 24h, rate limit 3 reenvíos/hora)
 - Integración [REDACTED-STRIPE] para suscripciones (pagos activos)
 - Middleware de acceso por tenant con verificación de suscripción
 - Período de gracia (30 días) y retención de datos (90 días)
@@ -100,6 +104,7 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - Usuarios persistidos en base de datos (consistencia entre reinicios)
 - Login con email O nombre de usuario para empresas
 - Lookup de nombres de trabajador con fallback a tabla de usuarios
+- Emails vía Resend (bienvenida, verificación, notificaciones albaranes)
 
 ## Preferencias Usuario
 
