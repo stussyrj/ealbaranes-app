@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,8 @@ export default function DashboardPage() {
     observations: "",
   });
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const [dateFilterStart, setDateFilterStart] = useState<string>("");
+  const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
 
   const previewDeliveryNote = (photo: string) => {
     if (!photo) {
@@ -572,13 +574,62 @@ export default function DashboardPage() {
       </Dialog>
 
       {/* Albaranes List Modal */}
-      <Dialog open={albaranesModalOpen} onOpenChange={setAlbaranesModalOpen}>
+      <Dialog open={albaranesModalOpen} onOpenChange={(open) => {
+        setAlbaranesModalOpen(open);
+        if (!open) {
+          setDateFilterStart("");
+          setDateFilterEnd("");
+        }
+      }}>
         <DialogContent className="max-w-md max-h-[95vh] overflow-y-auto w-screen sm:w-[95vw] h-screen sm:h-auto p-2 sm:p-3 sm:rounded-lg rounded-none">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base sm:text-lg">
               Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"} - {albaranesCreatorType === "admin" ? "Empresa" : "Trabajadores"}
             </DialogTitle>
           </DialogHeader>
+          
+          {/* Filtro de fechas */}
+          <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="w-4 h-4" />
+              Filtrar por fechas
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Desde</label>
+                <Input
+                  type="date"
+                  value={dateFilterStart}
+                  onChange={(e) => setDateFilterStart(e.target.value)}
+                  className="h-9 text-sm"
+                  data-testid="input-date-filter-start"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Hasta</label>
+                <Input
+                  type="date"
+                  value={dateFilterEnd}
+                  onChange={(e) => setDateFilterEnd(e.target.value)}
+                  className="h-9 text-sm"
+                  data-testid="input-date-filter-end"
+                />
+              </div>
+            </div>
+            {(dateFilterStart || dateFilterEnd) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7 w-full"
+                onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
+                data-testid="button-clear-date-filter"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Limpiar filtro
+              </Button>
+            )}
+          </div>
+
           <div className="space-y-3">
             {(() => {
               let notes: any[] = [];
@@ -587,8 +638,31 @@ export default function DashboardPage() {
               } else {
                 notes = albaranesModalType === "pending" ? trabajadoresPendingNotes : trabajadoresSignedNotes;
               }
+              
+              // Aplicar filtro de fechas
+              if (dateFilterStart || dateFilterEnd) {
+                notes = notes.filter((note: any) => {
+                  if (!note.date) return false;
+                  const noteDate = new Date(note.date);
+                  if (dateFilterStart) {
+                    const startDate = new Date(dateFilterStart);
+                    if (noteDate < startDate) return false;
+                  }
+                  if (dateFilterEnd) {
+                    const endDate = new Date(dateFilterEnd);
+                    if (noteDate > endDate) return false;
+                  }
+                  return true;
+                });
+              }
+              
               return notes.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No hay albaranes en esta categoría</p>
+                <p className="text-center text-muted-foreground py-8">
+                  {(dateFilterStart || dateFilterEnd) 
+                    ? "No hay albaranes en el rango de fechas seleccionado"
+                    : "No hay albaranes en esta categoría"
+                  }
+                </p>
               ) : notes.map((note: any) => (
               <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
                 {note.photo && (
