@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/AuthContext";
 import html2canvas from "html2canvas";
 import {
   Dialog,
@@ -20,6 +23,8 @@ import {
 
 export default function DashboardPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [showAnimation, setShowAnimation] = useState(true);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
@@ -29,6 +34,16 @@ export default function DashboardPage() {
   const [albaranesModalType, setAlbaranesModalType] = useState<"pending" | "signed">("pending");
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    clientName: "",
+    pickupOrigin: "",
+    destination: "",
+    vehicleType: "Furgoneta",
+    date: new Date().toISOString().split("T")[0],
+    time: "09:00",
+    observations: "",
+  });
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   const previewDeliveryNote = (photo: string) => {
@@ -164,8 +179,26 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Albaranes - Tarjetas clicables que abren detalles */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        {/* Albaranes - Tarjetas clicables */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          {/* Crear Albarán */}
+          <button
+            onClick={() => setCreateDeliveryOpen(true)}
+            className="rounded-lg bg-purple-600/85 hover:bg-purple-700/85 p-4 text-left shadow-sm text-white"
+            data-testid="button-create-albaran"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm sm:text-base font-bold">Crear</div>
+                <p className="text-[10px] sm:text-xs text-white/80 truncate">Albarán</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Pendientes */}
           <button
             onClick={() => { setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
             className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
@@ -177,11 +210,12 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <div className="text-xl sm:text-2xl font-bold">{pendingDeliveryNotes.length}</div>
-                <p className="text-xs text-muted-foreground truncate">Pendientes</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
               </div>
             </div>
           </button>
 
+          {/* Firmados */}
           <button
             onClick={() => { setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
             className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
@@ -193,7 +227,7 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <div className="text-xl sm:text-2xl font-bold">{signedDeliveryNotes.length}</div>
-                <p className="text-xs text-muted-foreground truncate">Firmados</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
               </div>
             </div>
           </button>
@@ -598,6 +632,148 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Crear Albarán */}
+      <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Albarán</DialogTitle>
+            <DialogDescription>
+              Completa los datos del albarán para registrar la entrega
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Nombre del Cliente</label>
+              <Input
+                placeholder="Ej: Juan García"
+                value={formData.clientName}
+                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                data-testid="input-client-name"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Origen (Recogida)</label>
+              <Input
+                placeholder="Ej: Calle Principal, 123"
+                value={formData.pickupOrigin}
+                onChange={(e) => setFormData({ ...formData, pickupOrigin: e.target.value })}
+                data-testid="input-pickup-origin"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Destino</label>
+              <Input
+                placeholder="Ej: Avenida Central, 456"
+                value={formData.destination}
+                onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                data-testid="input-destination"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Tipo de Vehículo</label>
+              <div className="grid grid-cols-2 gap-2">
+                {["Moto", "Furgoneta", "Furgón", "Carrozado"].map((tipo) => (
+                  <Button
+                    key={tipo}
+                    type="button"
+                    variant={formData.vehicleType === tipo ? "default" : "outline"}
+                    onClick={() => setFormData({ ...formData, vehicleType: tipo })}
+                    className="text-xs"
+                    data-testid={`button-vehicle-${tipo.toLowerCase()}`}
+                  >
+                    {tipo}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">Fecha</label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  data-testid="input-date"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Hora</label>
+                <Input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  data-testid="input-time"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Observaciones</label>
+              <Textarea
+                placeholder="Notas adicionales sobre el albarán..."
+                value={formData.observations}
+                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                rows={3}
+                data-testid="input-observations"
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setCreateDeliveryOpen(false)} className="flex-1" data-testid="button-cancel-create">
+                Cancelar
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const deliveryNoteData = {
+                      quoteId: `custom-${Date.now()}`,
+                      workerId: user?.id,
+                      clientName: formData.clientName,
+                      pickupOrigin: formData.pickupOrigin,
+                      destination: formData.destination,
+                      vehicleType: formData.vehicleType,
+                      date: formData.date,
+                      time: formData.time,
+                      observations: formData.observations,
+                      status: "pending",
+                    };
+
+                    const response = await fetch("/api/delivery-notes", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(deliveryNoteData),
+                      credentials: "include",
+                    });
+
+                    if (response.ok) {
+                      toast({ title: "Albarán creado", description: "El albarán se ha guardado correctamente" });
+                      await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+                      setCreateDeliveryOpen(false);
+                      setFormData({
+                        clientName: "",
+                        pickupOrigin: "",
+                        destination: "",
+                        vehicleType: "Furgoneta",
+                        date: new Date().toISOString().split("T")[0],
+                        time: "09:00",
+                        observations: "",
+                      });
+                    } else {
+                      toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
+                    }
+                  } catch (error) {
+                    console.error("Error guardando albarán:", error);
+                    toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
+                  }
+                }}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                data-testid="button-save-albaran"
+              >
+                Guardar Albarán
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
