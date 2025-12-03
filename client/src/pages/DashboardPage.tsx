@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import {
   Dialog,
   DialogContent,
@@ -357,25 +358,90 @@ export default function DashboardPage() {
                   return;
                 }
                 setIsDownloading(true);
-                toast({ title: "Preparando descarga...", description: `Descargando ${notesWithPhotos.length} foto(s)` });
+                toast({ title: "Generando PDF...", description: `Creando documento con ${notesWithPhotos.length} albarán(es)` });
                 try {
-                  for (const note of notesWithPhotos) {
-                    const response = await fetch(note.photo);
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `albaran-${note.noteNumber || note.id}-firmado-${note.destination || 'destino'}.png`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                  const pdf = new jsPDF('p', 'mm', 'a4');
+                  const pageWidth = pdf.internal.pageSize.getWidth();
+                  const pageHeight = pdf.internal.pageSize.getHeight();
+                  const margin = 15;
+                  
+                  for (let i = 0; i < notesWithPhotos.length; i++) {
+                    const note = notesWithPhotos[i];
+                    if (i > 0) pdf.addPage();
+                    
+                    pdf.setFillColor(124, 58, 237);
+                    pdf.rect(0, 0, pageWidth, 35, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(22);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('eAlbarán', margin, 18);
+                    pdf.setFontSize(14);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text(`Albarán #${note.noteNumber || '-'}`, margin, 28);
+                    pdf.setFontSize(10);
+                    pdf.text('FIRMADO', pageWidth - margin - 20, 18);
+                    
+                    pdf.setTextColor(0, 0, 0);
+                    let yPos = 45;
+                    
+                    pdf.setFontSize(11);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Datos del albarán:', margin, yPos);
+                    yPos += 8;
+                    
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(10);
+                    const details = [
+                      ['Cliente:', note.clientName || 'No especificado'],
+                      ['Origen:', note.pickupOrigin || 'No especificado'],
+                      ['Destino:', note.destination || 'No especificado'],
+                      ['Vehículo:', note.vehicleType || 'No especificado'],
+                      ['Fecha:', note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'No especificada'],
+                      ['Hora:', note.time || 'No especificada'],
+                      ['Trabajador:', note.workerName || 'Desconocido'],
+                      ['Observaciones:', note.observations || 'Sin observaciones']
+                    ];
+                    
+                    details.forEach(([label, value]) => {
+                      pdf.setFont('helvetica', 'bold');
+                      pdf.text(label, margin, yPos);
+                      pdf.setFont('helvetica', 'normal');
+                      pdf.text(String(value), margin + 30, yPos);
+                      yPos += 6;
+                    });
+                    
+                    yPos += 5;
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Foto del albarán firmado:', margin, yPos);
+                    yPos += 5;
+                    
+                    try {
+                      const response = await fetch(note.photo);
+                      const blob = await response.blob();
+                      const base64 = await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.readAsDataURL(blob);
+                      });
+                      
+                      const imgFormat = base64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                      const imgWidth = pageWidth - (margin * 2);
+                      const imgHeight = pageHeight - yPos - margin - 15;
+                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight);
+                    } catch (imgError) {
+                      pdf.text('(Imagen no disponible)', margin, yPos + 10);
+                    }
+                    
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(128, 128, 128);
+                    pdf.text(`Generado el ${new Date().toLocaleDateString('es-ES')} - eAlbarán`, margin, pageHeight - 8);
                   }
-                  toast({ title: "Descarga completada", description: `Se descargaron ${notesWithPhotos.length} foto(s) de albaranes firmados` });
+                  
+                  pdf.save(`albaranes-firmados-${new Date().toISOString().split('T')[0]}.pdf`);
+                  toast({ title: "PDF generado", description: `Se descargó el PDF con ${notesWithPhotos.length} albarán(es) firmado(s)` });
                 } catch (error) {
-                  console.error("Download error:", error);
-                  toast({ title: "Error", description: "No se pudieron descargar los albaranes", variant: "destructive" });
+                  console.error("PDF generation error:", error);
+                  toast({ title: "Error", description: "No se pudo generar el PDF", variant: "destructive" });
                 } finally {
                   setIsDownloading(false);
                   setDownloadModalOpen(false);
@@ -388,8 +454,8 @@ export default function DashboardPage() {
                   <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold">Albaranes Firmados</p>
-                  <p className="text-xs text-muted-foreground">{signedDeliveryNotes.filter((n: any) => n.photo).length} foto(s) disponible(s)</p>
+                  <p className="font-semibold">Albaranes Firmados (PDF)</p>
+                  <p className="text-xs text-muted-foreground">{signedDeliveryNotes.filter((n: any) => n.photo).length} albarán(es) con foto</p>
                 </div>
               </div>
             </Button>
@@ -404,33 +470,80 @@ export default function DashboardPage() {
                   return;
                 }
                 setIsDownloading(true);
-                toast({ title: "Preparando descarga...", description: `Generando ${pendingDeliveryNotes.length} albarán(es) pendiente(s)` });
+                toast({ title: "Generando PDF...", description: `Creando listado de ${pendingDeliveryNotes.length} albarán(es)` });
                 try {
-                  const pendingData = pendingDeliveryNotes.map((note: any) => ({
-                    numeroAlbaran: note.noteNumber || '-',
-                    origen: note.pickupOrigin || 'N/A',
-                    destino: note.destination || 'N/A',
-                    cliente: note.clientName || 'N/A',
-                    vehiculo: note.vehicleType || 'N/A',
-                    fecha: note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A',
-                    hora: note.time || 'N/A',
-                    trabajador: note.workerName || 'Desconocido',
-                    observaciones: note.observations || 'Sin observaciones'
-                  }));
-                  const csvContent = "data:text/csv;charset=utf-8," 
-                    + "Nº Albarán,Origen,Destino,Cliente,Vehículo,Fecha,Hora,Trabajador,Observaciones\n"
-                    + pendingData.map((row: any) => Object.values(row).map(v => `"${v}"`).join(",")).join("\n");
-                  const encodedUri = encodeURI(csvContent);
-                  const link = document.createElement("a");
-                  link.setAttribute("href", encodedUri);
-                  link.setAttribute("download", `albaranes-pendientes-${new Date().toISOString().split('T')[0]}.csv`);
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                  toast({ title: "Descarga completada", description: `Se descargó el listado de ${pendingDeliveryNotes.length} albarán(es) pendiente(s)` });
+                  const pdf = new jsPDF('p', 'mm', 'a4');
+                  const pageWidth = pdf.internal.pageSize.getWidth();
+                  const pageHeight = pdf.internal.pageSize.getHeight();
+                  const margin = 15;
+                  
+                  pdf.setFillColor(249, 115, 22);
+                  pdf.rect(0, 0, pageWidth, 35, 'F');
+                  pdf.setTextColor(255, 255, 255);
+                  pdf.setFontSize(22);
+                  pdf.setFont('helvetica', 'bold');
+                  pdf.text('eAlbarán', margin, 18);
+                  pdf.setFontSize(14);
+                  pdf.setFont('helvetica', 'normal');
+                  pdf.text('Listado de Albaranes Pendientes', margin, 28);
+                  pdf.setFontSize(10);
+                  pdf.text(new Date().toLocaleDateString('es-ES'), pageWidth - margin - 25, 18);
+                  
+                  pdf.setTextColor(0, 0, 0);
+                  let yPos = 45;
+                  
+                  pdf.setFontSize(10);
+                  pdf.setFont('helvetica', 'bold');
+                  pdf.setFillColor(240, 240, 240);
+                  pdf.rect(margin, yPos - 4, pageWidth - (margin * 2), 8, 'F');
+                  pdf.text('Nº', margin + 2, yPos);
+                  pdf.text('Origen', margin + 15, yPos);
+                  pdf.text('Destino', margin + 55, yPos);
+                  pdf.text('Cliente', margin + 95, yPos);
+                  pdf.text('Fecha', margin + 135, yPos);
+                  pdf.text('Trabajador', margin + 160, yPos);
+                  yPos += 8;
+                  
+                  pdf.setFont('helvetica', 'normal');
+                  pdf.setFontSize(9);
+                  
+                  for (const note of pendingDeliveryNotes) {
+                    if (yPos > pageHeight - 25) {
+                      pdf.addPage();
+                      yPos = 20;
+                      pdf.setFillColor(240, 240, 240);
+                      pdf.rect(margin, yPos - 4, pageWidth - (margin * 2), 8, 'F');
+                      pdf.setFont('helvetica', 'bold');
+                      pdf.text('Nº', margin + 2, yPos);
+                      pdf.text('Origen', margin + 15, yPos);
+                      pdf.text('Destino', margin + 55, yPos);
+                      pdf.text('Cliente', margin + 95, yPos);
+                      pdf.text('Fecha', margin + 135, yPos);
+                      pdf.text('Trabajador', margin + 160, yPos);
+                      yPos += 8;
+                      pdf.setFont('helvetica', 'normal');
+                    }
+                    
+                    const truncate = (str: string, len: number) => str && str.length > len ? str.substring(0, len) + '...' : (str || '-');
+                    
+                    pdf.text(String(note.noteNumber || '-'), margin + 2, yPos);
+                    pdf.text(truncate(note.pickupOrigin, 18), margin + 15, yPos);
+                    pdf.text(truncate(note.destination, 18), margin + 55, yPos);
+                    pdf.text(truncate(note.clientName, 18), margin + 95, yPos);
+                    pdf.text(note.date ? new Date(note.date).toLocaleDateString('es-ES') : '-', margin + 135, yPos);
+                    pdf.text(truncate(note.workerName || 'Desconocido', 15), margin + 160, yPos);
+                    yPos += 6;
+                  }
+                  
+                  pdf.setFontSize(8);
+                  pdf.setTextColor(128, 128, 128);
+                  pdf.text(`Total: ${pendingDeliveryNotes.length} albarán(es) pendiente(s) - Generado el ${new Date().toLocaleDateString('es-ES')}`, margin, pageHeight - 8);
+                  
+                  pdf.save(`albaranes-pendientes-${new Date().toISOString().split('T')[0]}.pdf`);
+                  toast({ title: "PDF generado", description: `Se descargó el listado de ${pendingDeliveryNotes.length} albarán(es) pendiente(s)` });
                 } catch (error) {
-                  console.error("Download error:", error);
-                  toast({ title: "Error", description: "No se pudo generar el archivo", variant: "destructive" });
+                  console.error("PDF generation error:", error);
+                  toast({ title: "Error", description: "No se pudo generar el PDF", variant: "destructive" });
                 } finally {
                   setIsDownloading(false);
                   setDownloadModalOpen(false);
@@ -443,8 +556,8 @@ export default function DashboardPage() {
                   <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold">Albaranes Pendientes</p>
-                  <p className="text-xs text-muted-foreground">{pendingDeliveryNotes.length} albarán(es) disponible(s)</p>
+                  <p className="font-semibold">Albaranes Pendientes (PDF)</p>
+                  <p className="text-xs text-muted-foreground">{pendingDeliveryNotes.length} albarán(es) en listado</p>
                 </div>
               </div>
             </Button>
