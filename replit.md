@@ -105,6 +105,8 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - Login con email O nombre de usuario para empresas
 - Lookup de nombres de trabajador con fallback a tabla de usuarios
 - Emails vía Resend (bienvenida, verificación, notificaciones albaranes)
+- Sistema de facturación de albaranes (Cobrados/Pendientes de cobro)
+- Filtrado de albaranes por rango de fechas
 
 ## Preferencias Usuario
 
