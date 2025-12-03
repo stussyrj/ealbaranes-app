@@ -958,7 +958,7 @@ export default function DashboardPage() {
 
       {/* Modal Crear Albarán */}
       <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Crear Nuevo Albarán</DialogTitle>
             <DialogDescription>
