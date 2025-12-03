@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2 } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,13 @@ export default function DashboardPage() {
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   const [dateFilterStart, setDateFilterStart] = useState<string>("");
   const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
+  
+  // Photo capture states for signing
+  const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
+  const [selectedNoteForPhoto, setSelectedNoteForPhoto] = useState<any>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const previewDeliveryNote = (photo: string) => {
     if (!photo) {
@@ -58,6 +65,58 @@ export default function DashboardPage() {
     setPreviewImage(photo);
     setAlbaranesModalOpen(false);
     setPreviewModalOpen(true);
+  };
+
+  // Handle file upload for photo
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const photoData = event.target?.result as string;
+        setCapturedPhoto(photoData);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
+
+  // Save photo and sign the delivery note
+  const savePhotoAndSign = async () => {
+    if (!selectedNoteForPhoto || !capturedPhoto) return;
+    
+    setIsUploadingPhoto(true);
+    try {
+      const now = new Date().toISOString();
+      const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          photo: capturedPhoto,
+          status: "confirmado",
+          signedAt: now
+        }),
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        toast({ title: "Albarán firmado", description: "La foto se ha guardado correctamente" });
+        
+        // Invalidate and refetch
+        await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+        
+        // Close dialogs and reset state
+        setCapturePhotoOpen(false);
+        setCapturedPhoto(null);
+        setSelectedNoteForPhoto(null);
+      } else {
+        throw new Error("Error al guardar");
+      }
+    } catch (error) {
+      console.error("Error saving photo:", error);
+      toast({ title: "Error", description: "No se pudo guardar la foto", variant: "destructive" });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   useEffect(() => {
@@ -885,7 +944,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
-                    {note.photo && (
+                    {note.photo ? (
                       <Button
                         size="sm"
                         variant="outline"
@@ -895,6 +954,21 @@ export default function DashboardPage() {
                       >
                         <Download className="w-3 h-3 mr-1" />
                         Ver foto
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="flex-1 text-xs h-7"
+                        onClick={() => {
+                          setSelectedNoteForPhoto(note);
+                          setCapturedPhoto(null);
+                          setCapturePhotoOpen(true);
+                        }}
+                        data-testid={`button-sign-photo-${note.id}`}
+                      >
+                        <Camera className="w-3 h-3 mr-1" />
+                        Firmar con foto
                       </Button>
                     )}
                     <Button
@@ -1398,6 +1472,105 @@ export default function DashboardPage() {
                 </div>
               ));
             })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Capture Dialog for Signing */}
+      <Dialog open={capturePhotoOpen} onOpenChange={(open) => {
+        setCapturePhotoOpen(open);
+        if (!open) {
+          setCapturedPhoto(null);
+          setSelectedNoteForPhoto(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Firmar Albarán #{selectedNoteForPhoto?.noteNumber}</DialogTitle>
+            <DialogDescription>
+              Sube o captura una foto del albarán firmado
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {!capturedPhoto && (
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-24 border-dashed border-2 flex flex-col gap-2"
+                  data-testid="button-upload-photo"
+                >
+                  <Upload className="w-8 h-8 text-muted-foreground" />
+                  <span>Subir foto del albarán</span>
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  data-testid="input-file-photo"
+                />
+              </div>
+            )}
+
+            {capturedPhoto && (
+              <div className="relative">
+                <img 
+                  src={capturedPhoto} 
+                  alt="Foto capturada" 
+                  className="w-full rounded-lg max-h-64 object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => setCapturedPhoto(null)}
+                  className="absolute top-2 right-2"
+                  data-testid="button-delete-photo"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCapturePhotoOpen(false);
+                  setCapturedPhoto(null);
+                  setSelectedNoteForPhoto(null);
+                }}
+                className="flex-1"
+                data-testid="button-cancel-photo"
+              >
+                Cancelar
+              </Button>
+              {capturedPhoto && (
+                <Button
+                  onClick={savePhotoAndSign}
+                  disabled={isUploadingPhoto}
+                  className="flex-1"
+                  data-testid="button-save-photo"
+                >
+                  {isUploadingPhoto ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Firmar albarán
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
