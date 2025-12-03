@@ -1255,6 +1255,16 @@ export default function DashboardPage() {
                       )}
                     </div>
 
+                    {note.observations && note.observations.trim() && (
+                      <div className="flex items-start gap-2 text-xs bg-slate-100 dark:bg-slate-800/50 rounded-md p-2">
+                        <FileText className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-muted-foreground">Observaciones</p>
+                          <p className="font-medium">{note.observations}</p>
+                        </div>
+                      </div>
+                    )}
+
                     {note.invoicedAt && (
                       <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md p-2 text-xs">
                         <Banknote className="w-3 h-3 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
