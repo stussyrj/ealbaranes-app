@@ -102,17 +102,15 @@ export function AppSidebar() {
               </p>
             </div>
           </div>
-          {isMobile && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCloseSidebar}
-              className="h-8 w-8"
-              data-testid="button-close-sidebar"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCloseSidebar}
+            className="h-8 w-8 lg:hidden"
+            data-testid="button-close-sidebar"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
       </SidebarHeader>
 
