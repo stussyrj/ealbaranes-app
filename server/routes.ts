@@ -497,6 +497,16 @@ export async function registerRoutes(
           data.invoicedAt = null;
         }
       } else {
+        // Validate photo size to prevent corrupt/empty photos
+        if (data.photo && typeof data.photo === 'string' && data.photo.length < 500) {
+          return res.status(400).json({ error: "La foto es demasiado pequeña o está corrupta. Inténtalo de nuevo." });
+        }
+        
+        // Validate signature size to prevent corrupt/empty signatures  
+        if (data.signature && typeof data.signature === 'string' && data.signature.length < 500) {
+          return res.status(400).json({ error: "La firma es demasiado pequeña o está corrupta. Inténtalo de nuevo." });
+        }
+        
         // Check if this is a signature-only update (photo or signature)
         const isSignatureUpdate = Object.keys(data).every(key => 
           key === 'photo' || key === 'signature'

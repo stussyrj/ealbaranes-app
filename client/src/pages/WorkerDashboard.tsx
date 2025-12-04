@@ -1436,10 +1436,17 @@ export default function WorkerDashboard() {
               >
                 Cancelar
               </Button>
-              {capturedPhoto && (
+              {capturedPhoto && capturedPhoto.length > 500 && (
                 <Button
                   onClick={async () => {
                     if (!selectedNoteForPhoto || !capturedPhoto) return;
+                    
+                    if (capturedPhoto.length < 500) {
+                      toast({ title: "Error", description: "La foto capturada está corrupta. Inténtalo de nuevo.", variant: "destructive" });
+                      setCapturedPhoto(null);
+                      return;
+                    }
+                    
                     try {
                       const now = new Date().toISOString();
                       const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
