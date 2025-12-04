@@ -392,8 +392,18 @@ export async function registerRoutes(
   // Delivery notes
   app.post("/api/delivery-notes", async (req, res) => {
     try {
+      // Require authentication for tenant isolation
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
       const data = req.body;
       const user = req.user as any;
+      
+      // Require tenantId to prevent orphan notes
+      if (!user.tenantId) {
+        return res.status(400).json({ error: "Usuario sin empresa asignada" });
+      }
       
       console.log("[routes] Creating delivery note. User:", user?.id, "isAdmin:", user?.isAdmin);
       
@@ -411,7 +421,7 @@ export async function registerRoutes(
         quoteId: data.quoteId,
         workerId: data.workerId,
         creatorType: creatorType,
-        tenantId: user?.tenantId || null,
+        tenantId: user.tenantId,
         clientName: data.clientName || null,
         pickupOrigins: data.pickupOrigins || (data.pickupOrigin ? [data.pickupOrigin] : null),
         destination: data.destination || null,
