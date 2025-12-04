@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -150,6 +150,13 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type Quote = typeof quotes.$inferSelect;
 
+export const pickupOriginSchema = z.object({
+  name: z.string(),
+  address: z.string(),
+});
+
+export type PickupOrigin = z.infer<typeof pickupOriginSchema>;
+
 export const deliveryNotes = pgTable("delivery_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   noteNumber: integer("note_number").notNull(),
@@ -157,7 +164,7 @@ export const deliveryNotes = pgTable("delivery_notes", {
   workerId: varchar("worker_id").notNull(),
   creatorType: text("creator_type").default("worker"),
   clientName: text("client_name"),
-  pickupOrigins: text("pickup_origins").array(),
+  pickupOrigins: jsonb("pickup_origins").$type<PickupOrigin[]>(),
   destination: text("destination"),
   vehicleType: text("vehicle_type"),
   date: text("date"),
