@@ -735,7 +735,7 @@ export default function DashboardPage() {
                       const imgFormat = base64.includes('data:image/png') ? 'PNG' : 'JPEG';
                       const imgWidth = pageWidth - (margin * 2);
                       const imgHeight = pageHeight - yPos - margin - 15;
-                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight);
+                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight, undefined, 'MEDIUM');
                     } catch (imgError) {
                       pdf.text('(Imagen no disponible)', margin, yPos + 10);
                     }
@@ -779,57 +779,93 @@ export default function DashboardPage() {
                   return;
                 }
                 setIsDownloading(true);
-                toast({ title: "Generando ZIP...", description: `Comprimiendo ${notesWithPhotos.length} albarán(es) cobrado(s)...` });
+                toast({ title: "Generando PDF...", description: `Creando documento con ${notesWithPhotos.length} albarán(es) cobrado(s)` });
                 try {
-                  const zip = new JSZip();
-                  const folder = zip.folder("albaranes-cobrados");
-                  let processedCount = 0;
-                  let errorCount = 0;
+                  const pdf = new jsPDF('p', 'mm', 'a4');
+                  const pageWidth = pdf.internal.pageSize.getWidth();
+                  const pageHeight = pdf.internal.pageSize.getHeight();
+                  const margin = 15;
                   
                   for (let i = 0; i < notesWithPhotos.length; i++) {
                     const note = notesWithPhotos[i];
+                    if (i > 0) pdf.addPage();
+                    
+                    pdf.setFillColor(16, 185, 129);
+                    pdf.rect(0, 0, pageWidth, 35, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(22);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('eAlbarán', margin, 18);
+                    pdf.setFontSize(14);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text(`Albarán #${note.noteNumber || '-'}`, margin, 28);
+                    pdf.setFontSize(10);
+                    pdf.text('COBRADO', pageWidth - margin - 22, 18);
+                    
+                    pdf.setTextColor(0, 0, 0);
+                    let yPos = 45;
+                    
+                    pdf.setFontSize(11);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Datos del albarán:', margin, yPos);
+                    yPos += 8;
+                    
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(10);
+                    const details = [
+                      ['Cliente:', note.clientName || 'No especificado'],
+                      ['Recogidas:', formatOriginsForPdf(note.pickupOrigins)],
+                      ['Destino:', note.destination || 'No especificado'],
+                      ['Vehículo:', note.vehicleType || 'No especificado'],
+                      ['Fecha:', note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'No especificada'],
+                      ['Hora:', note.time || 'No especificada'],
+                      ['Trabajador:', note.workerName || 'Desconocido'],
+                      ['Observaciones:', note.observations || 'Sin observaciones']
+                    ];
+                    
+                    details.forEach(([label, value]) => {
+                      pdf.setFont('helvetica', 'bold');
+                      pdf.text(label, margin, yPos);
+                      pdf.setFont('helvetica', 'normal');
+                      pdf.text(String(value), margin + 30, yPos);
+                      yPos += 6;
+                    });
+                    
+                    yPos += 5;
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Foto del albarán cobrado:', margin, yPos);
+                    yPos += 5;
                     
                     try {
-                      // Para imágenes base64, extraer los datos directamente
-                      if (note.photo.startsWith('data:image')) {
-                        const base64Data = note.photo.split(',')[1];
-                        if (base64Data) {
-                          const byteCharacters = atob(base64Data);
-                          const byteNumbers = new Array(byteCharacters.length);
-                          for (let j = 0; j < byteCharacters.length; j++) {
-                            byteNumbers[j] = byteCharacters.charCodeAt(j);
-                          }
-                          const byteArray = new Uint8Array(byteNumbers);
-                          const blob = new Blob([byteArray], { type: 'image/jpeg' });
-                          const fileName = `albaran-${note.noteNumber || i + 1}-cobrado-${note.clientName?.replace(/[^a-zA-Z0-9]/g, '_') || 'cliente'}.jpg`;
-                          folder?.file(fileName, blob);
-                          processedCount++;
-                        }
+                      let base64 = note.photo;
+                      if (!base64.startsWith('data:image')) {
+                        const response = await fetch(note.photo);
+                        const blob = await response.blob();
+                        base64 = await new Promise<string>((resolve) => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => resolve(reader.result as string);
+                          reader.readAsDataURL(blob);
+                        });
                       }
+                      
+                      const imgFormat = base64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                      const imgWidth = pageWidth - (margin * 2);
+                      const imgHeight = pageHeight - yPos - margin - 15;
+                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight, undefined, 'MEDIUM');
                     } catch (imgError) {
-                      console.error(`Error processing image for note ${note.noteNumber}:`, imgError);
-                      errorCount++;
+                      pdf.text('(Imagen no disponible)', margin, yPos + 10);
                     }
+                    
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(128, 128, 128);
+                    pdf.text(`Generado el ${new Date().toLocaleDateString('es-ES')} - eAlbarán`, margin, pageHeight - 8);
                   }
                   
-                  if (processedCount === 0) {
-                    throw new Error("No se pudo procesar ninguna imagen");
-                  }
-                  
-                  const content = await zip.generateAsync({ 
-                    type: "blob",
-                    compression: "DEFLATE",
-                    compressionOptions: { level: 6 }
-                  });
-                  
-                  saveAs(content, `albaranes-cobrados-${new Date().toISOString().split('T')[0]}.zip`);
-                  const message = errorCount > 0 
-                    ? `Se descargaron ${processedCount} albarán(es). ${errorCount} no se pudieron procesar.`
-                    : `Se descargó el archivo con ${processedCount} albarán(es) cobrado(s)`;
-                  toast({ title: "ZIP generado", description: message });
+                  pdf.save(`albaranes-cobrados-${new Date().toISOString().split('T')[0]}.pdf`);
+                  toast({ title: "PDF generado", description: `Se descargó el PDF con ${notesWithPhotos.length} albarán(es) cobrado(s)` });
                 } catch (error) {
-                  console.error("ZIP generation error:", error);
-                  toast({ title: "Error", description: "No se pudo generar el archivo ZIP", variant: "destructive" });
+                  console.error("PDF generation error:", error);
+                  toast({ title: "Error", description: "No se pudo generar el PDF", variant: "destructive" });
                 } finally {
                   setIsDownloading(false);
                   setDownloadModalOpen(false);
@@ -842,8 +878,8 @@ export default function DashboardPage() {
                   <Banknote className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold">Albaranes Cobrados (ZIP)</p>
-                  <p className="text-xs text-muted-foreground">{invoicedNotes.filter((n: any) => n.photo).length} albarán(es) con foto comprimidos</p>
+                  <p className="font-semibold">Albaranes Cobrados (PDF)</p>
+                  <p className="text-xs text-muted-foreground">{invoicedNotes.filter((n: any) => n.photo).length} albarán(es) con foto</p>
                 </div>
               </div>
             </Button>
