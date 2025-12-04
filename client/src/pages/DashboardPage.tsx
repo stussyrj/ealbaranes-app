@@ -49,7 +49,7 @@ export default function DashboardPage() {
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
   const [formData, setFormData] = useState({
     clientName: "",
-    pickupOrigin: "",
+    pickupOrigins: [""],
     destination: "",
     vehicleType: "Furgoneta",
     date: new Date().toISOString().split("T")[0],
@@ -79,6 +79,19 @@ export default function DashboardPage() {
     if (!note.photo) return "Falta foto";
     if (!note.signature) return "Falta firma digital";
     return null;
+  };
+  
+  // Helper to format multiple origins compactly
+  const formatOrigins = (origins: string[] | null | undefined, maxDisplay: number = 2): string => {
+    if (!origins || origins.length === 0) return 'N/A';
+    if (origins.length === 1) return origins[0];
+    if (origins.length <= maxDisplay) return origins.join(', ');
+    return `${origins.slice(0, maxDisplay).join(', ')} (+${origins.length - maxDisplay})`;
+  };
+  
+  const formatOriginsForPdf = (origins: string[] | null | undefined): string => {
+    if (!origins || origins.length === 0) return 'N/A';
+    return origins.join(' → ');
   };
 
   const previewDeliveryNote = (photo: string) => {
@@ -670,7 +683,7 @@ export default function DashboardPage() {
                     pdf.setFontSize(10);
                     const details = [
                       ['Cliente:', note.clientName || 'No especificado'],
-                      ['Origen:', note.pickupOrigin || 'No especificado'],
+                      ['Recogidas:', formatOriginsForPdf(note.pickupOrigins)],
                       ['Destino:', note.destination || 'No especificado'],
                       ['Vehículo:', note.vehicleType || 'No especificado'],
                       ['Fecha:', note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'No especificada'],
@@ -899,7 +912,7 @@ export default function DashboardPage() {
                     const truncate = (str: string, len: number) => str && str.length > len ? str.substring(0, len) + '...' : (str || '-');
                     
                     pdf.text(String(note.noteNumber || '-'), margin + 2, yPos);
-                    pdf.text(truncate(note.pickupOrigin, 18), margin + 15, yPos);
+                    pdf.text(truncate(formatOrigins(note.pickupOrigins, 1), 18), margin + 15, yPos);
                     pdf.text(truncate(note.destination, 18), margin + 55, yPos);
                     pdf.text(truncate(note.clientName, 18), margin + 95, yPos);
                     pdf.text(note.date ? new Date(note.date).toLocaleDateString('es-ES') : '-', margin + 135, yPos);
@@ -1075,8 +1088,10 @@ export default function DashboardPage() {
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Origen → Destino</p>
-                        <p className="text-sm font-medium truncate">{note.pickupOrigin || 'N/A'} → {note.destination || 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
+                        </p>
+                        <p className="text-sm font-medium truncate">{formatOrigins(note.pickupOrigins)} → {note.destination || 'N/A'}</p>
                       </div>
                     </div>
 
@@ -1405,14 +1420,52 @@ export default function DashboardPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Origen (Recogida)</label>
-              <AutocompleteInput
-                placeholder="Ej: Calle Principal, 123"
-                value={formData.pickupOrigin}
-                onChange={(value) => setFormData({ ...formData, pickupOrigin: value })}
-                suggestions={suggestions.origins}
-                data-testid="input-pickup-origin"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium">Recogidas ({formData.pickupOrigins.length})</label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, ""] })}
+                  className="h-6 text-xs px-2"
+                  data-testid="button-add-origin"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Añadir
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.pickupOrigins.map((origin, index) => (
+                  <div key={index} className="flex gap-2">
+                    <AutocompleteInput
+                      placeholder={`Recogida ${index + 1}`}
+                      value={origin}
+                      onChange={(value) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = value;
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                      suggestions={suggestions.origins}
+                      data-testid={`input-pickup-origin-${index}`}
+                    />
+                    {formData.pickupOrigins.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
+                          setFormData({ ...formData, pickupOrigins: newOrigins });
+                        }}
+                        className="h-9 w-9 flex-shrink-0"
+                        data-testid={`button-remove-origin-${index}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium">Destino</label>
@@ -1482,7 +1535,7 @@ export default function DashboardPage() {
                       quoteId: `custom-${Date.now()}`,
                       workerId: user?.id,
                       clientName: formData.clientName,
-                      pickupOrigin: formData.pickupOrigin,
+                      pickupOrigins: formData.pickupOrigins.filter(o => o.trim() !== ""),
                       destination: formData.destination,
                       vehicleType: formData.vehicleType,
                       date: formData.date,
@@ -1503,7 +1556,7 @@ export default function DashboardPage() {
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
-                        pickupOrigin: "",
+                        pickupOrigins: [""],
                         destination: "",
                         vehicleType: "Furgoneta",
                         date: new Date().toISOString().split("T")[0],
@@ -1653,8 +1706,10 @@ export default function DashboardPage() {
                     <div className="flex items-start gap-2 text-xs">
                       <MapPin className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-muted-foreground">Origen → Destino</p>
-                        <p className="font-medium truncate">{note.pickupOrigin || 'N/A'} → {note.destination || 'N/A'}</p>
+                        <p className="text-muted-foreground">
+                          {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
+                        </p>
+                        <p className="font-medium truncate">{formatOrigins(note.pickupOrigins)} → {note.destination || 'N/A'}</p>
                       </div>
                     </div>
 

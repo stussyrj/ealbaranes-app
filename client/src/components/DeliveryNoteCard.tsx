@@ -7,7 +7,7 @@ interface DeliveryNoteCardProps {
     id: string;
     noteNumber?: number;
     clientName?: string | null;
-    pickupOrigin?: string | null;
+    pickupOrigins?: string[] | null;
     destination?: string | null;
     vehicleType?: string | null;
     date?: string | null;
@@ -111,9 +111,11 @@ export function DeliveryNoteCard({
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">Origen → Destino</p>
+              <p className="text-xs text-muted-foreground">
+                {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
+              </p>
               <p className="text-sm font-medium truncate">
-                {note.pickupOrigin || 'N/A'} → {note.destination || 'N/A'}
+                {note.pickupOrigins?.length ? (note.pickupOrigins.length === 1 ? note.pickupOrigins[0] : `${note.pickupOrigins[0]} (+${note.pickupOrigins.length - 1})`) : 'N/A'} → {note.destination || 'N/A'}
               </p>
             </div>
           </div>

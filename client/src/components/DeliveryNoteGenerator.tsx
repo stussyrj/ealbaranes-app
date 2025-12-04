@@ -66,7 +66,7 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
       quoteId: quote.id,
       workerId,
       clientName: quote.customerName,
-      pickupOrigin: quote.origin,
+      pickupOrigins: [quote.origin],
       destination: quote.destination,
       vehicleType: quote.vehicleTypeName,
       distance: quote.distance,

@@ -37,7 +37,7 @@ export default function WorkerDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     clientName: "",
-    pickupOrigin: "",
+    pickupOrigins: [""],
     destination: "",
     vehicleType: "Furgoneta",
     date: new Date().toISOString().split("T")[0],
@@ -45,6 +45,14 @@ export default function WorkerDashboard() {
     observations: "",
     waitTime: 0,
   });
+  
+  // Helper to format multiple origins compactly
+  const formatOrigins = (origins: string[] | null | undefined, maxDisplay: number = 2): string => {
+    if (!origins || origins.length === 0) return 'N/A';
+    if (origins.length === 1) return origins[0];
+    if (origins.length <= maxDisplay) return origins.join(', ');
+    return `${origins.slice(0, maxDisplay).join(', ')} (+${origins.length - maxDisplay})`;
+  };
 
   // Use workerId if available, otherwise use user.id as the worker identifier
   const effectiveWorkerId = user?.workerId || user?.id;
@@ -404,7 +412,7 @@ export default function WorkerDashboard() {
                 </Badge>
               </div>
               <CardTitle className="text-lg line-clamp-2">
-                {note.pickupOrigin && note.destination ? `${note.pickupOrigin} → ${note.destination}` : note.quoteId}
+                {note.pickupOrigins?.length && note.destination ? `${formatOrigins(note.pickupOrigins)} → ${note.destination}` : note.quoteId}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 {note.clientName && `Cliente: ${note.clientName}`}
@@ -440,10 +448,12 @@ export default function WorkerDashboard() {
             )}
           </div>
 
-          {note.pickupOrigin && (
+          {note.pickupOrigins?.length && (
             <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded text-sm">
-              <p className="text-muted-foreground text-xs">Recogida</p>
-              <p className="font-semibold">{note.pickupOrigin}</p>
+              <p className="text-muted-foreground text-xs">
+                {note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
+              </p>
+              <p className="font-semibold">{note.pickupOrigins.join(' → ')}</p>
             </div>
           )}
 
@@ -701,8 +711,10 @@ export default function WorkerDashboard() {
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Origen → Destino</p>
-                        <p className="text-sm font-medium truncate">{note.pickupOrigin || 'N/A'} → {note.destination || 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
+                        </p>
+                        <p className="text-sm font-medium truncate">{formatOrigins(note.pickupOrigins)} → {note.destination || 'N/A'}</p>
                       </div>
                     </div>
 
@@ -782,7 +794,7 @@ export default function WorkerDashboard() {
                           setSelectedNoteToEdit(note); 
                           setFormData({ 
                             clientName: note.clientName || "", 
-                            pickupOrigin: note.pickupOrigin || "", 
+                            pickupOrigins: note.pickupOrigins || [""], 
                             destination: note.destination || "", 
                             vehicleType: note.vehicleType || "Furgoneta", 
                             date: note.date || new Date().toISOString().split("T")[0], 
@@ -842,12 +854,47 @@ export default function WorkerDashboard() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Origen (Recogida)</label>
-              <Input
-                placeholder="Ej: Calle Principal, 123"
-                value={formData.pickupOrigin}
-                onChange={(e) => setFormData({ ...formData, pickupOrigin: e.target.value })}
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium">Recogidas ({formData.pickupOrigins.length})</label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, ""] })}
+                  className="h-6 text-xs px-2"
+                >
+                  + Añadir
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.pickupOrigins.map((origin, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder={`Recogida ${index + 1}`}
+                      value={origin}
+                      onChange={(e) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = e.target.value;
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                    />
+                    {formData.pickupOrigins.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
+                          setFormData({ ...formData, pickupOrigins: newOrigins });
+                        }}
+                        className="h-9 w-9 flex-shrink-0"
+                      >
+                        ✕
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium">Destino</label>
@@ -929,7 +976,7 @@ export default function WorkerDashboard() {
                     
                     const updateData = {
                       clientName: formData.clientName,
-                      pickupOrigin: formData.pickupOrigin,
+                      pickupOrigins: formData.pickupOrigins.filter(o => o.trim() !== ""),
                       destination: formData.destination,
                       vehicleType: formData.vehicleType,
                       date: formData.date,
@@ -1007,12 +1054,47 @@ export default function WorkerDashboard() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Origen (Recogida)</label>
-              <Input
-                placeholder="Ej: Calle Principal, 123"
-                value={formData.pickupOrigin}
-                onChange={(e) => setFormData({ ...formData, pickupOrigin: e.target.value })}
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium">Recogidas ({formData.pickupOrigins.length})</label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, ""] })}
+                  className="h-6 text-xs px-2"
+                >
+                  + Añadir
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.pickupOrigins.map((origin, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder={`Recogida ${index + 1}`}
+                      value={origin}
+                      onChange={(e) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = e.target.value;
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                    />
+                    {formData.pickupOrigins.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
+                          setFormData({ ...formData, pickupOrigins: newOrigins });
+                        }}
+                        className="h-9 w-9 flex-shrink-0"
+                      >
+                        ✕
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium">Destino</label>
@@ -1081,7 +1163,7 @@ export default function WorkerDashboard() {
                       quoteId: `custom-${Date.now()}`,
                       workerId: effectiveWorkerId,
                       clientName: formData.clientName,
-                      pickupOrigin: formData.pickupOrigin,
+                      pickupOrigins: formData.pickupOrigins.filter(o => o.trim() !== ""),
                       destination: formData.destination,
                       vehicleType: formData.vehicleType,
                       date: formData.date,
@@ -1106,7 +1188,7 @@ export default function WorkerDashboard() {
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
-                        pickupOrigin: "",
+                        pickupOrigins: [""],
                         destination: "",
                         vehicleType: "Furgoneta",
                         date: new Date().toISOString().split("T")[0],
@@ -1175,8 +1257,10 @@ export default function WorkerDashboard() {
               </div>
 
               <div className="border-t pt-4">
-                <p className="text-xs text-muted-foreground mb-2">Recogida</p>
-                <p className="text-sm">{selectedNoteDetail.pickupOrigin || '-'}</p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {selectedNoteDetail.pickupOrigins && selectedNoteDetail.pickupOrigins.length > 1 ? `Recogidas (${selectedNoteDetail.pickupOrigins.length})` : 'Recogida'}
+                </p>
+                <p className="text-sm">{selectedNoteDetail.pickupOrigins?.join(' → ') || '-'}</p>
               </div>
 
               <div className="border-t pt-4">

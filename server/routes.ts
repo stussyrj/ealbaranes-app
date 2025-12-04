@@ -413,7 +413,7 @@ export async function registerRoutes(
         creatorType: creatorType,
         tenantId: user?.tenantId || null,
         clientName: data.clientName || null,
-        pickupOrigin: data.pickupOrigin || null,
+        pickupOrigins: data.pickupOrigins || (data.pickupOrigin ? [data.pickupOrigin] : null),
         destination: data.destination || null,
         vehicleType: data.vehicleType || null,
         date: data.date || null,
@@ -434,7 +434,7 @@ export async function registerRoutes(
             sendDeliveryNoteCreatedEmail(adminEmail, {
               noteNumber: note.noteNumber,
               clientName: note.clientName || undefined,
-              pickupOrigin: note.pickupOrigin || undefined,
+              pickupOrigins: note.pickupOrigins || undefined,
               destination: note.destination || undefined,
               createdBy: user.isAdmin ? 'Empresa' : (user.displayName || user.username || 'Trabajador'),
             }).catch(err => {
@@ -551,7 +551,7 @@ export async function registerRoutes(
             sendDeliveryNoteSignedEmail(adminEmail, {
               noteNumber: note.noteNumber,
               clientName: note.clientName || undefined,
-              pickupOrigin: note.pickupOrigin || undefined,
+              pickupOrigins: note.pickupOrigins || undefined,
               destination: note.destination || undefined,
               signedAt: note.signedAt || new Date(),
             }).catch(err => {
@@ -650,7 +650,7 @@ export async function registerRoutes(
           quoteId: `quote-${i}`,
           workerId: randomWorker,
           clientName: randomClient,
-          pickupOrigin: randomOrigin,
+          pickupOrigins: [randomOrigin],
           destination: randomDest,
           vehicleType: randomVehicle,
           date: dateStr,
