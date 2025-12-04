@@ -121,8 +121,8 @@ export default function RegisterPage() {
   if (verificationPending) {
     return (
       <div className="min-h-screen flex">
-        <div className="flex-1 flex items-center justify-center p-8 bg-background">
-          <Card className="w-full max-w-md">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background overflow-y-auto">
+          <Card className="w-full max-w-md mx-auto">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <Mail className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -199,8 +199,8 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <Card className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background overflow-y-auto">
+        <Card className="w-full max-w-md mx-auto my-4">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
               <Building2 className="h-6 w-6 text-primary" />

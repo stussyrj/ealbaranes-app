@@ -85,7 +85,7 @@ export default function VerifyEmailPage() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background overflow-y-auto">
         {state === "loading" && (
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">

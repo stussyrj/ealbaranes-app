@@ -79,8 +79,8 @@ export default function AuthPage() {
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
-      <div className="flex-1 flex items-center justify-center p-8 relative z-10">
-        <div className="w-full max-w-md rounded-lg border border-border/50 bg-card/95 dark:bg-card/90 backdrop-blur-sm shadow-lg">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative z-10 overflow-y-auto">
+        <div className="w-full max-w-md mx-auto my-4 rounded-lg border border-border/50 bg-card/95 dark:bg-card/90 backdrop-blur-sm shadow-lg">
           <div className="flex flex-col space-y-1.5 p-6 text-center">
             <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
               <Lock className="h-6 w-6 text-primary" />
