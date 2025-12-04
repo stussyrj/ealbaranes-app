@@ -115,7 +115,9 @@ pickupOrigins: PickupOrigin[] // Array de objetos
 - Usuarios persistidos en base de datos (consistencia entre reinicios)
 - Login con email O nombre de usuario para empresas
 - Lookup de nombres de trabajador con fallback a tabla de usuarios
-- Emails vía Resend (bienvenida, verificación, notificaciones albaranes)
+- Emails vía Resend con diseño spooky (fondo oscuro, colores naranja/púrpura, patrón telaraña)
+- Email de contacto: info@ealbaranes.es (incluido en footer de todos los emails)
+- Tipos de email: bienvenida, verificación, nuevo albarán, albarán firmado
 - Sistema de facturación de albaranes (Cobrados/Pendientes de cobro)
 - Filtrado de albaranes por rango de fechas
 - Sistema de firma dual: albarán solo "firmado" cuando tiene AMBOS foto Y firma digital
