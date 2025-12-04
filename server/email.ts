@@ -271,7 +271,7 @@ export async function sendVerificationEmail(to: string, companyName: string, ver
   const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
   
   const { data, error } = await client.emails.send({
-    from: fromEmail || 'eAlbarán <noreply@resend.dev>',
+    from: 'eAlbarán <no-reply@ealbaranes.es>',
     to: [to],
     subject: `Confirma tu email para eAlbarán`,
     html: `
