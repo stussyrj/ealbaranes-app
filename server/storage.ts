@@ -52,7 +52,7 @@ export interface IStorage {
   updateQuoteStatus(id: string, status: string): Promise<Quote | undefined>;
   assignQuoteToWorker(quoteId: string, workerId: string): Promise<Quote | undefined>;
   
-  getDeliveryNotes(tenantId?: string, quoteId?: string, workerId?: string): Promise<DeliveryNote[]>;
+  getDeliveryNotes(tenantId: string, quoteId?: string, workerId?: string): Promise<DeliveryNote[]>;
   getDeliveryNote(id: string): Promise<DeliveryNote | undefined>;
   createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote>;
   updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
@@ -524,17 +524,18 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getDeliveryNotes(tenantId?: string, quoteId?: string, workerId?: string): Promise<(DeliveryNote & { workerName?: string })[]> {
+  async getDeliveryNotes(tenantId: string, quoteId?: string, workerId?: string): Promise<(DeliveryNote & { workerName?: string })[]> {
     try {
+      // tenantId is required for multi-tenant isolation
+      if (!tenantId) {
+        console.error("[storage] getDeliveryNotes called without tenantId - this is a security risk");
+        return [];
+      }
+      
       let notes: DeliveryNote[] = [];
       
-      // Build conditions array for filtering
-      const conditions = [];
-      
-      // Always filter by tenantId if provided (critical for multi-tenant isolation)
-      if (tenantId) {
-        conditions.push(eq(deliveryNotesTable.tenantId, tenantId));
-      }
+      // Build conditions array for filtering - always include tenantId
+      const conditions = [eq(deliveryNotesTable.tenantId, tenantId)];
       
       if (quoteId) {
         conditions.push(eq(deliveryNotesTable.quoteId, quoteId));
@@ -544,13 +545,9 @@ export class MemStorage implements IStorage {
         conditions.push(eq(deliveryNotesTable.workerId, workerId));
       }
       
-      // Apply conditions if any exist
-      if (conditions.length > 0) {
-        notes = await db.select().from(deliveryNotesTable)
-          .where(and(...conditions));
-      } else {
-        notes = await db.select().from(deliveryNotesTable);
-      }
+      // Apply conditions (always has at least tenantId)
+      notes = await db.select().from(deliveryNotesTable)
+        .where(and(...conditions));
       
       // Enrich notes with worker names
       const notesWithWorkerNames = await Promise.all(notes.map(async (note) => {
