@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { DeliveryNoteCard } from "@/components/DeliveryNoteCard";
 import { AutocompleteInput } from "@/components/AutocompleteInput";
+import { SignaturePad } from "@/components/SignaturePad";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +60,20 @@ export default function DashboardPage() {
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Digital signature states
+  const [captureSignatureOpen, setCaptureSignatureOpen] = useState(false);
+  const [selectedNoteForSignature, setSelectedNoteForSignature] = useState<any>(null);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  
+  // Helper function to determine if a note is fully signed (has both photo and signature)
+  const isFullySigned = (note: any) => note.photo && note.signature;
+  const getMissingSignatureInfo = (note: any) => {
+    if (!note.photo && !note.signature) return "Falta foto y firma";
+    if (!note.photo) return "Falta foto";
+    if (!note.signature) return "Falta firma digital";
+    return null;
+  };
 
   const previewDeliveryNote = (photo: string) => {
     if (!photo) {
@@ -112,31 +127,30 @@ export default function DashboardPage() {
     }
   }, [compressImage]);
 
-  // Save photo and sign the delivery note
+  // Save photo to delivery note
   const savePhotoAndSign = async () => {
     if (!selectedNoteForPhoto || !capturedPhoto) return;
     
     setIsUploadingPhoto(true);
     try {
-      const now = new Date().toISOString();
+      const hasSignature = selectedNoteForPhoto.signature;
+      
       const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          photo: capturedPhoto,
-          status: "confirmado",
-          signedAt: now
-        }),
+        body: JSON.stringify({ photo: capturedPhoto }),
         credentials: "include",
       });
       
       if (response.ok) {
-        toast({ title: "Albarán firmado", description: "La foto se ha guardado correctamente" });
+        const willBeComplete = hasSignature;
+        const message = willBeComplete 
+          ? "Albarán completamente firmado" 
+          : "Foto guardada. Falta firma digital para completar.";
+        toast({ title: willBeComplete ? "Firmado" : "Foto guardada", description: message });
         
-        // Invalidate and refetch
         await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
         
-        // Close dialogs and reset state
         setCapturePhotoOpen(false);
         setCapturedPhoto(null);
         setSelectedNoteForPhoto(null);
@@ -148,6 +162,43 @@ export default function DashboardPage() {
       toast({ title: "Error", description: "No se pudo guardar la foto", variant: "destructive" });
     } finally {
       setIsUploadingPhoto(false);
+    }
+  };
+  
+  // Save digital signature to delivery note
+  const saveSignature = async (signatureDataUrl: string) => {
+    if (!selectedNoteForSignature) return;
+    
+    setIsUploadingSignature(true);
+    try {
+      const hasPhoto = selectedNoteForSignature.photo;
+      
+      const response = await fetch(`/api/delivery-notes/${selectedNoteForSignature.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signature: signatureDataUrl }),
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        const willBeComplete = hasPhoto;
+        const message = willBeComplete 
+          ? "Albarán completamente firmado" 
+          : "Firma guardada. Falta foto para completar.";
+        toast({ title: willBeComplete ? "Firmado" : "Firma guardada", description: message });
+        
+        await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+        
+        setCaptureSignatureOpen(false);
+        setSelectedNoteForSignature(null);
+      } else {
+        throw new Error("Error al guardar");
+      }
+    } catch (error) {
+      console.error("Error saving signature:", error);
+      toast({ title: "Error", description: "No se pudo guardar la firma", variant: "destructive" });
+    } finally {
+      setIsUploadingSignature(false);
     }
   };
 
@@ -225,17 +276,18 @@ export default function DashboardPage() {
   // Filter delivery notes by creatorType and status
   const allDeliveryNotes = Array.isArray(deliveryNotes) ? deliveryNotes : [];
   
-  // Empresa (admin) created notes - use signedAt instead of photo (photo excluded from list for performance)
-  const empresaPendingNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && !n.signedAt);
-  const empresaSignedNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && n.signedAt);
+  // A note is fully signed only when it has BOTH photo AND signature
+  // Empresa (admin) created notes
+  const empresaPendingNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && !isFullySigned(n));
+  const empresaSignedNotes = allDeliveryNotes.filter((n: any) => n.creatorType === "admin" && isFullySigned(n));
   
-  // Trabajadores (worker) created notes - use signedAt instead of photo (photo excluded from list for performance)
-  const trabajadoresPendingNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && !n.signedAt);
-  const trabajadoresSignedNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && n.signedAt);
+  // Trabajadores (worker) created notes
+  const trabajadoresPendingNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && !isFullySigned(n));
+  const trabajadoresSignedNotes = allDeliveryNotes.filter((n: any) => (!n.creatorType || n.creatorType === "worker") && isFullySigned(n));
   
-  // Legacy totals for backwards compatibility - use signedAt instead of photo
-  const signedDeliveryNotes = allDeliveryNotes.filter((n: any) => n.signedAt);
-  const pendingDeliveryNotes = allDeliveryNotes.filter((n: any) => !n.signedAt);
+  // Total counts - fully signed means has both photo AND signature
+  const signedDeliveryNotes = allDeliveryNotes.filter((n: any) => isFullySigned(n));
+  const pendingDeliveryNotes = allDeliveryNotes.filter((n: any) => !isFullySigned(n));
   
   // Facturación: Solo albaranes firmados (con foto)
   const invoicedNotes = signedDeliveryNotes.filter((n: any) => n.isInvoiced === true);
@@ -988,17 +1040,17 @@ export default function DashboardPage() {
                       Albarán #{note.noteNumber || '—'}
                     </span>
                     <div className="flex gap-1 flex-wrap">
-                      <Badge className={note.signedAt 
+                      <Badge className={isFullySigned(note)
                         ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
                         : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
                       }>
-                        {note.signedAt ? (
+                        {isFullySigned(note) ? (
                           <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
                         ) : (
-                          <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
+                          <><Clock className="w-3 h-3 mr-1" /> {getMissingSignatureInfo(note)}</>
                         )}
                       </Badge>
-                      {note.signedAt && (
+                      {isFullySigned(note) && (
                         <Badge className={note.isInvoiced 
                           ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 no-default-hover-elevate no-default-active-elevate"
                           : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 no-default-hover-elevate no-default-active-elevate"
@@ -1011,6 +1063,24 @@ export default function DashboardPage() {
                         </Badge>
                       )}
                     </div>
+                  </div>
+                  
+                  {/* Status indicators for photo and signature */}
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge className={note.photo 
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 no-default-hover-elevate no-default-active-elevate"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 no-default-hover-elevate no-default-active-elevate"
+                    }>
+                      <Image className="w-3 h-3 mr-1" />
+                      {note.photo ? "Foto" : "Sin foto"}
+                    </Badge>
+                    <Badge className={note.signature 
+                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 no-default-hover-elevate no-default-active-elevate"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 no-default-hover-elevate no-default-active-elevate"
+                    }>
+                      <Pen className="w-3 h-3 mr-1" />
+                      {note.signature ? "Firma" : "Sin firma"}
+                    </Badge>
                   </div>
 
                   <div className="space-y-2">
@@ -1073,11 +1143,11 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {note.signedAt && (
+                    {isFullySigned(note) && note.signedAt && (
                       <div className="flex items-start gap-2 bg-green-50 dark:bg-green-900/20 rounded-md p-2">
                         <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs text-green-700 dark:text-green-300">Firmado</p>
+                          <p className="text-xs text-green-700 dark:text-green-300">Completamente Firmado</p>
                           <p className="text-sm font-semibold text-green-800 dark:text-green-200">
                             {new Date(note.signedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -1085,7 +1155,43 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {note.signedAt && note.invoicedAt && (
+                    {/* Buttons to add missing photo or signature */}
+                    {!isFullySigned(note) && (
+                      <div className="flex gap-2 flex-wrap">
+                        {!note.photo && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 text-xs"
+                            onClick={() => {
+                              setSelectedNoteForPhoto(note);
+                              setCapturePhotoOpen(true);
+                            }}
+                            data-testid={`button-add-photo-${note.id}`}
+                          >
+                            <Camera className="w-3 h-3 mr-1" />
+                            Añadir Foto
+                          </Button>
+                        )}
+                        {!note.signature && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 text-xs"
+                            onClick={() => {
+                              setSelectedNoteForSignature(note);
+                              setCaptureSignatureOpen(true);
+                            }}
+                            data-testid={`button-add-signature-${note.id}`}
+                          >
+                            <Pen className="w-3 h-3 mr-1" />
+                            Añadir Firma
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {isFullySigned(note) && note.invoicedAt && (
                       <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md p-2">
                         <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
@@ -1791,6 +1897,38 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Digital Signature Dialog */}
+      <Dialog open={captureSignatureOpen} onOpenChange={(open) => {
+        setCaptureSignatureOpen(open);
+        if (!open) {
+          setSelectedNoteForSignature(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Firma Digital - Albarán #{selectedNoteForSignature?.noteNumber}</DialogTitle>
+            <DialogDescription>
+              El cliente debe firmar con el dedo o ratón en el recuadro
+            </DialogDescription>
+          </DialogHeader>
+          
+          <SignaturePad
+            onSave={saveSignature}
+            onCancel={() => {
+              setCaptureSignatureOpen(false);
+              setSelectedNoteForSignature(null);
+            }}
+          />
+          
+          {isUploadingSignature && (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+              <span>Guardando firma...</span>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

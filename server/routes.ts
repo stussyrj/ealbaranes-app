@@ -481,10 +481,10 @@ export async function registerRoutes(
         key === 'isInvoiced' || key === 'invoicedAt'
       );
       
-      // Invoice updates are only allowed on signed notes (those with photo)
+      // Invoice updates are only allowed on fully signed notes (those with photo AND signature)
       if (isInvoiceUpdate) {
-        if (!existingNote.photo) {
-          return res.status(403).json({ error: "Solo se pueden facturar albaranes firmados" });
+        if (!existingNote.photo || !existingNote.signature) {
+          return res.status(403).json({ error: "Solo se pueden facturar albaranes completamente firmados (con foto y firma digital)" });
         }
         // Validate isInvoiced is boolean
         if (typeof data.isInvoiced !== 'boolean') {
@@ -497,9 +497,20 @@ export async function registerRoutes(
           data.invoicedAt = null;
         }
       } else {
-        // Check if note is already signed (status is not pending) for non-invoice updates
-        if (existingNote.status !== "pending") {
-          return res.status(403).json({ error: "No se pueden editar albaranes firmados" });
+        // Check if this is a signature-only update (photo or signature)
+        const isSignatureUpdate = Object.keys(data).every(key => 
+          key === 'photo' || key === 'signature'
+        );
+        
+        // Allow adding photo or signature to partially signed notes
+        // But block all other edits once note is fully signed
+        if (existingNote.signedAt && !isSignatureUpdate) {
+          return res.status(403).json({ error: "No se pueden editar albaranes completamente firmados" });
+        }
+        
+        // Block all edits (except signature) once note is fully signed (has both photo AND signature)
+        if (existingNote.photo && existingNote.signature && !isSignatureUpdate) {
+          return res.status(403).json({ error: "No se pueden editar albaranes completamente firmados" });
         }
       }
       
@@ -513,9 +524,14 @@ export async function registerRoutes(
         data.invoicedAt = new Date(data.invoicedAt);
       }
       
-      // When adding photo, mark as signed
-      const isBeingSigned = data.photo && !existingNote.photo;
-      if (isBeingSigned) {
+      // Determine final state after update (photo and signature)
+      const willHavePhoto = data.photo !== undefined ? data.photo : existingNote.photo;
+      const willHaveSignature = data.signature !== undefined ? data.signature : existingNote.signature;
+      const willBeFullySigned = willHavePhoto && willHaveSignature;
+      
+      // Auto-set signedAt and status when both photo AND signature are present
+      if (willBeFullySigned && !existingNote.signedAt) {
+        data.signedAt = new Date();
         data.status = "signed";
       }
       
@@ -524,8 +540,12 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
       
-      // Send email notification when note is signed (non-blocking)
-      if (isBeingSigned && existingNote.tenantId) {
+      // Send email notification when note becomes fully signed (non-blocking)
+      const wasFullySigned = existingNote.photo && existingNote.signature;
+      const isNowFullySigned = note.photo && note.signature;
+      const justBecameFullySigned = !wasFullySigned && isNowFullySigned;
+      
+      if (justBecameFullySigned && existingNote.tenantId) {
         getAdminEmailForTenant(existingNote.tenantId).then(adminEmail => {
           if (adminEmail) {
             sendDeliveryNoteSignedEmail(adminEmail, {

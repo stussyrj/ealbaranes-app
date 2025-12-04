@@ -107,6 +107,11 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - Emails vía Resend (bienvenida, verificación, notificaciones albaranes)
 - Sistema de facturación de albaranes (Cobrados/Pendientes de cobro)
 - Filtrado de albaranes por rango de fechas
+- Sistema de firma dual: albarán solo "firmado" cuando tiene AMBOS foto Y firma digital
+- Componente SignaturePad para captura de firmas táctiles
+- Autocomplete para campos de cliente, origen y destino
+- Badges separados mostrando estado de foto y firma
+- Solo albaranes completamente firmados pueden facturarse
 
 ## Preferencias Usuario
 
