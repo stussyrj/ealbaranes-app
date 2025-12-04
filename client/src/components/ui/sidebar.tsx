@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useSwipeable } from "react-swipeable"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -164,70 +165,25 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-  const touchStartX = React.useRef<number>(0)
-  const touchStartY = React.useRef<number>(0)
-  const [translateX, setTranslateX] = React.useState(0)
-  const isHorizontalSwipe = React.useRef(false)
-
-  // Reset state when sidebar closes
-  React.useEffect(() => {
-    if (!openMobile) {
-      setTranslateX(0)
-      isHorizontalSwipe.current = false
-    }
-  }, [openMobile])
-
-  // Touch handlers for mobile swipe - these work on iOS/Safari
-  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    touchStartX.current = touch.clientX
-    touchStartY.current = touch.clientY
-    isHorizontalSwipe.current = false
-  }, [])
-
-  const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    const deltaX = touch.clientX - touchStartX.current
-    const deltaY = Math.abs(touch.clientY - touchStartY.current)
-    
-    // Determine if this is a horizontal swipe (only check once)
-    if (!isHorizontalSwipe.current && Math.abs(deltaX) > 10) {
-      isHorizontalSwipe.current = Math.abs(deltaX) > deltaY
-    }
-    
-    if (isHorizontalSwipe.current) {
-      // Prevent vertical scrolling when swiping horizontally
-      e.preventDefault()
-      
-      // For left sidebar, only allow dragging left (negative values)
-      if (side === "left" && deltaX < 0) {
-        setTranslateX(deltaX)
-      }
-      // For right sidebar, only allow dragging right (positive values)
-      if (side === "right" && deltaX > 0) {
-        setTranslateX(deltaX)
-      }
-    }
-  }, [side])
-
-  const handleTouchEnd = React.useCallback((e: React.TouchEvent) => {
-    const touch = e.changedTouches[0]
-    const deltaX = touch.clientX - touchStartX.current
-    
-    // Close if dragged more than 50px
-    const threshold = 50
-    
-    if (isHorizontalSwipe.current) {
-      if (side === "left" && deltaX < -threshold) {
-        setOpenMobile(false)
-      } else if (side === "right" && deltaX > threshold) {
+  
+  // Swipe handlers using react-swipeable for reliable mobile swipe detection
+  // Must be called before any conditional returns (React hooks rules)
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (side === "left") {
         setOpenMobile(false)
       }
-    }
-    
-    setTranslateX(0)
-    isHorizontalSwipe.current = false
-  }, [side, setOpenMobile])
+    },
+    onSwipedRight: () => {
+      if (side === "right") {
+        setOpenMobile(false)
+      }
+    },
+    trackMouse: false,
+    trackTouch: true,
+    delta: 50,
+    preventScrollOnSwipe: true,
+  })
 
   if (collapsible === "none") {
     return (
@@ -255,21 +211,18 @@ function Sidebar({
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              transform: translateX !== 0 ? `translateX(${translateX}px)` : undefined,
-              transition: translateX !== 0 ? 'none' : 'transform 0.3s ease-out',
-              touchAction: 'none',
             } as React.CSSProperties
           }
           side={side}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div className="flex h-full w-full flex-col overflow-y-auto">
+          <div 
+            {...swipeHandlers}
+            className="flex h-full w-full flex-col overflow-y-auto"
+          >
             {children}
           </div>
         </SheetContent>

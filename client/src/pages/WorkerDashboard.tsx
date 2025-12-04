@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
-import { FileText, MapPin, Truck, Clock, Calendar, CheckCircle, Edit2, Camera } from "lucide-react";
+import { FileText, MapPin, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
