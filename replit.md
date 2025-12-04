@@ -109,6 +109,19 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Rechazo estricto de registros con tenantId nulo o no coincidente
   - Cookies de sesión seguras en producción (secure + sameSite strict)
   - Credenciales por defecto deshabilitadas en producción
+- **Rate limiting en login** (protección anti brute-force):
+  - Máximo 5 intentos fallidos por IP
+  - Bloqueo de 15 minutos tras exceder límite
+  - Se resetea automáticamente tras login exitoso
+- **Sistema de auditoría** (tabla audit_logs en PostgreSQL):
+  - Registra: login, login_failed, logout, create/update/sign/invoice delivery notes
+  - Almacena: tenantId, userId, entityType, entityId, IP, user-agent, timestamp
+- **Validación estricta de registro**:
+  - Usuario: 3-50 caracteres, solo alfanuméricos/guiones/underscore
+  - Contraseña: mínimo 8 caracteres, máximo 128
+  - Email: validación de formato, máximo 254 caracteres
+  - Nombre empresa: máximo 200 caracteres
+  - Todos los valores sanitizados (trim, lowercase para email) antes de guardar
 - Registro de empresas con creación automática de tenant
 - **Verificación de email ACTIVA** - Las empresas deben verificar su email antes de iniciar sesión
 - Integración [REDACTED-STRIPE] para suscripciones (pagos activos)
