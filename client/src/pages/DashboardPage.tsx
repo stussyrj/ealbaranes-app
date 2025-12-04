@@ -876,16 +876,30 @@ export default function DashboardPage() {
                     <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded" data-testid={`note-number-${note.id}`}>
                       Albarán #{note.noteNumber || '—'}
                     </span>
-                    <Badge className={note.signedAt 
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
-                      : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
-                    }>
-                      {note.signedAt ? (
-                        <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
-                      ) : (
-                        <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
+                    <div className="flex gap-1 flex-wrap">
+                      <Badge className={note.signedAt 
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
+                        : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
+                      }>
+                        {note.signedAt ? (
+                          <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
+                        ) : (
+                          <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
+                        )}
+                      </Badge>
+                      {note.signedAt && (
+                        <Badge className={note.isInvoiced 
+                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 no-default-hover-elevate no-default-active-elevate"
+                          : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 no-default-hover-elevate no-default-active-elevate"
+                        }>
+                          {note.isInvoiced ? (
+                            <><Banknote className="w-3 h-3 mr-1" /> Cobrado</>
+                          ) : (
+                            <><Clock className="w-3 h-3 mr-1" /> Pendiente cobro</>
+                          )}
+                        </Badge>
                       )}
-                    </Badge>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -955,6 +969,18 @@ export default function DashboardPage() {
                           <p className="text-xs text-green-700 dark:text-green-300">Firmado</p>
                           <p className="text-sm font-semibold text-green-800 dark:text-green-200">
                             {new Date(note.signedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {note.signedAt && note.invoicedAt && (
+                      <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md p-2">
+                        <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-emerald-700 dark:text-emerald-300">Cobrado el</p>
+                          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                            {new Date(note.invoicedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
@@ -1067,6 +1093,57 @@ export default function DashboardPage() {
                       Compartir
                     </Button>
                   </div>
+                  
+                  {note.signedAt && (
+                    <Button
+                      size="sm"
+                      variant={note.isInvoiced ? "outline" : "default"}
+                      className={`w-full text-xs h-8 ${!note.isInvoiced ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/delivery-notes/${note.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              isInvoiced: !note.isInvoiced
+                            }),
+                            credentials: "include",
+                          });
+
+                          if (response.ok) {
+                            toast({ 
+                              title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como cobrado",
+                              description: `Albarán #${note.noteNumber} actualizado`
+                            });
+                            await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+                          } else {
+                            const errorData = await response.json().catch(() => ({}));
+                            toast({ 
+                              title: "Error", 
+                              description: errorData.error || "No se pudo actualizar el albarán", 
+                              variant: "destructive" 
+                            });
+                          }
+                        } catch (error) {
+                          console.error("Error actualizando albarán:", error);
+                          toast({ title: "Error", description: "No se pudo actualizar el albarán", variant: "destructive" });
+                        }
+                      }}
+                      data-testid={`button-toggle-invoice-card-${note.id}`}
+                    >
+                      {note.isInvoiced ? (
+                        <>
+                          <X className="w-3 h-3 mr-1" />
+                          Marcar como pendiente
+                        </>
+                      ) : (
+                        <>
+                          <Banknote className="w-3 h-3 mr-1" />
+                          Marcar como cobrado
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             ));
