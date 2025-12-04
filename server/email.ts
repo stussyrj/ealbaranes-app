@@ -39,23 +39,14 @@ async function getCredentials() {
 }
 
 async function getResendClient() {
-  const { apiKey, fromEmail } = await getCredentials();
+  const { apiKey } = await getCredentials();
   
-  // Use Resend's test email for unverified domains (gmail, yahoo, etc.)
-  // In production, use a verified custom domain
-  const unverifiedDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
-  const emailDomain = fromEmail?.split('@')[1]?.toLowerCase() || '';
-  
-  let safeFromEmail = fromEmail;
-  if (!fromEmail || unverifiedDomains.includes(emailDomain)) {
-    // Use Resend's default test email that works without domain verification
-    safeFromEmail = 'eAlbarán <onboarding@resend.dev>';
-    console.log('[email] Using Resend test email for sending (domain not verified)');
-  }
+  // Use the verified domain ealbaranes.es for sending emails
+  const verifiedFromEmail = 'eAlbarán <no-reply@ealbaranes.es>';
   
   return {
     client: new Resend(apiKey),
-    fromEmail: safeFromEmail
+    fromEmail: verifiedFromEmail
   };
 }
 
