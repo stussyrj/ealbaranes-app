@@ -685,8 +685,14 @@ export async function registerRoutes(
 
   // ========== STRIPE SUBSCRIPTION ROUTES ==========
 
+  // Helper to check if [REDACTED-STRIPE] is disabled
+  const is[REDACTED-STRIPE] = () => process.env.STRIPE_DISABLED === 'true';
+
   // Get [REDACTED-STRIPE] publishable key for frontend
   app.get("/api/stripe/config", async (req, res) => {
+    if (is[REDACTED-STRIPE] {
+      return res.json({ publishableKey: null, disabled: true, message: "Pagos próximamente disponibles" });
+    }
     try {
       const publishableKey = await get[REDACTED-STRIPE]
       res.json({ publishableKey });
@@ -698,6 +704,9 @@ export async function registerRoutes(
 
   // Get available subscription products
   app.get("/api/stripe/products", async (req, res) => {
+    if (is[REDACTED-STRIPE] {
+      return res.json({ products: [], disabled: true, message: "Pagos próximamente disponibles" });
+    }
     try {
       const products = await stripeService.getProductsWithPrices();
       res.json({ products });
@@ -712,6 +721,17 @@ export async function registerRoutes(
     try {
       if (!req.isAuthenticated() || !req.user) {
         return res.status(401).json({ error: "No autenticado" });
+      }
+
+      // When [REDACTED-STRIPE] is disabled, grant free trial access
+      if (is[REDACTED-STRIPE] {
+        return res.json({
+          subscription: null,
+          status: 'trial',
+          disabled: true,
+          message: 'Período de prueba gratuito - Pagos próximamente disponibles',
+          companyName: req.user.companyName || 'Tu Empresa',
+        });
       }
 
       const user = req.user;
@@ -755,6 +775,9 @@ export async function registerRoutes(
 
   // Create checkout session for subscription
   app.post("/api/stripe/checkout", async (req: any, res) => {
+    if (is[REDACTED-STRIPE] {
+      return res.status(503).json({ error: "Pagos próximamente disponibles", disabled: true });
+    }
     try {
       if (!req.isAuthenticated() || !req.user) {
         return res.status(401).json({ error: "No autenticado" });
@@ -821,6 +844,9 @@ export async function registerRoutes(
 
   // Create customer portal session
   app.post("/api/stripe/portal", async (req: any, res) => {
+    if (is[REDACTED-STRIPE] {
+      return res.status(503).json({ error: "Gestión de suscripciones próximamente disponible", disabled: true });
+    }
     try {
       if (!req.isAuthenticated() || !req.user) {
         return res.status(401).json({ error: "No autenticado" });

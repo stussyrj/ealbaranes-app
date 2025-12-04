@@ -28,6 +28,11 @@ export function log(message: string, source = "express") {
 }
 
 async function init[REDACTED-STRIPE] {
+  if (process.env.STRIPE_DISABLED === 'true') {
+    log('[REDACTED-STRIPE] disabled via STRIPE_DISABLED env var - payments coming soon', 'stripe');
+    return;
+  }
+
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {

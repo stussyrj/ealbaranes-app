@@ -2,15 +2,21 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, AlertTriangle, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { CreditCard, AlertTriangle, CheckCircle, Clock, Loader2, Gift } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function SubscriptionPage() {
   const { user } = useAuth();
 
-  const { data: subscription, isLoading } = useQuery({
-    queryKey: ["/api/stripe/subscription"],
+  const { data: subscriptionData, isLoading } = useQuery<{
+    subscription: any;
+    status: string;
+    disabled?: boolean;
+    message?: string;
+    companyName?: string;
+  }>({
+    queryKey: ["/api/subscription"],
     enabled: !!user?.isAdmin,
   });
 
@@ -25,6 +31,8 @@ export default function SubscriptionPage() {
       }
     },
   });
+
+  const is[REDACTED-STRIPE] = subscriptionData?.disabled === true;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -80,6 +88,105 @@ export default function SubscriptionPage() {
     );
   }
 
+  if (is[REDACTED-STRIPE] {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6">Gestión de Suscripción</h1>
+          
+          <div className="space-y-6">
+            <Card className="border-green-200 dark:border-green-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Gift className="h-5 w-5 text-green-600" />
+                      Período de Prueba Gratuito
+                    </CardTitle>
+                    <CardDescription>
+                      Disfruta de todas las funciones de eAlbarán sin costo
+                    </CardDescription>
+                  </div>
+                  <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Activo
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <Gift className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-green-800 dark:text-green-200">
+                        Acceso completo sin restricciones
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                        Estás disfrutando de un período de prueba gratuito con acceso a todas 
+                        las funcionalidades de eAlbarán. Los pagos estarán disponibles próximamente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm text-muted-foreground">Plan</p>
+                    <p className="font-medium">eAlbarán Pro (Prueba)</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm text-muted-foreground">Estado</p>
+                    <p className="font-medium text-green-600">Prueba Gratuita</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Próximamente:</strong> Los pagos y suscripciones estarán disponibles muy pronto. 
+                    Te notificaremos cuando puedas activar tu suscripción.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Funciones Incluidas</CardTitle>
+                <CardDescription>
+                  Todo lo que puedes hacer durante el período de prueba
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Crear albaranes digitales ilimitados
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Añadir fotos y firmas electrónicas
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Gestionar trabajadores
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Descargar albaranes en ZIP
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Control de facturación
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
@@ -103,7 +210,7 @@ export default function SubscriptionPage() {
                       Estado actual de tu plan eAlbarán Pro
                     </CardDescription>
                   </div>
-                  {user.subscription && getStatusBadge(user.subscription.status)}
+                  {subscriptionData && getStatusBadge(subscriptionData.status)}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -149,11 +256,11 @@ export default function SubscriptionPage() {
                   <div className="bg-muted/50 rounded-lg p-4">
                     <p className="text-sm text-muted-foreground">Estado</p>
                     <p className="font-medium capitalize">
-                      {user.subscription?.status === "active" ? "Activo" :
-                       user.subscription?.status === "past_due" ? "Pago pendiente" :
-                       user.subscription?.status === "in_grace" ? "Período de gracia" :
-                       user.subscription?.status === "canceled" ? "Cancelado" :
-                       user.subscription?.status || "Sin suscripción"}
+                      {subscriptionData?.status === "active" ? "Activo" :
+                       subscriptionData?.status === "past_due" ? "Pago pendiente" :
+                       subscriptionData?.status === "in_grace" ? "Período de gracia" :
+                       subscriptionData?.status === "canceled" ? "Cancelado" :
+                       subscriptionData?.status || "Sin suscripción"}
                     </p>
                   </div>
                 </div>

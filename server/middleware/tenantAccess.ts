@@ -3,6 +3,8 @@ import { db } from "../db";
 import { tenants, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
+const is[REDACTED-STRIPE] = () => process.env.STRIPE_DISABLED === 'true';
+
 export interface TenantContext {
   tenantId: string;
   subscriptionStatus: string;
@@ -63,6 +65,18 @@ export function requireTenantAccess(options: { allowReadOnly?: boolean } = {}) {
       return res.status(401).json({ error: "No autenticado" });
     }
 
+    // When [REDACTED-STRIPE] is disabled, grant full access
+    if (is[REDACTED-STRIPE] {
+      req.tenantContext = {
+        tenantId: user.tenantId || 'trial',
+        subscriptionStatus: 'trial',
+        isInGrace: false,
+        isReadOnly: false,
+        canAccess: true,
+      };
+      return next();
+    }
+
     const tenantContext = await getTenantForUser(user.id);
     
     if (!tenantContext) {
@@ -96,6 +110,18 @@ export function requireActiveSubscription() {
     const user = req.user as any;
     if (!user) {
       return res.status(401).json({ error: "No autenticado" });
+    }
+
+    // When [REDACTED-STRIPE] is disabled, grant full access
+    if (is[REDACTED-STRIPE] {
+      req.tenantContext = {
+        tenantId: user.tenantId || 'trial',
+        subscriptionStatus: 'trial',
+        isInGrace: false,
+        isReadOnly: false,
+        canAccess: true,
+      };
+      return next();
     }
 
     const tenantContext = await getTenantForUser(user.id);
