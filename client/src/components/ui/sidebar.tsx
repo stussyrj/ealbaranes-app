@@ -164,6 +164,34 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const touchStartX = React.useRef<number | null>(null)
+  const touchStartY = React.useRef<number | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return
+    
+    const touchEndX = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
+    const deltaX = touchEndX - touchStartX.current
+    const deltaY = Math.abs(touchEndY - touchStartY.current)
+    
+    // Swipe left to close (for left sidebar) - requires horizontal swipe > 50px and more horizontal than vertical
+    if (side === "left" && deltaX < -50 && deltaY < Math.abs(deltaX)) {
+      setOpenMobile(false)
+    }
+    // Swipe right to close (for right sidebar)
+    if (side === "right" && deltaX > 50 && deltaY < Math.abs(deltaX)) {
+      setOpenMobile(false)
+    }
+    
+    touchStartX.current = null
+    touchStartY.current = null
+  }
 
   if (collapsible === "none") {
     return (
@@ -194,6 +222,8 @@ function Sidebar({
             } as React.CSSProperties
           }
           side={side}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
