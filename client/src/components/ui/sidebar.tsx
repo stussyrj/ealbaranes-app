@@ -164,34 +164,48 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const mobileContentRef = React.useRef<HTMLDivElement>(null)
   const touchStartX = React.useRef<number | null>(null)
   const touchStartY = React.useRef<number | null>(null)
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
+  React.useEffect(() => {
+    if (!isMobile || !openMobile) return
+    
+    const el = mobileContentRef.current
+    if (!el) return
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return
-    
-    const touchEndX = e.changedTouches[0].clientX
-    const touchEndY = e.changedTouches[0].clientY
-    const deltaX = touchEndX - touchStartX.current
-    const deltaY = Math.abs(touchEndY - touchStartY.current)
-    
-    // Swipe left to close (for left sidebar) - requires horizontal swipe > 50px and more horizontal than vertical
-    if (side === "left" && deltaX < -50 && deltaY < Math.abs(deltaX)) {
-      setOpenMobile(false)
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX
+      touchStartY.current = e.touches[0].clientY
     }
-    // Swipe right to close (for right sidebar)
-    if (side === "right" && deltaX > 50 && deltaY < Math.abs(deltaX)) {
-      setOpenMobile(false)
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchStartX.current === null || touchStartY.current === null) return
+      
+      const touchEndX = e.changedTouches[0].clientX
+      const touchEndY = e.changedTouches[0].clientY
+      const deltaX = touchEndX - touchStartX.current
+      const deltaY = Math.abs(touchEndY - touchStartY.current)
+      
+      if (side === "left" && deltaX < -50 && deltaY < Math.abs(deltaX)) {
+        setOpenMobile(false)
+      }
+      if (side === "right" && deltaX > 50 && deltaY < Math.abs(deltaX)) {
+        setOpenMobile(false)
+      }
+      
+      touchStartX.current = null
+      touchStartY.current = null
     }
-    
-    touchStartX.current = null
-    touchStartY.current = null
-  }
+
+    el.addEventListener('touchstart', handleTouchStart, { passive: true })
+    el.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart)
+      el.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isMobile, openMobile, side, setOpenMobile])
 
   if (collapsible === "none") {
     return (
@@ -222,14 +236,17 @@ function Sidebar({
             } as React.CSSProperties
           }
           side={side}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div 
+            ref={mobileContentRef}
+            className="flex h-full w-full flex-col"
+          >
+            {children}
+          </div>
         </SheetContent>
       </Sheet>
     )
