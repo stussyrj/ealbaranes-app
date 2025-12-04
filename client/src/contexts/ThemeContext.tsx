@@ -16,9 +16,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (stored === "light" || stored === "spooky") return stored;
       // Migrate old 'dark' theme to 'spooky'
       if (stored === "dark") return "spooky";
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "spooky" : "light";
     }
-    return "light";
+    // Spooky theme is default
+    return "spooky";
   });
 
   useEffect(() => {
@@ -50,5 +50,5 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  return context || { theme: "light" as Theme, toggleTheme: () => {} };
+  return context || { theme: "spooky" as Theme, toggleTheme: () => {} };
 }
