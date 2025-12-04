@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useSwipeable } from "react-swipeable"
+import { useCallback, useRef } from "react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -166,24 +166,33 @@ function Sidebar({
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
   
-  // Swipe handlers using react-swipeable for reliable mobile swipe detection
-  // Must be called before any conditional returns (React hooks rules)
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (side === "left") {
+  // Native touch event handlers for swipe-to-close on mobile
+  const touchStartX = useRef<number>(0)
+  const touchStartY = useRef<number>(0)
+  
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }, [])
+  
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
+    const deltaX = touchEndX - touchStartX.current
+    const deltaY = Math.abs(touchEndY - touchStartY.current)
+    
+    // Only trigger if horizontal swipe is dominant (deltaX > deltaY)
+    // and swipe distance is at least 50px
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > deltaY) {
+      if (side === "left" && deltaX < 0) {
+        // Swipe left on left sidebar = close
+        setOpenMobile(false)
+      } else if (side === "right" && deltaX > 0) {
+        // Swipe right on right sidebar = close
         setOpenMobile(false)
       }
-    },
-    onSwipedRight: () => {
-      if (side === "right") {
-        setOpenMobile(false)
-      }
-    },
-    trackMouse: false,
-    trackTouch: true,
-    delta: 50,
-    preventScrollOnSwipe: true,
-  })
+    }
+  }, [side, setOpenMobile])
 
   if (collapsible === "none") {
     return (
@@ -220,7 +229,8 @@ function Sidebar({
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
           <div 
-            {...swipeHandlers}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             className="flex h-full w-full flex-col overflow-y-auto"
           >
             {children}
