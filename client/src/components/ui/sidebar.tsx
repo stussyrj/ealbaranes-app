@@ -24,7 +24,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useEffect, useRef } from "react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -165,43 +164,6 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-  
-  // Window-level pointer event tracking for swipe-to-close
-  const startPos = useRef<{ x: number; y: number } | null>(null)
-  
-  useEffect(() => {
-    if (!isMobile || !openMobile) return
-    
-    const handlePointerDown = (e: PointerEvent) => {
-      if (e.pointerType !== 'touch') return
-      startPos.current = { x: e.clientX, y: e.clientY }
-    }
-    
-    const handlePointerUp = (e: PointerEvent) => {
-      if (e.pointerType !== 'touch' || !startPos.current) return
-      
-      const dx = e.clientX - startPos.current.x
-      const dy = Math.abs(e.clientY - startPos.current.y)
-      
-      // Horizontal swipe: dx > 60px and more horizontal than vertical
-      if (Math.abs(dx) > 60 && Math.abs(dx) > dy) {
-        if (side === "left" && dx < 0) {
-          setOpenMobile(false)
-        } else if (side === "right" && dx > 0) {
-          setOpenMobile(false)
-        }
-      }
-      startPos.current = null
-    }
-    
-    window.addEventListener('pointerdown', handlePointerDown)
-    window.addEventListener('pointerup', handlePointerUp)
-    
-    return () => {
-      window.removeEventListener('pointerdown', handlePointerDown)
-      window.removeEventListener('pointerup', handlePointerUp)
-    }
-  }, [isMobile, openMobile, side, setOpenMobile])
 
   if (collapsible === "none") {
     return (

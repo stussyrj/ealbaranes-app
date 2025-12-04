@@ -127,7 +127,12 @@ pickupOrigins: PickupOrigin[] // Array de objetos
 - Solo albaranes completamente firmados pueden facturarse
 - Orígenes de recogida con campos separados de nombre y dirección (JSONB)
 - Formulario dinámico para añadir/eliminar múltiples recogidas con nombre y dirección
-- Sidebar móvil con swipe-to-close usando react-swipeable (delta: 50px)
+- Sidebar móvil optimizado con:
+  - Botón X visible para cerrar (esquina superior derecha)
+  - Overlay oscuro con desenfoque - click para cerrar
+  - Cierre automático al navegar
+  - Animaciones suaves (200ms cierre, 300ms apertura)
+  - Funciona igual para empresas y trabajadores
 
 ## Preferencias Usuario
 
