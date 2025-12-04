@@ -1116,95 +1116,87 @@ export default function WorkerDashboard() {
               </div>
             </div>
             
-            <details className="group">
-              <summary className="text-sm font-medium cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-1">
-                <Plus className="w-3 h-3 group-open:rotate-45 transition-transform" />
-                Más opciones
-              </summary>
-              <div className="space-y-3 mt-3 pt-3 border-t">
-                {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
-                  <div key={index + 1} className="flex items-center gap-2">
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                      <Input
-                        placeholder={`Recogida ${index + 2}`}
-                        value={origin.name}
-                        onChange={(e) => {
-                          const newOrigins = [...formData.pickupOrigins];
-                          newOrigins[index + 1] = { ...newOrigins[index + 1], name: e.target.value };
-                          setFormData({ ...formData, pickupOrigins: newOrigins });
-                        }}
-                        className="text-sm"
-                      />
-                      <Input
-                        placeholder="Dirección"
-                        value={origin.address}
-                        onChange={(e) => {
-                          const newOrigins = [...formData.pickupOrigins];
-                          newOrigins[index + 1] = { ...newOrigins[index + 1], address: e.target.value };
-                          setFormData({ ...formData, pickupOrigins: newOrigins });
-                        }}
-                        className="text-sm"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index + 1);
-                        setFormData({ ...formData, pickupOrigins: newOrigins });
-                      }}
-                      className="h-9 w-9 shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
-                  className="w-full text-xs"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Añadir otra recogida
-                </Button>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-muted-foreground">Fecha</label>
-                    <Input
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">Hora</label>
-                    <Input
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-xs text-muted-foreground">Observaciones</label>
-                  <Textarea
-                    placeholder="Notas adicionales..."
-                    value={formData.observations}
-                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                    rows={2}
+            {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
+              <div key={index + 1} className="flex items-center gap-2">
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder={`Recogida ${index + 2}`}
+                    value={origin.name}
+                    onChange={(e) => {
+                      const newOrigins = [...formData.pickupOrigins];
+                      newOrigins[index + 1] = { ...newOrigins[index + 1], name: e.target.value };
+                      setFormData({ ...formData, pickupOrigins: newOrigins });
+                    }}
+                    className="text-sm"
+                  />
+                  <Input
+                    placeholder="Dirección"
+                    value={origin.address}
+                    onChange={(e) => {
+                      const newOrigins = [...formData.pickupOrigins];
+                      newOrigins[index + 1] = { ...newOrigins[index + 1], address: e.target.value };
+                      setFormData({ ...formData, pickupOrigins: newOrigins });
+                    }}
                     className="text-sm"
                   />
                 </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index + 1);
+                    setFormData({ ...formData, pickupOrigins: newOrigins });
+                  }}
+                  className="h-9 w-9 shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-            </details>
+            ))}
+            
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
+              className="w-full text-xs"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Añadir otra recogida
+            </Button>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Fecha</label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Hora</label>
+                <Input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-xs text-muted-foreground">Observaciones</label>
+              <Textarea
+                placeholder="Notas adicionales..."
+                value={formData.observations}
+                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                rows={2}
+                className="text-sm"
+              />
+            </div>
             
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => setCreateDeliveryOpen(false)} className="flex-1">

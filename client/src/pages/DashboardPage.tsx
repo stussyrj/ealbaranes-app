@@ -1473,102 +1473,94 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <details className="group">
-              <summary className="text-sm font-medium cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-1">
-                <Plus className="w-3 h-3 group-open:rotate-45 transition-transform" />
-                Más opciones
-              </summary>
-              <div className="space-y-3 mt-3 pt-3 border-t">
-                {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
-                  <div key={index + 1} className="flex items-center gap-2">
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                      <AutocompleteInput
-                        placeholder={`Recogida ${index + 2}`}
-                        value={origin.name}
-                        onChange={(value) => {
-                          const newOrigins = [...formData.pickupOrigins];
-                          newOrigins[index + 1] = { ...newOrigins[index + 1], name: value };
-                          setFormData({ ...formData, pickupOrigins: newOrigins });
-                        }}
-                        suggestions={suggestions.originNames || []}
-                        data-testid={`input-pickup-origin-name-${index + 1}`}
-                      />
-                      <AutocompleteInput
-                        placeholder="Dirección"
-                        value={origin.address}
-                        onChange={(value) => {
-                          const newOrigins = [...formData.pickupOrigins];
-                          newOrigins[index + 1] = { ...newOrigins[index + 1], address: value };
-                          setFormData({ ...formData, pickupOrigins: newOrigins });
-                        }}
-                        suggestions={suggestions.originAddresses || []}
-                        data-testid={`input-pickup-origin-address-${index + 1}`}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index + 1);
-                        setFormData({ ...formData, pickupOrigins: newOrigins });
-                      }}
-                      className="h-9 w-9 shrink-0"
-                      data-testid={`button-remove-origin-${index + 1}`}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
-                  className="w-full text-xs"
-                  data-testid="button-add-origin"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Añadir otra recogida
-                </Button>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-muted-foreground">Fecha</label>
-                    <Input
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="text-sm"
-                      data-testid="input-date"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">Hora</label>
-                    <Input
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                      className="text-sm"
-                      data-testid="input-time"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-xs text-muted-foreground">Observaciones</label>
-                  <Textarea
-                    placeholder="Notas adicionales..."
-                    value={formData.observations}
-                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                    rows={2}
-                    className="text-sm"
-                    data-testid="input-observations"
+            {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
+              <div key={index + 1} className="flex items-center gap-2">
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <AutocompleteInput
+                    placeholder={`Recogida ${index + 2}`}
+                    value={origin.name}
+                    onChange={(value) => {
+                      const newOrigins = [...formData.pickupOrigins];
+                      newOrigins[index + 1] = { ...newOrigins[index + 1], name: value };
+                      setFormData({ ...formData, pickupOrigins: newOrigins });
+                    }}
+                    suggestions={suggestions.originNames || []}
+                    data-testid={`input-pickup-origin-name-${index + 1}`}
+                  />
+                  <AutocompleteInput
+                    placeholder="Dirección"
+                    value={origin.address}
+                    onChange={(value) => {
+                      const newOrigins = [...formData.pickupOrigins];
+                      newOrigins[index + 1] = { ...newOrigins[index + 1], address: value };
+                      setFormData({ ...formData, pickupOrigins: newOrigins });
+                    }}
+                    suggestions={suggestions.originAddresses || []}
+                    data-testid={`input-pickup-origin-address-${index + 1}`}
                   />
                 </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index + 1);
+                    setFormData({ ...formData, pickupOrigins: newOrigins });
+                  }}
+                  className="h-9 w-9 shrink-0"
+                  data-testid={`button-remove-origin-${index + 1}`}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-            </details>
+            ))}
+            
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
+              className="w-full text-xs"
+              data-testid="button-add-origin"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Añadir otra recogida
+            </Button>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Fecha</label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="text-sm"
+                  data-testid="input-date"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Hora</label>
+                <Input
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  className="text-sm"
+                  data-testid="input-time"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-xs text-muted-foreground">Observaciones</label>
+              <Textarea
+                placeholder="Notas adicionales..."
+                value={formData.observations}
+                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                rows={2}
+                className="text-sm"
+                data-testid="input-observations"
+              />
+            </div>
             
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => setCreateDeliveryOpen(false)} className="flex-1" data-testid="button-cancel-create">
