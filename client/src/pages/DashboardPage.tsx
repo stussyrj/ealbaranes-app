@@ -26,6 +26,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -1155,40 +1161,47 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {/* Buttons to add missing photo or signature */}
+                    {/* Button to add missing photo or signature */}
                     {!isFullySigned(note) && (
-                      <div className="flex gap-2 flex-wrap">
-                        {!note.photo && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 text-xs"
+                            className="w-full text-xs"
+                            data-testid={`button-sign-${note.id}`}
+                          >
+                            <Pen className="w-3 h-3 mr-1" />
+                            Firmar Albarán
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-48">
+                          <DropdownMenuItem
                             onClick={() => {
                               setSelectedNoteForPhoto(note);
                               setCapturePhotoOpen(true);
                             }}
-                            data-testid={`button-add-photo-${note.id}`}
+                            className="cursor-pointer"
+                            data-testid={`menu-add-photo-${note.id}`}
                           >
-                            <Camera className="w-3 h-3 mr-1" />
-                            Añadir Foto
-                          </Button>
-                        )}
-                        {!note.signature && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 text-xs"
+                            <Camera className="w-4 h-4 mr-2" />
+                            {note.photo ? "Cambiar Foto" : "Añadir Foto"}
+                            {note.photo && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => {
                               setSelectedNoteForSignature(note);
                               setCaptureSignatureOpen(true);
                             }}
-                            data-testid={`button-add-signature-${note.id}`}
+                            className="cursor-pointer"
+                            data-testid={`menu-add-signature-${note.id}`}
                           >
-                            <Pen className="w-3 h-3 mr-1" />
-                            Añadir Firma
-                          </Button>
-                        )}
-                      </div>
+                            <Pen className="w-4 h-4 mr-2" />
+                            {note.signature ? "Cambiar Firma" : "Añadir Firma Digital"}
+                            {note.signature && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
 
                     {isFullySigned(note) && note.invoicedAt && (
