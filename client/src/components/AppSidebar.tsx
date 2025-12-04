@@ -5,6 +5,7 @@ import {
   LogOut,
   Users,
   CreditCard,
+  X,
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import {
@@ -80,21 +81,38 @@ export function AppSidebar() {
     logout();
   };
 
+  const handleCloseSidebar = () => {
+    setOpenMobile(false);
+  };
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <img 
-            src={logoImage} 
-            alt="eAlbarán Logo" 
-            className="h-10 w-10 rounded-lg object-cover"
-          />
-          <div>
-            <h1 className="font-semibold text-lg">eAlbarán</h1>
-            <p className="text-xs text-muted-foreground">
-              {isAdmin ? "Panel de Empresa" : "Panel de Trabajador"}
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img 
+              src={logoImage} 
+              alt="eAlbarán Logo" 
+              className="h-10 w-10 rounded-lg object-cover"
+            />
+            <div>
+              <h1 className="font-semibold text-lg">eAlbarán</h1>
+              <p className="text-xs text-muted-foreground">
+                {isAdmin ? "Panel de Empresa" : "Panel de Trabajador"}
+              </p>
+            </div>
           </div>
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCloseSidebar}
+              className="h-8 w-8"
+              data-testid="button-close-sidebar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </SidebarHeader>
 
