@@ -33,11 +33,11 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   
-  getWorkers(includeInactive?: boolean): Promise<Worker[]>;
+  getWorkers(tenantId: string, includeInactive?: boolean): Promise<Worker[]>;
   getWorker(id: string): Promise<Worker | undefined>;
-  createWorker(worker: InsertWorker): Promise<Worker>;
-  updateWorker(id: string, worker: Partial<InsertWorker>): Promise<Worker | undefined>;
-  deleteWorker(id: string): Promise<boolean>;
+  createWorker(worker: InsertWorker & { tenantId: string }): Promise<Worker>;
+  updateWorker(id: string, tenantId: string, worker: Partial<InsertWorker>): Promise<Worker | undefined>;
+  deleteWorker(id: string, tenantId: string): Promise<boolean>;
   
   getVehicleTypes(): Promise<VehicleType[]>;
   getAllVehicleTypes(): Promise<VehicleType[]>;
@@ -46,11 +46,11 @@ export interface IStorage {
   updateVehicleType(id: string, vehicle: Partial<InsertVehicleType>): Promise<VehicleType | undefined>;
   deleteVehicleType(id: string): Promise<boolean>;
   
-  getQuotes(userId?: string, workerId?: string): Promise<Quote[]>;
-  getQuote(id: string): Promise<Quote | undefined>;
-  createQuote(quote: InsertQuote): Promise<Quote>;
-  updateQuoteStatus(id: string, status: string): Promise<Quote | undefined>;
-  assignQuoteToWorker(quoteId: string, workerId: string): Promise<Quote | undefined>;
+  getQuotes(tenantId: string, userId?: string, workerId?: string): Promise<Quote[]>;
+  getQuote(id: string, tenantId?: string): Promise<Quote | undefined>;
+  createQuote(quote: InsertQuote & { tenantId: string }): Promise<Quote>;
+  updateQuoteStatus(id: string, tenantId: string, status: string): Promise<Quote | undefined>;
+  assignQuoteToWorker(quoteId: string, tenantId: string, workerId: string): Promise<Quote | undefined>;
   
   getDeliveryNotes(tenantId: string, quoteId?: string, workerId?: string): Promise<DeliveryNote[]>;
   getDeliveryNote(id: string): Promise<DeliveryNote | undefined>;
@@ -373,8 +373,11 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async getWorkers(includeInactive: boolean = false): Promise<Worker[]> {
-    const allWorkers = Array.from(this.workers.values());
+  async getWorkers(tenantId: string, includeInactive: boolean = false): Promise<Worker[]> {
+    // Filter by tenantId for multi-tenant isolation
+    const allWorkers = Array.from(this.workers.values())
+      .filter(w => w.tenantId === tenantId);
+    
     if (includeInactive) {
       return allWorkers;
     }
@@ -385,7 +388,7 @@ export class MemStorage implements IStorage {
     return this.workers.get(id);
   }
 
-  async createWorker(worker: InsertWorker): Promise<Worker> {
+  async createWorker(worker: InsertWorker & { tenantId: string }): Promise<Worker> {
     const id = randomUUID();
     const newWorker: Worker = {
       id,
@@ -393,22 +396,26 @@ export class MemStorage implements IStorage {
       email: worker.email,
       phone: worker.phone ?? null,
       isActive: worker.isActive ?? true,
-      tenantId: worker.tenantId ?? null,
+      tenantId: worker.tenantId, // Required for multi-tenant
       createdAt: new Date(),
     };
     this.workers.set(id, newWorker);
     return newWorker;
   }
 
-  async updateWorker(id: string, updates: Partial<InsertWorker>): Promise<Worker | undefined> {
+  async updateWorker(id: string, tenantId: string, updates: Partial<InsertWorker>): Promise<Worker | undefined> {
     const existing = this.workers.get(id);
-    if (!existing) return undefined;
+    // Verify tenant ownership before updating
+    if (!existing || existing.tenantId !== tenantId) return undefined;
     const updated = { ...existing, ...updates };
     this.workers.set(id, updated);
     return updated;
   }
 
-  async deleteWorker(id: string): Promise<boolean> {
+  async deleteWorker(id: string, tenantId: string): Promise<boolean> {
+    const existing = this.workers.get(id);
+    // Verify tenant ownership before deleting
+    if (!existing || existing.tenantId !== tenantId) return false;
     return this.workers.delete(id);
   }
 
@@ -453,8 +460,11 @@ export class MemStorage implements IStorage {
     return this.vehicleTypes.delete(id);
   }
 
-  async getQuotes(userId?: string, workerId?: string): Promise<Quote[]> {
-    const allQuotes = Array.from(this.quotes.values());
+  async getQuotes(tenantId: string, userId?: string, workerId?: string): Promise<Quote[]> {
+    // Filter by tenantId for multi-tenant isolation
+    const allQuotes = Array.from(this.quotes.values())
+      .filter(q => q.tenantId === tenantId);
+    
     let filtered = allQuotes;
     
     if (userId) {
@@ -472,11 +482,21 @@ export class MemStorage implements IStorage {
     });
   }
 
-  async getQuote(id: string): Promise<Quote | undefined> {
-    return this.quotes.get(id);
+  async getQuote(id: string, tenantId?: string): Promise<Quote | undefined> {
+    const quote = this.quotes.get(id);
+    if (!quote) return undefined;
+    
+    // If tenantId provided, enforce tenant isolation
+    if (tenantId !== undefined) {
+      if (!quote.tenantId || quote.tenantId !== tenantId) {
+        return undefined;
+      }
+    }
+    
+    return quote;
   }
 
-  async createQuote(quote: InsertQuote): Promise<Quote> {
+  async createQuote(quote: InsertQuote & { tenantId: string }): Promise<Quote> {
     const id = randomUUID();
     const newQuote: Quote = {
       id,
@@ -501,24 +521,26 @@ export class MemStorage implements IStorage {
       assignedWorkerId: quote.assignedWorkerId ?? null,
       confirmedAt: quote.confirmedAt ?? null,
       carrozadoUnavailableUntil: quote.carrozadoUnavailableUntil ?? null,
-      tenantId: quote.tenantId ?? null,
+      tenantId: quote.tenantId, // Required for multi-tenant
       createdAt: new Date(),
     };
     this.quotes.set(id, newQuote);
     return newQuote;
   }
 
-  async updateQuoteStatus(id: string, status: string): Promise<Quote | undefined> {
+  async updateQuoteStatus(id: string, tenantId: string, status: string): Promise<Quote | undefined> {
     const existing = this.quotes.get(id);
-    if (!existing) return undefined;
+    // Verify tenant ownership before updating
+    if (!existing || existing.tenantId !== tenantId) return undefined;
     const updated = { ...existing, status };
     this.quotes.set(id, updated);
     return updated;
   }
 
-  async assignQuoteToWorker(quoteId: string, workerId: string): Promise<Quote | undefined> {
+  async assignQuoteToWorker(quoteId: string, tenantId: string, workerId: string): Promise<Quote | undefined> {
     const existing = this.quotes.get(quoteId);
-    if (!existing) return undefined;
+    // Verify tenant ownership before updating
+    if (!existing || existing.tenantId !== tenantId) return undefined;
     const updated = { ...existing, assignedWorkerId: workerId, status: "assigned" };
     this.quotes.set(quoteId, updated);
     return updated;

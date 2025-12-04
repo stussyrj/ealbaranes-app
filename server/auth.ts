@@ -36,9 +36,15 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export async function initializeAdminUser() {
+  // SECURITY: Disable default admin creation in production
+  if (process.env.NODE_ENV === 'production') {
+    console.log("[auth] Default admin user creation disabled in production - use registration flow");
+    return;
+  }
+  
   const adminUser = await storage.getUserByUsername("admin");
   if (!adminUser) {
-    console.log("[auth] Creating default admin user...");
+    console.log("[auth] Creating default admin user for development...");
     const hashedPassword = await hashPassword("admin123");
     await storage.createUser({
       username: "admin",
@@ -46,19 +52,23 @@ export async function initializeAdminUser() {
       isAdmin: true,
       workerId: null,
     });
-    console.log("[auth] Default admin user created (username: admin, password: admin123)");
+    console.log("[auth] Development admin user created (username: admin, password: admin123)");
+    console.log("[auth] WARNING: This user is for development only - do not use in production");
   }
 }
 
 export function setupAuth(app: Express) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false,
+      secure: isProduction, // HTTPS only in production
       httpOnly: true,
+      sameSite: isProduction ? 'strict' : 'lax', // CSRF protection in production
       maxAge: 24 * 60 * 60 * 1000,
     },
   };

@@ -148,6 +148,16 @@ export async function registerRoutes(
 
   app.post("/api/calculate-quote", async (req, res) => {
     try {
+      // Require authentication for tenant isolation
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Usuario sin empresa asignada" });
+      }
+      
       const data = calculateQuoteRequestSchema.parse(req.body);
       
       // Check if carrozado is available at requested time
@@ -177,6 +187,7 @@ export async function registerRoutes(
       }
       
       const quote = await storage.createQuote({
+        tenantId, // Required for multi-tenant isolation
         origin: data.origin,
         destination: data.destination,
         originCoords: JSON.stringify({ lat: routeInfo.origin.lat, lng: routeInfo.origin.lng }),
@@ -237,8 +248,17 @@ export async function registerRoutes(
 
   app.get("/api/quotes", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const userId = req.query.userId as string | undefined;
-      const quotes = await storage.getQuotes(userId);
+      const quotes = await storage.getQuotes(tenantId, userId);
       res.json(quotes);
     } catch (error) {
       console.error("Error fetching quotes:", error);
@@ -248,11 +268,22 @@ export async function registerRoutes(
 
   app.get("/api/quotes/:id", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { id } = req.params;
-      const quote = await storage.getQuote(id);
+      // Use tenant-aware getQuote for defense-in-depth
+      const quote = await storage.getQuote(id, tenantId);
       if (!quote) {
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
+      
       res.json(quote);
     } catch (error) {
       console.error("Error fetching quote:", error);
@@ -262,9 +293,19 @@ export async function registerRoutes(
 
   app.patch("/api/quotes/:id/status", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { id } = req.params;
       const { status } = req.body;
-      const quote = await storage.getQuote(id);
+      // Use tenant-aware getQuote for defense-in-depth
+      const quote = await storage.getQuote(id, tenantId);
       if (!quote) {
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
@@ -276,7 +317,7 @@ export async function registerRoutes(
         }
       }
 
-      const updatedQuote = await storage.updateQuoteStatus(id, status);
+      const updatedQuote = await storage.updateQuoteStatus(id, tenantId, status);
       if (!updatedQuote) {
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
@@ -289,8 +330,17 @@ export async function registerRoutes(
 
   app.post("/api/quotes/:id/confirm", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { id } = req.params;
-      const quote = await storage.updateQuoteStatus(id, "confirmed");
+      const quote = await storage.updateQuoteStatus(id, tenantId, "confirmed");
       if (!quote) {
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
@@ -301,11 +351,20 @@ export async function registerRoutes(
     }
   });
 
-  // Workers endpoints
+  // Workers endpoints - require authentication and filter by tenant
   app.get("/api/workers", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const includeInactive = req.query.includeInactive === "true";
-      const workers = await storage.getWorkers(includeInactive);
+      const workers = await storage.getWorkers(tenantId, includeInactive);
       res.json(workers);
     } catch (error) {
       console.error("Error fetching workers:", error);
@@ -315,11 +374,20 @@ export async function registerRoutes(
 
   app.post("/api/workers", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { name, email, phone } = req.body;
       if (!name || !email) {
         return res.status(400).json({ error: "Nombre y email son requeridos" });
       }
-      const worker = await storage.createWorker({ name, email, phone: phone || "" });
+      const worker = await storage.createWorker({ name, email, phone: phone || "", tenantId });
       res.status(201).json(worker);
     } catch (error) {
       console.error("Error creating worker:", error);
@@ -329,9 +397,18 @@ export async function registerRoutes(
 
   app.patch("/api/workers/:id", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { id } = req.params;
       const updates = req.body;
-      const worker = await storage.updateWorker(id, updates);
+      const worker = await storage.updateWorker(id, tenantId, updates);
       if (!worker) {
         return res.status(404).json({ error: "Trabajador no encontrado" });
       }
@@ -344,8 +421,17 @@ export async function registerRoutes(
 
   app.delete("/api/workers/:id", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { id } = req.params;
-      const deleted = await storage.deleteWorker(id);
+      const deleted = await storage.deleteWorker(id, tenantId);
       if (!deleted) {
         return res.status(404).json({ error: "Trabajador no encontrado" });
       }
@@ -356,17 +442,41 @@ export async function registerRoutes(
     }
   });
 
-  // Assign quote to worker
+  // Assign quote to worker - requires authentication
   app.patch("/api/quotes/:id/assign-worker", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { id } = req.params;
       const { workerId } = req.body;
       
       if (!workerId) {
         return res.status(400).json({ error: "ID del trabajador es requerido" });
       }
+      
+      // Use tenant-aware getQuote for defense-in-depth
+      const existingQuote = await storage.getQuote(id, tenantId);
+      if (!existingQuote) {
+        return res.status(404).json({ error: "Presupuesto no encontrado" });
+      }
+      
+      // Verify worker belongs to tenant
+      const worker = await storage.getWorker(workerId);
+      if (!worker) {
+        return res.status(404).json({ error: "Trabajador no encontrado" });
+      }
+      if (worker.tenantId !== tenantId) {
+        return res.status(403).json({ error: "El trabajador no pertenece a tu empresa" });
+      }
 
-      const quote = await storage.assignQuoteToWorker(id, workerId);
+      const quote = await storage.assignQuoteToWorker(id, tenantId, workerId);
       if (!quote) {
         return res.status(404).json({ error: "Presupuesto no encontrado" });
       }
@@ -377,11 +487,30 @@ export async function registerRoutes(
     }
   });
 
-  // Worker orders
+  // Worker orders - requires authentication
   app.get("/api/workers/:workerId/orders", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
       const { workerId } = req.params;
-      const orders = await storage.getQuotes(undefined, workerId);
+      
+      // Verify worker belongs to tenant
+      const worker = await storage.getWorker(workerId);
+      if (!worker) {
+        return res.status(404).json({ error: "Trabajador no encontrado" });
+      }
+      if (worker.tenantId !== tenantId) {
+        return res.status(403).json({ error: "El trabajador no pertenece a tu empresa" });
+      }
+      
+      const orders = await storage.getQuotes(tenantId, undefined, workerId);
       res.json(orders);
     } catch (error) {
       console.error("Error fetching worker orders:", error);
@@ -942,11 +1071,16 @@ export async function registerRoutes(
       if (!req.isAuthenticated() || !req.user?.isAdmin) {
         return res.status(401).json({ error: "No autorizado" });
       }
+      
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
 
       const { createCanvas, loadImage } = await import('canvas');
       
-      // Get all delivery notes with large photos (> 100KB)
-      const notes = await storage.getDeliveryNotes();
+      // Get all delivery notes with large photos (> 100KB) for this tenant
+      const notes = await storage.getDeliveryNotes(tenantId);
       const largePhotoNotes = notes.filter(n => n.photo && n.photo.length > 100000);
       
       let compressed = 0;
