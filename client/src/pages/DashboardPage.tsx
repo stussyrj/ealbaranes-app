@@ -788,37 +788,22 @@ export default function DashboardPage() {
                     const note = notesWithPhotos[i];
                     
                     try {
-                      const canvas = document.createElement('canvas');
-                      const ctx = canvas.getContext('2d');
-                      const img = new Image();
-                      
-                      await new Promise<void>((resolve, reject) => {
-                        img.onload = () => {
-                          const maxWidth = 1200;
-                          let width = img.width;
-                          let height = img.height;
-                          
-                          if (width > maxWidth) {
-                            height = (height * maxWidth) / width;
-                            width = maxWidth;
+                      // Para imágenes base64, extraer los datos directamente
+                      if (note.photo.startsWith('data:image')) {
+                        const base64Data = note.photo.split(',')[1];
+                        if (base64Data) {
+                          const byteCharacters = atob(base64Data);
+                          const byteNumbers = new Array(byteCharacters.length);
+                          for (let j = 0; j < byteCharacters.length; j++) {
+                            byteNumbers[j] = byteCharacters.charCodeAt(j);
                           }
-                          
-                          canvas.width = width;
-                          canvas.height = height;
-                          ctx?.drawImage(img, 0, 0, width, height);
-                          
-                          canvas.toBlob((blob) => {
-                            if (blob && folder) {
-                              const fileName = `albaran-${note.noteNumber || i + 1}-cobrado-${note.clientName?.replace(/[^a-zA-Z0-9]/g, '_') || 'cliente'}.jpg`;
-                              folder.file(fileName, blob);
-                              processedCount++;
-                            }
-                            resolve();
-                          }, 'image/jpeg', 0.8);
-                        };
-                        img.onerror = () => reject(new Error('Error loading image'));
-                        img.src = note.photo;
-                      });
+                          const byteArray = new Uint8Array(byteNumbers);
+                          const blob = new Blob([byteArray], { type: 'image/jpeg' });
+                          const fileName = `albaran-${note.noteNumber || i + 1}-cobrado-${note.clientName?.replace(/[^a-zA-Z0-9]/g, '_') || 'cliente'}.jpg`;
+                          folder?.file(fileName, blob);
+                          processedCount++;
+                        }
+                      }
                     } catch (imgError) {
                       console.error(`Error processing image for note ${note.noteNumber}:`, imgError);
                       errorCount++;
