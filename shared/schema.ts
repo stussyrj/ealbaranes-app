@@ -157,7 +157,7 @@ export const deliveryNotes = pgTable("delivery_notes", {
   workerId: varchar("worker_id").notNull(),
   creatorType: text("creator_type").default("worker"),
   clientName: text("client_name"),
-  pickupOrigin: text("pickup_origin"),
+  pickupOrigins: text("pickup_origins").array(),
   destination: text("destination"),
   vehicleType: text("vehicle_type"),
   date: text("date"),
