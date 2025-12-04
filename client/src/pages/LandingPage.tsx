@@ -175,34 +175,88 @@ export default function LandingPage() {
                 </ul>
               </div>
               <div className="relative">
-                <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-8 border border-primary/20">
-                  <div className="bg-card rounded-lg shadow-lg p-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">Albarán #0042</p>
-                        <p className="text-sm text-muted-foreground">Creado hace 5 min</p>
+                <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-4 sm:p-6 border border-primary/20">
+                  <div className="bg-card rounded-lg shadow-lg overflow-hidden">
+                    <div className="p-4 sm:p-5 border-b border-border">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">Albarán #0127</p>
+                            <p className="text-xs text-muted-foreground">01/12/2024 - 14:30</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium">
+                            <Camera className="h-3 w-3" /> Foto
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium">
+                            <PenTool className="h-3 w-3" /> Firmado
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Cliente:</span>
-                        <span className="text-foreground font-medium">Transportes García</span>
+                    
+                    <div className="p-4 sm:p-5 space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-1">Cliente</p>
+                          <p className="text-foreground font-medium">Mudanzas Express S.L.</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-1">Vehículo</p>
+                          <p className="text-foreground font-medium">Furgón</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-1">Origen</p>
+                          <p className="text-foreground font-medium">C/ Gran Vía 45, Madrid</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-1">Destino</p>
+                          <p className="text-foreground font-medium">Av. Diagonal 230, Barcelona</p>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Destino:</span>
-                        <span className="text-foreground font-medium">Madrid Centro</span>
+                      
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-muted-foreground text-xs mb-1">Observaciones</p>
+                        <p className="text-foreground text-sm">Mercancía frágil. Entregar en mano al responsable de almacén.</p>
                       </div>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs">
-                        <Camera className="h-3 w-3" /> Foto
-                      </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs">
-                        <PenTool className="h-3 w-3" /> Firmado
-                      </span>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-2">Foto de entrega</p>
+                          <div className="aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden border border-border">
+                            <div className="text-center p-3">
+                              <Camera className="h-8 w-8 text-muted-foreground/50 mx-auto mb-1" />
+                              <p className="text-xs text-muted-foreground">Foto adjunta</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-2">Firma del cliente</p>
+                          <div className="aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden border border-border">
+                            <svg viewBox="0 0 200 80" className="w-full h-full p-2">
+                              <path 
+                                d="M 20 50 Q 40 20 60 50 T 100 50 Q 120 30 140 50 T 180 40" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth="2" 
+                                className="text-foreground"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground">Trabajador: José Martínez</p>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary text-xs font-medium">
+                          <CheckCircle className="h-3 w-3" /> Completado
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
