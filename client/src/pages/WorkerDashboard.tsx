@@ -31,6 +31,8 @@ export default function WorkerDashboard() {
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [showCameraPreview, setShowCameraPreview] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [viewSignatureOpen, setViewSignatureOpen] = useState(false);
+  const [signatureToView, setSignatureToView] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const frameIdRef = useRef<number | null>(null);
@@ -483,6 +485,28 @@ export default function WorkerDashboard() {
             <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded">
               <p className="text-muted-foreground text-xs mb-2">Fotografía</p>
               <img src={note.photo} alt="Foto del albarán" className="w-full rounded-md max-h-48 object-cover" data-testid={`img-delivery-note-photo-${note.id}`} />
+            </div>
+          )}
+
+          {note.signature && (
+            <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-muted-foreground text-xs">Firma Digital</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSignatureToView(note.signature);
+                    setViewSignatureOpen(true);
+                  }}
+                  className="h-6 text-xs px-2"
+                  data-testid={`button-view-signature-${note.id}`}
+                >
+                  Ver
+                </Button>
+              </div>
+              <img src={note.signature} alt="Firma digital" className="w-full rounded-md max-h-24 object-contain bg-white" />
             </div>
           )}
 
@@ -1335,6 +1359,27 @@ export default function WorkerDashboard() {
                 </div>
               )}
 
+              {selectedNoteDetail.signature && (
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-muted-foreground">Firma Digital</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSignatureToView(selectedNoteDetail.signature);
+                        setViewSignatureOpen(true);
+                      }}
+                      className="h-7 text-xs"
+                      data-testid="button-view-signature-detail"
+                    >
+                      Ver Firma
+                    </Button>
+                  </div>
+                  <img src={selectedNoteDetail.signature} alt="Firma digital" className="w-full rounded-lg max-h-32 object-contain bg-white border" />
+                </div>
+              )}
+
               {selectedNoteDetail.signedAt && (
                 <div className="border-t pt-4 bg-green-50 dark:bg-green-950/20 p-3 rounded">
                   <p className="text-xs text-green-600 dark:text-green-400">✓ Firmado el {new Date(selectedNoteDetail.signedAt).toLocaleString('es-ES')}</p>
@@ -1497,6 +1542,24 @@ export default function WorkerDashboard() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={viewSignatureOpen} onOpenChange={setViewSignatureOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Firma Digital</DialogTitle>
+          </DialogHeader>
+          {signatureToView && (
+            <div className="bg-white rounded-lg p-4 border">
+              <img 
+                src={signatureToView} 
+                alt="Firma digital" 
+                className="w-full object-contain max-h-80"
+                data-testid="img-signature-fullview"
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

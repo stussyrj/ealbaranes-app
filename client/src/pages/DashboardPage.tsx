@@ -72,6 +72,8 @@ export default function DashboardPage() {
   const [captureSignatureOpen, setCaptureSignatureOpen] = useState(false);
   const [selectedNoteForSignature, setSelectedNoteForSignature] = useState<any>(null);
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  const [viewSignatureOpen, setViewSignatureOpen] = useState(false);
+  const [signatureToView, setSignatureToView] = useState<string | null>(null);
   
   // Helper function to determine if a note is fully signed (has both photo and signature)
   const isFullySigned = (note: any) => note.photo && note.signature;
@@ -1245,6 +1247,22 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     )}
+
+                    {note.signature && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSignatureToView(note.signature);
+                          setViewSignatureOpen(true);
+                        }}
+                        className="w-full text-xs h-7"
+                        data-testid={`button-view-signature-${note.id}`}
+                      >
+                        <Pen className="w-3 h-3 mr-1" />
+                        Ver Firma Digital
+                      </Button>
+                    )}
                   </div>
 
                   <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
@@ -2016,6 +2034,25 @@ export default function DashboardPage() {
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
               <span>Guardando firma...</span>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Signature Dialog */}
+      <Dialog open={viewSignatureOpen} onOpenChange={setViewSignatureOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Firma Digital</DialogTitle>
+          </DialogHeader>
+          {signatureToView && (
+            <div className="bg-white rounded-lg p-4 border">
+              <img 
+                src={signatureToView} 
+                alt="Firma digital" 
+                className="w-full object-contain max-h-80"
+                data-testid="img-signature-fullview"
+              />
             </div>
           )}
         </DialogContent>
