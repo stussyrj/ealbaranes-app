@@ -558,6 +558,23 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/delivery-notes/suggestions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant no encontrado" });
+      }
+      const suggestions = await storage.getDeliveryNoteSuggestions(tenantId);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching delivery note suggestions:", error);
+      res.status(500).json({ error: "Error al obtener sugerencias" });
+    }
+  });
+
   app.get("/api/workers/:workerId/delivery-notes", async (req, res) => {
     try {
       const { workerId } = req.params;

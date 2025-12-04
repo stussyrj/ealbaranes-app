@@ -56,6 +56,7 @@ export interface IStorage {
   getDeliveryNote(id: string): Promise<DeliveryNote | undefined>;
   createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote>;
   updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
+  getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], origins: string[], destinations: string[] }>;
 }
 
 const defaultVehicleTypes: VehicleType[] = [
@@ -611,6 +612,27 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error("Error updating delivery note in DB:", error);
       return undefined;
+    }
+  }
+
+  async getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], origins: string[], destinations: string[] }> {
+    try {
+      const notes = await db.select({
+        clientName: deliveryNotesTable.clientName,
+        pickupOrigin: deliveryNotesTable.pickupOrigin,
+        destination: deliveryNotesTable.destination,
+      })
+        .from(deliveryNotesTable)
+        .where(eq(deliveryNotesTable.tenantId, tenantId));
+      
+      const clients = Array.from(new Set(notes.map(n => n.clientName).filter((c): c is string => !!c && c.trim() !== '')));
+      const origins = Array.from(new Set(notes.map(n => n.pickupOrigin).filter((o): o is string => !!o && o.trim() !== '')));
+      const destinations = Array.from(new Set(notes.map(n => n.destination).filter((d): d is string => !!d && d.trim() !== '')));
+      
+      return { clients: clients.sort(), origins: origins.sort(), destinations: destinations.sort() };
+    } catch (error) {
+      console.error("Error fetching delivery note suggestions:", error);
+      return { clients: [], origins: [], destinations: [] };
     }
   }
 }

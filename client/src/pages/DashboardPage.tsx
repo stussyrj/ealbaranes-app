@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { DeliveryNoteCard } from "@/components/DeliveryNoteCard";
+import { AutocompleteInput } from "@/components/AutocompleteInput";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -189,6 +190,19 @@ export default function DashboardPage() {
     },
     retry: false,
     staleTime: 0,
+  });
+
+  const { data: suggestions = { clients: [], origins: [], destinations: [] } } = useQuery<{ clients: string[], origins: string[], destinations: string[] }>({
+    queryKey: ["/api/delivery-notes/suggestions"],
+    queryFn: async () => {
+      const res = await fetch("/api/delivery-notes/suggestions", { credentials: "include" });
+      if (!res.ok) {
+        return { clients: [], origins: [], destinations: [] };
+      }
+      return res.json();
+    },
+    retry: false,
+    staleTime: 60000,
   });
 
   // Refetch data when user changes
@@ -1308,28 +1322,31 @@ export default function DashboardPage() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Nombre del Cliente</label>
-              <Input
+              <AutocompleteInput
                 placeholder="Ej: Juan García"
                 value={formData.clientName}
-                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, clientName: value })}
+                suggestions={suggestions.clients}
                 data-testid="input-client-name"
               />
             </div>
             <div>
               <label className="text-sm font-medium">Origen (Recogida)</label>
-              <Input
+              <AutocompleteInput
                 placeholder="Ej: Calle Principal, 123"
                 value={formData.pickupOrigin}
-                onChange={(e) => setFormData({ ...formData, pickupOrigin: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, pickupOrigin: value })}
+                suggestions={suggestions.origins}
                 data-testid="input-pickup-origin"
               />
             </div>
             <div>
               <label className="text-sm font-medium">Destino</label>
-              <Input
+              <AutocompleteInput
                 placeholder="Ej: Avenida Central, 456"
                 value={formData.destination}
-                onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, destination: value })}
+                suggestions={suggestions.destinations}
                 data-testid="input-destination"
               />
             </div>
