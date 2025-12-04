@@ -96,10 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (userData: ServerUser) => {
       setLoginError(null);
       queryClient.setQueryData(["/api/user"], userData);
-      toast({
-        title: "Bienvenido",
-        description: `Sesión iniciada como ${userData.displayName || userData.username}`,
-      });
     },
     onError: (error: any) => {
       const errorCode = error?.code;
