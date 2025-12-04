@@ -11,6 +11,7 @@ import RegisterPage from "@/pages/RegisterPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import PricingPage from "@/pages/PricingPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
+import LandingPage from "@/pages/LandingPage";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -68,9 +69,10 @@ function MainLayout() {
       <Route path="/pricing" component={PricingPage} />
       <Route path="/register" component={RegisterPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
+      <Route path="/login" component={AuthPage} />
       <Route>
         {!user ? (
-          <AuthPage />
+          <LandingPage />
         ) : (
           <SidebarProvider style={sidebarStyle as React.CSSProperties}>
             <div className="flex min-h-screen w-full">
