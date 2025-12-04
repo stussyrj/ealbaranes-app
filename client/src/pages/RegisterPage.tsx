@@ -313,6 +313,25 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(!!checked)}
+                  data-testid="checkbox-terms"
+                />
+                <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                  Acepto los{" "}
+                  <Link href="/terms" className="text-primary hover:underline" data-testid="link-terms">
+                    Términos y Condiciones
+                  </Link>
+                  {" "}y la{" "}
+                  <Link href="/privacy" className="text-primary hover:underline" data-testid="link-privacy">
+                    Política de Privacidad
+                  </Link>
+                </Label>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"
@@ -330,15 +349,12 @@ export default function RegisterPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground text-center">
+          <CardFooter>
+            <p className="text-sm text-muted-foreground text-center w-full">
               ¿Ya tienes cuenta?{" "}
               <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
                 Iniciar Sesión
               </Link>
-            </p>
-            <p className="text-xs text-muted-foreground text-center">
-              Al registrarte, aceptas nuestros términos de servicio y política de privacidad.
             </p>
           </CardFooter>
         </Card>

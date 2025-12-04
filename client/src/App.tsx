@@ -12,6 +12,8 @@ import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import PricingPage from "@/pages/PricingPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import LandingPage from "@/pages/LandingPage";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -70,6 +72,8 @@ function MainLayout() {
       <Route path="/register" component={RegisterPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
       <Route path="/login" component={AuthPage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy" component={PrivacyPage} />
       <Route>
         {!user ? (
           <LandingPage />
