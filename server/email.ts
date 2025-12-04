@@ -51,7 +51,7 @@ export async function sendWelcomeEmail(to: string, companyName: string) {
     const { client, fromEmail } = await getResendClient();
     
     const { data, error } = await client.emails.send({
-      from: fromEmail || 'eAlbarán <noreply@resend.dev>',
+      from: 'eAlbarán <no-reply@ealbaranes.es>',
       to: [to],
       subject: `Bienvenido a eAlbarán, ${companyName}`,
       html: `
@@ -118,7 +118,7 @@ export async function sendDeliveryNoteCreatedEmail(to: string, noteData: {
     const { client, fromEmail } = await getResendClient();
     
     const { data, error } = await client.emails.send({
-      from: fromEmail || 'eAlbarán <noreply@resend.dev>',
+      from: 'eAlbarán <no-reply@ealbaranes.es>',
       to: [to],
       subject: `Nuevo Albarán #${noteData.noteNumber} creado`,
       html: `
@@ -193,7 +193,7 @@ export async function sendDeliveryNoteSignedEmail(to: string, noteData: {
     });
     
     const { data, error } = await client.emails.send({
-      from: fromEmail || 'eAlbarán <noreply@resend.dev>',
+      from: 'eAlbarán <no-reply@ealbaranes.es>',
       to: [to],
       subject: `Albarán #${noteData.noteNumber} firmado`,
       html: `
