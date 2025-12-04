@@ -103,6 +103,12 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Verificación de propiedad al acceder a albaranes individuales
   - Creación de albaranes solo permitida con tenantId válido
   - Endpoint de seed deshabilitado en producción
+  - **Endpoints de quotes con aislamiento de tenant** (GET/PATCH/confirm/assign-worker)
+  - **Endpoints de workers con aislamiento de tenant** (GET/POST/PATCH/DELETE)
+  - Defense-in-depth: storage.getQuote verifica tenantId en capa de datos
+  - Rechazo estricto de registros con tenantId nulo o no coincidente
+  - Cookies de sesión seguras en producción (secure + sameSite strict)
+  - Credenciales por defecto deshabilitadas en producción
 - Registro de empresas con creación automática de tenant
 - **Verificación de email ACTIVA** - Las empresas deben verificar su email antes de iniciar sesión
 - Integración [REDACTED-STRIPE] para suscripciones (pagos activos)
@@ -151,4 +157,5 @@ pickupOrigins: PickupOrigin[] // Array de objetos
 ## Credenciales de Desarrollo
 
 - Usuario empresa por defecto: `admin` / `admin123`
-- Solo para desarrollo local
+- **Solo disponible en desarrollo local** (NODE_ENV=development)
+- Deshabilitado automáticamente en producción por seguridad
