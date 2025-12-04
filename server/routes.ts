@@ -453,11 +453,23 @@ export async function registerRoutes(
 
   app.get("/api/delivery-notes/:id", async (req, res) => {
     try {
+      // Require authentication for tenant isolation
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
       const { id } = req.params;
       const note = await storage.getDeliveryNote(id);
       if (!note) {
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
+      
+      // Verify note belongs to user's tenant
+      const tenantId = (req.user as any).tenantId;
+      if (note.tenantId && note.tenantId !== tenantId) {
+        return res.status(403).json({ error: "No tienes acceso a este albarán" });
+      }
+      
       res.json(note);
     } catch (error) {
       console.error("Error fetching delivery note:", error);
@@ -467,6 +479,11 @@ export async function registerRoutes(
 
   app.patch("/api/delivery-notes/:id", async (req, res) => {
     try {
+      // Require authentication for tenant isolation
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
       const { id } = req.params;
       const data = req.body;
       
@@ -474,6 +491,12 @@ export async function registerRoutes(
       const existingNote = await storage.getDeliveryNote(id);
       if (!existingNote) {
         return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      
+      // Verify note belongs to user's tenant
+      const tenantId = (req.user as any).tenantId;
+      if (existingNote.tenantId && existingNote.tenantId !== tenantId) {
+        return res.status(403).json({ error: "No tienes acceso a este albarán" });
       }
       
       // Check if this is an invoice status update only
