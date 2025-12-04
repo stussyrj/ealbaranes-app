@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useCallback, useRef } from "react"
+import { useEffect, useRef } from "react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -166,33 +166,42 @@ function Sidebar({
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
   
-  // Native touch event handlers for swipe-to-close on mobile
-  const touchStartX = useRef<number>(0)
-  const touchStartY = useRef<number>(0)
+  // Window-level pointer event tracking for swipe-to-close
+  const startPos = useRef<{ x: number; y: number } | null>(null)
   
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }, [])
-  
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const touchEndX = e.changedTouches[0].clientX
-    const touchEndY = e.changedTouches[0].clientY
-    const deltaX = touchEndX - touchStartX.current
-    const deltaY = Math.abs(touchEndY - touchStartY.current)
+  useEffect(() => {
+    if (!isMobile || !openMobile) return
     
-    // Only trigger if horizontal swipe is dominant (deltaX > deltaY)
-    // and swipe distance is at least 50px
-    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > deltaY) {
-      if (side === "left" && deltaX < 0) {
-        // Swipe left on left sidebar = close
-        setOpenMobile(false)
-      } else if (side === "right" && deltaX > 0) {
-        // Swipe right on right sidebar = close
-        setOpenMobile(false)
-      }
+    const handlePointerDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') return
+      startPos.current = { x: e.clientX, y: e.clientY }
     }
-  }, [side, setOpenMobile])
+    
+    const handlePointerUp = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch' || !startPos.current) return
+      
+      const dx = e.clientX - startPos.current.x
+      const dy = Math.abs(e.clientY - startPos.current.y)
+      
+      // Horizontal swipe: dx > 60px and more horizontal than vertical
+      if (Math.abs(dx) > 60 && Math.abs(dx) > dy) {
+        if (side === "left" && dx < 0) {
+          setOpenMobile(false)
+        } else if (side === "right" && dx > 0) {
+          setOpenMobile(false)
+        }
+      }
+      startPos.current = null
+    }
+    
+    window.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('pointerup', handlePointerUp)
+    
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+  }, [isMobile, openMobile, side, setOpenMobile])
 
   if (collapsible === "none") {
     return (
@@ -228,11 +237,7 @@ function Sidebar({
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div 
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            className="flex h-full w-full flex-col overflow-y-auto"
-          >
+          <div className="flex h-full w-full flex-col overflow-y-auto">
             {children}
           </div>
         </SheetContent>
