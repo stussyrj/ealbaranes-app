@@ -9,6 +9,11 @@ interface SignaturePadProps {
   height?: number;
 }
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 export function SignaturePad({
   onSave,
   onCancel,
@@ -18,6 +23,8 @@ export function SignaturePad({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
+  const lastPointRef = useRef<Point | null>(null);
+  const pointsRef = useRef<Point[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -29,13 +36,15 @@ export function SignaturePad({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
   }, []);
 
   const getCoordinates = useCallback(
-    (e: React.MouseEvent | React.TouchEvent): { x: number; y: number } | null => {
+    (e: React.MouseEvent | React.TouchEvent): Point | null => {
       const canvas = canvasRef.current;
       if (!canvas) return null;
 
@@ -71,8 +80,13 @@ export function SignaturePad({
       if (!ctx) return;
 
       setIsDrawing(true);
+      lastPointRef.current = coords;
+      pointsRef.current = [coords];
+      
       ctx.beginPath();
       ctx.moveTo(coords.x, coords.y);
+      ctx.lineTo(coords.x, coords.y);
+      ctx.stroke();
     },
     [getCoordinates]
   );
@@ -89,16 +103,66 @@ export function SignaturePad({
       const ctx = canvas?.getContext("2d");
       if (!ctx) return;
 
-      ctx.lineTo(coords.x, coords.y);
-      ctx.stroke();
+      const lastPoint = lastPointRef.current;
+      if (!lastPoint) {
+        lastPointRef.current = coords;
+        return;
+      }
+
+      pointsRef.current.push(coords);
+      const points = pointsRef.current;
+
+      if (points.length >= 3) {
+        const p0 = points[points.length - 3];
+        const p1 = points[points.length - 2];
+        const p2 = points[points.length - 1];
+
+        const midPoint1 = {
+          x: (p0.x + p1.x) / 2,
+          y: (p0.y + p1.y) / 2,
+        };
+        const midPoint2 = {
+          x: (p1.x + p2.x) / 2,
+          y: (p1.y + p2.y) / 2,
+        };
+
+        ctx.beginPath();
+        ctx.moveTo(midPoint1.x, midPoint1.y);
+        ctx.quadraticCurveTo(p1.x, p1.y, midPoint2.x, midPoint2.y);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(coords.x, coords.y);
+        ctx.stroke();
+      }
+
+      lastPointRef.current = coords;
       setHasSignature(true);
     },
     [isDrawing, getCoordinates]
   );
 
   const stopDrawing = useCallback(() => {
+    if (isDrawing && pointsRef.current.length >= 2) {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (ctx) {
+        const points = pointsRef.current;
+        const lastPoint = points[points.length - 1];
+        const prevPoint = points[points.length - 2];
+        
+        ctx.beginPath();
+        ctx.moveTo(prevPoint.x, prevPoint.y);
+        ctx.lineTo(lastPoint.x, lastPoint.y);
+        ctx.stroke();
+      }
+    }
+    
     setIsDrawing(false);
-  }, []);
+    lastPointRef.current = null;
+    pointsRef.current = [];
+  }, [isDrawing]);
 
   const clearSignature = useCallback(() => {
     const canvas = canvasRef.current;
@@ -108,6 +172,8 @@ export function SignaturePad({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
+    lastPointRef.current = null;
+    pointsRef.current = [];
   }, []);
 
   const saveSignature = useCallback(() => {
@@ -129,6 +195,7 @@ export function SignaturePad({
           width={width}
           height={height}
           className="w-full touch-none cursor-crosshair"
+          style={{ touchAction: "none" }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
