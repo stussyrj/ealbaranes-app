@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import {
   Dialog,
   DialogContent,
@@ -659,6 +661,101 @@ export default function DashboardPage() {
                 <div className="flex-1 text-left">
                   <p className="font-semibold">Albaranes Firmados (PDF)</p>
                   <p className="text-xs text-muted-foreground">{signedDeliveryNotes.filter((n: any) => n.photo).length} albarán(es) con foto</p>
+                </div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4 px-4"
+              disabled={isDownloading || invoicedNotes.filter((n: any) => n.photo).length === 0}
+              onClick={async () => {
+                const notesWithPhotos = invoicedNotes.filter((n: any) => n.photo);
+                if (notesWithPhotos.length === 0) {
+                  toast({ title: "Sin fotos", description: "No hay albaranes cobrados con foto para descargar", variant: "destructive" });
+                  return;
+                }
+                setIsDownloading(true);
+                toast({ title: "Generando ZIP...", description: `Comprimiendo ${notesWithPhotos.length} albarán(es) cobrado(s)...` });
+                try {
+                  const zip = new JSZip();
+                  const folder = zip.folder("albaranes-cobrados");
+                  let processedCount = 0;
+                  let errorCount = 0;
+                  
+                  for (let i = 0; i < notesWithPhotos.length; i++) {
+                    const note = notesWithPhotos[i];
+                    
+                    try {
+                      const canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d');
+                      const img = new Image();
+                      
+                      await new Promise<void>((resolve, reject) => {
+                        img.onload = () => {
+                          const maxWidth = 1200;
+                          let width = img.width;
+                          let height = img.height;
+                          
+                          if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                          }
+                          
+                          canvas.width = width;
+                          canvas.height = height;
+                          ctx?.drawImage(img, 0, 0, width, height);
+                          
+                          canvas.toBlob((blob) => {
+                            if (blob && folder) {
+                              const fileName = `albaran-${note.noteNumber || i + 1}-cobrado-${note.clientName?.replace(/[^a-zA-Z0-9]/g, '_') || 'cliente'}.jpg`;
+                              folder.file(fileName, blob);
+                              processedCount++;
+                            }
+                            resolve();
+                          }, 'image/jpeg', 0.8);
+                        };
+                        img.onerror = () => reject(new Error('Error loading image'));
+                        img.src = note.photo;
+                      });
+                    } catch (imgError) {
+                      console.error(`Error processing image for note ${note.noteNumber}:`, imgError);
+                      errorCount++;
+                    }
+                  }
+                  
+                  if (processedCount === 0) {
+                    throw new Error("No se pudo procesar ninguna imagen");
+                  }
+                  
+                  const content = await zip.generateAsync({ 
+                    type: "blob",
+                    compression: "DEFLATE",
+                    compressionOptions: { level: 6 }
+                  });
+                  
+                  saveAs(content, `albaranes-cobrados-${new Date().toISOString().split('T')[0]}.zip`);
+                  const message = errorCount > 0 
+                    ? `Se descargaron ${processedCount} albarán(es). ${errorCount} no se pudieron procesar.`
+                    : `Se descargó el archivo con ${processedCount} albarán(es) cobrado(s)`;
+                  toast({ title: "ZIP generado", description: message });
+                } catch (error) {
+                  console.error("ZIP generation error:", error);
+                  toast({ title: "Error", description: "No se pudo generar el archivo ZIP", variant: "destructive" });
+                } finally {
+                  setIsDownloading(false);
+                  setDownloadModalOpen(false);
+                }
+              }}
+              data-testid="button-download-invoiced"
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                  <Banknote className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold">Albaranes Cobrados (ZIP)</p>
+                  <p className="text-xs text-muted-foreground">{invoicedNotes.filter((n: any) => n.photo).length} albarán(es) con foto comprimidos</p>
                 </div>
               </div>
             </Button>
