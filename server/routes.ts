@@ -580,7 +580,18 @@ export async function registerRoutes(
 
   app.get("/api/delivery-notes", async (req, res) => {
     try {
-      const notes = await storage.getDeliveryNotes();
+      // Require authentication for tenant isolation
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      // Filter by tenant for data isolation
+      const notes = await storage.getDeliveryNotes(tenantId);
       res.json(notes);
     } catch (error) {
       console.error("Error fetching all delivery notes:", error);
@@ -607,8 +618,16 @@ export async function registerRoutes(
 
   app.get("/api/workers/:workerId/delivery-notes", async (req, res) => {
     try {
+      // Require authentication for tenant isolation
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
       const { workerId } = req.params;
-      const notes = await storage.getDeliveryNotes(undefined, workerId);
+      const tenantId = (req.user as any).tenantId;
+      
+      // Filter by tenant for data isolation
+      const notes = await storage.getDeliveryNotes(tenantId, undefined, workerId);
       res.json(notes);
     } catch (error) {
       console.error("Error fetching worker delivery notes:", error);

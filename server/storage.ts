@@ -52,7 +52,7 @@ export interface IStorage {
   updateQuoteStatus(id: string, status: string): Promise<Quote | undefined>;
   assignQuoteToWorker(quoteId: string, workerId: string): Promise<Quote | undefined>;
   
-  getDeliveryNotes(quoteId?: string, workerId?: string): Promise<DeliveryNote[]>;
+  getDeliveryNotes(tenantId?: string, quoteId?: string, workerId?: string): Promise<DeliveryNote[]>;
   getDeliveryNote(id: string): Promise<DeliveryNote | undefined>;
   createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote>;
   updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
@@ -524,19 +524,30 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getDeliveryNotes(quoteId?: string, workerId?: string): Promise<(DeliveryNote & { workerName?: string })[]> {
+  async getDeliveryNotes(tenantId?: string, quoteId?: string, workerId?: string): Promise<(DeliveryNote & { workerName?: string })[]> {
     try {
       let notes: DeliveryNote[] = [];
       
-      if (quoteId && workerId) {
+      // Build conditions array for filtering
+      const conditions = [];
+      
+      // Always filter by tenantId if provided (critical for multi-tenant isolation)
+      if (tenantId) {
+        conditions.push(eq(deliveryNotesTable.tenantId, tenantId));
+      }
+      
+      if (quoteId) {
+        conditions.push(eq(deliveryNotesTable.quoteId, quoteId));
+      }
+      
+      if (workerId) {
+        conditions.push(eq(deliveryNotesTable.workerId, workerId));
+      }
+      
+      // Apply conditions if any exist
+      if (conditions.length > 0) {
         notes = await db.select().from(deliveryNotesTable)
-          .where(and(eq(deliveryNotesTable.quoteId, quoteId), eq(deliveryNotesTable.workerId, workerId)));
-      } else if (quoteId) {
-        notes = await db.select().from(deliveryNotesTable)
-          .where(eq(deliveryNotesTable.quoteId, quoteId));
-      } else if (workerId) {
-        notes = await db.select().from(deliveryNotesTable)
-          .where(eq(deliveryNotesTable.workerId, workerId));
+          .where(and(...conditions));
       } else {
         notes = await db.select().from(deliveryNotesTable);
       }
