@@ -1071,23 +1071,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   
-                  {/* Status indicators for photo and signature */}
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge className={note.photo 
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 no-default-hover-elevate no-default-active-elevate"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 no-default-hover-elevate no-default-active-elevate"
-                    }>
-                      <Image className="w-3 h-3 mr-1" />
-                      {note.photo ? "Foto" : "Sin foto"}
-                    </Badge>
-                    <Badge className={note.signature 
-                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 no-default-hover-elevate no-default-active-elevate"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 no-default-hover-elevate no-default-active-elevate"
-                    }>
-                      <Pen className="w-3 h-3 mr-1" />
-                      {note.signature ? "Firma" : "Sin firma"}
-                    </Badge>
-                  </div>
 
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
@@ -1228,33 +1211,6 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
-                    {note.photo ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 text-xs h-7"
-                        onClick={() => previewDeliveryNote(note.photo)}
-                        data-testid={`button-view-photo-${note.id}`}
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        Ver foto
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="default"
-                        className="flex-1 text-xs h-7"
-                        onClick={() => {
-                          setSelectedNoteForPhoto(note);
-                          setCapturedPhoto(null);
-                          setCapturePhotoOpen(true);
-                        }}
-                        data-testid={`button-sign-photo-${note.id}`}
-                      >
-                        <Camera className="w-3 h-3 mr-1" />
-                        Firmar con foto
-                      </Button>
-                    )}
                     <Button
                       size="sm"
                       variant="outline"
