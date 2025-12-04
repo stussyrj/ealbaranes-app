@@ -1171,8 +1171,8 @@ export default function WorkerDashboard() {
             
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Vehículo</label>
-              <div className="grid grid-cols-4 gap-1">
-                {["Moto", "Furgoneta", "Furgón", "Carrozado"].map((tipo) => (
+              <div className="grid grid-cols-5 gap-1">
+                {["Moto", "Furgoneta", "Furgón", "Carrozado", "Camión"].map((tipo) => (
                   <Button
                     key={tipo}
                     type="button"
