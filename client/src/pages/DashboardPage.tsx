@@ -1454,25 +1454,6 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <div>
-              <label className="text-sm font-medium mb-1 block">Vehículo</label>
-              <div className="grid grid-cols-4 gap-1">
-                {["Moto", "Furgoneta", "Furgón", "Carrozado"].map((tipo) => (
-                  <Button
-                    key={tipo}
-                    type="button"
-                    variant={formData.vehicleType === tipo ? "default" : "outline"}
-                    onClick={() => setFormData({ ...formData, vehicleType: tipo })}
-                    size="sm"
-                    className="text-xs px-1"
-                    data-testid={`button-vehicle-${tipo.toLowerCase()}`}
-                  >
-                    {tipo}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
             {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
               <div key={index + 1} className="flex items-center gap-2">
                 <div className="flex-1 grid grid-cols-2 gap-2">
@@ -1551,16 +1532,40 @@ export default function DashboardPage() {
             </div>
             
             <div>
-              <label className="text-xs text-muted-foreground">Observaciones</label>
-              <Textarea
-                placeholder="Notas adicionales..."
-                value={formData.observations}
-                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                rows={2}
-                className="text-sm"
-                data-testid="input-observations"
-              />
+              <label className="text-xs text-muted-foreground mb-1 block">Vehículo</label>
+              <div className="grid grid-cols-4 gap-1">
+                {["Moto", "Furgoneta", "Furgón", "Carrozado"].map((tipo) => (
+                  <Button
+                    key={tipo}
+                    type="button"
+                    variant={formData.vehicleType === tipo ? "default" : "outline"}
+                    onClick={() => setFormData({ ...formData, vehicleType: tipo })}
+                    size="sm"
+                    className="text-xs px-1"
+                    data-testid={`button-vehicle-${tipo.toLowerCase()}`}
+                  >
+                    {tipo}
+                  </Button>
+                ))}
+              </div>
             </div>
+            
+            <details className="group">
+              <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
+                <Plus className="w-3 h-3 group-open:rotate-45 transition-transform" />
+                Observaciones
+              </summary>
+              <div className="mt-2">
+                <Textarea
+                  placeholder="Notas adicionales..."
+                  value={formData.observations}
+                  onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                  rows={2}
+                  className="text-sm"
+                  data-testid="input-observations"
+                />
+              </div>
+            </details>
             
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => setCreateDeliveryOpen(false)} className="flex-1" data-testid="button-cancel-create">
