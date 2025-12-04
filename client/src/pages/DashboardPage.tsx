@@ -75,6 +75,11 @@ export default function DashboardPage() {
   
   // Helper function to determine if a note is fully signed (has both photo and signature)
   const isFullySigned = (note: any) => note.photo && note.signature;
+  
+  const isValidPhoto = (photo: string | null | undefined) => {
+    if (!photo) return false;
+    return photo.length > 500;
+  };
   const getMissingSignatureInfo = (note: any) => {
     if (!note.photo && !note.signature) return "Falta foto y firma";
     if (!note.photo) return "Falta foto";
@@ -1058,8 +1063,17 @@ export default function DashboardPage() {
               ) : notes.map((note: any) => (
               <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm" ref={(el) => { deliveryNoteRefs.current[note.id] = el as any; }}>
                 {note.photo && (
-                  <div className="w-full h-32 sm:h-40 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
-                    <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                  <div className="w-full h-32 sm:h-40 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => isValidPhoto(note.photo) && previewDeliveryNote(note.photo)}>
+                    {isValidPhoto(note.photo) ? (
+                      <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <Camera className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                          <p className="text-xs">Imagen no disponible</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="p-3 space-y-3">
@@ -1730,8 +1744,17 @@ export default function DashboardPage() {
               ) : notes.map((note: any) => (
                 <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm">
                   {note.photo && (
-                    <div className="w-full h-24 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => previewDeliveryNote(note.photo)}>
-                      <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                    <div className="w-full h-24 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => isValidPhoto(note.photo) && previewDeliveryNote(note.photo)}>
+                      {isValidPhoto(note.photo) ? (
+                        <img src={note.photo} alt="Albarán firmado" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                          <div className="text-center">
+                            <Camera className="w-6 h-6 mx-auto mb-1 opacity-50" />
+                            <p className="text-xs">No disponible</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="p-3 space-y-2">
