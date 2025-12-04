@@ -75,10 +75,13 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - `POST /api/stripe/portal` - Portal de gestión de suscripción
 - `GET /api/stripe/subscription` - Estado de suscripción
 
-### Albaranes
-- `GET /api/delivery-notes` - Lista albaranes (filtrado por tenant)
-- `POST /api/delivery-notes` - Crea albarán (genera noteNumber único automáticamente)
-- `PATCH /api/delivery-notes/:id` - Actualiza albarán (añadir firma/foto)
+### Albaranes (todos requieren autenticación y filtran por tenant)
+- `GET /api/delivery-notes` - Lista albaranes (filtrado por tenant del usuario)
+- `GET /api/delivery-notes/suggestions` - Sugerencias de autocompletado (filtrado por tenant)
+- `GET /api/delivery-notes/:id` - Obtener albarán (verifica propiedad del tenant)
+- `POST /api/delivery-notes` - Crea albarán (requiere tenantId, genera noteNumber único)
+- `PATCH /api/delivery-notes/:id` - Actualiza albarán (verifica propiedad del tenant)
+- `GET /api/workers/:workerId/delivery-notes` - Albaranes de un trabajador (filtrado por tenant)
 
 ## Modelo de Datos - Pickup Origins
 
@@ -94,7 +97,12 @@ pickupOrigins: PickupOrigin[] // Array de objetos
 ## Estado Actual
 
 ### ✅ Completado
-- Sistema multi-tenant con aislamiento de datos
+- **Sistema multi-tenant con aislamiento de datos completo**:
+  - Todos los endpoints de albaranes requieren autenticación
+  - Filtrado por tenantId en todas las consultas
+  - Verificación de propiedad al acceder a albaranes individuales
+  - Creación de albaranes solo permitida con tenantId válido
+  - Endpoint de seed deshabilitado en producción
 - Registro de empresas con creación automática de tenant
 - **Verificación de email ACTIVA** - Las empresas deben verificar su email antes de iniciar sesión
 - Integración [REDACTED-STRIPE] para suscripciones (pagos activos)
