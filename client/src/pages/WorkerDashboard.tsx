@@ -1122,22 +1122,11 @@ export default function WorkerDashboard() {
                 Más opciones
               </summary>
               <div className="space-y-3 mt-3 pt-3 border-t">
-                <Input
-                  placeholder="Nombre del origen (opcional)"
-                  value={formData.pickupOrigins[0]?.name || ""}
-                  onChange={(e) => {
-                    const newOrigins = [...formData.pickupOrigins];
-                    if (newOrigins.length === 0) newOrigins.push({ name: "", address: "" });
-                    newOrigins[0] = { ...newOrigins[0], name: e.target.value };
-                    setFormData({ ...formData, pickupOrigins: newOrigins });
-                  }}
-                />
-                
                 {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
-                  <div key={index + 1} className="flex gap-2">
-                    <div className="flex-1 space-y-1">
+                  <div key={index + 1} className="flex items-center gap-2">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
                       <Input
-                        placeholder={`Nombre recogida ${index + 2}`}
+                        placeholder={`Recogida ${index + 2}`}
                         value={origin.name}
                         onChange={(e) => {
                           const newOrigins = [...formData.pickupOrigins];
@@ -1147,7 +1136,7 @@ export default function WorkerDashboard() {
                         className="text-sm"
                       />
                       <Input
-                        placeholder={`Dirección recogida ${index + 2}`}
+                        placeholder="Dirección"
                         value={origin.address}
                         onChange={(e) => {
                           const newOrigins = [...formData.pickupOrigins];
@@ -1165,7 +1154,7 @@ export default function WorkerDashboard() {
                         const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index + 1);
                         setFormData({ ...formData, pickupOrigins: newOrigins });
                       }}
-                      className="h-9 w-9 shrink-0 mt-1"
+                      className="h-9 w-9 shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </Button>
