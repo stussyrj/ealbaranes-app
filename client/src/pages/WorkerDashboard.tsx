@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import type { Quote, DeliveryNote } from "@shared/schema";
+import type { Quote, DeliveryNote, PickupOrigin } from "@shared/schema";
 
 export default function WorkerDashboard() {
   const { user } = useAuth();
@@ -37,7 +37,7 @@ export default function WorkerDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     clientName: "",
-    pickupOrigins: [""],
+    pickupOrigins: [{ name: "", address: "" }] as PickupOrigin[],
     destination: "",
     vehicleType: "Furgoneta",
     date: new Date().toISOString().split("T")[0],
@@ -46,12 +46,20 @@ export default function WorkerDashboard() {
     waitTime: 0,
   });
   
+  // Helper to format a single origin display
+  const formatOrigin = (origin: PickupOrigin): string => {
+    if (origin.name && origin.address) return `${origin.name} (${origin.address})`;
+    if (origin.name) return origin.name;
+    if (origin.address) return origin.address;
+    return 'N/A';
+  };
+  
   // Helper to format multiple origins compactly
-  const formatOrigins = (origins: string[] | null | undefined, maxDisplay: number = 2): string => {
+  const formatOrigins = (origins: PickupOrigin[] | null | undefined, maxDisplay: number = 2): string => {
     if (!origins || origins.length === 0) return 'N/A';
-    if (origins.length === 1) return origins[0];
-    if (origins.length <= maxDisplay) return origins.join(', ');
-    return `${origins.slice(0, maxDisplay).join(', ')} (+${origins.length - maxDisplay})`;
+    if (origins.length === 1) return formatOrigin(origins[0]);
+    if (origins.length <= maxDisplay) return origins.map(o => formatOrigin(o)).join(', ');
+    return `${origins.slice(0, maxDisplay).map(o => formatOrigin(o)).join(', ')} (+${origins.length - maxDisplay})`;
   };
 
   // Use workerId if available, otherwise use user.id as the worker identifier
@@ -453,7 +461,7 @@ export default function WorkerDashboard() {
               <p className="text-muted-foreground text-xs">
                 {note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
               </p>
-              <p className="font-semibold">{note.pickupOrigins.join(' → ')}</p>
+              <p className="font-semibold">{formatOrigins(note.pickupOrigins)}</p>
             </div>
           )}
 
@@ -794,7 +802,7 @@ export default function WorkerDashboard() {
                           setSelectedNoteToEdit(note); 
                           setFormData({ 
                             clientName: note.clientName || "", 
-                            pickupOrigins: note.pickupOrigins || [""], 
+                            pickupOrigins: note.pickupOrigins || [{ name: "", address: "" }], 
                             destination: note.destination || "", 
                             vehicleType: note.vehicleType || "Furgoneta", 
                             date: note.date || new Date().toISOString().split("T")[0], 
@@ -837,7 +845,7 @@ export default function WorkerDashboard() {
 
       {/* Edit Delivery Dialog */}
       <Dialog open={editDeliveryOpen} onOpenChange={setEditDeliveryOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Albarán</DialogTitle>
             <DialogDescription>
@@ -860,38 +868,52 @@ export default function WorkerDashboard() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, ""] })}
+                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
                   className="h-6 text-xs px-2"
                 >
                   + Añadir
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {formData.pickupOrigins.map((origin, index) => (
-                  <div key={index} className="flex gap-2">
+                  <div key={index} className="space-y-1 p-2 border rounded-md bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Recogida {index + 1}</span>
+                      {formData.pickupOrigins.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
+                            setFormData({ ...formData, pickupOrigins: newOrigins });
+                          }}
+                          className="h-5 w-5 p-0 text-xs"
+                        >
+                          ✕
+                        </Button>
+                      )}
+                    </div>
                     <Input
-                      placeholder={`Recogida ${index + 1}`}
-                      value={origin}
+                      placeholder="Nombre (ej: Almacén Central)"
+                      value={origin.name}
                       onChange={(e) => {
                         const newOrigins = [...formData.pickupOrigins];
-                        newOrigins[index] = e.target.value;
+                        newOrigins[index] = { ...newOrigins[index], name: e.target.value };
                         setFormData({ ...formData, pickupOrigins: newOrigins });
                       }}
+                      className="text-sm"
                     />
-                    {formData.pickupOrigins.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
-                          setFormData({ ...formData, pickupOrigins: newOrigins });
-                        }}
-                        className="h-9 w-9 flex-shrink-0"
-                      >
-                        ✕
-                      </Button>
-                    )}
+                    <Input
+                      placeholder="Dirección (ej: Calle Principal, 123)"
+                      value={origin.address}
+                      onChange={(e) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = { ...newOrigins[index], address: e.target.value };
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                      className="text-sm"
+                    />
                   </div>
                 ))}
               </div>
@@ -976,7 +998,7 @@ export default function WorkerDashboard() {
                     
                     const updateData = {
                       clientName: formData.clientName,
-                      pickupOrigins: formData.pickupOrigins.filter(o => o.trim() !== ""),
+                      pickupOrigins: formData.pickupOrigins.filter(o => o.name.trim() !== "" || o.address.trim() !== ""),
                       destination: formData.destination,
                       vehicleType: formData.vehicleType,
                       date: formData.date,
@@ -1037,7 +1059,7 @@ export default function WorkerDashboard() {
       </Dialog>
 
       <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Crear Nuevo Albarán</DialogTitle>
             <DialogDescription>
@@ -1060,38 +1082,52 @@ export default function WorkerDashboard() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, ""] })}
+                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
                   className="h-6 text-xs px-2"
                 >
                   + Añadir
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {formData.pickupOrigins.map((origin, index) => (
-                  <div key={index} className="flex gap-2">
+                  <div key={index} className="space-y-1 p-2 border rounded-md bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Recogida {index + 1}</span>
+                      {formData.pickupOrigins.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
+                            setFormData({ ...formData, pickupOrigins: newOrigins });
+                          }}
+                          className="h-5 w-5 p-0 text-xs"
+                        >
+                          ✕
+                        </Button>
+                      )}
+                    </div>
                     <Input
-                      placeholder={`Recogida ${index + 1}`}
-                      value={origin}
+                      placeholder="Nombre (ej: Almacén Central)"
+                      value={origin.name}
                       onChange={(e) => {
                         const newOrigins = [...formData.pickupOrigins];
-                        newOrigins[index] = e.target.value;
+                        newOrigins[index] = { ...newOrigins[index], name: e.target.value };
                         setFormData({ ...formData, pickupOrigins: newOrigins });
                       }}
+                      className="text-sm"
                     />
-                    {formData.pickupOrigins.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
-                          setFormData({ ...formData, pickupOrigins: newOrigins });
-                        }}
-                        className="h-9 w-9 flex-shrink-0"
-                      >
-                        ✕
-                      </Button>
-                    )}
+                    <Input
+                      placeholder="Dirección (ej: Calle Principal, 123)"
+                      value={origin.address}
+                      onChange={(e) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = { ...newOrigins[index], address: e.target.value };
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                      className="text-sm"
+                    />
                   </div>
                 ))}
               </div>
@@ -1163,7 +1199,7 @@ export default function WorkerDashboard() {
                       quoteId: `custom-${Date.now()}`,
                       workerId: effectiveWorkerId,
                       clientName: formData.clientName,
-                      pickupOrigins: formData.pickupOrigins.filter(o => o.trim() !== ""),
+                      pickupOrigins: formData.pickupOrigins.filter(o => o.name.trim() !== "" || o.address.trim() !== ""),
                       destination: formData.destination,
                       vehicleType: formData.vehicleType,
                       date: formData.date,
@@ -1188,7 +1224,7 @@ export default function WorkerDashboard() {
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
-                        pickupOrigins: [""],
+                        pickupOrigins: [{ name: "", address: "" }],
                         destination: "",
                         vehicleType: "Furgoneta",
                         date: new Date().toISOString().split("T")[0],
@@ -1260,7 +1296,7 @@ export default function WorkerDashboard() {
                 <p className="text-xs text-muted-foreground mb-2">
                   {selectedNoteDetail.pickupOrigins && selectedNoteDetail.pickupOrigins.length > 1 ? `Recogidas (${selectedNoteDetail.pickupOrigins.length})` : 'Recogida'}
                 </p>
-                <p className="text-sm">{selectedNoteDetail.pickupOrigins?.join(' → ') || '-'}</p>
+                <p className="text-sm">{formatOrigins(selectedNoteDetail.pickupOrigins) || '-'}</p>
               </div>
 
               <div className="border-t pt-4">

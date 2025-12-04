@@ -1,13 +1,29 @@
 import { MapPin, Clock, Truck, User, Calendar, FileText, CheckCircle, Timer, Camera, Edit2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { PickupOrigin } from "@shared/schema";
+
+// Helper to format a single origin
+const formatOrigin = (origin: PickupOrigin): string => {
+  if (origin.name && origin.address) return `${origin.name} (${origin.address})`;
+  if (origin.name) return origin.name;
+  if (origin.address) return origin.address;
+  return 'N/A';
+};
+
+// Helper to format multiple origins compactly
+const formatOrigins = (origins: PickupOrigin[] | null | undefined): string => {
+  if (!origins || origins.length === 0) return 'N/A';
+  if (origins.length === 1) return formatOrigin(origins[0]);
+  return `${formatOrigin(origins[0])} (+${origins.length - 1})`;
+};
 
 interface DeliveryNoteCardProps {
   note: {
     id: string;
     noteNumber?: number;
     clientName?: string | null;
-    pickupOrigins?: string[] | null;
+    pickupOrigins?: PickupOrigin[] | null;
     destination?: string | null;
     vehicleType?: string | null;
     date?: string | null;
@@ -115,7 +131,7 @@ export function DeliveryNoteCard({
                 {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
               </p>
               <p className="text-sm font-medium truncate">
-                {note.pickupOrigins?.length ? (note.pickupOrigins.length === 1 ? note.pickupOrigins[0] : `${note.pickupOrigins[0]} (+${note.pickupOrigins.length - 1})`) : 'N/A'} → {note.destination || 'N/A'}
+                {formatOrigins(note.pickupOrigins)} → {note.destination || 'N/A'}
               </p>
             </div>
           </div>

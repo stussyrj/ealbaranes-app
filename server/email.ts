@@ -1,7 +1,12 @@
 import { Resend } from 'resend';
 import { db } from './db';
-import { tenants, users } from '@shared/schema';
+import { tenants, users, PickupOrigin } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+
+function formatPickupOrigins(origins?: PickupOrigin[]): string {
+  if (!origins || origins.length === 0) return 'No especificado';
+  return origins.map(o => o.name ? `${o.name} (${o.address})` : o.address).join(' → ');
+}
 
 let connectionSettings: any;
 
@@ -105,7 +110,7 @@ export async function sendWelcomeEmail(to: string, companyName: string) {
 export async function sendDeliveryNoteCreatedEmail(to: string, noteData: {
   noteNumber: number;
   clientName?: string;
-  pickupOrigins?: string[];
+  pickupOrigins?: PickupOrigin[];
   destination?: string;
   createdBy: string;
 }) {
@@ -141,7 +146,7 @@ export async function sendDeliveryNoteCreatedEmail(to: string, noteData: {
               <div class="info-box">
                 <p><strong>Número:</strong> ${noteData.noteNumber}</p>
                 <p><strong>Cliente:</strong> ${noteData.clientName || 'No especificado'}</p>
-                <p><strong>Recogidas:</strong> ${noteData.pickupOrigins?.length ? noteData.pickupOrigins.join(' → ') : 'No especificado'}</p>
+                <p><strong>Recogidas:</strong> ${formatPickupOrigins(noteData.pickupOrigins)}</p>
                 <p><strong>Destino:</strong> ${noteData.destination || 'No especificado'}</p>
                 <p><strong>Creado por:</strong> ${noteData.createdBy}</p>
               </div>
@@ -172,7 +177,7 @@ export async function sendDeliveryNoteCreatedEmail(to: string, noteData: {
 export async function sendDeliveryNoteSignedEmail(to: string, noteData: {
   noteNumber: number;
   clientName?: string;
-  pickupOrigins?: string[];
+  pickupOrigins?: PickupOrigin[];
   destination?: string;
   signedAt: Date;
 }) {
@@ -218,7 +223,7 @@ export async function sendDeliveryNoteSignedEmail(to: string, noteData: {
               <div class="info-box">
                 <p><strong>Número:</strong> ${noteData.noteNumber}</p>
                 <p><strong>Cliente:</strong> ${noteData.clientName || 'No especificado'}</p>
-                <p><strong>Recogidas:</strong> ${noteData.pickupOrigins?.length ? noteData.pickupOrigins.join(' → ') : 'No especificado'}</p>
+                <p><strong>Recogidas:</strong> ${formatPickupOrigins(noteData.pickupOrigins)}</p>
                 <p><strong>Destino:</strong> ${noteData.destination || 'No especificado'}</p>
                 <p><strong>Firmado:</strong> ${signedDate}</p>
               </div>

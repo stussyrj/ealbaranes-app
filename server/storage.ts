@@ -56,7 +56,7 @@ export interface IStorage {
   getDeliveryNote(id: string): Promise<DeliveryNote | undefined>;
   createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote>;
   updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
-  getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], origins: string[], destinations: string[] }>;
+  getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], originNames: string[], originAddresses: string[], destinations: string[] }>;
 }
 
 const defaultVehicleTypes: VehicleType[] = [
@@ -615,7 +615,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], origins: string[], destinations: string[] }> {
+  async getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], originNames: string[], originAddresses: string[], destinations: string[] }> {
     try {
       const notes = await db.select({
         clientName: deliveryNotesTable.clientName,
@@ -626,14 +626,17 @@ export class MemStorage implements IStorage {
         .where(eq(deliveryNotesTable.tenantId, tenantId));
       
       const clients = Array.from(new Set(notes.map(n => n.clientName).filter((c): c is string => !!c && c.trim() !== '')));
-      const allOrigins = notes.flatMap(n => n.pickupOrigins || []).filter((o): o is string => !!o && o.trim() !== '');
-      const origins = Array.from(new Set(allOrigins));
+      
+      const allOrigins = notes.flatMap(n => n.pickupOrigins || []);
+      const originNames = Array.from(new Set(allOrigins.map(o => o.name).filter((n): n is string => !!n && n.trim() !== '')));
+      const originAddresses = Array.from(new Set(allOrigins.map(o => o.address).filter((a): a is string => !!a && a.trim() !== '')));
+      
       const destinations = Array.from(new Set(notes.map(n => n.destination).filter((d): d is string => !!d && d.trim() !== '')));
       
-      return { clients: clients.sort(), origins: origins.sort(), destinations: destinations.sort() };
+      return { clients: clients.sort(), originNames: originNames.sort(), originAddresses: originAddresses.sort(), destinations: destinations.sort() };
     } catch (error) {
       console.error("Error fetching delivery note suggestions:", error);
-      return { clients: [], origins: [], destinations: [] };
+      return { clients: [], originNames: [], originAddresses: [], destinations: [] };
     }
   }
 }

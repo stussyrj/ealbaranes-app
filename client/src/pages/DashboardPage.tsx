@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image } from "lucide-react";
+import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ export default function DashboardPage() {
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
   const [formData, setFormData] = useState({
     clientName: "",
-    pickupOrigins: [""],
+    pickupOrigins: [{ name: "", address: "" }] as PickupOrigin[],
     destination: "",
     vehicleType: "Furgoneta",
     date: new Date().toISOString().split("T")[0],
@@ -81,17 +82,25 @@ export default function DashboardPage() {
     return null;
   };
   
-  // Helper to format multiple origins compactly
-  const formatOrigins = (origins: string[] | null | undefined, maxDisplay: number = 2): string => {
-    if (!origins || origins.length === 0) return 'N/A';
-    if (origins.length === 1) return origins[0];
-    if (origins.length <= maxDisplay) return origins.join(', ');
-    return `${origins.slice(0, maxDisplay).join(', ')} (+${origins.length - maxDisplay})`;
+  // Helper to format a single origin display
+  const formatOrigin = (origin: PickupOrigin): string => {
+    if (origin.name && origin.address) return `${origin.name} (${origin.address})`;
+    if (origin.name) return origin.name;
+    if (origin.address) return origin.address;
+    return 'N/A';
   };
   
-  const formatOriginsForPdf = (origins: string[] | null | undefined): string => {
+  // Helper to format multiple origins compactly
+  const formatOrigins = (origins: PickupOrigin[] | null | undefined, maxDisplay: number = 2): string => {
     if (!origins || origins.length === 0) return 'N/A';
-    return origins.join(' → ');
+    if (origins.length === 1) return formatOrigin(origins[0]);
+    if (origins.length <= maxDisplay) return origins.map(o => formatOrigin(o)).join(', ');
+    return `${origins.slice(0, maxDisplay).map(o => formatOrigin(o)).join(', ')} (+${origins.length - maxDisplay})`;
+  };
+  
+  const formatOriginsForPdf = (origins: PickupOrigin[] | null | undefined): string => {
+    if (!origins || origins.length === 0) return 'N/A';
+    return origins.map(o => formatOrigin(o)).join(' → ');
   };
 
   const previewDeliveryNote = (photo: string) => {
@@ -262,12 +271,12 @@ export default function DashboardPage() {
     staleTime: 0,
   });
 
-  const { data: suggestions = { clients: [], origins: [], destinations: [] } } = useQuery<{ clients: string[], origins: string[], destinations: string[] }>({
+  const { data: suggestions = { clients: [], originNames: [], originAddresses: [], destinations: [] } } = useQuery<{ clients: string[], originNames: string[], originAddresses: string[], destinations: string[] }>({
     queryKey: ["/api/delivery-notes/suggestions"],
     queryFn: async () => {
       const res = await fetch("/api/delivery-notes/suggestions", { credentials: "include" });
       if (!res.ok) {
-        return { clients: [], origins: [], destinations: [] };
+        return { clients: [], originNames: [], originAddresses: [], destinations: [] };
       }
       return res.json();
     },
@@ -1426,7 +1435,7 @@ export default function DashboardPage() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, ""] })}
+                  onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
                   className="h-6 text-xs px-2"
                   data-testid="button-add-origin"
                 >
@@ -1434,35 +1443,49 @@ export default function DashboardPage() {
                   Añadir
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {formData.pickupOrigins.map((origin, index) => (
-                  <div key={index} className="flex gap-2">
+                  <div key={index} className="space-y-1 p-2 border rounded-md bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Recogida {index + 1}</span>
+                      {formData.pickupOrigins.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
+                            setFormData({ ...formData, pickupOrigins: newOrigins });
+                          }}
+                          className="h-5 w-5 p-0 text-xs"
+                          data-testid={`button-remove-origin-${index}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                     <AutocompleteInput
-                      placeholder={`Recogida ${index + 1}`}
-                      value={origin}
+                      placeholder="Nombre (ej: Almacén Central)"
+                      value={origin.name}
                       onChange={(value) => {
                         const newOrigins = [...formData.pickupOrigins];
-                        newOrigins[index] = value;
+                        newOrigins[index] = { ...newOrigins[index], name: value };
                         setFormData({ ...formData, pickupOrigins: newOrigins });
                       }}
-                      suggestions={suggestions.origins}
-                      data-testid={`input-pickup-origin-${index}`}
+                      suggestions={suggestions.originNames || []}
+                      data-testid={`input-pickup-origin-name-${index}`}
                     />
-                    {formData.pickupOrigins.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
-                          setFormData({ ...formData, pickupOrigins: newOrigins });
-                        }}
-                        className="h-9 w-9 flex-shrink-0"
-                        data-testid={`button-remove-origin-${index}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <AutocompleteInput
+                      placeholder="Dirección (ej: Calle Principal, 123)"
+                      value={origin.address}
+                      onChange={(value) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = { ...newOrigins[index], address: value };
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                      suggestions={suggestions.originAddresses || []}
+                      data-testid={`input-pickup-origin-address-${index}`}
+                    />
                   </div>
                 ))}
               </div>
@@ -1535,7 +1558,7 @@ export default function DashboardPage() {
                       quoteId: `custom-${Date.now()}`,
                       workerId: user?.id,
                       clientName: formData.clientName,
-                      pickupOrigins: formData.pickupOrigins.filter(o => o.trim() !== ""),
+                      pickupOrigins: formData.pickupOrigins.filter(o => o.name.trim() !== "" || o.address.trim() !== ""),
                       destination: formData.destination,
                       vehicleType: formData.vehicleType,
                       date: formData.date,
@@ -1552,11 +1575,14 @@ export default function DashboardPage() {
                     });
 
                     if (response.ok) {
-                      // Close modal first
+                      // Invalidate cache first to ensure data is fresh
+                      await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+                      
+                      // Close modal and reset form
                       setCreateDeliveryOpen(false);
                       setFormData({
                         clientName: "",
-                        pickupOrigins: [""],
+                        pickupOrigins: [{ name: "", address: "" }],
                         destination: "",
                         vehicleType: "Furgoneta",
                         date: new Date().toISOString().split("T")[0],
@@ -1566,9 +1592,6 @@ export default function DashboardPage() {
                       
                       // Show success message
                       toast({ title: "Albarán creado", description: "El albarán se ha guardado correctamente" });
-                      
-                      // Invalidate cache in background
-                      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
                     } else {
                       toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
                     }

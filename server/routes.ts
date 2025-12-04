@@ -650,7 +650,7 @@ export async function registerRoutes(
           quoteId: `quote-${i}`,
           workerId: randomWorker,
           clientName: randomClient,
-          pickupOrigins: [randomOrigin],
+          pickupOrigins: [{ name: '', address: randomOrigin }],
           destination: randomDest,
           vehicleType: randomVehicle,
           date: dateStr,

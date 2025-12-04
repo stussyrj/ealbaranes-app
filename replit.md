@@ -80,6 +80,17 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - `POST /api/delivery-notes` - Crea albarán (genera noteNumber único automáticamente)
 - `PATCH /api/delivery-notes/:id` - Actualiza albarán (añadir firma/foto)
 
+## Modelo de Datos - Pickup Origins
+
+Los orígenes de recogida (`pickupOrigins`) usan formato JSONB con objetos:
+```typescript
+type PickupOrigin = { name: string; address: string };
+pickupOrigins: PickupOrigin[] // Array de objetos
+```
+
+**Formato de visualización**: "Nombre (Dirección)" o solo Nombre/Dirección si falta uno.
+**Múltiples orígenes**: Se muestran como "Origen1 (+N)" donde N es el número de orígenes adicionales.
+
 ## Estado Actual
 
 ### ✅ Completado
@@ -112,6 +123,8 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - Autocomplete para campos de cliente, origen y destino
 - Badges separados mostrando estado de foto y firma
 - Solo albaranes completamente firmados pueden facturarse
+- Orígenes de recogida con campos separados de nombre y dirección (JSONB)
+- Formulario dinámico para añadir/eliminar múltiples recogidas con nombre y dirección
 
 ## Preferencias Usuario
 
