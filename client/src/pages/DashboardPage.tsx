@@ -411,7 +411,9 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Panel de Empresa</h1>
-            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">Resumen de tu actividad</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Bienvenido, <span className="font-medium text-foreground">{user?.displayName || user?.username}</span>
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button

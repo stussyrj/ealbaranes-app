@@ -536,7 +536,9 @@ export default function WorkerDashboard() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-semibold">Mis Servicios</h1>
-            <p className="text-sm text-muted-foreground mt-1">Trabajador: {user?.username}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Bienvenido, <span className="font-medium text-foreground">{user?.displayName || user?.username}</span>
+            </p>
           </div>
         </div>
 
