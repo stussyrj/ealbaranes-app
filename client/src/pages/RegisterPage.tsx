@@ -4,6 +4,7 @@ import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, User, Lock, Mail, Building2, Loader2, CheckCircle, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -24,6 +25,8 @@ export default function RegisterPage() {
     confirmPassword: "",
     companyName: "",
   });
+  
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const registerMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -89,6 +92,15 @@ export default function RegisterPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!acceptedTerms) {
+      toast({
+        title: "Error",
+        description: "Debes aceptar los términos y condiciones para continuar",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast({
