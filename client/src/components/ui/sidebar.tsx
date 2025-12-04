@@ -164,48 +164,76 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-  const mobileContentRef = React.useRef<HTMLDivElement>(null)
-  const touchStartX = React.useRef<number | null>(null)
-  const touchStartY = React.useRef<number | null>(null)
+  const pointerStartX = React.useRef<number>(0)
+  const pointerStartY = React.useRef<number>(0)
+  const [translateX, setTranslateX] = React.useState(0)
+  const isDragging = React.useRef(false)
+  const pointerId = React.useRef<number | null>(null)
 
+  // Reset state when sidebar closes
   React.useEffect(() => {
-    if (!isMobile || !openMobile) return
+    if (!openMobile) {
+      setTranslateX(0)
+      isDragging.current = false
+      pointerId.current = null
+    }
+  }, [openMobile])
+
+  const handlePointerDown = React.useCallback((e: React.PointerEvent) => {
+    pointerStartX.current = e.clientX
+    pointerStartY.current = e.clientY
+    isDragging.current = false
+    pointerId.current = e.pointerId
+    // Capture pointer events to this element
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }, [])
+
+  const handlePointerMove = React.useCallback((e: React.PointerEvent) => {
+    if (pointerId.current !== e.pointerId) return
     
-    const el = mobileContentRef.current
-    if (!el) return
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX.current = e.touches[0].clientX
-      touchStartY.current = e.touches[0].clientY
-    }
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (touchStartX.current === null || touchStartY.current === null) return
-      
-      const touchEndX = e.changedTouches[0].clientX
-      const touchEndY = e.changedTouches[0].clientY
-      const deltaX = touchEndX - touchStartX.current
-      const deltaY = Math.abs(touchEndY - touchStartY.current)
-      
-      if (side === "left" && deltaX < -50 && deltaY < Math.abs(deltaX)) {
-        setOpenMobile(false)
+    const deltaX = e.clientX - pointerStartX.current
+    const deltaY = Math.abs(e.clientY - pointerStartY.current)
+    
+    // Only start dragging if horizontal movement is greater than vertical
+    if (!isDragging.current && Math.abs(deltaX) > 10) {
+      if (Math.abs(deltaX) > deltaY) {
+        isDragging.current = true
       }
-      if (side === "right" && deltaX > 50 && deltaY < Math.abs(deltaX)) {
-        setOpenMobile(false)
+    }
+    
+    if (isDragging.current) {
+      // For left sidebar, only allow dragging left (negative values)
+      if (side === "left" && deltaX < 0) {
+        setTranslateX(deltaX)
       }
-      
-      touchStartX.current = null
-      touchStartY.current = null
+      // For right sidebar, only allow dragging right (positive values)
+      if (side === "right" && deltaX > 0) {
+        setTranslateX(deltaX)
+      }
     }
+  }, [side])
 
-    el.addEventListener('touchstart', handleTouchStart, { passive: true })
-    el.addEventListener('touchend', handleTouchEnd, { passive: true })
-
-    return () => {
-      el.removeEventListener('touchstart', handleTouchStart)
-      el.removeEventListener('touchend', handleTouchEnd)
+  const handlePointerUp = React.useCallback((e: React.PointerEvent) => {
+    if (pointerId.current !== e.pointerId) return
+    
+    const deltaX = e.clientX - pointerStartX.current
+    
+    // Close if dragged more than 60px
+    const threshold = 60
+    
+    if (side === "left" && deltaX < -threshold) {
+      setOpenMobile(false)
+    } else if (side === "right" && deltaX > threshold) {
+      setOpenMobile(false)
     }
-  }, [isMobile, openMobile, side, setOpenMobile])
+    
+    setTranslateX(0)
+    isDragging.current = false
+    pointerId.current = null
+    
+    // Release pointer capture
+    ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
+  }, [side, setOpenMobile])
 
   if (collapsible === "none") {
     return (
@@ -233,6 +261,8 @@ function Sidebar({
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              transform: translateX !== 0 ? `translateX(${translateX}px)` : undefined,
+              transition: translateX !== 0 ? 'none' : 'transform 0.3s ease-out',
             } as React.CSSProperties
           }
           side={side}
@@ -242,9 +272,18 @@ function Sidebar({
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
           <div 
-            ref={mobileContentRef}
-            className="flex h-full w-full flex-col"
+            className="flex h-full w-full flex-col relative"
+            style={{ touchAction: 'pan-y' }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
           >
+            {/* Swipe handle indicator - visible drag area */}
+            <div 
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-16 bg-muted-foreground/30 rounded-l-full pointer-events-none"
+              aria-hidden="true"
+            />
             {children}
           </div>
         </SheetContent>
