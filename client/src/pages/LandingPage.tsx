@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { 
-  Truck, 
   FileText, 
   Camera, 
   PenTool, 
@@ -16,6 +15,7 @@ import {
   CheckCircle,
   ArrowRight
 } from "lucide-react";
+import logoImage from "@assets/CCE26E41-35E6-415D-849E-D057421781A1_1764880195490.png";
 
 const features = [
   {
@@ -66,9 +66,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                <Truck className="h-6 w-6 text-primary-foreground" />
-              </div>
+              <img 
+                src={logoImage} 
+                alt="eAlbarán Logo" 
+                className="h-10 w-10 rounded-lg object-cover"
+                style={{ filter: 'sepia(1) saturate(4) hue-rotate(250deg) brightness(0.85)' }}
+              />
               <span className="text-xl font-bold text-foreground">eAlbarán</span>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
@@ -335,9 +338,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <Truck className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <img 
+                src={logoImage} 
+                alt="eAlbarán Logo" 
+                className="h-8 w-8 rounded-lg object-cover"
+                style={{ filter: 'sepia(1) saturate(4) hue-rotate(250deg) brightness(0.85)' }}
+              />
               <span className="font-semibold text-foreground">eAlbarán</span>
             </div>
             <p className="text-sm text-muted-foreground">

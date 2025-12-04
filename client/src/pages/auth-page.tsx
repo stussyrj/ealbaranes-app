@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw, Truck } from "lucide-react";
+import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logoImage from "@assets/CCE26E41-35E6-415D-849E-D057421781A1_1764880195490.png";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -258,8 +259,13 @@ export default function AuthPage() {
 
       <div className="hidden lg:flex flex-1 bg-primary relative z-10 items-center justify-center p-8">
         <div className="max-w-md text-center text-primary-foreground">
-          <div className="mx-auto mb-8 h-20 w-20 rounded-full bg-primary-foreground/10 flex items-center justify-center">
-            <Truck className="h-10 w-10" />
+          <div className="mx-auto mb-8">
+            <img 
+              src={logoImage} 
+              alt="eAlbarán Logo" 
+              className="h-20 w-20 rounded-2xl object-cover mx-auto"
+              style={{ filter: 'sepia(1) saturate(4) hue-rotate(250deg) brightness(0.9)' }}
+            />
           </div>
           <h1 className="text-3xl font-bold mb-4">eAlbarán</h1>
           <p className="text-lg opacity-90 mb-6">
