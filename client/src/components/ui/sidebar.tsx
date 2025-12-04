@@ -164,44 +164,41 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-  const pointerStartX = React.useRef<number>(0)
-  const pointerStartY = React.useRef<number>(0)
+  const touchStartX = React.useRef<number>(0)
+  const touchStartY = React.useRef<number>(0)
   const [translateX, setTranslateX] = React.useState(0)
-  const isDragging = React.useRef(false)
-  const pointerId = React.useRef<number | null>(null)
+  const isHorizontalSwipe = React.useRef(false)
 
   // Reset state when sidebar closes
   React.useEffect(() => {
     if (!openMobile) {
       setTranslateX(0)
-      isDragging.current = false
-      pointerId.current = null
+      isHorizontalSwipe.current = false
     }
   }, [openMobile])
 
-  const handlePointerDown = React.useCallback((e: React.PointerEvent) => {
-    pointerStartX.current = e.clientX
-    pointerStartY.current = e.clientY
-    isDragging.current = false
-    pointerId.current = e.pointerId
-    // Capture pointer events to this element
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  // Touch handlers for mobile swipe - these work on iOS/Safari
+  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    touchStartX.current = touch.clientX
+    touchStartY.current = touch.clientY
+    isHorizontalSwipe.current = false
   }, [])
 
-  const handlePointerMove = React.useCallback((e: React.PointerEvent) => {
-    if (pointerId.current !== e.pointerId) return
+  const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - touchStartX.current
+    const deltaY = Math.abs(touch.clientY - touchStartY.current)
     
-    const deltaX = e.clientX - pointerStartX.current
-    const deltaY = Math.abs(e.clientY - pointerStartY.current)
-    
-    // Only start dragging if horizontal movement is greater than vertical
-    if (!isDragging.current && Math.abs(deltaX) > 10) {
-      if (Math.abs(deltaX) > deltaY) {
-        isDragging.current = true
-      }
+    // Determine if this is a horizontal swipe (only check once)
+    if (!isHorizontalSwipe.current && Math.abs(deltaX) > 10) {
+      isHorizontalSwipe.current = Math.abs(deltaX) > deltaY
     }
     
-    if (isDragging.current) {
+    if (isHorizontalSwipe.current) {
+      // Prevent vertical scrolling when swiping horizontally
+      e.preventDefault()
+      
       // For left sidebar, only allow dragging left (negative values)
       if (side === "left" && deltaX < 0) {
         setTranslateX(deltaX)
@@ -213,26 +210,23 @@ function Sidebar({
     }
   }, [side])
 
-  const handlePointerUp = React.useCallback((e: React.PointerEvent) => {
-    if (pointerId.current !== e.pointerId) return
+  const handleTouchEnd = React.useCallback((e: React.TouchEvent) => {
+    const touch = e.changedTouches[0]
+    const deltaX = touch.clientX - touchStartX.current
     
-    const deltaX = e.clientX - pointerStartX.current
+    // Close if dragged more than 50px
+    const threshold = 50
     
-    // Close if dragged more than 60px
-    const threshold = 60
-    
-    if (side === "left" && deltaX < -threshold) {
-      setOpenMobile(false)
-    } else if (side === "right" && deltaX > threshold) {
-      setOpenMobile(false)
+    if (isHorizontalSwipe.current) {
+      if (side === "left" && deltaX < -threshold) {
+        setOpenMobile(false)
+      } else if (side === "right" && deltaX > threshold) {
+        setOpenMobile(false)
+      }
     }
     
     setTranslateX(0)
-    isDragging.current = false
-    pointerId.current = null
-    
-    // Release pointer capture
-    ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
+    isHorizontalSwipe.current = false
   }, [side, setOpenMobile])
 
   if (collapsible === "none") {
@@ -263,27 +257,19 @@ function Sidebar({
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
               transform: translateX !== 0 ? `translateX(${translateX}px)` : undefined,
               transition: translateX !== 0 ? 'none' : 'transform 0.3s ease-out',
+              touchAction: 'none',
             } as React.CSSProperties
           }
           side={side}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div 
-            className="flex h-full w-full flex-col relative"
-            style={{ touchAction: 'pan-y' }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-          >
-            {/* Swipe handle indicator - visible drag area */}
-            <div 
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-16 bg-muted-foreground/30 rounded-l-full pointer-events-none"
-              aria-hidden="true"
-            />
+          <div className="flex h-full w-full flex-col overflow-y-auto">
             {children}
           </div>
         </SheetContent>
