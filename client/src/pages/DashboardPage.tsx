@@ -980,7 +980,7 @@ export default function DashboardPage() {
           setDateFilterEnd("");
         }
       }}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto w-[95vw] p-3 rounded-lg top-[5vh] translate-y-0">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[95vw] p-3 rounded-lg top-[5vh] translate-y-0">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base sm:text-lg">
               Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"} - {albaranesCreatorType === "admin" ? "Empresa" : "Trabajadores"}
@@ -1029,7 +1029,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-hidden">
             {(() => {
               let notes: any[] = [];
               if (albaranesCreatorType === "admin") {
@@ -1670,7 +1670,7 @@ export default function DashboardPage() {
           setDateFilterEnd("");
         }
       }}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto w-[95vw] p-3 rounded-lg top-[5vh] translate-y-0">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[95vw] p-3 rounded-lg top-[5vh] translate-y-0">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base sm:text-lg flex items-center gap-2">
               {invoiceModalType === "invoiced" ? (
