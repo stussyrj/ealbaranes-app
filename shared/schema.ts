@@ -221,3 +221,25 @@ export const calculateQuoteRequestSchema = z.object({
 export type GeocodeRequest = z.infer<typeof geocodeRequestSchema>;
 export type RouteRequest = z.infer<typeof routeRequestSchema>;
 export type CalculateQuoteRequest = z.infer<typeof calculateQuoteRequestSchema>;
+
+// Audit log for tracking important actions
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  userId: varchar("user_id"),
+  action: text("action").notNull(), // login, logout, create_delivery_note, update_delivery_note, etc.
+  entityType: text("entity_type"), // delivery_note, worker, quote, etc.
+  entityId: varchar("entity_id"),
+  details: jsonb("details"), // Additional details about the action
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;

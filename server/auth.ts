@@ -11,8 +11,65 @@ import { eq, and, gt, isNull } from "drizzle-orm";
 import { stripeService } from "./stripeService";
 import { getTenantForUser } from "./middleware/tenantAccess";
 import { sendWelcomeEmail, sendVerificationEmail } from "./email";
+import { logAudit, getClientInfo } from "./auditService";
 
 const resendLimits = new Map<string, { count: number; resetAt: number }>();
+
+// Rate limiting for login attempts - protection against brute force attacks
+const loginAttempts = new Map<string, { count: number; blockedUntil: number | null }>();
+const LOGIN_MAX_ATTEMPTS = 5; // Max failed attempts before blocking
+const LOGIN_BLOCK_DURATION = 15 * 60 * 1000; // 15 minutes block
+
+function getClientIP(req: any): string {
+  return req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
+}
+
+function checkLoginRateLimit(ip: string): { allowed: boolean; remainingTime?: number } {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+  
+  if (!record) {
+    return { allowed: true };
+  }
+  
+  // Check if still blocked
+  if (record.blockedUntil && now < record.blockedUntil) {
+    const remainingTime = Math.ceil((record.blockedUntil - now) / 1000 / 60);
+    return { allowed: false, remainingTime };
+  }
+  
+  // Reset if block has expired
+  if (record.blockedUntil && now >= record.blockedUntil) {
+    loginAttempts.delete(ip);
+    return { allowed: true };
+  }
+  
+  return { allowed: true };
+}
+
+function recordFailedLogin(ip: string): void {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+  
+  if (!record) {
+    loginAttempts.set(ip, { count: 1, blockedUntil: null });
+    return;
+  }
+  
+  record.count++;
+  
+  // Block if exceeded max attempts
+  if (record.count >= LOGIN_MAX_ATTEMPTS) {
+    record.blockedUntil = now + LOGIN_BLOCK_DURATION;
+    console.log(`[auth] IP ${ip} blocked for ${LOGIN_BLOCK_DURATION / 1000 / 60} minutes after ${record.count} failed login attempts`);
+  }
+  
+  loginAttempts.set(ip, record);
+}
+
+function clearFailedLogins(ip: string): void {
+  loginAttempts.delete(ip);
+}
 
 declare global {
   namespace Express {
@@ -103,9 +160,33 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    const clientIP = getClientIP(req);
+    
+    // Check rate limit before attempting login
+    const rateCheck = checkLoginRateLimit(clientIP);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({ 
+        error: `Demasiados intentos fallidos. Intenta de nuevo en ${rateCheck.remainingTime} minutos.`,
+        code: "RATE_LIMITED"
+      });
+    }
+    
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) {
+        // Record failed login attempt
+        recordFailedLogin(clientIP);
+        
+        // Log failed login attempt
+        const clientInfo = getClientInfo(req);
+        logAudit({
+          action: 'login_failed',
+          entityType: 'user',
+          details: { username: req.body.username, reason: info?.message || 'invalid_credentials' },
+          ipAddress: clientInfo.ipAddress,
+          userAgent: clientInfo.userAgent,
+        });
+        
         if (info?.message === "EMAIL_NOT_VERIFIED") {
           return res.status(403).json({ 
             error: "Tu email no ha sido verificado. Revisa tu correo y haz click en el enlace de confirmación.",
@@ -114,8 +195,26 @@ export function setupAuth(app: Express) {
         }
         return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
       }
-      req.login(user, (loginErr) => {
+      
+      // Clear failed login attempts on successful login
+      clearFailedLogins(clientIP);
+      
+      req.login(user, async (loginErr) => {
         if (loginErr) return next(loginErr);
+        
+        // Log successful login
+        const clientInfo = getClientInfo(req);
+        await logAudit({
+          tenantId: user.tenantId,
+          userId: user.id,
+          action: 'login',
+          entityType: 'user',
+          entityId: user.id,
+          details: { username: user.username, isAdmin: user.isAdmin },
+          ipAddress: clientInfo.ipAddress,
+          userAgent: clientInfo.userAgent,
+        });
+        
         res.status(200).json({
           id: user.id,
           username: user.username,
@@ -127,7 +226,23 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/logout", async (req, res, next) => {
+    const user = req.user;
+    
+    // Log logout before destroying session
+    if (user) {
+      const clientInfo = getClientInfo(req);
+      await logAudit({
+        tenantId: (user as any).tenantId,
+        userId: user.id,
+        action: 'logout',
+        entityType: 'user',
+        entityId: user.id,
+        ipAddress: clientInfo.ipAddress,
+        userAgent: clientInfo.userAgent,
+      });
+    }
+    
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
@@ -160,43 +275,81 @@ export function setupAuth(app: Express) {
     try {
       const { username, password, email, companyName } = req.body;
       
+      // Basic required field validation
       if (!username || !password || !email) {
         return res.status(400).json({ error: "Usuario, contraseña y email son requeridos" });
       }
+      
+      // Username validation
+      const usernameStr = String(username).trim();
+      if (usernameStr.length < 3) {
+        return res.status(400).json({ error: "El nombre de usuario debe tener al menos 3 caracteres" });
+      }
+      if (usernameStr.length > 50) {
+        return res.status(400).json({ error: "El nombre de usuario no puede tener más de 50 caracteres" });
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(usernameStr)) {
+        return res.status(400).json({ error: "El nombre de usuario solo puede contener letras, números, guiones y guiones bajos" });
+      }
+      
+      // Password strength validation
+      const passwordStr = String(password);
+      if (passwordStr.length < 8) {
+        return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
+      }
+      if (passwordStr.length > 128) {
+        return res.status(400).json({ error: "La contraseña no puede tener más de 128 caracteres" });
+      }
+      
+      // Email format validation
+      const emailStr = String(email).trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailStr)) {
+        return res.status(400).json({ error: "El formato del email no es válido" });
+      }
+      if (emailStr.length > 254) {
+        return res.status(400).json({ error: "El email es demasiado largo" });
+      }
+      
+      // Company name validation (optional but if provided, validate)
+      if (companyName && String(companyName).length > 200) {
+        return res.status(400).json({ error: "El nombre de empresa no puede tener más de 200 caracteres" });
+      }
 
-      const existingUser = await storage.getUserByUsername(username);
+      const existingUser = await storage.getUserByUsername(usernameStr);
       if (existingUser) {
         return res.status(400).json({ error: "Este nombre de usuario ya está en uso" });
       }
 
       // Check if email is already in use
-      const existingEmailUser = await storage.getUserByEmail(email);
+      const existingEmailUser = await storage.getUserByEmail(emailStr);
       if (existingEmailUser) {
         return res.status(400).json({ error: "Este email ya está registrado" });
       }
 
-      // Create [REDACTED-STRIPE] customer first (outside transaction)
-      const stripeCustomer = await stripeService.createCustomer(email, "", companyName);
+      // Use sanitized values for [REDACTED-STRIPE] customer
+      const companyNameStr = companyName ? String(companyName).trim() : null;
+      const stripeCustomer = await stripeService.createCustomer(emailStr, "", companyNameStr || undefined);
 
       let tenant: typeof tenants.$inferSelect | null = null;
       let user: typeof users.$inferSelect | null = null;
       let verificationToken: string | null = null;
 
       try {
-        // Create tenant
+        // Create tenant with sanitized values
         const [newTenant] = await db.insert(tenants).values({
-          companyName: companyName || null,
+          companyName: companyNameStr,
           stripeCustomerId: stripeCustomer.id,
           subscriptionStatus: 'active',
         }).returning();
         tenant = newTenant;
 
-        // Create user - requires email verification
+        // Create user with sanitized values - requires email verification
         user = await storage.createUser({
-          username,
-          email: email,
-          displayName: companyName || username,
-          password: await hashPassword(password),
+          username: usernameStr,
+          email: emailStr,
+          displayName: companyNameStr || usernameStr,
+          password: await hashPassword(passwordStr),
           isAdmin: true,
           workerId: null,
           tenantId: tenant.id,
@@ -222,13 +375,13 @@ export function setupAuth(app: Express) {
         const host = req.headers['host'];
         const baseUrl = `${protocol}://${host}`;
 
-        // Send verification email
-        await sendVerificationEmail(email, companyName || username, verificationToken, baseUrl);
+        // Send verification email with sanitized values
+        await sendVerificationEmail(emailStr, companyNameStr || usernameStr, verificationToken, baseUrl);
 
         res.status(201).json({
           success: true,
           message: "¡Cuenta creada! Te hemos enviado un email de verificación. Revisa tu bandeja de entrada.",
-          email: email,
+          email: emailStr,
           requiresVerification: true,
         });
       } catch (emailError: any) {

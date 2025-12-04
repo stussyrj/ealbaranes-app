@@ -21,6 +21,7 @@ import { get[REDACTED-STRIPE] } from "./stripeClient";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
+import { logAudit, getClientInfo } from "./auditService";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -566,6 +567,19 @@ export async function registerRoutes(
       };
       const note = await storage.createDeliveryNote(noteData);
       
+      // Log audit entry for delivery note creation
+      const clientInfo = getClientInfo(req);
+      logAudit({
+        tenantId: user.tenantId,
+        userId: user.id,
+        action: 'create_delivery_note',
+        entityType: 'delivery_note',
+        entityId: note.id,
+        details: { noteNumber: note.noteNumber, clientName: note.clientName, creatorType },
+        ipAddress: clientInfo.ipAddress,
+        userAgent: clientInfo.userAgent,
+      });
+      
       // Send email notification to admin (non-blocking)
       if (user?.tenantId) {
         getAdminEmailForTenant(user.tenantId).then(adminEmail => {
@@ -729,6 +743,34 @@ export async function registerRoutes(
       if (!note) {
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
+      
+      // Log audit entry for delivery note update
+      const user = req.user as any;
+      const clientInfo = getClientInfo(req);
+      
+      // Determine the specific action based on what was updated
+      let auditAction: 'update_delivery_note' | 'sign_delivery_note' | 'invoice_delivery_note' = 'update_delivery_note';
+      if (data.isInvoiced !== undefined) {
+        auditAction = 'invoice_delivery_note';
+      } else if (data.photo !== undefined || data.signature !== undefined) {
+        auditAction = 'sign_delivery_note';
+      }
+      
+      logAudit({
+        tenantId: user.tenantId,
+        userId: user.id,
+        action: auditAction,
+        entityType: 'delivery_note',
+        entityId: note.id,
+        details: { 
+          noteNumber: note.noteNumber, 
+          changedFields: Object.keys(data),
+          isInvoiced: note.isInvoiced,
+          isSigned: !!(note.photo && note.signature),
+        },
+        ipAddress: clientInfo.ipAddress,
+        userAgent: clientInfo.userAgent,
+      });
       
       // Send email notification when note becomes fully signed (non-blocking)
       const wasFullySigned = existingNote.photo && existingNote.signature;
