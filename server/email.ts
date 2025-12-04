@@ -40,9 +40,22 @@ async function getCredentials() {
 
 async function getResendClient() {
   const { apiKey, fromEmail } = await getCredentials();
+  
+  // Use Resend's test email for unverified domains (gmail, yahoo, etc.)
+  // In production, use a verified custom domain
+  const unverifiedDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
+  const emailDomain = fromEmail?.split('@')[1]?.toLowerCase() || '';
+  
+  let safeFromEmail = fromEmail;
+  if (!fromEmail || unverifiedDomains.includes(emailDomain)) {
+    // Use Resend's default test email that works without domain verification
+    safeFromEmail = 'eAlbarán <onboarding@resend.dev>';
+    console.log('[email] Using Resend test email for sending (domain not verified)');
+  }
+  
   return {
     client: new Resend(apiKey),
-    fromEmail
+    fromEmail: safeFromEmail
   };
 }
 
@@ -51,7 +64,7 @@ export async function sendWelcomeEmail(to: string, companyName: string) {
     const { client, fromEmail } = await getResendClient();
     
     const { data, error } = await client.emails.send({
-      from: 'eAlbarán <no-reply@ealbaranes.es>',
+      from: fromEmail,
       to: [to],
       subject: `Bienvenido a eAlbarán, ${companyName}`,
       html: `
@@ -118,7 +131,7 @@ export async function sendDeliveryNoteCreatedEmail(to: string, noteData: {
     const { client, fromEmail } = await getResendClient();
     
     const { data, error } = await client.emails.send({
-      from: 'eAlbarán <no-reply@ealbaranes.es>',
+      from: fromEmail,
       to: [to],
       subject: `Nuevo Albarán #${noteData.noteNumber} creado`,
       html: `
@@ -193,7 +206,7 @@ export async function sendDeliveryNoteSignedEmail(to: string, noteData: {
     });
     
     const { data, error } = await client.emails.send({
-      from: 'eAlbarán <no-reply@ealbaranes.es>',
+      from: fromEmail,
       to: [to],
       subject: `Albarán #${noteData.noteNumber} firmado`,
       html: `
@@ -271,7 +284,7 @@ export async function sendVerificationEmail(to: string, companyName: string, ver
   const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
   
   const { data, error } = await client.emails.send({
-    from: 'eAlbarán <no-reply@ealbaranes.es>',
+    from: fromEmail,
     to: [to],
     subject: `Confirma tu email para eAlbarán`,
     html: `
