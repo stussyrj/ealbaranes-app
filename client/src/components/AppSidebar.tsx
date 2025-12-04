@@ -6,7 +6,7 @@ import {
   Users,
   CreditCard,
 } from "lucide-react";
-import logoImage from "@assets/CCE26E41-35E6-415D-849E-D057421781A1_1764880195490.png";
+import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import {
   Sidebar,
   SidebarContent,
@@ -88,7 +88,6 @@ export function AppSidebar() {
             src={logoImage} 
             alt="eAlbarán Logo" 
             className="h-10 w-10 rounded-lg object-cover"
-            style={{ filter: 'sepia(1) saturate(3) hue-rotate(-15deg) brightness(0.9)' }}
           />
           <div>
             <h1 className="font-semibold text-lg">eAlbarán</h1>

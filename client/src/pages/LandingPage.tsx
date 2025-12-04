@@ -15,7 +15,7 @@ import {
   CheckCircle,
   ArrowRight
 } from "lucide-react";
-import logoImage from "@assets/CCE26E41-35E6-415D-849E-D057421781A1_1764880195490.png";
+import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 
 const features = [
   {
@@ -70,7 +70,6 @@ export default function LandingPage() {
                 src={logoImage} 
                 alt="eAlbarán Logo" 
                 className="h-10 w-10 rounded-lg object-cover"
-                style={{ filter: 'sepia(1) saturate(4) hue-rotate(250deg) brightness(0.85)' }}
               />
               <span className="text-xl font-bold text-foreground">eAlbarán</span>
             </div>
@@ -342,7 +341,6 @@ export default function LandingPage() {
                 src={logoImage} 
                 alt="eAlbarán Logo" 
                 className="h-8 w-8 rounded-lg object-cover"
-                style={{ filter: 'sepia(1) saturate(4) hue-rotate(250deg) brightness(0.85)' }}
               />
               <span className="font-semibold text-foreground">eAlbarán</span>
             </div>

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import logoImage from "@assets/CCE26E41-35E6-415D-849E-D057421781A1_1764880195490.png";
+import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -264,7 +264,6 @@ export default function AuthPage() {
               src={logoImage} 
               alt="eAlbarán Logo" 
               className="h-20 w-20 rounded-2xl object-cover mx-auto"
-              style={{ filter: 'sepia(1) saturate(4) hue-rotate(250deg) brightness(0.9)' }}
             />
           </div>
           <h1 className="text-3xl font-bold mb-4">eAlbarán</h1>
