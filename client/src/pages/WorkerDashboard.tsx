@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
+import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
 import { FileText, MapPin, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ export default function WorkerDashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [showAnimation, setShowAnimation] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
@@ -529,6 +531,16 @@ export default function WorkerDashboard() {
     );
   };
 
+  if (showAnimation) {
+    return (
+      <DriverDoorAnimation 
+        onComplete={() => setShowAnimation(false)} 
+        userName={user?.displayName || user?.username}
+        subtitle="a tu panel de trabajador"
+      />
+    );
+  }
+
   return (
     <div className="relative">
       <AnimatedPageBackground />
@@ -536,9 +548,6 @@ export default function WorkerDashboard() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-semibold">Mis Servicios</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Bienvenido, <span className="font-medium text-foreground">{user?.displayName || user?.username}</span>
-            </p>
           </div>
         </div>
 

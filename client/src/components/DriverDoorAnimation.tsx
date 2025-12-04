@@ -1,6 +1,12 @@
 import { motion } from "framer-motion";
 
-export function DriverDoorAnimation({ onComplete }: { onComplete: () => void }) {
+interface DriverDoorAnimationProps {
+  onComplete: () => void;
+  userName?: string;
+  subtitle?: string;
+}
+
+export function DriverDoorAnimation({ onComplete, userName, subtitle = "a tu panel de control" }: DriverDoorAnimationProps) {
   return (
     <div className="fixed inset-0 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 z-50 flex items-center justify-center overflow-hidden">
       {/* Minimal clean welcome animation */}
@@ -36,8 +42,10 @@ export function DriverDoorAnimation({ onComplete }: { onComplete: () => void }) 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
         >
-          <h1 className="text-slate-900 dark:text-white text-4xl font-light tracking-wide">Bienvenido</h1>
-          <p className="text-slate-600 dark:text-slate-300 text-sm mt-4 font-light">a tu panel de control</p>
+          <h1 className="text-slate-900 dark:text-white text-4xl font-light tracking-wide">
+            {userName ? `Bienvenido, ${userName}` : "Bienvenido"}
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300 text-sm mt-4 font-light">{subtitle}</p>
         </motion.div>
       </motion.div>
 
