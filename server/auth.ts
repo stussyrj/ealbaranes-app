@@ -550,6 +550,11 @@ export function setupAuth(app: Express) {
       return res.status(403).json({ error: "No autorizado" });
     }
 
+    const tenantId = req.user.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Empresa no encontrada" });
+    }
+
     const { username, displayName, password, workerId } = req.body;
     
     if (!username || !password) {
@@ -567,6 +572,7 @@ export function setupAuth(app: Express) {
       password: await hashPassword(password),
       isAdmin: false,
       workerId: workerId || null,
+      tenantId: tenantId,
     });
 
     res.status(201).json({ 
@@ -583,8 +589,15 @@ export function setupAuth(app: Express) {
       return res.status(403).json({ error: "No autorizado" });
     }
 
-    const users = await storage.getAllUsers();
-    res.json(users.map(u => ({
+    const tenantId = req.user.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Empresa no encontrada" });
+    }
+
+    const allUsers = await storage.getAllUsers();
+    const tenantUsers = allUsers.filter(u => u.tenantId === tenantId);
+    
+    res.json(tenantUsers.map(u => ({
       id: u.id,
       username: u.username,
       displayName: u.displayName,
@@ -599,11 +612,21 @@ export function setupAuth(app: Express) {
       return res.status(403).json({ error: "No autorizado" });
     }
 
+    const tenantId = req.user.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Empresa no encontrada" });
+    }
+
     const { id } = req.params;
     const { password } = req.body;
 
     if (!password) {
       return res.status(400).json({ error: "La contraseña es requerida" });
+    }
+
+    const targetUser = await storage.getUser(id);
+    if (!targetUser || targetUser.tenantId !== tenantId) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
     const updated = await storage.updateUserPassword(id, await hashPassword(password));
@@ -619,10 +642,20 @@ export function setupAuth(app: Express) {
       return res.status(403).json({ error: "No autorizado" });
     }
 
+    const tenantId = req.user.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Empresa no encontrada" });
+    }
+
     const { id } = req.params;
     
     if (id === req.user.id) {
       return res.status(400).json({ error: "No puedes eliminar tu propio usuario" });
+    }
+
+    const targetUser = await storage.getUser(id);
+    if (!targetUser || targetUser.tenantId !== tenantId) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
     const deleted = await storage.deleteUser(id);
