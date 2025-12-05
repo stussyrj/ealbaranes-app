@@ -25,8 +25,6 @@ export default function PrivacyPage() {
           </CardHeader>
 
           <CardContent className="prose prose-sm max-w-none space-y-6">
-
-            {/* 1 */}
             <section>
               <h3 className="text-lg font-semibold">1. Responsable del Tratamiento</h3>
               <p className="text-muted-foreground">
@@ -35,7 +33,6 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            {/* 2 */}
             <section>
               <h3 className="text-lg font-semibold">2. Datos que Recopilamos</h3>
               <p className="text-muted-foreground">
@@ -43,88 +40,72 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-1">
                 <li>Datos de identificación: nombre, email, nombre de empresa</li>
-                <li>Datos de los albaranes: información de entregas, fotografías, firmas digitales</li>
-                <li>Datos de uso: información sobre cómo utiliza nuestro servicio</li>
-                <li>Datos de pago: procesados de forma segura a través de [REDACTED-STRIPE]</li>
+                <li>Datos de los albaranes: entregas, fotografías, firmas digitales</li>
+                <li>Datos de uso: cómo utiliza nuestro servicio</li>
+                <li>Datos de pago: procesados a través de [REDACTED-STRIPE]</li>
               </ul>
             </section>
 
-            {/* 3 */}
             <section>
               <h3 className="text-lg font-semibold">3. Finalidad del Tratamiento</h3>
               <p className="text-muted-foreground">
-                Sus datos personales serán tratados para las siguientes finalidades:
+                Sus datos personales serán tratados para:
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-                <li>Prestación del servicio de gestión de albaranes</li>
+                <li>Gestión de albaranes</li>
                 <li>Gestión de su cuenta y suscripción</li>
-                <li>Comunicaciones relacionadas con el servicio</li>
-                <li>Mejora de nuestros servicios</li>
+                <li>Comunicaciones del servicio</li>
+                <li>Mejoras internas</li>
               </ul>
             </section>
 
-            {/* 4 */}
             <section>
               <h3 className="text-lg font-semibold">4. Base Legal</h3>
               <p className="text-muted-foreground">
-                El tratamiento de sus datos se basa en la ejecución de un contrato
-                y en su consentimiento expreso para comunicaciones comerciales.
+                La base del tratamiento es el contrato del servicio y su consentimiento para comunicaciones comerciales.
               </p>
             </section>
 
-            {/* 5 */}
             <section>
-              <h3 className="text-lg font-semibold">5. Conservación de Datos</h3>
+              <h3 className="text-lg font-semibold">5. Conservación</h3>
               <p className="text-muted-foreground">
-                Sus datos se conservarán mientras mantenga su cuenta activa. Tras la cancelación,
-                los datos se mantendrán durante 90 días antes de su eliminación definitiva,
-                excepto aquellos que debamos conservar por obligaciones legales.
+                Conservamos sus datos mientras tenga cuenta activa, y 90 días después de eliminarla.
               </p>
             </section>
 
-            {/* 6 */}
             <section>
               <h3 className="text-lg font-semibold">6. Seguridad</h3>
               <p className="text-muted-foreground">
-                Implementamos medidas de seguridad técnicas y organizativas para proteger sus datos
-                personales contra acceso no autorizado, alteración, divulgación o destrucción.
+                Aplicamos medidas técnicas y organizativas para evitar accesos no autorizados.
               </p>
             </section>
 
-            {/* 7 */}
             <section>
               <h3 className="text-lg font-semibold">7. Sus Derechos</h3>
-              <p className="text-muted-foreground">
-                De acuerdo con el RGPD, usted tiene derecho a:
-              </p>
+              <p className="text-muted-foreground">Usted puede:</p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-                <li>Acceder a sus datos personales</li>
-                <li>Rectificar datos inexactos</li>
-                <li>Solicitar la supresión de sus datos</li>
+                <li>Acceder a sus datos</li>
+                <li>Rectificarlos</li>
+                <li>Solicitar su eliminación</li>
                 <li>Oponerse al tratamiento</li>
-                <li>Solicitar la portabilidad de sus datos</li>
-                <li>Presentar una reclamación ante la AEPD</li>
+                <li>Solicitar portabilidad</li>
+                <li>Reclamar ante la AEPD</li>
               </ul>
             </section>
 
-            {/* 8 */}
             <section>
               <h3 className="text-lg font-semibold">8. Cookies</h3>
               <p className="text-muted-foreground">
-                Utilizamos cookies técnicas necesarias para el funcionamiento del servicio
-                y cookies de sesión para mantener su autenticación.
+                Solo usamos cookies técnicas y de sesión necesarias para autenticación.
               </p>
             </section>
 
-            {/* 9 */}
             <section>
               <h3 className="text-lg font-semibold">9. Contacto</h3>
               <p className="text-muted-foreground">
-                Para ejercer sus derechos o realizar cualquier consulta sobre el tratamiento de sus datos,
-                puede contactarnos en: privacidad@ealbaranes.es
+                Para ejercer derechos: privacidad@ealbaranes.es
               </p>
             </section>
-
           </CardContent>
         </Card>
       </div>
