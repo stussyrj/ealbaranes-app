@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
-import { FileText, MapPin, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X } from "lucide-react";
+import { SignaturePad } from "@/components/SignaturePad";
+import { FileText, MapPin, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +36,9 @@ export default function WorkerDashboard() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [viewSignatureOpen, setViewSignatureOpen] = useState(false);
   const [signatureToView, setSignatureToView] = useState<string | null>(null);
+  const [captureSignatureOpen, setCaptureSignatureOpen] = useState(false);
+  const [selectedNoteForSignature, setSelectedNoteForSignature] = useState<DeliveryNote | null>(null);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const frameIdRef = useRef<number | null>(null);
@@ -100,6 +104,54 @@ export default function WorkerDashboard() {
       };
       reader.readAsDataURL(file);
     });
+  };
+
+  // Helper function to determine if a note is fully signed (has both photo and signature)
+  const isFullySigned = (note: DeliveryNote) => note.photo && note.signature;
+  
+  // Helper to get missing signature info
+  const getMissingSignatureInfo = (note: DeliveryNote) => {
+    if (!note.photo && !note.signature) return "Falta foto y firma";
+    if (!note.photo) return "Falta foto";
+    if (!note.signature) return "Falta firma digital";
+    return null;
+  };
+
+  // Save digital signature
+  const saveSignature = async (signatureDataUrl: string) => {
+    if (!selectedNoteForSignature) return;
+    
+    setIsUploadingSignature(true);
+    try {
+      const hasPhoto = selectedNoteForSignature.photo;
+      
+      const response = await fetch(`/api/delivery-notes/${selectedNoteForSignature.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signature: signatureDataUrl }),
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        const willBeComplete = hasPhoto;
+        const message = willBeComplete 
+          ? "Albarán completamente firmado" 
+          : "Firma guardada. Falta foto para completar.";
+        toast({ title: willBeComplete ? "Firmado" : "Firma guardada", description: message });
+        
+        await queryClient.invalidateQueries({ queryKey: ["/api/workers", effectiveWorkerId || "", "delivery-notes"] });
+        
+        setCaptureSignatureOpen(false);
+        setSelectedNoteForSignature(null);
+      } else {
+        throw new Error("Error al guardar");
+      }
+    } catch (error) {
+      console.error("Error saving signature:", error);
+      toast({ title: "Error", description: "No se pudo guardar la firma", variant: "destructive" });
+    } finally {
+      setIsUploadingSignature(false);
+    }
   };
 
   // Cleanup on unmount
@@ -512,19 +564,44 @@ export default function WorkerDashboard() {
             </div>
           )}
 
-          {!note.photo && (
-            <Button
-              onClick={() => {
-                setSelectedNoteForPhoto(note);
-                setCapturePhotoOpen(true);
-                setCapturedPhoto(null);
-              }}
-              variant="outline"
-              className="w-full"
-              data-testid={`button-add-photo-${note.id}`}
-            >
-              📸 Agregar Fotografía
-            </Button>
+          {/* Buttons for adding missing photo/signature */}
+          {!isFullySigned(note) && (
+            <div className="flex flex-col gap-2">
+              {!note.photo && (
+                <Button
+                  onClick={() => {
+                    setSelectedNoteForPhoto(note);
+                    setCapturePhotoOpen(true);
+                    setCapturedPhoto(null);
+                  }}
+                  variant="outline"
+                  className="w-full"
+                  data-testid={`button-add-photo-${note.id}`}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Agregar Fotografía
+                </Button>
+              )}
+              {!note.signature && (
+                <Button
+                  onClick={() => {
+                    setSelectedNoteForSignature(note);
+                    setCaptureSignatureOpen(true);
+                  }}
+                  variant="outline"
+                  className="w-full"
+                  data-testid={`button-add-signature-${note.id}`}
+                >
+                  <Pen className="w-4 h-4 mr-2" />
+                  Agregar Firma Digital
+                </Button>
+              )}
+              {getMissingSignatureInfo(note) && (
+                <p className="text-xs text-muted-foreground text-center">
+                  {getMissingSignatureInfo(note)}
+                </p>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -1569,6 +1646,35 @@ export default function WorkerDashboard() {
                 className="w-full object-contain max-h-80"
                 data-testid="img-signature-fullview"
               />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Capture Signature Dialog */}
+      <Dialog open={captureSignatureOpen} onOpenChange={(open) => {
+        if (!open) {
+          setCaptureSignatureOpen(false);
+          setSelectedNoteForSignature(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Firma Digital del Cliente</DialogTitle>
+            <DialogDescription>
+              Pide al cliente que firme en el recuadro
+            </DialogDescription>
+          </DialogHeader>
+          <SignaturePad
+            onSave={saveSignature}
+            onCancel={() => {
+              setCaptureSignatureOpen(false);
+              setSelectedNoteForSignature(null);
+            }}
+          />
+          {isUploadingSignature && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
+              <p className="text-sm text-muted-foreground">Guardando firma...</p>
             </div>
           )}
         </DialogContent>
