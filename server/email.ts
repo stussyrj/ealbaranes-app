@@ -56,7 +56,7 @@ function getSpookyEmailTemplate(content: {
   buttonText?: string;
   buttonUrl?: string;
   accentColor?: 'orange' | 'green' | 'purple';
-  showSpiderWeb?: boolean;
+  showBackground?: boolean;
 }) {
   const colors = {
     orange: { primary: '#ff6b1a', gradient: 'linear-gradient(135deg, #ff6b1a 0%, #ea580c 100%)' },
@@ -67,7 +67,9 @@ function getSpookyEmailTemplate(content: {
   const accent = colors[content.accentColor || 'orange'];
   const year = new Date().getFullYear();
   
-  const spiderWebSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M50 0 L50 100 M0 50 L100 50 M0 0 L100 100 M100 0 L0 100' stroke='%23ff6b1a' stroke-width='0.3' fill='none' opacity='0.15'/%3E%3Ccircle cx='50' cy='50' r='10' stroke='%23ff6b1a' stroke-width='0.3' fill='none' opacity='0.15'/%3E%3Ccircle cx='50' cy='50' r='25' stroke='%23ff6b1a' stroke-width='0.3' fill='none' opacity='0.12'/%3E%3Ccircle cx='50' cy='50' r='40' stroke='%23ff6b1a' stroke-width='0.3' fill='none' opacity='0.1'/%3E%3C/svg%3E`;
+  // Animated background inspired pattern: floating circles + dots
+  // Purple circle (left), orange circle (right), small decorative dots
+  const animatedBgSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cdefs%3E%3ClinearGradient id='bgGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23581c87;stop-opacity:0.15'/%3E%3Cstop offset='50%25' style='stop-color:%230f172a;stop-opacity:0.1'/%3E%3Cstop offset='100%25' style='stop-color:%23431407;stop-opacity:0.12'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='400' fill='url(%23bgGrad)'/%3E%3Ccircle cx='50' cy='80' r='60' stroke='%239333ea' stroke-width='1.5' fill='none' opacity='0.2'/%3E%3Ccircle cx='50' cy='80' r='80' stroke='%239333ea' stroke-width='1' fill='none' opacity='0.12'/%3E%3Ccircle cx='350' cy='320' r='50' stroke='%23ff6b1a' stroke-width='1.5' fill='none' opacity='0.2'/%3E%3Ccircle cx='350' cy='320' r='70' stroke='%23ff6b1a' stroke-width='1' fill='none' opacity='0.12'/%3E%3Ccircle cx='120' cy='200' r='25' stroke='%239333ea' stroke-width='0.8' fill='none' opacity='0.15'/%3E%3Ccircle cx='300' cy='100' r='20' stroke='%23ff6b1a' stroke-width='0.8' fill='none' opacity='0.15'/%3E%3Ccircle cx='80' cy='350' r='15' stroke='%239333ea' stroke-width='0.6' fill='none' opacity='0.12'/%3E%3Ccircle cx='320' cy='180' r='12' stroke='%23ff6b1a' stroke-width='0.6' fill='none' opacity='0.12'/%3E%3Ccircle cx='200' cy='150' r='2' fill='%239333ea' opacity='0.3'/%3E%3Ccircle cx='250' cy='200' r='2' fill='%23ff6b1a' opacity='0.3'/%3E%3Ccircle cx='150' cy='280' r='2' fill='%239333ea' opacity='0.25'/%3E%3Ccircle cx='280' cy='250' r='1.5' fill='%23ff6b1a' opacity='0.25'/%3E%3Ccircle cx='100' cy='120' r='1.5' fill='%239333ea' opacity='0.2'/%3E%3Ccircle cx='340' cy='60' r='2' fill='%23ff6b1a' opacity='0.2'/%3E%3Ccircle cx='60' cy='220' r='1' fill='%239333ea' opacity='0.25'/%3E%3Ccircle cx='380' cy='140' r='1' fill='%23ff6b1a' opacity='0.25'/%3E%3C/svg%3E`;
 
   return `
     <!DOCTYPE html>
@@ -79,7 +81,7 @@ function getSpookyEmailTemplate(content: {
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     </head>
     <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0c0a09; color: #fafaf9;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0c0a09; ${content.showSpiderWeb !== false ? `background-image: url('${spiderWebSvg}'); background-repeat: repeat;` : ''}">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0c0a09; ${content.showBackground !== false ? `background-image: url('${animatedBgSvg}'); background-repeat: repeat; background-size: 400px 400px;` : ''}">
         <tr>
           <td align="center" style="padding: 40px 20px;">
             <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%;">
@@ -103,7 +105,7 @@ function getSpookyEmailTemplate(content: {
               <!-- Main Card -->
               <tr>
                 <td>
-                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(180deg, #1c1917 0%, #171412 100%); border-radius: 16px; border: 1px solid #292524; overflow: hidden;">
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(180deg, rgba(28, 25, 23, 0.95) 0%, rgba(23, 20, 18, 0.98) 100%); border-radius: 16px; border: 1px solid #292524; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
                     
                     <!-- Title Section -->
                     <tr>
