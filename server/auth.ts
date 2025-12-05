@@ -448,10 +448,13 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Mark user as verified
+      // Mark user as verified in database
       await db.update(users)
         .set({ emailVerified: true })
         .where(eq(users.id, tokenRecord.userId));
+      
+      // Invalidate the user from the cache so next login fetches fresh data from DB
+      storage.invalidateUserCache(tokenRecord.userId);
 
       // Mark token as used
       await db.update(verificationTokens)

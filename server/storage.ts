@@ -32,6 +32,7 @@ export interface IStorage {
   updateUserPassword(id: string, password: string): Promise<User | undefined>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
+  invalidateUserCache(id: string): void;
   
   getWorkers(tenantId: string, includeInactive?: boolean): Promise<Worker[]>;
   getWorker(id: string): Promise<Worker | undefined>;
@@ -354,6 +355,10 @@ export class MemStorage implements IStorage {
       console.error("Error deleting user from DB:", error);
       return false;
     }
+  }
+
+  invalidateUserCache(id: string): void {
+    this.users.delete(id);
   }
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
