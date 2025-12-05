@@ -1,8 +1,8 @@
 # eAlbarán - Gestión Digital de Albaranes de Transporte
 
-## Status: OPERATIONAL - Acceso Gratuito ([REDACTED-STRIPE] Desconectado)
+## Status: OPERATIONAL - Acceso Gratuito ([REDACTED-STRIPE] Eliminado)
 
-**La aplicación está funcionando con acceso gratuito. [REDACTED-STRIPE] está temporalmente desconectado.**
+**La aplicación está funcionando con acceso gratuito. El código de [REDACTED-STRIPE] fue eliminado para permitir publicación.**
 
 ## Overview
 
@@ -12,7 +12,7 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 - Frontend: React + TypeScript con Vite
 - Backend: Express + TypeScript
 - Base de datos: PostgreSQL via Neon con Drizzle ORM
-- Pagos: [REDACTED-STRIPE] (DESCONECTADO temporalmente - código preservado)
+- Pagos: Sin pagos (código de [REDACTED-STRIPE] eliminado)
 - UI Framework: shadcn/ui con Tailwind CSS
 
 ## Modelo de Usuarios
@@ -20,7 +20,7 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 La aplicación tiene dos tipos de usuarios claramente diferenciados:
 
 ### Empresa (antes "admin")
-- Acceso gratuito ([REDACTED-STRIPE] desconectado temporalmente)
+- Acceso gratuito ([REDACTED-STRIPE] eliminado)
 - Panel de Empresa con acceso completo
 - Gestionan trabajadores y supervisan albaranes
 - Acceden a: Dashboard, Gestión de Usuarios
@@ -33,10 +33,9 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 
 ## Sistema Multi-Tenant
 
-### Modelo de Negocio ([REDACTED-STRIPE] Desconectado)
-- **Empresa**: Acceso gratuito (sin pagos por ahora)
+### Modelo de Negocio
+- **Empresa**: Acceso gratuito
 - **Trabajadores**: Acceso gratuito (invitados por su empresa)
-- **Nota**: El código de [REDACTED-STRIPE] está preservado pero desactivado via `STRIPE_DISABLED=true`
 
 ### Flujo de Uso
 1. **Empresa** se registra (sin pago requerido)
@@ -65,13 +64,6 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - `POST /api/login` - Login (bloquea usuarios empresa no verificados)
 - `POST /api/logout` - Logout
 - `GET /api/user` - Usuario actual
-
-### [REDACTED-STRIPE] (DESCONECTADO)
-Los siguientes endpoints existen pero devuelven respuestas vacías/trial cuando `STRIPE_DISABLED=true`:
-- `GET /api/stripe/products` - Devuelve lista vacía
-- `POST /api/stripe/checkout` - Devuelve error "próximamente"
-- `POST /api/stripe/portal` - Devuelve error "próximamente"
-- `GET /api/subscription` - Devuelve status: 'trial'
 
 ### Albaranes (todos requieren autenticación y filtran por tenant)
 - `GET /api/delivery-notes` - Lista albaranes (filtrado por tenant del usuario)
@@ -122,7 +114,7 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Todos los valores sanitizados (trim, lowercase para email) antes de guardar
 - Registro de empresas con creación automática de tenant
 - **Verificación de email ACTIVA** - Las empresas deben verificar su email antes de iniciar sesión
-- **[REDACTED-STRIPE] DESCONECTADO** - El código de pagos está preservado pero desactivado
+- **[REDACTED-STRIPE] ELIMINADO** - Código de pagos eliminado para permitir publicación
 - Middleware de acceso por tenant (acceso completo sin verificar suscripción)
 - Frontend React con rutas públicas y protegidas
 - Tema claro/spooky (Halloween: naranja, púrpura, negro)

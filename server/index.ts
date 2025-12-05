@@ -2,10 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { runMigrations } from 'stripe-replit-sync';
-import { get[REDACTED-STRIPE] } from './stripeClient';
-import { WebhookHandlers } from './webhookHandlers';
-import { stripeService } from './stripeService';
 
 const app = express();
 const httpServer = createServer(app);
@@ -27,106 +23,8 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-async function init[REDACTED-STRIPE] {
-  if (process.env.STRIPE_DISABLED === 'true') {
-    log('[REDACTED-STRIPE] disabled via STRIPE_DISABLED env var - payments coming soon', 'stripe');
-    return;
-  }
-
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    log('DATABASE_URL not set, skipping [REDACTED-STRIPE] initialization', 'stripe');
-    return;
-  }
-
-  const maxRetries = 3;
-  let attempt = 0;
-
-  while (attempt < maxRetries) {
-    try {
-      attempt++;
-      log(`Initializing [REDACTED-STRIPE] schema (attempt ${attempt}/${maxRetries})...`, 'stripe');
-      
-      await runMigrations({ 
-        databaseUrl,
-        schema: 'stripe'
-      });
-      log('[REDACTED-STRIPE] schema ready', 'stripe');
-
-      const stripeSync = await get[REDACTED-STRIPE]
-
-      log('Setting up managed webhook...', 'stripe');
-      const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
-      const { webhook, uuid } = await stripeSync.findOrCreateManagedWebhook(
-        `${webhookBaseUrl}/api/stripe/webhook`,
-        {
-          enabled_events: ['*'],
-          description: 'eAlbarán subscription webhook',
-        }
-      );
-      log(`Webhook configured: ${webhook.url}`, 'stripe');
-
-      log('Syncing [REDACTED-STRIPE] data in background...', 'stripe');
-      stripeSync.syncBackfill()
-        .then(async () => {
-          log('[REDACTED-STRIPE] data synced', 'stripe');
-          await stripeService.ensureSubscriptionProducts();
-        })
-        .catch((err: Error) => {
-          log(`Error syncing [REDACTED-STRIPE] data: ${err.message}`, 'stripe');
-        });
-      
-      return;
-    } catch (error: any) {
-      log(`[REDACTED-STRIPE] init attempt ${attempt} failed: ${error.message}`, 'stripe');
-      if (attempt < maxRetries) {
-        log(`Retrying in 2 seconds...`, 'stripe');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } else {
-        log(`All [REDACTED-STRIPE] init attempts failed. Continuing without [REDACTED-STRIPE] sync.`, 'stripe');
-      }
-    }
-  }
-}
-
 (async () => {
-  // Only initialize [REDACTED-STRIPE] if not disabled
-  if (process.env.STRIPE_DISABLED !== 'true') {
-    await init[REDACTED-STRIPE]
-
-    // Register webhook route only when [REDACTED-STRIPE] is enabled
-    app.post(
-      '/api/stripe/webhook/:uuid',
-      express.raw({ type: 'application/json' }),
-      async (req, res) => {
-        const signature = req.headers['stripe-signature'];
-
-        if (!signature) {
-          return res.status(400).json({ error: 'Missing stripe-signature' });
-        }
-
-        try {
-          const sig = Array.isArray(signature) ? signature[0] : signature;
-
-          if (!Buffer.isBuffer(req.body)) {
-            log('STRIPE WEBHOOK ERROR: req.body is not a Buffer', 'stripe');
-            return res.status(500).json({ error: 'Webhook processing error' });
-          }
-
-          const { uuid } = req.params;
-          await WebhookHandlers.processWebhook(req.body as Buffer, sig, uuid);
-
-          res.status(200).json({ received: true });
-        } catch (error: any) {
-          log(`Webhook error: ${error.message}`, 'stripe');
-          res.status(400).json({ error: 'Webhook processing error' });
-        }
-      }
-    );
-  } else {
-    log('[REDACTED-STRIPE] completely disabled - no webhooks registered', 'stripe');
-  }
+  log('[REDACTED-STRIPE] removed - free access enabled', 'app');
 
   app.use(
     express.json({

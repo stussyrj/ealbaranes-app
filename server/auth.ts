@@ -8,7 +8,6 @@ import { storage } from "./storage";
 import { User as SelectUser, tenants, verificationTokens, users } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, isNull } from "drizzle-orm";
-import { stripeService } from "./stripeService";
 import { getTenantForUser } from "./middleware/tenantAccess";
 import { sendWelcomeEmail, sendVerificationEmail } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
@@ -328,23 +327,16 @@ export function setupAuth(app: Express) {
       }
 
       const companyNameStr = companyName ? String(companyName).trim() : null;
-      
-      // Only create [REDACTED-STRIPE] customer if [REDACTED-STRIPE] is enabled
-      let stripeCustomerId: string | null = null;
-      if (process.env.STRIPE_DISABLED !== 'true') {
-        const stripeCustomer = await stripeService.createCustomer(emailStr, "", companyNameStr || undefined);
-        stripeCustomerId = stripeCustomer.id;
-      }
 
       let tenant: typeof tenants.$inferSelect | null = null;
       let user: typeof users.$inferSelect | null = null;
       let verificationToken: string | null = null;
 
       try {
-        // Create tenant with sanitized values
+        // Create tenant with sanitized values (no [REDACTED-STRIPE]
         const [newTenant] = await db.insert(tenants).values({
           companyName: companyNameStr,
-          stripeCustomerId: stripeCustomerId,
+          stripeCustomerId: null,
           subscriptionStatus: 'active',
         }).returning();
         tenant = newTenant;
@@ -402,15 +394,6 @@ export function setupAuth(app: Express) {
         // Delete tenant if created
         if (tenant) {
           await db.delete(tenants).where(eq(tenants.id, tenant.id)).catch(() => {});
-        }
-        
-        // Try to delete [REDACTED-STRIPE] customer if it was created (best effort)
-        if (stripeCustomerId) {
-          try {
-            await stripeService.deleteCustomer(stripeCustomerId);
-          } catch (stripeError) {
-            console.error("[auth] Failed to delete orphaned [REDACTED-STRIPE] customer:", stripeCustomerId);
-          }
         }
 
         // Return user-friendly error
