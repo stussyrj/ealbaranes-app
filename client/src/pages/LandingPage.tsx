@@ -112,14 +112,14 @@ export default function LandingPage() {
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="/pricing">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-hero-pricing">
-                    Ver Precios
+                <Link href="/login">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-hero-login">
+                    Iniciar Sesión
                   </Button>
                 </Link>
               </div>
               <p className="text-sm text-muted-foreground mt-4">
-                Prueba gratuita de 14 días. Sin tarjeta de crédito.
+                Acceso gratuito. Sin tarjeta de crédito.
               </p>
             </div>
           </div>
@@ -322,9 +322,9 @@ export default function LandingPage() {
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="/pricing">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" data-testid="button-cta-pricing">
-                    Ver Planes y Precios
+                <Link href="/login">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" data-testid="button-cta-login">
+                    Ya tengo cuenta
                   </Button>
                 </Link>
               </div>

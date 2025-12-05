@@ -9,8 +9,6 @@ import UserManagement from "@/pages/admin/UserManagement";
 import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/RegisterPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
-import PricingPage from "@/pages/PricingPage";
-import SubscriptionPage from "@/pages/SubscriptionPage";
 import LandingPage from "@/pages/LandingPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
@@ -26,7 +24,6 @@ function AdminRoutes() {
     <Switch>
       <Route path="/" component={DashboardPage} />
       <Route path="/admin/users" component={UserManagement} />
-      <Route path="/admin/subscription" component={SubscriptionPage} />
       <Route component={DashboardPage} />
     </Switch>
   );
@@ -44,7 +41,6 @@ function WorkerRoutes() {
 function PublicRoutes() {
   return (
     <Switch>
-      <Route path="/pricing" component={PricingPage} />
       <Route path="/register" component={RegisterPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
     </Switch>
@@ -68,7 +64,6 @@ function MainLayout() {
 
   return (
     <Switch>
-      <Route path="/pricing" component={PricingPage} />
       <Route path="/register" component={RegisterPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
       <Route path="/login" component={AuthPage} />

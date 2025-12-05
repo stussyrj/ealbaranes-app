@@ -91,36 +91,42 @@ async function init[REDACTED-STRIPE] {
 }
 
 (async () => {
-  await init[REDACTED-STRIPE]
+  // Only initialize [REDACTED-STRIPE] if not disabled
+  if (process.env.STRIPE_DISABLED !== 'true') {
+    await init[REDACTED-STRIPE]
 
-  app.post(
-    '/api/stripe/webhook/:uuid',
-    express.raw({ type: 'application/json' }),
-    async (req, res) => {
-      const signature = req.headers['stripe-signature'];
+    // Register webhook route only when [REDACTED-STRIPE] is enabled
+    app.post(
+      '/api/stripe/webhook/:uuid',
+      express.raw({ type: 'application/json' }),
+      async (req, res) => {
+        const signature = req.headers['stripe-signature'];
 
-      if (!signature) {
-        return res.status(400).json({ error: 'Missing stripe-signature' });
-      }
-
-      try {
-        const sig = Array.isArray(signature) ? signature[0] : signature;
-
-        if (!Buffer.isBuffer(req.body)) {
-          log('STRIPE WEBHOOK ERROR: req.body is not a Buffer', 'stripe');
-          return res.status(500).json({ error: 'Webhook processing error' });
+        if (!signature) {
+          return res.status(400).json({ error: 'Missing stripe-signature' });
         }
 
-        const { uuid } = req.params;
-        await WebhookHandlers.processWebhook(req.body as Buffer, sig, uuid);
+        try {
+          const sig = Array.isArray(signature) ? signature[0] : signature;
 
-        res.status(200).json({ received: true });
-      } catch (error: any) {
-        log(`Webhook error: ${error.message}`, 'stripe');
-        res.status(400).json({ error: 'Webhook processing error' });
+          if (!Buffer.isBuffer(req.body)) {
+            log('STRIPE WEBHOOK ERROR: req.body is not a Buffer', 'stripe');
+            return res.status(500).json({ error: 'Webhook processing error' });
+          }
+
+          const { uuid } = req.params;
+          await WebhookHandlers.processWebhook(req.body as Buffer, sig, uuid);
+
+          res.status(200).json({ received: true });
+        } catch (error: any) {
+          log(`Webhook error: ${error.message}`, 'stripe');
+          res.status(400).json({ error: 'Webhook processing error' });
+        }
       }
-    }
-  );
+    );
+  } else {
+    log('[REDACTED-STRIPE] completely disabled - no webhooks registered', 'stripe');
+  }
 
   app.use(
     express.json({

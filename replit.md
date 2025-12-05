@@ -1,8 +1,8 @@
 # eAlbarán - Gestión Digital de Albaranes de Transporte
 
-## Status: OPERATIONAL - Multi-tenant SaaS con Suscripciones
+## Status: OPERATIONAL - Acceso Gratuito ([REDACTED-STRIPE] Desconectado)
 
-**Sistema de suscripciones implementado. La aplicación está funcionando correctamente.**
+**La aplicación está funcionando con acceso gratuito. [REDACTED-STRIPE] está temporalmente desconectado.**
 
 ## Overview
 
@@ -12,7 +12,7 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 - Frontend: React + TypeScript con Vite
 - Backend: Express + TypeScript
 - Base de datos: PostgreSQL via Neon con Drizzle ORM
-- Pagos: [REDACTED-STRIPE] (suscripciones)
+- Pagos: [REDACTED-STRIPE] (DESCONECTADO temporalmente - código preservado)
 - UI Framework: shadcn/ui con Tailwind CSS
 
 ## Modelo de Usuarios
@@ -20,10 +20,10 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 La aplicación tiene dos tipos de usuarios claramente diferenciados:
 
 ### Empresa (antes "admin")
-- Pagan suscripción mensual (29€) o anual (290€)
+- Acceso gratuito ([REDACTED-STRIPE] desconectado temporalmente)
 - Panel de Empresa con acceso completo
 - Gestionan trabajadores y supervisan albaranes
-- Acceden a: Dashboard, Gestión de Usuarios, Suscripción
+- Acceden a: Dashboard, Gestión de Usuarios
 
 ### Trabajador
 - Acceso gratuito (creados por su empresa)
@@ -33,27 +33,24 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 
 ## Sistema Multi-Tenant
 
-### Modelo de Negocio
-- **Empresa**: Paga suscripción mensual (29€) o anual (290€)
+### Modelo de Negocio ([REDACTED-STRIPE] Desconectado)
+- **Empresa**: Acceso gratuito (sin pagos por ahora)
 - **Trabajadores**: Acceso gratuito (invitados por su empresa)
-- **Período de gracia**: 30 días después de cancelación (solo lectura)
-- **Retención de datos**: 90 días después de cancelación antes de eliminación
+- **Nota**: El código de [REDACTED-STRIPE] está preservado pero desactivado via `STRIPE_DISABLED=true`
 
 ### Flujo de Uso
-1. **Empresa** se registra y paga suscripción
+1. **Empresa** se registra (sin pago requerido)
 2. **Empresa** crea trabajadores desde el panel
 3. **Trabajadores** crean albaranes digitales con fotos/firmas
 4. **Empresa** gestiona y supervisa todos los albaranes
 
 ### Rutas Públicas
-- `/pricing` - Página de precios
-- `/register` - Registro de empresa (crea tenant + cliente [REDACTED-STRIPE] envía email de verificación)
+- `/register` - Registro de empresa (crea tenant, envía email de verificación)
 - `/verify-email` - Verificación de email (procesa token de verificación)
 - `/login` - Inicio de sesión
 
 ### Rutas Protegidas (Empresa)
 - `/` - Dashboard con resumen de albaranes
-- `/admin/subscription` - Gestión de suscripción
 - `/admin/users` - Gestión de trabajadores
 
 ### Rutas Protegidas (Trabajador)
@@ -62,18 +59,19 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 ## Endpoints Backend
 
 ### Autenticación
-- `POST /api/register` - Registro de empresa (crea tenant + [REDACTED-STRIPE] customer, envía email verificación)
+- `POST /api/register` - Registro de empresa (crea tenant, envía email verificación)
 - `GET /api/verify-email?token=xxx` - Verificar email con token
 - `POST /api/resend-verification` - Reenviar email de verificación (rate limited: 3/hora)
 - `POST /api/login` - Login (bloquea usuarios empresa no verificados)
 - `POST /api/logout` - Logout
 - `GET /api/user` - Usuario actual
 
-### [REDACTED-STRIPE]
-- `GET /api/stripe/products` - Lista productos disponibles
-- `POST /api/stripe/checkout` - Crear sesión de checkout
-- `POST /api/stripe/portal` - Portal de gestión de suscripción
-- `GET /api/stripe/subscription` - Estado de suscripción
+### [REDACTED-STRIPE] (DESCONECTADO)
+Los siguientes endpoints existen pero devuelven respuestas vacías/trial cuando `STRIPE_DISABLED=true`:
+- `GET /api/stripe/products` - Devuelve lista vacía
+- `POST /api/stripe/checkout` - Devuelve error "próximamente"
+- `POST /api/stripe/portal` - Devuelve error "próximamente"
+- `GET /api/subscription` - Devuelve status: 'trial'
 
 ### Albaranes (todos requieren autenticación y filtran por tenant)
 - `GET /api/delivery-notes` - Lista albaranes (filtrado por tenant del usuario)
@@ -124,14 +122,11 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Todos los valores sanitizados (trim, lowercase para email) antes de guardar
 - Registro de empresas con creación automática de tenant
 - **Verificación de email ACTIVA** - Las empresas deben verificar su email antes de iniciar sesión
-- Integración [REDACTED-STRIPE] para suscripciones (pagos activos)
-- Middleware de acceso por tenant con verificación de suscripción
-- Período de gracia (30 días) y retención de datos (90 días)
-- Webhooks [REDACTED-STRIPE] para gestión de estados
-- Páginas de pricing, registro y gestión de suscripción
+- **[REDACTED-STRIPE] DESCONECTADO** - El código de pagos está preservado pero desactivado
+- Middleware de acceso por tenant (acceso completo sin verificar suscripción)
 - Frontend React con rutas públicas y protegidas
 - Tema claro/spooky (Halloween: naranja, púrpura, negro)
-- Sidebar simplificado (Dashboard + Gestión de Usuarios + Suscripción)
+- Sidebar simplificado (Dashboard + Gestión de Usuarios)
 - Panel de trabajador para albaranes
 - Números de albarán únicos (Albarán #X) con generación automática
 - Renombrado de app: DirectTransports → eAlbarán

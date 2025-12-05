@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   LogOut,
   Users,
-  CreditCard,
   X,
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
@@ -28,7 +27,6 @@ import { useAuth } from "@/contexts/AuthContext";
 const adminNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Gestión de Usuarios", url: "/admin/users", icon: Users },
-  { title: "Suscripción", url: "/admin/subscription", icon: CreditCard },
 ];
 
 const workerNavItems = [

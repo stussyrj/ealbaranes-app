@@ -327,9 +327,14 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Este email ya está registrado" });
       }
 
-      // Use sanitized values for [REDACTED-STRIPE] customer
       const companyNameStr = companyName ? String(companyName).trim() : null;
-      const stripeCustomer = await stripeService.createCustomer(emailStr, "", companyNameStr || undefined);
+      
+      // Only create [REDACTED-STRIPE] customer if [REDACTED-STRIPE] is enabled
+      let stripeCustomerId: string | null = null;
+      if (process.env.STRIPE_DISABLED !== 'true') {
+        const stripeCustomer = await stripeService.createCustomer(emailStr, "", companyNameStr || undefined);
+        stripeCustomerId = stripeCustomer.id;
+      }
 
       let tenant: typeof tenants.$inferSelect | null = null;
       let user: typeof users.$inferSelect | null = null;
@@ -339,7 +344,7 @@ export function setupAuth(app: Express) {
         // Create tenant with sanitized values
         const [newTenant] = await db.insert(tenants).values({
           companyName: companyNameStr,
-          stripeCustomerId: stripeCustomer.id,
+          stripeCustomerId: stripeCustomerId,
           subscriptionStatus: 'active',
         }).returning();
         tenant = newTenant;
@@ -399,11 +404,13 @@ export function setupAuth(app: Express) {
           await db.delete(tenants).where(eq(tenants.id, tenant.id)).catch(() => {});
         }
         
-        // Try to delete [REDACTED-STRIPE] customer (best effort)
-        try {
-          await stripeService.deleteCustomer(stripeCustomer.id);
-        } catch (stripeError) {
-          console.error("[auth] Failed to delete orphaned [REDACTED-STRIPE] customer:", stripeCustomer.id);
+        // Try to delete [REDACTED-STRIPE] customer if it was created (best effort)
+        if (stripeCustomerId) {
+          try {
+            await stripeService.deleteCustomer(stripeCustomerId);
+          } catch (stripeError) {
+            console.error("[auth] Failed to delete orphaned [REDACTED-STRIPE] customer:", stripeCustomerId);
+          }
         }
 
         // Return user-friendly error
