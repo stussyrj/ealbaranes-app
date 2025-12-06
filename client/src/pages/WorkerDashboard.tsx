@@ -1075,6 +1075,24 @@ export default function WorkerDashboard() {
                       )}
                     </div>
                   )}
+
+                  {albaranesModalType === "signed" && note.signature && (
+                    <div className="pt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSignatureToView(note.signature);
+                          setViewSignatureOpen(true);
+                        }}
+                        className="w-full text-xs"
+                        data-testid={`button-view-signature-modal-${note.id}`}
+                      >
+                        <Pen className="w-3.5 h-3.5 mr-1.5" />
+                        Ver Firma Digital
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
