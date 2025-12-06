@@ -1,21 +1,14 @@
-import { MapPin, Clock, Truck, User, Calendar, FileText, CheckCircle, Timer, Camera, Edit2 } from "lucide-react";
+import { MapPin, Clock, Truck, User, Calendar, FileText, CheckCircle, Timer, Camera, Edit2, ArrowRight, CircleDot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PickupOrigin } from "@shared/schema";
 
-// Helper to format a single origin
-const formatOrigin = (origin: PickupOrigin): string => {
-  if (origin.name && origin.address) return `${origin.name} (${origin.address})`;
-  if (origin.name) return origin.name;
-  if (origin.address) return origin.address;
-  return 'N/A';
-};
-
-// Helper to format multiple origins compactly
-const formatOrigins = (origins: PickupOrigin[] | null | undefined): string => {
-  if (!origins || origins.length === 0) return 'N/A';
-  if (origins.length === 1) return formatOrigin(origins[0]);
-  return `${formatOrigin(origins[0])} (+${origins.length - 1})`;
+// Helper to format a single origin for display
+const formatOriginDisplay = (origin: PickupOrigin): { name: string; address: string } => {
+  return {
+    name: origin.name || '',
+    address: origin.address || ''
+  };
 };
 
 interface DeliveryNoteCardProps {
@@ -124,15 +117,48 @@ export function DeliveryNoteCard({
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-start gap-2">
-            <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">
-                {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
-              </p>
-              <p className="text-sm font-medium truncate">
-                {formatOrigins(note.pickupOrigins)} → {note.destination || 'N/A'}
-              </p>
+          <div className="bg-muted/20 rounded-md p-2 space-y-1.5">
+            <div className="flex items-start gap-2">
+              <div className="flex flex-col items-center gap-0.5 pt-0.5">
+                <CircleDot className="w-3.5 h-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                {(note.pickupOrigins && note.pickupOrigins.length > 1) && (
+                  <div className="w-0.5 h-3 bg-muted-foreground/30 rounded-full" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground font-medium">
+                  {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
+                </p>
+                {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
+                  <div className="space-y-1">
+                    {note.pickupOrigins.map((origin, idx) => {
+                      const { name, address } = formatOriginDisplay(origin);
+                      return (
+                        <div key={idx} className="text-sm">
+                          {name && <span className="font-medium">{name}</span>}
+                          {name && address && <span className="text-muted-foreground"> · </span>}
+                          {address && <span className="text-muted-foreground text-xs">{address}</span>}
+                          {!name && !address && <span className="text-muted-foreground">N/A</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">N/A</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 pl-1">
+              <ArrowRight className="w-3 h-3 text-muted-foreground" />
+            </div>
+
+            <div className="flex items-start gap-2">
+              <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground font-medium">Entrega</p>
+                <p className="text-sm font-medium">{note.destination || 'N/A'}</p>
+              </div>
             </div>
           </div>
 

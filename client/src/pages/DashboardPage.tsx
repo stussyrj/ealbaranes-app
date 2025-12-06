@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image } from "lucide-react";
+import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, CircleDot } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,6 +103,14 @@ export default function DashboardPage() {
     if (origins.length === 1) return formatOrigin(origins[0]);
     if (origins.length <= maxDisplay) return origins.map(o => formatOrigin(o)).join(', ');
     return `${origins.slice(0, maxDisplay).map(o => formatOrigin(o)).join(', ')} (+${origins.length - maxDisplay})`;
+  };
+  
+  // Helper to format a single origin for structured display
+  const formatOriginDisplay = (origin: PickupOrigin): { name: string; address: string } => {
+    return {
+      name: origin.name || '',
+      address: origin.address || ''
+    };
   };
   
   const formatOriginsForPdf = (origins: PickupOrigin[] | null | undefined): string => {
@@ -1132,19 +1140,54 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">
-                          {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
-                        </p>
-                        <p className="text-sm font-medium truncate">{formatOrigins(note.pickupOrigins)} → {note.destination || 'N/A'}</p>
+                    <div className="bg-muted/20 rounded-md p-2 space-y-1.5">
+                      <div className="flex items-start gap-2">
+                        <div className="flex flex-col items-center gap-0.5 pt-0.5">
+                          <CircleDot className="w-3.5 h-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                          {(note.pickupOrigins && note.pickupOrigins.length > 1) && (
+                            <div className="w-0.5 h-3 bg-muted-foreground/30 rounded-full" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
+                          </p>
+                          {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
+                            <div className="space-y-1">
+                              {note.pickupOrigins.map((origin: PickupOrigin, idx: number) => {
+                                const { name, address } = formatOriginDisplay(origin);
+                                return (
+                                  <div key={idx} className="text-sm">
+                                    {name && <span className="font-medium">{name}</span>}
+                                    {name && address && <span className="text-muted-foreground"> · </span>}
+                                    {address && <span className="text-muted-foreground text-xs">{address}</span>}
+                                    {!name && !address && <span className="text-muted-foreground">N/A</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">N/A</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 pl-1">
+                        <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                      </div>
+
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground font-medium">Entrega</p>
+                          <p className="text-sm font-medium">{note.destination || 'N/A'}</p>
+                        </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                       <div className="flex items-start gap-2">
-                        <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <User className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs text-muted-foreground">Cliente</p>
                           <p className="text-sm font-medium truncate">{note.clientName || 'N/A'}</p>
@@ -1158,7 +1201,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs text-muted-foreground">Fecha</p>
                           <p className="text-sm font-medium">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
@@ -1174,7 +1217,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <User className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Trabajador</p>
                         <p className="text-sm font-medium truncate">{note.workerName || 'Desconocido'}</p>
@@ -1809,13 +1852,44 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-2 text-xs">
-                      <MapPin className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-muted-foreground">
-                          {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'} → Entrega
-                        </p>
-                        <p className="font-medium truncate">{formatOrigins(note.pickupOrigins)} → {note.destination || 'N/A'}</p>
+                    <div className="bg-muted/20 rounded-md p-2 space-y-1 text-xs">
+                      <div className="flex items-start gap-2">
+                        <CircleDot className="w-3 h-3 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-muted-foreground font-medium">
+                            {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
+                          </p>
+                          {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
+                            <div className="space-y-0.5">
+                              {note.pickupOrigins.slice(0, 2).map((origin: PickupOrigin, idx: number) => {
+                                const { name, address } = formatOriginDisplay(origin);
+                                return (
+                                  <div key={idx} className="text-sm">
+                                    {name && <span className="font-medium">{name}</span>}
+                                    {name && address && <span className="text-muted-foreground"> · </span>}
+                                    {address && <span className="text-muted-foreground text-xs">{address}</span>}
+                                    {!name && !address && <span className="text-muted-foreground">N/A</span>}
+                                  </div>
+                                );
+                              })}
+                              {note.pickupOrigins.length > 2 && (
+                                <p className="text-muted-foreground text-xs">+{note.pickupOrigins.length - 2} más</p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">N/A</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center pl-1">
+                        <ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-muted-foreground font-medium">Entrega</p>
+                          <p className="font-medium">{note.destination || 'N/A'}</p>
+                        </div>
                       </div>
                     </div>
 
