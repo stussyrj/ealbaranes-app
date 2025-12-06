@@ -3,9 +3,13 @@ import { db } from './db';
 import { tenants, users, PickupOrigin } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-function formatPickupOrigins(origins?: PickupOrigin[]): string {
+function formatPickupOriginsAsRoutes(origins?: PickupOrigin[]): string {
   if (!origins || origins.length === 0) return 'No especificado';
-  return origins.map(o => o.name ? `${o.name} (${o.address})` : o.address).join(' → ');
+  return origins.map(o => {
+    const from = o.name || 'N/A';
+    const to = o.address || 'N/A';
+    return `Recogida: ${from} → Entrega: ${to}`;
+  }).join('<br>');
 }
 
 let connectionSettings: any;
@@ -323,9 +327,8 @@ export async function sendDeliveryNoteCreatedEmail(to: string, noteData: {
       
       ${getInfoBox([
         { label: 'Número de Albarán', value: `#${noteData.noteNumber}` },
-        { label: 'Cliente', value: noteData.clientName || 'No especificado' },
-        { label: 'Recogidas', value: formatPickupOrigins(noteData.pickupOrigins) },
-        { label: 'Destino', value: noteData.destination || 'No especificado' },
+        { label: 'Nombre del cliente', value: noteData.clientName || 'No especificado' },
+        { label: 'Rutas', value: formatPickupOriginsAsRoutes(noteData.pickupOrigins) },
         { label: 'Creado por', value: noteData.createdBy }
       ])}
       
@@ -393,9 +396,8 @@ export async function sendDeliveryNoteSignedEmail(to: string, noteData: {
       
       ${getInfoBox([
         { label: 'Número de Albarán', value: `#${noteData.noteNumber}` },
-        { label: 'Cliente', value: noteData.clientName || 'No especificado' },
-        { label: 'Recogidas', value: formatPickupOrigins(noteData.pickupOrigins) },
-        { label: 'Destino', value: noteData.destination || 'No especificado' },
+        { label: 'Nombre del cliente', value: noteData.clientName || 'No especificado' },
+        { label: 'Rutas', value: formatPickupOriginsAsRoutes(noteData.pickupOrigins) },
         { label: 'Fecha de firma', value: signedDate }
       ], '#22c55e')}
       
