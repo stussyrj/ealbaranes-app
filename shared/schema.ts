@@ -43,6 +43,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   isAdmin: boolean("is_admin").default(false),
   emailVerified: boolean("email_verified").default(false),
+  hasCompletedOnboarding: boolean("has_completed_onboarding").default(false),
   workerId: varchar("worker_id"),
   tenantId: varchar("tenant_id"),
   createdAt: timestamp("created_at").defaultNow(),
