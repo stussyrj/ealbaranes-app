@@ -243,3 +243,31 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
 
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// Internal messages (replaces email notifications)
+export const messageTypeEnum = pgEnum('message_type', [
+  'delivery_note_created',
+  'delivery_note_signed',
+  'worker_created',
+  'system'
+]);
+
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  type: messageTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  read: boolean("read").default(false),
+  entityType: text("entity_type"), // delivery_note, worker, etc.
+  entityId: varchar("entity_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
