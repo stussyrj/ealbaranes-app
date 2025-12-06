@@ -47,6 +47,8 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - `/register` - Registro de empresa (crea tenant, envía email de verificación)
 - `/verify-email` - Verificación de email (procesa token de verificación)
 - `/login` - Inicio de sesión
+- `/forgot-password` - Solicitar recuperación de contraseña
+- `/reset-password?token=xxx` - Restablecer contraseña con token
 
 ### Rutas Protegidas (Empresa)
 - `/` - Dashboard con resumen de albaranes
@@ -61,6 +63,8 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - `POST /api/register` - Registro de empresa (crea tenant, envía email verificación)
 - `GET /api/verify-email?token=xxx` - Verificar email con token
 - `POST /api/resend-verification` - Reenviar email de verificación (rate limited: 3/hora)
+- `POST /api/forgot-password` - Solicitar email de recuperación de contraseña (rate limited: 3/hora)
+- `POST /api/reset-password` - Restablecer contraseña con token (token expira en 1 hora)
 - `POST /api/login` - Login (bloquea usuarios empresa no verificados)
 - `POST /api/logout` - Logout
 - `GET /api/user` - Usuario actual
@@ -154,6 +158,15 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Trabajador: 5 pasos (Crear albarán, Foto, Firma, Completado)
   - Se marca como completado en base de datos (hasCompletedOnboarding)
   - No reaparece en sesiones posteriores
+- **Sistema de recuperación de contraseña**:
+  - Enlace "¿Olvidaste tu contraseña?" en ambas pestañas del login (Empresa/Trabajador)
+  - Formulario de solicitud de recuperación vía email
+  - Token único de un solo uso con expiración de 1 hora
+  - Rate limiting: máximo 3 solicitudes por hora por email
+  - Email con tema spooky coherente con el resto de la app
+  - Formulario de nueva contraseña con confirmación
+  - Registro de auditoría de password_reset
+  - No permite enumerar emails (siempre devuelve éxito genérico)
 
 ## Preferencias Usuario
 
