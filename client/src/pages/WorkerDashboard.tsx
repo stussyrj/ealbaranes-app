@@ -970,40 +970,61 @@ export default function WorkerDashboard() {
                   </div>
 
                   {albaranesModalType === "pending" && (
-                    <div className="flex gap-2 pt-1">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => { 
-                          setSelectedNoteToEdit(note); 
-                          setFormData({ 
-                            clientName: note.clientName || "", 
-                            pickupOrigins: note.pickupOrigins || [{ name: "", address: "" }], 
-                            destination: note.destination || "", 
-                            vehicleType: note.vehicleType || "Furgoneta", 
-                            date: note.date || new Date().toISOString().split("T")[0], 
-                            time: note.time || "09:00", 
-                            observations: note.observations || "", 
-                            waitTime: (note as any).waitTime || 0 
-                          }); 
-                          setEditDeliveryOpen(true); 
-                        }}
-                        data-testid={`button-edit-${note.id}`}
-                      >
-                        <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-                        Editar
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => { setSelectedNoteForPhoto(note); setCapturePhotoOpen(true); }}
-                        data-testid={`button-add-photo-${note.id}`}
-                      >
-                        <Camera className="w-3.5 h-3.5 mr-1.5" />
-                        Foto
-                      </Button>
+                    <div className="space-y-2 pt-1">
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => { 
+                            setSelectedNoteToEdit(note); 
+                            setFormData({ 
+                              clientName: note.clientName || "", 
+                              pickupOrigins: note.pickupOrigins || [{ name: "", address: "" }], 
+                              destination: note.destination || "", 
+                              vehicleType: note.vehicleType || "Furgoneta", 
+                              date: note.date || new Date().toISOString().split("T")[0], 
+                              time: note.time || "09:00", 
+                              observations: note.observations || "", 
+                              waitTime: (note as any).waitTime || 0 
+                            }); 
+                            setEditDeliveryOpen(true); 
+                          }}
+                          data-testid={`button-edit-${note.id}`}
+                        >
+                          <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                          Editar
+                        </Button>
+                        {!note.photo && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => { setSelectedNoteForPhoto(note); setCapturePhotoOpen(true); }}
+                            data-testid={`button-add-photo-modal-${note.id}`}
+                          >
+                            <Camera className="w-3.5 h-3.5 mr-1.5" />
+                            Foto
+                          </Button>
+                        )}
+                        {!note.signature && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => { setSelectedNoteForSignature(note); setCaptureSignatureOpen(true); }}
+                            data-testid={`button-add-signature-modal-${note.id}`}
+                          >
+                            <Pen className="w-3.5 h-3.5 mr-1.5" />
+                            Firma
+                          </Button>
+                        )}
+                      </div>
+                      {getMissingSignatureInfo(note) && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          {getMissingSignatureInfo(note)}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
