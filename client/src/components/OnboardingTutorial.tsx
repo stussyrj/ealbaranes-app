@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -147,6 +147,12 @@ export function OnboardingTutorial({ isOpen, onComplete, userType }: OnboardingT
   const [currentStep, setCurrentStep] = useState(0);
   const steps = userType === "company" ? companySteps : workerSteps;
   const step = steps[currentStep];
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(0);
+    }
+  }, [isOpen]);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {

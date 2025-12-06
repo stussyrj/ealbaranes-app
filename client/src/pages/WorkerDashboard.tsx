@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
 import { SignaturePad } from "@/components/SignaturePad";
+import { OnboardingTutorial } from "@/components/OnboardingTutorial";
 import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -20,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient as qc } from "@/lib/queryClient";
 import type { Quote, DeliveryNote, PickupOrigin } from "@shared/schema";
 
 export default function WorkerDashboard() {
@@ -59,6 +61,31 @@ export default function WorkerDashboard() {
     observations: "",
     waitTime: 0,
   });
+  
+  // Onboarding tutorial state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Show onboarding if user hasn't completed it
+  useEffect(() => {
+    if (user && user.hasCompletedOnboarding === false) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
+  
+  // Mutation to complete onboarding
+  const completeOnboardingMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/user/complete-onboarding");
+    },
+    onSuccess: () => {
+      setShowOnboarding(false);
+      qc.invalidateQueries({ queryKey: ["/api/user"] });
+    },
+  });
+  
+  const handleCompleteOnboarding = () => {
+    completeOnboardingMutation.mutate();
+  };
   
   // Helper to format a single origin display
   const formatOrigin = (origin: PickupOrigin): string => {
@@ -1823,6 +1850,13 @@ export default function WorkerDashboard() {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Onboarding Tutorial */}
+      <OnboardingTutorial
+        isOpen={showOnboarding}
+        onComplete={handleCompleteOnboarding}
+        userType="worker"
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
@@ -12,10 +12,12 @@ import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
 import { DeliveryNoteCard } from "@/components/DeliveryNoteCard";
 import { AutocompleteInput } from "@/components/AutocompleteInput";
 import { SignaturePad } from "@/components/SignaturePad";
+import { OnboardingTutorial } from "@/components/OnboardingTutorial";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiRequest, queryClient as qc } from "@/lib/queryClient";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import JSZip from "jszip";
@@ -74,6 +76,31 @@ export default function DashboardPage() {
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const [viewSignatureOpen, setViewSignatureOpen] = useState(false);
   const [signatureToView, setSignatureToView] = useState<string | null>(null);
+  
+  // Onboarding tutorial state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Show onboarding if user hasn't completed it
+  useEffect(() => {
+    if (user && user.hasCompletedOnboarding === false) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
+  
+  // Mutation to complete onboarding
+  const completeOnboardingMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/user/complete-onboarding");
+    },
+    onSuccess: () => {
+      setShowOnboarding(false);
+      qc.invalidateQueries({ queryKey: ["/api/user"] });
+    },
+  });
+  
+  const handleCompleteOnboarding = () => {
+    completeOnboardingMutation.mutate();
+  };
   
   // State for tracking which notes have their origins expanded
   const [expandedOrigins, setExpandedOrigins] = useState<Set<string>>(new Set());
@@ -2240,6 +2267,13 @@ export default function DashboardPage() {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Onboarding Tutorial */}
+      <OnboardingTutorial
+        isOpen={showOnboarding}
+        onComplete={handleCompleteOnboarding}
+        userType="company"
+      />
     </div>
   );
 }
