@@ -9,6 +9,8 @@ import {
   type InsertWorker,
   type DeliveryNote,
   type InsertDeliveryNote,
+  type Message,
+  type InsertMessage,
   deliveryNotes as deliveryNotesTable,
   users as usersTable,
   tenants as tenantsTable,
@@ -17,6 +19,7 @@ import {
   vehicleTypes as vehicleTypesTable,
   verificationTokens as verificationTokensTable,
   auditLogs as auditLogsTable,
+  messages as messagesTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -65,6 +68,12 @@ export interface IStorage {
   createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote>;
   updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
   getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], originNames: string[], originAddresses: string[], destinations: string[] }>;
+  
+  getMessages(tenantId: string): Promise<Message[]>;
+  getUnreadMessageCount(tenantId: string): Promise<number>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  markMessageAsRead(id: string, tenantId: string): Promise<Message | undefined>;
+  markAllMessagesAsRead(tenantId: string): Promise<void>;
 }
 
 const defaultVehicleTypes: VehicleType[] = [
@@ -785,6 +794,45 @@ export class MemStorage implements IStorage {
         this.workers.set(w.id, { ...w, createdAt: new Date() });
       }
     }
+  }
+  
+  async getMessages(tenantId: string): Promise<Message[]> {
+    const results = await db.select().from(messagesTable)
+      .where(eq(messagesTable.tenantId, tenantId))
+      .orderBy(sql`${messagesTable.createdAt} DESC`);
+    return results;
+  }
+  
+  async getUnreadMessageCount(tenantId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(messagesTable)
+      .where(and(
+        eq(messagesTable.tenantId, tenantId),
+        eq(messagesTable.read, false)
+      ));
+    return Number(result[0]?.count || 0);
+  }
+  
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const [created] = await db.insert(messagesTable).values(message).returning();
+    return created;
+  }
+  
+  async markMessageAsRead(id: string, tenantId: string): Promise<Message | undefined> {
+    const [updated] = await db.update(messagesTable)
+      .set({ read: true })
+      .where(and(
+        eq(messagesTable.id, id),
+        eq(messagesTable.tenantId, tenantId)
+      ))
+      .returning();
+    return updated;
+  }
+  
+  async markAllMessagesAsRead(tenantId: string): Promise<void> {
+    await db.update(messagesTable)
+      .set({ read: true })
+      .where(eq(messagesTable.tenantId, tenantId));
   }
 }
 

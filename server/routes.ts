@@ -18,7 +18,8 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
+// Email imports removed - now using internal messaging system
+// import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
 
 export async function registerRoutes(
@@ -578,20 +579,23 @@ export async function registerRoutes(
         userAgent: clientInfo.userAgent,
       });
       
-      // Send email notification to admin (non-blocking)
+      // Create internal message notification (replaces email)
       if (user?.tenantId) {
-        getAdminEmailForTenant(user.tenantId).then(adminEmail => {
-          if (adminEmail) {
-            sendDeliveryNoteCreatedEmail(adminEmail, {
-              noteNumber: note.noteNumber,
-              clientName: note.clientName || undefined,
-              pickupOrigins: note.pickupOrigins || undefined,
-              destination: note.destination || undefined,
-              createdBy: user.isAdmin ? 'Empresa' : (user.displayName || user.username || 'Trabajador'),
-            }).catch(err => {
-              console.error("[routes] Failed to send delivery note created email:", err);
-            });
-          }
+        const createdBy = user.isAdmin ? 'Empresa' : (user.displayName || user.username || 'Trabajador');
+        const routeLines = (note.pickupOrigins || []).map((o: any) => 
+          `Recogida: ${o.name || 'N/A'} → Entrega: ${o.address || 'N/A'}`
+        ).join('\n');
+        
+        storage.createMessage({
+          tenantId: user.tenantId,
+          type: 'delivery_note_created',
+          title: `Nuevo Albarán #${note.noteNumber}`,
+          body: `Cliente: ${note.clientName || 'No especificado'}\n${routeLines}\nCreado por: ${createdBy}`,
+          read: false,
+          entityType: 'delivery_note',
+          entityId: note.id,
+        }).catch(err => {
+          console.error("[routes] Failed to create delivery note message:", err);
         });
       }
       
@@ -770,24 +774,29 @@ export async function registerRoutes(
         userAgent: clientInfo.userAgent,
       });
       
-      // Send email notification when note becomes fully signed (non-blocking)
+      // Create internal message when note becomes fully signed (replaces email)
       const wasFullySigned = existingNote.photo && existingNote.signature;
       const isNowFullySigned = note.photo && note.signature;
       const justBecameFullySigned = !wasFullySigned && isNowFullySigned;
       
       if (justBecameFullySigned && existingNote.tenantId) {
-        getAdminEmailForTenant(existingNote.tenantId).then(adminEmail => {
-          if (adminEmail) {
-            sendDeliveryNoteSignedEmail(adminEmail, {
-              noteNumber: note.noteNumber,
-              clientName: note.clientName || undefined,
-              pickupOrigins: note.pickupOrigins || undefined,
-              destination: note.destination || undefined,
-              signedAt: note.signedAt || new Date(),
-            }).catch(err => {
-              console.error("[routes] Failed to send delivery note signed email:", err);
-            });
-          }
+        const routeLines = (note.pickupOrigins || []).map((o: any) => 
+          `Recogida: ${o.name || 'N/A'} → Entrega: ${o.address || 'N/A'}`
+        ).join('\n');
+        const signedDate = (note.signedAt || new Date()).toLocaleDateString('es-ES', {
+          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        
+        storage.createMessage({
+          tenantId: existingNote.tenantId,
+          type: 'delivery_note_signed',
+          title: `Albarán #${note.noteNumber} Firmado`,
+          body: `Cliente: ${note.clientName || 'No especificado'}\n${routeLines}\nFirmado: ${signedDate}`,
+          read: false,
+          entityType: 'delivery_note',
+          entityId: note.id,
+        }).catch(err => {
+          console.error("[routes] Failed to create delivery note signed message:", err);
         });
       }
       
@@ -983,6 +992,96 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error compressing photos:", error);
       res.status(500).json({ error: "Error al comprimir fotos" });
+    }
+  });
+
+  // ==================== MESSAGES ENDPOINTS ====================
+  
+  // Get all messages for tenant
+  app.get("/api/messages", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo empresas pueden ver mensajes" });
+      }
+      if (!user.tenantId) {
+        return res.status(400).json({ error: "Tenant no encontrado" });
+      }
+      const messages = await storage.getMessages(user.tenantId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Error al obtener mensajes" });
+    }
+  });
+  
+  // Get unread message count
+  app.get("/api/messages/unread-count", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo empresas pueden ver mensajes" });
+      }
+      if (!user.tenantId) {
+        return res.status(400).json({ error: "Tenant no encontrado" });
+      }
+      const count = await storage.getUnreadMessageCount(user.tenantId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ error: "Error al obtener conteo" });
+    }
+  });
+  
+  // Mark single message as read
+  app.patch("/api/messages/:id/read", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo empresas pueden gestionar mensajes" });
+      }
+      if (!user.tenantId) {
+        return res.status(400).json({ error: "Tenant no encontrado" });
+      }
+      const { id } = req.params;
+      const message = await storage.markMessageAsRead(id, user.tenantId);
+      if (!message) {
+        return res.status(404).json({ error: "Mensaje no encontrado" });
+      }
+      res.json(message);
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ error: "Error al marcar mensaje" });
+    }
+  });
+  
+  // Mark all messages as read
+  app.patch("/api/messages/read-all", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo empresas pueden gestionar mensajes" });
+      }
+      if (!user.tenantId) {
+        return res.status(400).json({ error: "Tenant no encontrado" });
+      }
+      await storage.markAllMessagesAsRead(user.tenantId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all messages as read:", error);
+      res.status(500).json({ error: "Error al marcar mensajes" });
     }
   });
 
