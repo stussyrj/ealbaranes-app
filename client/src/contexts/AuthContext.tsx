@@ -20,6 +20,7 @@ interface ServerUser {
   tenantId?: string | null;
   createdAt?: string;
   subscription?: SubscriptionInfo | null;
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface AuthUser {
@@ -31,6 +32,7 @@ export interface AuthUser {
   workerId?: string | null;
   isAdmin?: boolean;
   subscription?: SubscriptionInfo;
+  hasCompletedOnboarding?: boolean;
 }
 
 interface AuthContextType {
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isInGrace: serverUser.subscription.isInGrace,
       isReadOnly: serverUser.subscription.isReadOnly,
     } : undefined,
+    hasCompletedOnboarding: serverUser.hasCompletedOnboarding ?? false,
   } : null;
 
   const loginMutation = useMutation({

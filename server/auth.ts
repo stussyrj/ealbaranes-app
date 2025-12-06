@@ -262,12 +262,26 @@ export function setupAuth(app: Express) {
       workerId: user.workerId,
       tenantId: user.tenantId,
       createdAt: user.createdAt,
+      hasCompletedOnboarding: user.hasCompletedOnboarding ?? false,
       subscription: tenantContext ? {
         status: tenantContext.subscriptionStatus,
         isReadOnly: tenantContext.isReadOnly,
         isInGrace: tenantContext.isInGrace,
       } : null,
     });
+  });
+  
+  app.post("/api/user/complete-onboarding", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const user = req.user!;
+    
+    try {
+      await db.update(users).set({ hasCompletedOnboarding: true }).where(eq(users.id, user.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      res.status(500).json({ error: "Error al completar el tutorial" });
+    }
   });
 
   app.post("/api/register", async (req, res) => {
