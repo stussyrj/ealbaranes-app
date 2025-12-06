@@ -9,7 +9,7 @@ import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
 import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
 import { SignaturePad } from "@/components/SignaturePad";
-import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -291,7 +291,7 @@ export default function WorkerDashboard() {
     enabled: !!effectiveWorkerId,
   });
 
-  const { data: deliveryNotes = [] } = useQuery<DeliveryNote[]>({
+  const { data: deliveryNotes = [], refetch: refetchDeliveryNotes } = useQuery<DeliveryNote[]>({
     queryKey: ["/api/workers", effectiveWorkerId || "", "delivery-notes"],
     enabled: !!effectiveWorkerId,
   });
@@ -669,6 +669,19 @@ export default function WorkerDashboard() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-semibold">Mis Servicios</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                refetchDeliveryNotes();
+                toast({ title: "Actualizando datos..." });
+              }}
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate flex-shrink-0"
+              title="Actualizar datos"
+              data-testid="button-refresh-worker"
+            >
+              <RefreshCcw className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
