@@ -11,6 +11,15 @@ function formatPickupOrigins(origins?: PickupOrigin[]): string {
 let connectionSettings: any;
 
 async function getCredentials() {
+  // First, check for direct RESEND_API_KEY (Railway, Vercel, etc.)
+  if (process.env.RESEND_API_KEY) {
+    return { 
+      apiKey: process.env.RESEND_API_KEY, 
+      fromEmail: 'eAlbarán <no-reply@ealbaranes.es>' 
+    };
+  }
+
+  // Fallback to Replit's connector system
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
@@ -19,7 +28,7 @@ async function getCredentials() {
     : null;
 
   if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+    throw new Error('RESEND_API_KEY environment variable is required');
   }
 
   connectionSettings = await fetch(
