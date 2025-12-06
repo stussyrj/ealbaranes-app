@@ -79,13 +79,14 @@ export default function DashboardPage() {
   
   // Onboarding tutorial state
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingManuallyCompleted, setOnboardingManuallyCompleted] = useState(false);
   
-  // Show onboarding if user hasn't completed it
+  // Show onboarding if user hasn't completed it (and wasn't manually closed this session)
   useEffect(() => {
-    if (user && user.hasCompletedOnboarding === false) {
+    if (user && user.hasCompletedOnboarding === false && !onboardingManuallyCompleted) {
       setShowOnboarding(true);
     }
-  }, [user]);
+  }, [user, onboardingManuallyCompleted]);
   
   // Mutation to complete onboarding
   const completeOnboardingMutation = useMutation({
@@ -93,12 +94,14 @@ export default function DashboardPage() {
       await apiRequest("POST", "/api/user/complete-onboarding");
     },
     onSuccess: () => {
-      setShowOnboarding(false);
       qc.invalidateQueries({ queryKey: ["/api/user"] });
     },
   });
   
   const handleCompleteOnboarding = () => {
+    // Close immediately to prevent race condition with user refetch
+    setShowOnboarding(false);
+    setOnboardingManuallyCompleted(true);
     completeOnboardingMutation.mutate();
   };
   
