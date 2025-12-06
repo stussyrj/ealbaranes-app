@@ -1252,49 +1252,29 @@ export default function WorkerDashboard() {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-sm font-medium">Recogida <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="Dirección de recogida"
-                  value={formData.pickupOrigins[0]?.address || ""}
-                  onChange={(e) => {
-                    const newOrigins = [...formData.pickupOrigins];
-                    if (newOrigins.length === 0) newOrigins.push({ name: "", address: "" });
-                    newOrigins[0] = { ...newOrigins[0], address: e.target.value };
-                    setFormData({ ...formData, pickupOrigins: newOrigins });
-                  }}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Destino <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="Dirección de entrega"
-                  value={formData.destination}
-                  onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium">Recogida <span className="text-destructive">*</span></label>
+              <Input
+                placeholder="Lugar de recogida (ej: Mediarent)"
+                value={formData.pickupOrigins[0]?.name || ""}
+                onChange={(e) => {
+                  const newOrigins = [...formData.pickupOrigins];
+                  if (newOrigins.length === 0) newOrigins.push({ name: "", address: "" });
+                  newOrigins[0] = { ...newOrigins[0], name: e.target.value };
+                  setFormData({ ...formData, pickupOrigins: newOrigins });
+                }}
+              />
             </div>
             
             {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
               <div key={index + 1} className="flex items-center gap-2">
-                <div className="flex-1 grid grid-cols-2 gap-2">
+                <div className="flex-1">
                   <Input
                     placeholder={`Recogida ${index + 2}`}
                     value={origin.name}
                     onChange={(e) => {
                       const newOrigins = [...formData.pickupOrigins];
                       newOrigins[index + 1] = { ...newOrigins[index + 1], name: e.target.value };
-                      setFormData({ ...formData, pickupOrigins: newOrigins });
-                    }}
-                    className="text-sm"
-                  />
-                  <Input
-                    placeholder="Dirección"
-                    value={origin.address}
-                    onChange={(e) => {
-                      const newOrigins = [...formData.pickupOrigins];
-                      newOrigins[index + 1] = { ...newOrigins[index + 1], address: e.target.value };
                       setFormData({ ...formData, pickupOrigins: newOrigins });
                     }}
                     className="text-sm"
@@ -1314,6 +1294,15 @@ export default function WorkerDashboard() {
                 </Button>
               </div>
             ))}
+            
+            <div>
+              <label className="text-sm font-medium">Entrega <span className="text-destructive">*</span></label>
+              <Input
+                placeholder="Lugar de entrega (ej: Bob)"
+                value={formData.destination}
+                onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+              />
+            </div>
             
             <Button
               type="button"
@@ -1386,7 +1375,7 @@ export default function WorkerDashboard() {
                 Cancelar
               </Button>
               <Button
-                disabled={!formData.clientName.trim() || !formData.destination.trim() || (!formData.pickupOrigins[0]?.address?.trim())}
+                disabled={!formData.clientName.trim() || !formData.destination.trim() || (!formData.pickupOrigins[0]?.name?.trim())}
                 onClick={async () => {
                   try {
                     if (!effectiveWorkerId) {

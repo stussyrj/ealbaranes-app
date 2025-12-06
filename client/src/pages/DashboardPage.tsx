@@ -1161,22 +1161,26 @@ export default function DashboardPage() {
                       <p className="text-xs text-muted-foreground">({note.workerName || 'Trabajador'})</p>
                     </div>
 
-                    <div className="bg-muted/20 rounded-md p-2 space-y-1">
+                    <div className="bg-muted/20 rounded-md p-2 space-y-1.5">
                       {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
                         <>
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="flex-1 min-w-0 truncate">{formatOrigin(note.pickupOrigins[0])}</span>
-                            <ArrowRight className="w-3 h-3 text-primary flex-shrink-0" />
-                            <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                          <div className="space-y-1">
+                            <div className="flex items-start gap-2 text-sm">
+                              <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
+                              <span className="flex-1 min-w-0">{formatOrigin(note.pickupOrigins[0])}</span>
+                            </div>
+                            <div className="flex items-start gap-2 text-sm">
+                              <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Entrega:</span>
+                              <span className="flex-1 min-w-0">{note.destination || 'N/A'}</span>
+                            </div>
                           </div>
                           
                           {note.pickupOrigins.length > 1 && expandedOrigins.has(note.id) && (
-                            <div className="space-y-1 pt-1 border-t border-muted-foreground/10">
+                            <div className="space-y-1 pt-1.5 border-t border-muted-foreground/10">
                               {note.pickupOrigins.slice(1).map((origin: PickupOrigin, idx: number) => (
-                                <div key={idx + 1} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span className="flex-1 min-w-0 truncate">{formatOrigin(origin)}</span>
-                                  <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                                  <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                                <div key={idx + 1} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                  <span className="text-xs font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
+                                  <span className="flex-1 min-w-0">{formatOrigin(origin)}</span>
                                 </div>
                               ))}
                             </div>
@@ -1185,11 +1189,11 @@ export default function DashboardPage() {
                           {note.pickupOrigins.length > 1 && (
                             <button
                               onClick={() => toggleExpandedOrigins(note.id)}
-                              className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                              className="flex items-center gap-1 text-xs text-primary hover:underline"
                               data-testid={`button-toggle-origins-${note.id}`}
                             >
                               {expandedOrigins.has(note.id) ? (
-                                <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas</>
+                                <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas más</>
                               ) : (
                                 <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} recogidas más</>
                               )}
@@ -1197,10 +1201,15 @@ export default function DashboardPage() {
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>N/A</span>
-                          <ArrowRight className="w-3 h-3" />
-                          <span>{note.destination || 'N/A'}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <span className="text-xs font-medium w-16 flex-shrink-0">Recogida:</span>
+                            <span>N/A</span>
+                          </div>
+                          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <span className="text-xs font-medium w-16 flex-shrink-0">Entrega:</span>
+                            <span>{note.destination || 'N/A'}</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1519,37 +1528,25 @@ export default function DashboardPage() {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-sm font-medium">Recogida <span className="text-destructive">*</span></label>
-                <AutocompleteInput
-                  placeholder="Dirección de recogida"
-                  value={formData.pickupOrigins[0]?.address || ""}
-                  onChange={(value) => {
-                    const newOrigins = [...formData.pickupOrigins];
-                    if (newOrigins.length === 0) newOrigins.push({ name: "", address: "" });
-                    newOrigins[0] = { ...newOrigins[0], address: value };
-                    setFormData({ ...formData, pickupOrigins: newOrigins });
-                  }}
-                  suggestions={suggestions.originAddresses || []}
-                  data-testid="input-pickup-origin-0"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Destino <span className="text-destructive">*</span></label>
-                <AutocompleteInput
-                  placeholder="Dirección de entrega"
-                  value={formData.destination}
-                  onChange={(value) => setFormData({ ...formData, destination: value })}
-                  suggestions={suggestions.destinations}
-                  data-testid="input-destination"
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium">Recogida <span className="text-destructive">*</span></label>
+              <AutocompleteInput
+                placeholder="Lugar de recogida (ej: Mediarent)"
+                value={formData.pickupOrigins[0]?.name || ""}
+                onChange={(value) => {
+                  const newOrigins = [...formData.pickupOrigins];
+                  if (newOrigins.length === 0) newOrigins.push({ name: "", address: "" });
+                  newOrigins[0] = { ...newOrigins[0], name: value };
+                  setFormData({ ...formData, pickupOrigins: newOrigins });
+                }}
+                suggestions={suggestions.originNames || []}
+                data-testid="input-pickup-origin-0"
+              />
             </div>
             
             {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
               <div key={index + 1} className="flex items-center gap-2">
-                <div className="flex-1 grid grid-cols-2 gap-2">
+                <div className="flex-1">
                   <AutocompleteInput
                     placeholder={`Recogida ${index + 2}`}
                     value={origin.name}
@@ -1559,18 +1556,7 @@ export default function DashboardPage() {
                       setFormData({ ...formData, pickupOrigins: newOrigins });
                     }}
                     suggestions={suggestions.originNames || []}
-                    data-testid={`input-pickup-origin-name-${index + 1}`}
-                  />
-                  <AutocompleteInput
-                    placeholder="Dirección"
-                    value={origin.address}
-                    onChange={(value) => {
-                      const newOrigins = [...formData.pickupOrigins];
-                      newOrigins[index + 1] = { ...newOrigins[index + 1], address: value };
-                      setFormData({ ...formData, pickupOrigins: newOrigins });
-                    }}
-                    suggestions={suggestions.originAddresses || []}
-                    data-testid={`input-pickup-origin-address-${index + 1}`}
+                    data-testid={`input-pickup-origin-${index + 1}`}
                   />
                 </div>
                 <Button
@@ -1588,6 +1574,17 @@ export default function DashboardPage() {
                 </Button>
               </div>
             ))}
+            
+            <div>
+              <label className="text-sm font-medium">Entrega <span className="text-destructive">*</span></label>
+              <AutocompleteInput
+                placeholder="Lugar de entrega (ej: Bob)"
+                value={formData.destination}
+                onChange={(value) => setFormData({ ...formData, destination: value })}
+                suggestions={suggestions.destinations}
+                data-testid="input-destination"
+              />
+            </div>
             
             <Button
               type="button"
@@ -1665,7 +1662,7 @@ export default function DashboardPage() {
                 Cancelar
               </Button>
               <Button
-                disabled={!formData.clientName.trim() || !formData.destination.trim() || (!formData.pickupOrigins[0]?.address?.trim())}
+                disabled={!formData.clientName.trim() || !formData.destination.trim() || (!formData.pickupOrigins[0]?.name?.trim())}
                 onClick={async () => {
                   try {
                     const deliveryNoteData = {

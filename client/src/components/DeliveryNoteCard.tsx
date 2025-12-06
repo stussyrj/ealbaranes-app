@@ -127,22 +127,26 @@ export function DeliveryNoteCard({
             )}
           </div>
 
-          <div className="bg-muted/20 rounded-md p-2 space-y-1">
+          <div className="bg-muted/20 rounded-md p-2 space-y-1.5">
             {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
               <>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="flex-1 min-w-0 truncate">{formatOriginText(note.pickupOrigins[0])}</span>
-                  <ArrowRight className="w-3 h-3 text-primary flex-shrink-0" />
-                  <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                <div className="space-y-1">
+                  <div className="flex items-start gap-2 text-sm">
+                    <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
+                    <span className="flex-1 min-w-0">{formatOriginText(note.pickupOrigins[0])}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Entrega:</span>
+                    <span className="flex-1 min-w-0">{note.destination || 'N/A'}</span>
+                  </div>
                 </div>
                 
                 {hasMultipleOrigins && showAllOrigins && (
-                  <div className="space-y-1 pt-1 border-t border-muted-foreground/10">
+                  <div className="space-y-1 pt-1.5 border-t border-muted-foreground/10">
                     {note.pickupOrigins.slice(1).map((origin, idx) => (
-                      <div key={idx + 1} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="flex-1 min-w-0 truncate">{formatOriginText(origin)}</span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                        <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                      <div key={idx + 1} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <span className="text-xs font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
+                        <span className="flex-1 min-w-0">{formatOriginText(origin)}</span>
                       </div>
                     ))}
                   </div>
@@ -151,11 +155,11 @@ export function DeliveryNoteCard({
                 {hasMultipleOrigins && (
                   <button
                     onClick={() => setShowAllOrigins(!showAllOrigins)}
-                    className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                    className="flex items-center gap-1 text-xs text-primary hover:underline"
                     data-testid={`button-toggle-origins-${note.id}`}
                   >
                     {showAllOrigins ? (
-                      <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas</>
+                      <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas más</>
                     ) : (
                       <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} recogidas más</>
                     )}
@@ -163,10 +167,15 @@ export function DeliveryNoteCard({
                 )}
               </>
             ) : (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>N/A</span>
-                <ArrowRight className="w-3 h-3" />
-                <span>{note.destination || 'N/A'}</span>
+              <div className="space-y-1">
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="text-xs font-medium w-16 flex-shrink-0">Recogida:</span>
+                  <span>N/A</span>
+                </div>
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="text-xs font-medium w-16 flex-shrink-0">Entrega:</span>
+                  <span>{note.destination || 'N/A'}</span>
+                </div>
               </div>
             )}
           </div>
