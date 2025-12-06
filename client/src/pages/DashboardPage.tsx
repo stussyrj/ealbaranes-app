@@ -1140,26 +1140,23 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="bg-muted/20 rounded-md p-2 space-y-1.5">
-                      <div className="flex items-start gap-2">
-                        <div className="flex flex-col items-center gap-0.5 pt-0.5">
-                          <CircleDot className="w-3.5 h-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                          {(note.pickupOrigins && note.pickupOrigins.length > 1) && (
-                            <div className="w-0.5 h-3 bg-muted-foreground/30 rounded-full" />
-                          )}
-                        </div>
+                    <div className="bg-muted/20 rounded-md p-2">
+                      <div className="flex items-stretch gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-muted-foreground font-medium">
-                            {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
-                          </p>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <CircleDot className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            <p className="text-xs text-muted-foreground font-medium">
+                              {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
+                            </p>
+                          </div>
                           {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
-                            <div className="space-y-1">
+                            <div className="space-y-0.5 pl-4">
                               {note.pickupOrigins.map((origin: PickupOrigin, idx: number) => {
                                 const { name, address } = formatOriginDisplay(origin);
                                 return (
                                   <div key={idx} className="text-sm">
                                     {name && <span className="font-medium">{name}</span>}
-                                    {name && address && <span className="text-muted-foreground"> · </span>}
+                                    {name && address && <br />}
                                     {address && <span className="text-muted-foreground text-xs">{address}</span>}
                                     {!name && !address && <span className="text-muted-foreground">N/A</span>}
                                   </div>
@@ -1167,20 +1164,20 @@ export default function DashboardPage() {
                               })}
                             </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">N/A</p>
+                            <p className="text-sm text-muted-foreground pl-4">N/A</p>
                           )}
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 pl-1">
-                        <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                      </div>
+                        
+                        <div className="flex items-center px-1">
+                          <ArrowRight className="w-4 h-4 text-primary" />
+                        </div>
 
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-muted-foreground font-medium">Entrega</p>
-                          <p className="text-sm font-medium">{note.destination || 'N/A'}</p>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
+                            <p className="text-xs text-muted-foreground font-medium">Entrega</p>
+                          </div>
+                          <p className="text-sm font-medium pl-4">{note.destination || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
@@ -1852,21 +1849,23 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="bg-muted/20 rounded-md p-2 space-y-1 text-xs">
-                      <div className="flex items-start gap-2">
-                        <CircleDot className="w-3 h-3 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div className="bg-muted/20 rounded-md p-2 text-xs">
+                      <div className="flex items-stretch gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-muted-foreground font-medium">
-                            {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
-                          </p>
+                          <div className="flex items-center gap-1 mb-1">
+                            <CircleDot className="w-2.5 h-2.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            <p className="text-muted-foreground font-medium">
+                              {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
+                            </p>
+                          </div>
                           {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
-                            <div className="space-y-0.5">
+                            <div className="space-y-0.5 pl-3">
                               {note.pickupOrigins.slice(0, 2).map((origin: PickupOrigin, idx: number) => {
                                 const { name, address } = formatOriginDisplay(origin);
                                 return (
                                   <div key={idx} className="text-sm">
                                     {name && <span className="font-medium">{name}</span>}
-                                    {name && address && <span className="text-muted-foreground"> · </span>}
+                                    {name && address && <br />}
                                     {address && <span className="text-muted-foreground text-xs">{address}</span>}
                                     {!name && !address && <span className="text-muted-foreground">N/A</span>}
                                   </div>
@@ -1877,18 +1876,20 @@ export default function DashboardPage() {
                               )}
                             </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">N/A</p>
+                            <p className="text-sm text-muted-foreground pl-3">N/A</p>
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center pl-1">
-                        <ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                        
+                        <div className="flex items-center px-1">
+                          <ArrowRight className="w-3 h-3 text-primary" />
+                        </div>
+
                         <div className="flex-1 min-w-0">
-                          <p className="text-muted-foreground font-medium">Entrega</p>
-                          <p className="font-medium">{note.destination || 'N/A'}</p>
+                          <div className="flex items-center gap-1 mb-1">
+                            <MapPin className="w-2.5 h-2.5 text-primary flex-shrink-0" />
+                            <p className="text-muted-foreground font-medium">Entrega</p>
+                          </div>
+                          <p className="font-medium pl-3">{note.destination || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
