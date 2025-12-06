@@ -1208,22 +1208,16 @@ export default function DashboardPage() {
                       {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
                         <>
                           <div className="space-y-1">
-                            <div className="flex items-start gap-2 text-sm">
-                              <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
-                              <span className="flex-1 min-w-0">{formatOrigin(note.pickupOrigins[0])}</span>
-                            </div>
-                            <div className="flex items-start gap-2 text-sm">
-                              <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Entrega:</span>
-                              <span className="flex-1 min-w-0">{note.destination || 'N/A'}</span>
+                            <div className="text-sm">
+                              {formatOrigin(note.pickupOrigins[0])}
                             </div>
                           </div>
                           
                           {note.pickupOrigins.length > 1 && expandedOrigins.has(note.id) && (
-                            <div className="space-y-1 pt-1.5 border-t border-muted-foreground/10">
+                            <div className="space-y-1 pt-1">
                               {note.pickupOrigins.slice(1).map((origin: PickupOrigin, idx: number) => (
-                                <div key={idx + 1} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                  <span className="text-xs font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
-                                  <span className="flex-1 min-w-0">{formatOrigin(origin)}</span>
+                                <div key={idx + 1} className="text-sm">
+                                  {formatOrigin(origin)}
                                 </div>
                               ))}
                             </div>
@@ -1236,23 +1230,16 @@ export default function DashboardPage() {
                               data-testid={`button-toggle-origins-${note.id}`}
                             >
                               {expandedOrigins.has(note.id) ? (
-                                <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas más</>
+                                <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} tramos</>
                               ) : (
-                                <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} recogidas más</>
+                                <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} tramos más</>
                               )}
                             </button>
                           )}
                         </>
                       ) : (
-                        <div className="space-y-1">
-                          <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="text-xs font-medium w-16 flex-shrink-0">Recogida:</span>
-                            <span>N/A</span>
-                          </div>
-                          <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="text-xs font-medium w-16 flex-shrink-0">Entrega:</span>
-                            <span>{note.destination || 'N/A'}</span>
-                          </div>
+                        <div className="text-sm text-muted-foreground">
+                          Sin ruta definida
                         </div>
                       )}
                     </div>
