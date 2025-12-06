@@ -4,11 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PickupOrigin } from "@shared/schema";
 
-// Helper to format a route as "Recogida: X → Entrega: Y"
-const formatRouteText = (origin: PickupOrigin): string => {
+// Helper to format a route as "Recogida: X → Entrega: Y" with styled labels
+const RouteDisplay = ({ origin }: { origin: PickupOrigin }) => {
   const from = origin.name || 'N/A';
   const to = origin.address || 'N/A';
-  return `Recogida: ${from} → Entrega: ${to}`;
+  return (
+    <span>
+      <span className="text-muted-foreground">Recogida:</span> {from} <span className="text-muted-foreground">→</span> <span className="text-muted-foreground">Entrega:</span> {to}
+    </span>
+  );
 };
 
 interface DeliveryNoteCardProps {
@@ -131,7 +135,7 @@ export function DeliveryNoteCard({
               <>
                 <div className="space-y-1">
                   <div className="text-sm">
-                    {formatRouteText(note.pickupOrigins[0])}
+                    <RouteDisplay origin={note.pickupOrigins[0]} />
                   </div>
                 </div>
                 
@@ -139,7 +143,7 @@ export function DeliveryNoteCard({
                   <div className="space-y-1 pt-1">
                     {note.pickupOrigins.slice(1).map((origin, idx) => (
                       <div key={idx + 1} className="text-sm">
-                        {formatRouteText(origin)}
+                        <RouteDisplay origin={origin} />
                       </div>
                     ))}
                   </div>

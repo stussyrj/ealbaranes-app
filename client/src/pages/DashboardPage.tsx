@@ -105,8 +105,19 @@ export default function DashboardPage() {
     return null;
   };
   
-  // Helper to format a single origin display
-  const formatOrigin = (origin: PickupOrigin): string => {
+  // Helper to format a single origin display as JSX with styled labels
+  const RouteDisplay = ({ origin }: { origin: PickupOrigin }) => {
+    const from = origin.name || 'N/A';
+    const to = origin.address || 'N/A';
+    return (
+      <span>
+        <span className="text-muted-foreground">Recogida:</span> {from} <span className="text-muted-foreground">→</span> <span className="text-muted-foreground">Entrega:</span> {to}
+      </span>
+    );
+  };
+  
+  // Keep string version for PDF generation
+  const formatOriginString = (origin: PickupOrigin): string => {
     const from = origin.name || 'N/A';
     const to = origin.address || 'N/A';
     return `Recogida: ${from} → Entrega: ${to}`;
@@ -115,9 +126,9 @@ export default function DashboardPage() {
   // Helper to format multiple origins compactly
   const formatOrigins = (origins: PickupOrigin[] | null | undefined, maxDisplay: number = 2): string => {
     if (!origins || origins.length === 0) return 'N/A';
-    if (origins.length === 1) return formatOrigin(origins[0]);
-    if (origins.length <= maxDisplay) return origins.map(o => formatOrigin(o)).join(', ');
-    return `${origins.slice(0, maxDisplay).map(o => formatOrigin(o)).join(', ')} (+${origins.length - maxDisplay})`;
+    if (origins.length === 1) return formatOriginString(origins[0]);
+    if (origins.length <= maxDisplay) return origins.map(o => formatOriginString(o)).join(', ');
+    return `${origins.slice(0, maxDisplay).map(o => formatOriginString(o)).join(', ')} (+${origins.length - maxDisplay})`;
   };
   
   // Helper to format a single origin for structured display
@@ -130,7 +141,7 @@ export default function DashboardPage() {
   
   const formatOriginsForPdf = (origins: PickupOrigin[] | null | undefined): string => {
     if (!origins || origins.length === 0) return 'N/A';
-    return origins.map(o => formatOrigin(o)).join('\n');
+    return origins.map(o => formatOriginString(o)).join('\n');
   };
 
   const previewDeliveryNote = (photo: string) => {
@@ -1209,7 +1220,7 @@ export default function DashboardPage() {
                         <>
                           <div className="space-y-1">
                             <div className="text-sm">
-                              {formatOrigin(note.pickupOrigins[0])}
+                              <RouteDisplay origin={note.pickupOrigins[0]} />
                             </div>
                           </div>
                           
@@ -1217,7 +1228,7 @@ export default function DashboardPage() {
                             <div className="space-y-1 pt-1">
                               {note.pickupOrigins.slice(1).map((origin: PickupOrigin, idx: number) => (
                                 <div key={idx + 1} className="text-sm">
-                                  {formatOrigin(origin)}
+                                  <RouteDisplay origin={origin} />
                                 </div>
                               ))}
                             </div>
@@ -1883,19 +1894,15 @@ export default function DashboardPage() {
                     <div className="bg-muted/20 rounded-md p-2 space-y-1 text-xs">
                       {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
                         <>
-                          <div className="flex items-center gap-2">
-                            <span className="flex-1 min-w-0 truncate">{formatOrigin(note.pickupOrigins[0])}</span>
-                            <ArrowRight className="w-2.5 h-2.5 text-primary flex-shrink-0" />
-                            <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                          <div>
+                            <RouteDisplay origin={note.pickupOrigins[0]} />
                           </div>
                           
                           {note.pickupOrigins.length > 1 && expandedOrigins.has(note.id) && (
-                            <div className="space-y-1 pt-1 border-t border-muted-foreground/10">
+                            <div className="space-y-1 pt-1">
                               {note.pickupOrigins.slice(1).map((origin: PickupOrigin, idx: number) => (
-                                <div key={idx + 1} className="flex items-center gap-2 text-muted-foreground">
-                                  <span className="flex-1 min-w-0 truncate">{formatOrigin(origin)}</span>
-                                  <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
-                                  <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                                <div key={idx + 1}>
+                                  <RouteDisplay origin={origin} />
                                 </div>
                               ))}
                             </div>
@@ -1916,10 +1923,8 @@ export default function DashboardPage() {
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <span>N/A</span>
-                          <ArrowRight className="w-2.5 h-2.5" />
-                          <span>{note.destination || 'N/A'}</span>
+                        <div className="text-muted-foreground">
+                          Sin ruta definida
                         </div>
                       )}
                     </div>
