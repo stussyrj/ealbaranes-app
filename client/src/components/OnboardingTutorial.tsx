@@ -168,9 +168,13 @@ export function OnboardingTutorial({ isOpen, onComplete, userType }: OnboardingT
     }
   };
 
+  const handleSkip = () => {
+    onComplete();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="max-w-lg" hideCloseButton onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader className="text-center">
           <div className="flex justify-center mb-4">
             {step.icon}
@@ -203,7 +207,17 @@ export function OnboardingTutorial({ isOpen, onComplete, userType }: OnboardingT
           </div>
           
           <div className="flex gap-2">
-            {currentStep > 0 && (
+            {currentStep === 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSkip}
+                className="text-muted-foreground"
+                data-testid="button-skip-tutorial"
+              >
+                Saltar
+              </Button>
+            ) : (
               <Button
                 variant="outline"
                 size="sm"
