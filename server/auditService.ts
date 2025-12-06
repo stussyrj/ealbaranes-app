@@ -15,7 +15,8 @@ export type AuditAction =
   | 'delete_worker'
   | 'create_quote'
   | 'update_quote_status'
-  | 'assign_worker_to_quote';
+  | 'assign_worker_to_quote'
+  | 'tenant_deleted';
 
 export type AuditEntityType = 
   | 'user'

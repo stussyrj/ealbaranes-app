@@ -665,4 +665,89 @@ export function setupAuth(app: Express) {
 
     res.json({ success: true });
   });
+
+  app.delete("/api/admin/company", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).json({ error: "No autorizado" });
+    }
+
+    const user = req.user;
+    const tenantId = user.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Empresa no encontrada" });
+    }
+
+    const { password, confirmText } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({ error: "La contraseña es requerida para confirmar esta acción" });
+    }
+    
+    if (!confirmText || confirmText !== "ELIMINAR") {
+      return res.status(400).json({ error: "Debes escribir ELIMINAR para confirmar" });
+    }
+
+    const isPasswordValid = await comparePasswords(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Contraseña incorrecta" });
+    }
+
+    try {
+      const deletionDetails = { 
+        username: user.username, 
+        email: user.email,
+        companyDeleted: true,
+        deletedAt: new Date().toISOString()
+      };
+
+      await storage.deleteTenantCascade(tenantId);
+
+      console.log(`[auth] Successfully deleted tenant ${tenantId} and all its data`);
+      console.log(`[auth] Deletion details:`, JSON.stringify(deletionDetails));
+
+      // Wrap logout and session destruction in a promise to ensure completion before response
+      let sessionCleanupSuccess = true;
+      let sessionCleanupError: Error | null = null;
+      try {
+        await new Promise<void>((resolve, reject) => {
+          req.logout((err) => {
+            if (err) {
+              console.error("[auth] Error during logout after company deletion:", err);
+              sessionCleanupSuccess = false;
+              sessionCleanupError = err;
+            }
+            req.session.destroy((sessionErr) => {
+              if (sessionErr) {
+                console.error("[auth] Error destroying session after company deletion:", sessionErr);
+                sessionCleanupSuccess = false;
+                if (!sessionCleanupError) sessionCleanupError = sessionErr;
+              }
+              res.clearCookie('connect.sid');
+              resolve();
+            });
+          });
+        });
+      } catch (logoutErr) {
+        console.error("[auth] Session cleanup error:", logoutErr);
+        sessionCleanupSuccess = false;
+        sessionCleanupError = logoutErr as Error;
+        res.clearCookie('connect.sid');
+      }
+
+      // Return 200 with metadata indicating success status
+      // Using 200 since the primary operation (data deletion) succeeded
+      // sessionCleared indicates whether session cleanup was also successful
+      res.status(200).json({ 
+        success: true, 
+        dataDeleted: true,
+        sessionCleared: sessionCleanupSuccess,
+        message: sessionCleanupSuccess 
+          ? "Empresa y todos sus datos han sido eliminados" 
+          : "Los datos fueron eliminados. Por favor cierra el navegador para completar el cierre de sesión."
+      });
+    } catch (error) {
+      console.error("[auth] Error deleting company:", error);
+      res.status(500).json({ error: "Error al eliminar la empresa. Por favor, intenta de nuevo." });
+    }
+  });
 }

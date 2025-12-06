@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -15,7 +16,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Key, Trash2, Users, Shield, User } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Plus, Key, Trash2, Users, Shield, User, AlertTriangle } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -28,14 +40,18 @@ interface UserData {
 
 export default function UserManagement() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isDeleteCompanyDialogOpen, setIsDeleteCompanyDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [changePassword, setChangePassword] = useState("");
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<UserData[]>({
     queryKey: ["/api/admin/users"],
@@ -114,6 +130,50 @@ export default function UserManagement() {
     },
   });
 
+  const deleteCompanyMutation = useMutation({
+    mutationFn: async ({ password, confirmText }: { password: string; confirmText: string }) => {
+      const res = await apiRequest("DELETE", "/api/admin/company", { password, confirmText });
+      const data = await res.json() as { 
+        success: boolean; 
+        message?: string; 
+        sessionCleared: boolean;
+        dataDeleted?: boolean;
+        error?: string;
+      };
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Error al eliminar la empresa");
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      resetDeleteCompanyForm();
+      queryClient.clear();
+      
+      toast({
+        title: "Empresa eliminada",
+        description: data.message || "Tu empresa y todos sus datos han sido eliminados permanentemente",
+      });
+      
+      // If session cleanup failed, force hard redirect to ensure clean browser state
+      // Otherwise use SPA navigation
+      if (!data.sessionCleared) {
+        window.location.href = "/login";
+      } else {
+        setLocation("/login");
+      }
+    },
+    onError: (error: Error) => {
+      setDeleteConfirmPassword("");
+      setDeleteConfirmText("");
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar la empresa",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateUser = () => {
     if (!newUsername.trim() || !newPassword.trim()) {
       toast({
@@ -148,6 +208,35 @@ export default function UserManagement() {
     if (confirm(`¿Estás seguro de eliminar al usuario "${user.username}"?`)) {
       deleteUserMutation.mutate(user.id);
     }
+  };
+
+  const handleDeleteCompany = () => {
+    if (!deleteConfirmPassword.trim()) {
+      toast({
+        title: "Error",
+        description: "Debes introducir tu contraseña",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (deleteConfirmText !== "ELIMINAR") {
+      toast({
+        title: "Error",
+        description: "Debes escribir ELIMINAR para confirmar",
+        variant: "destructive",
+      });
+      return;
+    }
+    deleteCompanyMutation.mutate({ 
+      password: deleteConfirmPassword, 
+      confirmText: deleteConfirmText 
+    });
+  };
+
+  const resetDeleteCompanyForm = () => {
+    setDeleteConfirmPassword("");
+    setDeleteConfirmText("");
+    setIsDeleteCompanyDialogOpen(false);
   };
 
   const nonAdminUsers = users.filter(u => !u.isAdmin);
@@ -336,6 +425,102 @@ export default function UserManagement() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Zona de Peligro
+              </CardTitle>
+              <CardDescription>
+                Acciones irreversibles que afectan a toda la empresa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <h4 className="font-medium text-destructive mb-2">Eliminar Empresa</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Esta acción eliminará permanentemente tu empresa y todos los datos asociados: 
+                  albaranes, trabajadores, usuarios y cualquier otra información. 
+                  Esta acción no se puede deshacer.
+                </p>
+                <Dialog open={isDeleteCompanyDialogOpen} onOpenChange={(open) => {
+                  if (!open) resetDeleteCompanyForm();
+                  setIsDeleteCompanyDialogOpen(open);
+                }}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="destructive"
+                      data-testid="button-delete-company"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar Empresa
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        Confirmar Eliminación de Empresa
+                      </DialogTitle>
+                      <DialogDescription>
+                        Esta acción es irreversible. Se eliminarán permanentemente:
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
+                        <li>Todos los albaranes y sus fotos/firmas</li>
+                        <li>Todos los trabajadores y usuarios</li>
+                        <li>Todo el historial y registros</li>
+                        <li>La cuenta de empresa</li>
+                      </ul>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="delete-password">Tu contraseña</Label>
+                          <Input
+                            id="delete-password"
+                            type="password"
+                            value={deleteConfirmPassword}
+                            onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+                            placeholder="Introduce tu contraseña"
+                            data-testid="input-delete-password"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="delete-confirm">
+                            Escribe <span className="font-bold text-destructive">ELIMINAR</span> para confirmar
+                          </Label>
+                          <Input
+                            id="delete-confirm"
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                            placeholder="ELIMINAR"
+                            data-testid="input-delete-confirm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={resetDeleteCompanyForm}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteCompany}
+                        disabled={deleteCompanyMutation.isPending || deleteConfirmText !== "ELIMINAR"}
+                        data-testid="button-confirm-delete-company"
+                      >
+                        {deleteCompanyMutation.isPending ? "Eliminando..." : "Eliminar Permanentemente"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardContent>
           </Card>
         </div>

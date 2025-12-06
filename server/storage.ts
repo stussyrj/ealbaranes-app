@@ -11,10 +11,16 @@ import {
   type InsertDeliveryNote,
   deliveryNotes as deliveryNotesTable,
   users as usersTable,
+  tenants as tenantsTable,
+  workers as workersTable,
+  quotes as quotesTable,
+  vehicleTypes as vehicleTypesTable,
+  verificationTokens as verificationTokensTable,
+  auditLogs as auditLogsTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, sql, max } from "drizzle-orm";
+import { eq, and, sql, max, inArray } from "drizzle-orm";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { Pool } from "@neondatabase/serverless";
@@ -33,6 +39,7 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   invalidateUserCache(id: string): void;
+  deleteTenantCascade(tenantId: string): Promise<void>;
   
   getWorkers(tenantId: string, includeInactive?: boolean): Promise<Worker[]>;
   getWorker(id: string): Promise<Worker | undefined>;
@@ -672,6 +679,111 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error("Error fetching delivery note suggestions:", error);
       return { clients: [], originNames: [], originAddresses: [], destinations: [] };
+    }
+  }
+
+  async deleteTenantCascade(tenantId: string): Promise<void> {
+    console.log(`[storage] Starting cascade deletion for tenant ${tenantId}`);
+    
+    // Get all user IDs for this tenant BEFORE the transaction
+    const tenantUsers = await db.select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.tenantId, tenantId));
+    const userIds = tenantUsers.map(u => u.id);
+    
+    // Flag to ensure cache pruning only happens after successful commit
+    let transactionCommitted = false;
+    
+    try {
+      // Use a transaction to ensure atomicity - all or nothing
+      // Note: Session cleanup is included in transaction for consistency
+      await db.transaction(async (tx) => {
+        // 1. Delete audit logs for this tenant
+        await tx.delete(auditLogsTable).where(eq(auditLogsTable.tenantId, tenantId));
+        console.log(`[storage] Deleted audit logs for tenant ${tenantId}`);
+        
+        // 2. Delete delivery notes for this tenant
+        await tx.delete(deliveryNotesTable).where(eq(deliveryNotesTable.tenantId, tenantId));
+        console.log(`[storage] Deleted delivery notes for tenant ${tenantId}`);
+        
+        // 3. Delete quotes for this tenant
+        await tx.delete(quotesTable).where(eq(quotesTable.tenantId, tenantId));
+        console.log(`[storage] Deleted quotes for tenant ${tenantId}`);
+        
+        // 4. Delete workers for this tenant
+        await tx.delete(workersTable).where(eq(workersTable.tenantId, tenantId));
+        console.log(`[storage] Deleted workers for tenant ${tenantId}`);
+        
+        // 5. Delete vehicle types for this tenant
+        await tx.delete(vehicleTypesTable).where(eq(vehicleTypesTable.tenantId, tenantId));
+        console.log(`[storage] Deleted vehicle types for tenant ${tenantId}`);
+        
+        // 6. Delete verification tokens for tenant users
+        if (userIds.length > 0) {
+          await tx.delete(verificationTokensTable).where(inArray(verificationTokensTable.userId, userIds));
+          console.log(`[storage] Deleted verification tokens for ${userIds.length} users`);
+        }
+        
+        // 7. Delete sessions for tenant users (within transaction using parameterized queries)
+        if (userIds.length > 0) {
+          // Delete sessions one by one using parameterized queries for SQL injection safety
+          // Each individual delete uses a parameterized query with proper escaping
+          for (const userId of userIds) {
+            await tx.execute(sql`DELETE FROM user_sessions WHERE sess::jsonb->'passport'->>'user' = ${userId}`);
+          }
+          console.log(`[storage] Deleted sessions for ${userIds.length} users`);
+        }
+        
+        // 8. Delete all users for this tenant
+        await tx.delete(usersTable).where(eq(usersTable.tenantId, tenantId));
+        console.log(`[storage] Deleted users for tenant ${tenantId}`);
+        
+        // 9. Finally, delete the tenant itself
+        await tx.delete(tenantsTable).where(eq(tenantsTable.id, tenantId));
+        console.log(`[storage] Deleted tenant ${tenantId}`);
+      });
+      
+      // Transaction completed successfully
+      transactionCommitted = true;
+    } catch (error) {
+      console.error(`[storage] Transaction failed for tenant ${tenantId}:`, error);
+      throw error; // Re-throw to propagate to caller
+    }
+    
+    // ONLY clean up in-memory caches if transaction was committed successfully
+    if (transactionCommitted) {
+      // Only delete tenant-specific data, preserve global defaults (tenantId = null)
+      const workersToDelete = Array.from(this.workers.values()).filter(w => w.tenantId === tenantId);
+      workersToDelete.forEach(w => this.workers.delete(w.id));
+      
+      const vehiclesToDelete = Array.from(this.vehicleTypes.values()).filter(v => v.tenantId === tenantId);
+      vehiclesToDelete.forEach(v => this.vehicleTypes.delete(v.id));
+      
+      const quotesToDelete = Array.from(this.quotes.values()).filter(q => q.tenantId === tenantId);
+      quotesToDelete.forEach(q => this.quotes.delete(q.id));
+      
+      userIds.forEach(id => this.users.delete(id));
+      
+      // Re-seed global defaults (tenantId = null) to ensure they're always present
+      // This provides a safeguard against any accidental erosion of baseline data
+      this.ensureDefaultsExist();
+      
+      console.log(`[storage] Successfully completed cascade deletion for tenant ${tenantId}`);
+    }
+  }
+  
+  private ensureDefaultsExist(): void {
+    // Re-seed default vehicle types if missing (complete records)
+    for (const vt of defaultVehicleTypes) {
+      if (!this.vehicleTypes.has(vt.id)) {
+        this.vehicleTypes.set(vt.id, { ...vt });
+      }
+    }
+    // Re-seed default workers if missing (complete records with fresh timestamps)
+    for (const w of defaultWorkers) {
+      if (!this.workers.has(w.id)) {
+        this.workers.set(w.id, { ...w, createdAt: new Date() });
+      }
     }
   }
 }
