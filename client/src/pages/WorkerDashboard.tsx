@@ -471,9 +471,10 @@ export default function WorkerDashboard() {
   };
 
   const renderDeliveryNoteCard = (note: DeliveryNote) => {
-    const getStatusColor = (hasPhoto?: boolean) => {
-      return hasPhoto 
-        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+    const noteIsFullySigned = isFullySigned(note);
+    const getStatusColor = (fullySigned: boolean) => {
+      return fullySigned 
+        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
         : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300";
     };
 
@@ -486,8 +487,8 @@ export default function WorkerDashboard() {
                 <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded" data-testid={`note-number-${note.id}`}>
                   Albarán #{(note as any).noteNumber || '—'}
                 </span>
-                <Badge className={`${getStatusColor(!!note.photo)}`} data-testid={`badge-status-${note.id}`}>
-                  {note.photo ? "✓ Firmado" : "Pendiente"}
+                <Badge className={`${getStatusColor(noteIsFullySigned)}`} data-testid={`badge-status-${note.id}`}>
+                  {noteIsFullySigned ? "✓ Firmado" : getMissingSignatureInfo(note) || "Pendiente"}
                 </Badge>
               </div>
               <CardTitle className="text-lg line-clamp-2">
@@ -809,10 +810,10 @@ export default function WorkerDashboard() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                      {deliveryNotes.filter(n => n.status === "pending").length}
+                      {deliveryNotes.filter(n => !isFullySigned(n)).length}
                     </div>
                     <div className="w-full text-center text-sm font-medium">
-                      Ver {deliveryNotes.filter(n => n.status === "pending").length} Albaranes Pendientes
+                      Ver {deliveryNotes.filter(n => !isFullySigned(n)).length} Albaranes Pendientes
                     </div>
                   </CardContent>
                 </Card>
@@ -822,11 +823,11 @@ export default function WorkerDashboard() {
                     <CardTitle className="text-sm text-muted-foreground">Albaranes Firmados</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                      {deliveryNotes.filter(n => n.status !== "pending").length}
+                    <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                      {deliveryNotes.filter(n => isFullySigned(n)).length}
                     </div>
                     <div className="w-full text-center text-sm font-medium">
-                      Ver {deliveryNotes.filter(n => n.status !== "pending").length} Albaranes Firmados
+                      Ver {deliveryNotes.filter(n => isFullySigned(n)).length} Albaranes Firmados
                     </div>
                   </CardContent>
                 </Card>
@@ -845,7 +846,7 @@ export default function WorkerDashboard() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            {(albaranesModalType === "pending" ? deliveryNotes.filter(n => n.status === "pending") : deliveryNotes.filter(n => n.status !== "pending")).map((note: DeliveryNote) => (
+            {(albaranesModalType === "pending" ? deliveryNotes.filter(n => !isFullySigned(n)) : deliveryNotes.filter(n => isFullySigned(n))).map((note: DeliveryNote) => (
               <div key={note.id} className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm">
                 {note.photo && (
                   <div className="w-full h-32 sm:h-40 bg-muted">
@@ -858,14 +859,14 @@ export default function WorkerDashboard() {
                     <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded" data-testid={`modal-note-number-${note.id}`}>
                       Albarán #{(note as any).noteNumber || '—'}
                     </span>
-                    <Badge className={note.photo 
+                    <Badge className={isFullySigned(note) 
                       ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
                       : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
                     }>
-                      {note.photo ? (
+                      {isFullySigned(note) ? (
                         <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
                       ) : (
-                        <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
+                        <><Clock className="w-3 h-3 mr-1" /> {getMissingSignatureInfo(note)}</>
                       )}
                     </Badge>
                   </div>
