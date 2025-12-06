@@ -778,6 +778,9 @@ export default function DashboardPage() {
                     pdf.text('Foto del albarán firmado:', margin, yPos);
                     yPos += 5;
                     
+                    const signatureHeight = note.signature ? 35 : 0;
+                    const photoMaxHeight = pageHeight - yPos - margin - 20 - signatureHeight;
+                    
                     try {
                       const response = await fetch(note.photo);
                       const blob = await response.blob();
@@ -789,10 +792,41 @@ export default function DashboardPage() {
                       
                       const imgFormat = base64.includes('data:image/png') ? 'PNG' : 'JPEG';
                       const imgWidth = pageWidth - (margin * 2);
-                      const imgHeight = pageHeight - yPos - margin - 15;
-                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight, undefined, 'MEDIUM');
+                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, photoMaxHeight, undefined, 'MEDIUM');
+                      yPos += photoMaxHeight + 5;
                     } catch (imgError) {
                       pdf.text('(Imagen no disponible)', margin, yPos + 10);
+                      yPos += 15;
+                    }
+                    
+                    if (note.signature) {
+                      pdf.setFont('helvetica', 'bold');
+                      pdf.setFontSize(9);
+                      pdf.setTextColor(0, 0, 0);
+                      pdf.text('Firma digital del cliente:', margin, yPos);
+                      yPos += 4;
+                      
+                      try {
+                        const sigResponse = await fetch(note.signature);
+                        const sigBlob = await sigResponse.blob();
+                        const sigBase64 = await new Promise<string>((resolve) => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => resolve(reader.result as string);
+                          reader.readAsDataURL(sigBlob);
+                        });
+                        
+                        const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                        const sigWidth = 50;
+                        const sigImgHeight = 25;
+                        pdf.setFillColor(255, 255, 255);
+                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'F');
+                        pdf.setDrawColor(200, 200, 200);
+                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'S');
+                        pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 2, sigWidth, sigImgHeight, undefined, 'MEDIUM');
+                      } catch (sigError) {
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.text('(Firma no disponible)', margin, yPos + 10);
+                      }
                     }
                     
                     pdf.setFontSize(8);
@@ -913,6 +947,9 @@ export default function DashboardPage() {
                     pdf.text('Foto del albarán cobrado:', margin, yPos);
                     yPos += 5;
                     
+                    const cobradoSignatureHeight = note.signature ? 35 : 0;
+                    const cobradoPhotoMaxHeight = pageHeight - yPos - margin - 20 - cobradoSignatureHeight;
+                    
                     try {
                       let base64 = note.photo;
                       if (!base64.startsWith('data:image')) {
@@ -927,10 +964,44 @@ export default function DashboardPage() {
                       
                       const imgFormat = base64.includes('data:image/png') ? 'PNG' : 'JPEG';
                       const imgWidth = pageWidth - (margin * 2);
-                      const imgHeight = pageHeight - yPos - margin - 15;
-                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight, undefined, 'MEDIUM');
+                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, cobradoPhotoMaxHeight, undefined, 'MEDIUM');
+                      yPos += cobradoPhotoMaxHeight + 5;
                     } catch (imgError) {
                       pdf.text('(Imagen no disponible)', margin, yPos + 10);
+                      yPos += 15;
+                    }
+                    
+                    if (note.signature) {
+                      pdf.setFont('helvetica', 'bold');
+                      pdf.setFontSize(9);
+                      pdf.setTextColor(0, 0, 0);
+                      pdf.text('Firma digital del cliente:', margin, yPos);
+                      yPos += 4;
+                      
+                      try {
+                        let sigBase64 = note.signature;
+                        if (!sigBase64.startsWith('data:image')) {
+                          const sigResponse = await fetch(note.signature);
+                          const sigBlob = await sigResponse.blob();
+                          sigBase64 = await new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.readAsDataURL(sigBlob);
+                          });
+                        }
+                        
+                        const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                        const sigWidth = 50;
+                        const sigImgHeight = 25;
+                        pdf.setFillColor(255, 255, 255);
+                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'F');
+                        pdf.setDrawColor(200, 200, 200);
+                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'S');
+                        pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 2, sigWidth, sigImgHeight, undefined, 'MEDIUM');
+                      } catch (sigError) {
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.text('(Firma no disponible)', margin, yPos + 10);
+                      }
                     }
                     
                     pdf.setFontSize(8);
