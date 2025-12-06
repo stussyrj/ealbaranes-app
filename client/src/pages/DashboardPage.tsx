@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, MapPin, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, CircleDot } from "lucide-react";
+import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +74,22 @@ export default function DashboardPage() {
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const [viewSignatureOpen, setViewSignatureOpen] = useState(false);
   const [signatureToView, setSignatureToView] = useState<string | null>(null);
+  
+  // State for tracking which notes have their origins expanded
+  const [expandedOrigins, setExpandedOrigins] = useState<Set<string>>(new Set());
+  
+  // Toggle expanded origins for a note
+  const toggleExpandedOrigins = (noteId: string) => {
+    setExpandedOrigins(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(noteId)) {
+        newSet.delete(noteId);
+      } else {
+        newSet.add(noteId);
+      }
+      return newSet;
+    });
+  };
   
   // Helper function to determine if a note is fully signed (has both photo and signature)
   const isFullySigned = (note: any) => note.photo && note.signature;
@@ -1140,84 +1156,67 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="bg-muted/20 rounded-md p-2">
-                      <div className="flex items-stretch gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <CircleDot className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
-                            <p className="text-xs text-muted-foreground font-medium">
-                              {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
-                            </p>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold">{note.clientName || 'Cliente N/A'}</p>
+                      <p className="text-xs text-muted-foreground">({note.workerName || 'Trabajador'})</p>
+                    </div>
+
+                    <div className="bg-muted/20 rounded-md p-2 space-y-1">
+                      {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
+                        <>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="flex-1 min-w-0 truncate">{formatOrigin(note.pickupOrigins[0])}</span>
+                            <ArrowRight className="w-3 h-3 text-primary flex-shrink-0" />
+                            <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
                           </div>
-                          {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
-                            <div className="space-y-0.5 pl-4">
-                              {note.pickupOrigins.map((origin: PickupOrigin, idx: number) => {
-                                const { name, address } = formatOriginDisplay(origin);
-                                return (
-                                  <div key={idx} className="text-sm">
-                                    {name && <span className="font-medium">{name}</span>}
-                                    {name && address && <br />}
-                                    {address && <span className="text-muted-foreground text-xs">{address}</span>}
-                                    {!name && !address && <span className="text-muted-foreground">N/A</span>}
-                                  </div>
-                                );
-                              })}
+                          
+                          {note.pickupOrigins.length > 1 && expandedOrigins.has(note.id) && (
+                            <div className="space-y-1 pt-1 border-t border-muted-foreground/10">
+                              {note.pickupOrigins.slice(1).map((origin: PickupOrigin, idx: number) => (
+                                <div key={idx + 1} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <span className="flex-1 min-w-0 truncate">{formatOrigin(origin)}</span>
+                                  <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                                  <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                                </div>
+                              ))}
                             </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground pl-4">N/A</p>
                           )}
+                          
+                          {note.pickupOrigins.length > 1 && (
+                            <button
+                              onClick={() => toggleExpandedOrigins(note.id)}
+                              className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                              data-testid={`button-toggle-origins-${note.id}`}
+                            >
+                              {expandedOrigins.has(note.id) ? (
+                                <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas</>
+                              ) : (
+                                <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} recogidas más</>
+                              )}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>N/A</span>
+                          <ArrowRight className="w-3 h-3" />
+                          <span>{note.destination || 'N/A'}</span>
                         </div>
-                        
-                        <div className="flex items-center px-1">
-                          <ArrowRight className="w-4 h-4 text-primary" />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
-                            <p className="text-xs text-muted-foreground font-medium">Entrega</p>
-                          </div>
-                          <p className="text-sm font-medium pl-4">{note.destination || 'N/A'}</p>
-                        </div>
-                      </div>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                      <div className="flex items-start gap-2">
-                        <User className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">Cliente</p>
-                          <p className="text-sm font-medium truncate">{note.clientName || 'N/A'}</p>
-                        </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">Vehículo</p>
+                        <p className="font-medium truncate">{note.vehicleType || 'N/A'}</p>
                       </div>
-                      <div className="flex items-start gap-2">
-                        <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">Vehículo</p>
-                          <p className="text-sm font-medium truncate">{note.vehicleType || 'N/A'}</p>
-                        </div>
+                      <div>
+                        <p className="text-muted-foreground">Fecha</p>
+                        <p className="font-medium">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
                       </div>
-                      <div className="flex items-start gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">Fecha</p>
-                          <p className="text-sm font-medium">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Clock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">Hora</p>
-                          <p className="text-sm font-medium">{note.time || 'N/A'}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <User className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">Trabajador</p>
-                        <p className="text-sm font-medium truncate">{note.workerName || 'Desconocido'}</p>
+                      <div>
+                        <p className="text-muted-foreground">Hora</p>
+                        <p className="font-medium">{note.time || 'N/A'}</p>
                       </div>
                     </div>
 
@@ -1849,80 +1848,64 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="bg-muted/20 rounded-md p-2 text-xs">
-                      <div className="flex items-stretch gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1 mb-1">
-                            <CircleDot className="w-2.5 h-2.5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                            <p className="text-muted-foreground font-medium">
-                              {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
-                            </p>
-                          </div>
-                          {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
-                            <div className="space-y-0.5 pl-3">
-                              {note.pickupOrigins.slice(0, 2).map((origin: PickupOrigin, idx: number) => {
-                                const { name, address } = formatOriginDisplay(origin);
-                                return (
-                                  <div key={idx} className="text-sm">
-                                    {name && <span className="font-medium">{name}</span>}
-                                    {name && address && <br />}
-                                    {address && <span className="text-muted-foreground text-xs">{address}</span>}
-                                    {!name && !address && <span className="text-muted-foreground">N/A</span>}
-                                  </div>
-                                );
-                              })}
-                              {note.pickupOrigins.length > 2 && (
-                                <p className="text-muted-foreground text-xs">+{note.pickupOrigins.length - 2} más</p>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground pl-3">N/A</p>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center px-1">
-                          <ArrowRight className="w-3 h-3 text-primary" />
-                        </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold truncate">{note.clientName || 'Cliente N/A'}</p>
+                      <p className="text-xs text-muted-foreground">({note.workerName || 'Trabajador'})</p>
+                    </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1 mb-1">
-                            <MapPin className="w-2.5 h-2.5 text-primary flex-shrink-0" />
-                            <p className="text-muted-foreground font-medium">Entrega</p>
+                    <div className="bg-muted/20 rounded-md p-2 space-y-1 text-xs">
+                      {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="flex-1 min-w-0 truncate">{formatOrigin(note.pickupOrigins[0])}</span>
+                            <ArrowRight className="w-2.5 h-2.5 text-primary flex-shrink-0" />
+                            <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
                           </div>
-                          <p className="font-medium pl-3">{note.destination || 'N/A'}</p>
+                          
+                          {note.pickupOrigins.length > 1 && expandedOrigins.has(note.id) && (
+                            <div className="space-y-1 pt-1 border-t border-muted-foreground/10">
+                              {note.pickupOrigins.slice(1).map((origin: PickupOrigin, idx: number) => (
+                                <div key={idx + 1} className="flex items-center gap-2 text-muted-foreground">
+                                  <span className="flex-1 min-w-0 truncate">{formatOrigin(origin)}</span>
+                                  <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
+                                  <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {note.pickupOrigins.length > 1 && (
+                            <button
+                              onClick={() => toggleExpandedOrigins(note.id)}
+                              className="flex items-center gap-1 text-xs text-primary hover:underline"
+                              data-testid={`button-toggle-origins-grid-${note.id}`}
+                            >
+                              {expandedOrigins.has(note.id) ? (
+                                <><ChevronUp className="w-3 h-3" /> Ocultar</>
+                              ) : (
+                                <><ChevronDown className="w-3 h-3" /> +{note.pickupOrigins.length - 1}</>
+                              )}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <span>N/A</span>
+                          <ArrowRight className="w-2.5 h-2.5" />
+                          <span>{note.destination || 'N/A'}</span>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-start gap-2">
-                        <User className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-muted-foreground">Trabajador</p>
-                          <p className="font-medium truncate">{note.workerName || 'N/A'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Calendar className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-muted-foreground">Fecha</p>
-                          <p className="font-medium">{note.date || 'N/A'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Truck className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-muted-foreground">Cliente</p>
-                          <p className="font-medium truncate">{note.clientName || 'N/A'}</p>
-                        </div>
+                      <div>
+                        <p className="text-muted-foreground">Fecha</p>
+                        <p className="font-medium">{note.date || 'N/A'}</p>
                       </div>
                       {note.waitTime && note.waitTime > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Hourglass className="w-3 h-3 text-amber-500 mt-0.5 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-muted-foreground">T. Espera</p>
-                            <p className="font-medium text-amber-600 dark:text-amber-400">{note.waitTime} min</p>
-                          </div>
+                        <div>
+                          <p className="text-muted-foreground">T. Espera</p>
+                          <p className="font-medium text-amber-600 dark:text-amber-400">{note.waitTime} min</p>
                         </div>
                       )}
                     </div>

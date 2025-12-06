@@ -1,14 +1,15 @@
-import { MapPin, Clock, Truck, User, Calendar, FileText, CheckCircle, Timer, Camera, Edit2, ArrowRight, CircleDot } from "lucide-react";
+import { useState } from "react";
+import { Clock, Truck, User, Calendar, FileText, CheckCircle, Timer, Camera, Edit2, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PickupOrigin } from "@shared/schema";
 
-// Helper to format a single origin for display
-const formatOriginDisplay = (origin: PickupOrigin): { name: string; address: string } => {
-  return {
-    name: origin.name || '',
-    address: origin.address || ''
-  };
+// Helper to format origin text (name or address)
+const formatOriginText = (origin: PickupOrigin): string => {
+  if (origin.name && origin.address) return `${origin.name} (${origin.address})`;
+  if (origin.name) return origin.name;
+  if (origin.address) return origin.address;
+  return 'N/A';
 };
 
 interface DeliveryNoteCardProps {
@@ -48,7 +49,9 @@ export function DeliveryNoteCard({
   onEditClick,
   onAddPhotoClick,
 }: DeliveryNoteCardProps) {
+  const [showAllOrigins, setShowAllOrigins] = useState(false);
   const isSigned = !!note.photo || !!note.signature;
+  const hasMultipleOrigins = note.pickupOrigins && note.pickupOrigins.length > 1;
   
   const formatWaitTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -117,93 +120,71 @@ export function DeliveryNoteCard({
         </div>
 
         <div className="space-y-2">
-          <div className="bg-muted/20 rounded-md p-2">
-            <div className="flex items-stretch gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <CircleDot className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
-                  <p className="text-xs text-muted-foreground font-medium">
-                    {note.pickupOrigins && note.pickupOrigins.length > 1 ? `Recogidas (${note.pickupOrigins.length})` : 'Recogida'}
-                  </p>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">{note.clientName || 'Cliente N/A'}</p>
+            {showWorkerName && (
+              <p className="text-xs text-muted-foreground">({note.workerName || 'Trabajador'})</p>
+            )}
+          </div>
+
+          <div className="bg-muted/20 rounded-md p-2 space-y-1">
+            {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
+              <>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="flex-1 min-w-0 truncate">{formatOriginText(note.pickupOrigins[0])}</span>
+                  <ArrowRight className="w-3 h-3 text-primary flex-shrink-0" />
+                  <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
                 </div>
-                {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
-                  <div className="space-y-0.5 pl-4">
-                    {note.pickupOrigins.map((origin, idx) => {
-                      const { name, address } = formatOriginDisplay(origin);
-                      return (
-                        <div key={idx} className="text-sm">
-                          {name && <span className="font-medium">{name}</span>}
-                          {name && address && <br />}
-                          {address && <span className="text-muted-foreground text-xs">{address}</span>}
-                          {!name && !address && <span className="text-muted-foreground">N/A</span>}
-                        </div>
-                      );
-                    })}
+                
+                {hasMultipleOrigins && showAllOrigins && (
+                  <div className="space-y-1 pt-1 border-t border-muted-foreground/10">
+                    {note.pickupOrigins.slice(1).map((origin, idx) => (
+                      <div key={idx + 1} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="flex-1 min-w-0 truncate">{formatOriginText(origin)}</span>
+                        <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                        <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground pl-4">N/A</p>
                 )}
+                
+                {hasMultipleOrigins && (
+                  <button
+                    onClick={() => setShowAllOrigins(!showAllOrigins)}
+                    className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                    data-testid={`button-toggle-origins-${note.id}`}
+                  >
+                    {showAllOrigins ? (
+                      <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas</>
+                    ) : (
+                      <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} recogidas más</>
+                    )}
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>N/A</span>
+                <ArrowRight className="w-3 h-3" />
+                <span>{note.destination || 'N/A'}</span>
               </div>
-              
-              <div className="flex items-center px-1">
-                <ArrowRight className="w-4 h-4 text-primary" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
-                  <p className="text-xs text-muted-foreground font-medium">Entrega</p>
-                </div>
-                <p className="text-sm font-medium pl-4">{note.destination || 'N/A'}</p>
-              </div>
-            </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-start gap-2">
-              <User className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Cliente</p>
-                <p className="text-sm font-medium truncate">{note.clientName || 'N/A'}</p>
-              </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <p className="text-muted-foreground">Vehículo</p>
+              <p className="font-medium truncate">{note.vehicleType || 'N/A'}</p>
             </div>
-            
-            <div className="flex items-start gap-2">
-              <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Vehículo</p>
-                <p className="text-sm font-medium truncate">{note.vehicleType || 'N/A'}</p>
-              </div>
+            <div>
+              <p className="text-muted-foreground">Fecha</p>
+              <p className="font-medium">{note.date ? formatDate(note.date) : 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Hora</p>
+              <p className="font-medium">{note.time || 'N/A'}</p>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-start gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Fecha</p>
-                <p className="text-sm font-medium">{note.date ? formatDate(note.date) : 'N/A'}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Hora</p>
-                <p className="text-sm font-medium">{note.time || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-
-          {showWorkerName && (
-            <div className="flex items-start gap-2">
-              <User className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Trabajador</p>
-                <p className="text-sm font-medium truncate">{note.workerName || 'Desconocido'}</p>
-              </div>
-            </div>
-          )}
 
           {note.waitTime && note.waitTime > 0 && (
             <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-md p-2">
