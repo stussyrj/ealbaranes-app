@@ -49,6 +49,8 @@ export default function DashboardPage() {
   const [albaranesModalType, setAlbaranesModalType] = useState<"pending" | "signed">("pending");
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadDateFrom, setDownloadDateFrom] = useState<string>("");
+  const [downloadDateTo, setDownloadDateTo] = useState<string>("");
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
   const [formData, setFormData] = useState({
     clientName: "",
@@ -395,6 +397,60 @@ export default function DashboardPage() {
   const totalSignedCount = signedQuotes.length + signedDeliveryNotes.length;
   const totalPendingCount = pendingQuotes.length + pendingDeliveryNotes.length;
   
+  // Summary counters: Today, This Month, Total (all time)
+  // Helper to normalize any date (string or Date) to local YYYY-MM-DD format
+  // This handles ISO timestamps by first parsing to Date, then extracting local components
+  const normalizeToLocalDateStr = (dateInput: Date | string): string => {
+    let d: Date;
+    if (typeof dateInput === 'string') {
+      // For date-only strings like "2024-12-06", append time to force local parse
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        d = new Date(dateInput + 'T12:00:00');
+      } else {
+        // For ISO timestamps or other formats, parse normally
+        d = new Date(dateInput);
+      }
+    } else {
+      d = dateInput;
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const today = new Date();
+  const todayStr = normalizeToLocalDateStr(today);
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
+  const notesCreatedToday = allDeliveryNotes.filter((n: any) => {
+    if (!n.date) return false;
+    const noteDateStr = normalizeToLocalDateStr(n.date);
+    return noteDateStr === todayStr;
+  }).length;
+  
+  const notesCreatedThisMonth = allDeliveryNotes.filter((n: any) => {
+    if (!n.date) return false;
+    const noteDateStr = normalizeToLocalDateStr(n.date);
+    const [noteYear, noteMonth] = noteDateStr.split('-').map(Number);
+    return noteMonth === (currentMonth + 1) && noteYear === currentYear;
+  }).length;
+  
+  const totalNotesAllTime = allDeliveryNotes.length;
+  
+  // Helper to filter notes by date range for downloads
+  const filterNotesByDateRange = (notes: any[]) => {
+    return notes.filter((n: any) => {
+      if (!downloadDateFrom && !downloadDateTo) return true;
+      if (!n.date) return false;
+      const noteDateStr = normalizeToLocalDateStr(n.date);
+      if (downloadDateFrom && noteDateStr < downloadDateFrom) return false;
+      if (downloadDateTo && noteDateStr > downloadDateTo) return false;
+      return true;
+    });
+  };
+  
   // State for modal type (includes empresa/trabajadores split)
   const [albaranesCreatorType, setAlbaranesCreatorType] = useState<"admin" | "worker">("admin");
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
@@ -501,6 +557,60 @@ export default function DashboardPage() {
             >
               <FileDown className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
             </button>
+          </div>
+        </div>
+
+        {/* Resumen de Albaranes - Contadores */}
+        <div className="space-y-2">
+          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Resumen de Actividad
+          </h2>
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {/* Hoy */}
+            <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-center shadow-sm">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-today">
+                    {isLoadingNotes ? "..." : notesCreatedToday}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Hoy</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Este Mes */}
+            <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-center shadow-sm">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-month">
+                    {isLoadingNotes ? "..." : notesCreatedThisMonth}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Este mes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-center shadow-sm">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Archive className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-total">
+                    {isLoadingNotes ? "..." : totalNotesAllTime}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Total</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -706,7 +816,13 @@ export default function DashboardPage() {
       />
 
       {/* Modal de Descarga de Albaranes */}
-      <Dialog open={downloadModalOpen} onOpenChange={setDownloadModalOpen}>
+      <Dialog open={downloadModalOpen} onOpenChange={(open) => {
+        setDownloadModalOpen(open);
+        if (!open) {
+          setDownloadDateFrom("");
+          setDownloadDateTo("");
+        }
+      }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-lg flex items-center gap-2">
@@ -714,16 +830,48 @@ export default function DashboardPage() {
               Descargar Albaranes
             </DialogTitle>
             <DialogDescription>
-              Selecciona el tipo de albaranes que quieres descargar para tu respaldo de seguridad.
+              Selecciona el tipo de albaranes y el rango de fechas para descargar.
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Date Range Filter */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Desde</label>
+              <Input
+                type="date"
+                value={downloadDateFrom}
+                onChange={(e) => setDownloadDateFrom(e.target.value)}
+                className="text-sm"
+                data-testid="input-download-date-from"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Hasta</label>
+              <Input
+                type="date"
+                value={downloadDateTo}
+                onChange={(e) => setDownloadDateTo(e.target.value)}
+                className="text-sm"
+                data-testid="input-download-date-to"
+              />
+            </div>
+          </div>
+          {(downloadDateFrom || downloadDateTo) && (
+            <p className="text-xs text-muted-foreground text-center">
+              Mostrando albaranes {downloadDateFrom ? `desde ${new Date(downloadDateFrom).toLocaleDateString('es-ES')}` : ''} 
+              {downloadDateFrom && downloadDateTo ? ' ' : ''}
+              {downloadDateTo ? `hasta ${new Date(downloadDateTo).toLocaleDateString('es-ES')}` : ''}
+            </p>
+          )}
+          
           <div className="space-y-3 pt-2">
             <Button
               variant="outline"
               className="w-full justify-start h-auto py-4 px-4"
-              disabled={isDownloading || signedDeliveryNotes.filter((n: any) => n.photo).length === 0}
+              disabled={isDownloading || filterNotesByDateRange(signedDeliveryNotes.filter((n: any) => n.photo)).length === 0}
               onClick={async () => {
-                const notesWithPhotos = signedDeliveryNotes.filter((n: any) => n.photo);
+                const notesWithPhotos = filterNotesByDateRange(signedDeliveryNotes.filter((n: any) => n.photo));
                 if (notesWithPhotos.length === 0) {
                   toast({ title: "Sin fotos", description: "No hay albaranes firmados con foto para descargar", variant: "destructive" });
                   return;
@@ -882,7 +1030,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold">Albaranes Firmados (PDF)</p>
-                  <p className="text-xs text-muted-foreground">{signedDeliveryNotes.filter((n: any) => n.photo).length} albarán(es) con foto</p>
+                  <p className="text-xs text-muted-foreground">{filterNotesByDateRange(signedDeliveryNotes.filter((n: any) => n.photo)).length} albarán(es) con foto</p>
                 </div>
               </div>
             </Button>
@@ -890,9 +1038,9 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               className="w-full justify-start h-auto py-4 px-4"
-              disabled={isDownloading || invoicedNotes.filter((n: any) => n.photo).length === 0}
+              disabled={isDownloading || filterNotesByDateRange(invoicedNotes.filter((n: any) => n.photo)).length === 0}
               onClick={async () => {
-                const notesWithPhotos = invoicedNotes.filter((n: any) => n.photo);
+                const notesWithPhotos = filterNotesByDateRange(invoicedNotes.filter((n: any) => n.photo));
                 if (notesWithPhotos.length === 0) {
                   toast({ title: "Sin fotos", description: "No hay albaranes cobrados con foto para descargar", variant: "destructive" });
                   return;
@@ -1057,7 +1205,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold">Albaranes Cobrados (PDF)</p>
-                  <p className="text-xs text-muted-foreground">{invoicedNotes.filter((n: any) => n.photo).length} albarán(es) con foto</p>
+                  <p className="text-xs text-muted-foreground">{filterNotesByDateRange(invoicedNotes.filter((n: any) => n.photo)).length} albarán(es) con foto</p>
                 </div>
               </div>
             </Button>
@@ -1065,14 +1213,15 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               className="w-full justify-start h-auto py-4 px-4"
-              disabled={isDownloading || pendingDeliveryNotes.length === 0}
+              disabled={isDownloading || filterNotesByDateRange(pendingDeliveryNotes).length === 0}
               onClick={async () => {
-                if (pendingDeliveryNotes.length === 0) {
-                  toast({ title: "Sin albaranes", description: "No hay albaranes pendientes para descargar", variant: "destructive" });
+                const filteredPendingNotes = filterNotesByDateRange(pendingDeliveryNotes);
+                if (filteredPendingNotes.length === 0) {
+                  toast({ title: "Sin albaranes", description: "No hay albaranes pendientes para descargar en el rango seleccionado", variant: "destructive" });
                   return;
                 }
                 setIsDownloading(true);
-                toast({ title: "Generando PDF...", description: `Creando listado de ${pendingDeliveryNotes.length} albarán(es)` });
+                toast({ title: "Generando PDF...", description: `Creando listado de ${filteredPendingNotes.length} albarán(es)` });
                 try {
                   const pdf = new jsPDF('p', 'mm', 'a4');
                   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -1109,7 +1258,7 @@ export default function DashboardPage() {
                   pdf.setFont('helvetica', 'normal');
                   pdf.setFontSize(9);
                   
-                  for (const note of pendingDeliveryNotes) {
+                  for (const note of filteredPendingNotes) {
                     if (yPos > pageHeight - 25) {
                       pdf.addPage();
                       yPos = 20;
@@ -1139,10 +1288,10 @@ export default function DashboardPage() {
                   
                   pdf.setFontSize(8);
                   pdf.setTextColor(128, 128, 128);
-                  pdf.text(`Total: ${pendingDeliveryNotes.length} albarán(es) pendiente(s) - Generado el ${new Date().toLocaleDateString('es-ES')}`, margin, pageHeight - 8);
+                  pdf.text(`Total: ${filteredPendingNotes.length} albarán(es) pendiente(s) - Generado el ${new Date().toLocaleDateString('es-ES')}`, margin, pageHeight - 8);
                   
                   pdf.save(`albaranes-pendientes-${new Date().toISOString().split('T')[0]}.pdf`);
-                  toast({ title: "PDF generado", description: `Se descargó el listado de ${pendingDeliveryNotes.length} albarán(es) pendiente(s)` });
+                  toast({ title: "PDF generado", description: `Se descargó el listado de ${filteredPendingNotes.length} albarán(es) pendiente(s)` });
                 } catch (error) {
                   console.error("PDF generation error:", error);
                   toast({ title: "Error", description: "No se pudo generar el PDF", variant: "destructive" });
@@ -1159,7 +1308,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold">Albaranes Pendientes (PDF)</p>
-                  <p className="text-xs text-muted-foreground">{pendingDeliveryNotes.length} albarán(es) en listado</p>
+                  <p className="text-xs text-muted-foreground">{filterNotesByDateRange(pendingDeliveryNotes).length} albarán(es) en listado</p>
                 </div>
               </div>
             </Button>
