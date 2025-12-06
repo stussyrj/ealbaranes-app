@@ -11,6 +11,12 @@ import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
 import { SignaturePad } from "@/components/SignaturePad";
 import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -608,38 +614,48 @@ export default function WorkerDashboard() {
             </div>
           )}
 
-          {/* Buttons for adding missing photo/signature */}
+          {/* Unified button for adding photo/signature */}
           {!isFullySigned(note) && (
-            <div className="flex flex-col gap-2">
-              {!note.photo && (
-                <Button
-                  onClick={() => {
-                    setSelectedNoteForPhoto(note);
-                    setCapturePhotoOpen(true);
-                    setCapturedPhoto(null);
-                  }}
-                  variant="outline"
-                  className="w-full"
-                  data-testid={`button-add-photo-${note.id}`}
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Agregar Fotografía
-                </Button>
-              )}
-              {!note.signature && (
-                <Button
-                  onClick={() => {
-                    setSelectedNoteForSignature(note);
-                    setCaptureSignatureOpen(true);
-                  }}
-                  variant="outline"
-                  className="w-full"
-                  data-testid={`button-add-signature-${note.id}`}
-                >
-                  <Pen className="w-4 h-4 mr-2" />
-                  Agregar Firma Digital
-                </Button>
-              )}
+            <div className="space-y-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    data-testid={`button-sign-${note.id}`}
+                  >
+                    <Pen className="w-4 h-4 mr-2" />
+                    Firmar Albarán
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedNoteForPhoto(note);
+                      setCapturePhotoOpen(true);
+                      setCapturedPhoto(null);
+                    }}
+                    className="cursor-pointer"
+                    data-testid={`menu-add-photo-${note.id}`}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    {note.photo ? "Cambiar Foto" : "Añadir Foto"}
+                    {note.photo && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedNoteForSignature(note);
+                      setCaptureSignatureOpen(true);
+                    }}
+                    className="cursor-pointer"
+                    data-testid={`menu-add-signature-${note.id}`}
+                  >
+                    <Pen className="w-4 h-4 mr-2" />
+                    {note.signature ? "Cambiar Firma" : "Añadir Firma Digital"}
+                    {note.signature && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {getMissingSignatureInfo(note) && (
                 <p className="text-xs text-muted-foreground text-center">
                   {getMissingSignatureInfo(note)}
@@ -1009,29 +1025,47 @@ export default function WorkerDashboard() {
                           <Edit2 className="w-3.5 h-3.5 mr-1.5" />
                           Editar
                         </Button>
-                        {!note.photo && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="flex-1"
-                            onClick={() => { setSelectedNoteForPhoto(note); setCapturePhotoOpen(true); }}
-                            data-testid={`button-add-photo-modal-${note.id}`}
-                          >
-                            <Camera className="w-3.5 h-3.5 mr-1.5" />
-                            Foto
-                          </Button>
-                        )}
-                        {!note.signature && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="flex-1"
-                            onClick={() => { setSelectedNoteForSignature(note); setCaptureSignatureOpen(true); }}
-                            data-testid={`button-add-signature-modal-${note.id}`}
-                          >
-                            <Pen className="w-3.5 h-3.5 mr-1.5" />
-                            Firma
-                          </Button>
+                        {!isFullySigned(note) && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                data-testid={`button-sign-modal-${note.id}`}
+                              >
+                                <Pen className="w-3.5 h-3.5 mr-1.5" />
+                                Firmar
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="center" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => { 
+                                  setSelectedNoteForPhoto(note); 
+                                  setCapturePhotoOpen(true);
+                                  setCapturedPhoto(null);
+                                }}
+                                className="cursor-pointer"
+                                data-testid={`menu-add-photo-modal-${note.id}`}
+                              >
+                                <Camera className="w-4 h-4 mr-2" />
+                                {note.photo ? "Cambiar Foto" : "Añadir Foto"}
+                                {note.photo && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => { 
+                                  setSelectedNoteForSignature(note); 
+                                  setCaptureSignatureOpen(true); 
+                                }}
+                                className="cursor-pointer"
+                                data-testid={`menu-add-signature-modal-${note.id}`}
+                              >
+                                <Pen className="w-4 h-4 mr-2" />
+                                {note.signature ? "Cambiar Firma" : "Añadir Firma"}
+                                {note.signature && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         )}
                       </div>
                       {getMissingSignatureInfo(note) && (
