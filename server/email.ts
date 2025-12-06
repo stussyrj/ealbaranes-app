@@ -446,6 +446,71 @@ export async function getAdminEmailForTenant(tenantId: string): Promise<string |
   }
 }
 
+export async function sendPasswordResetEmail(to: string, userName: string, resetToken: string, baseUrl: string) {
+  const { client, fromEmail } = await getResendClient();
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+  
+  const body = `
+    <p style="margin: 0 0 16px; color: #e7e5e4; font-size: 16px; line-height: 1.6;">
+      Hola <strong style="color: #fafaf9;">${userName}</strong>,
+    </p>
+    <p style="margin: 0 0 24px; color: #d6d3d1; font-size: 15px; line-height: 1.7;">
+      Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en eAlbarán. 
+      Haz clic en el botón de abajo para crear una nueva contraseña.
+    </p>
+    
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+      <tr>
+        <td align="center">
+          <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #ff6b1a 0%, #ea580c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(255, 107, 26, 0.4);">Restablecer Contraseña</a>
+        </td>
+      </tr>
+    </table>
+    
+    <p style="margin: 24px 0 8px; color: #78716c; font-size: 13px;">
+      Si el botón no funciona, copia y pega este enlace en tu navegador:
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td style="background: #292524; padding: 12px 16px; border-radius: 8px; word-break: break-all;">
+          <a href="${resetUrl}" style="color: #ff6b1a; font-size: 12px; text-decoration: none;">${resetUrl}</a>
+        </td>
+      </tr>
+    </table>
+    
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top: 28px;">
+      <tr>
+        <td style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 16px 20px;">
+          <p style="margin: 0; color: #fbbf24; font-size: 14px;">
+            <strong>⚠️ Este enlace expira en 1 hora.</strong><br>
+            <span style="color: #d6d3d1;">Si no solicitaste restablecer tu contraseña, puedes ignorar este mensaje.</span>
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+  
+  const { data, error } = await client.emails.send({
+    from: fromEmail,
+    to: [to],
+    subject: `Restablece tu contraseña de eAlbarán`,
+    html: getSpookyEmailTemplate({
+      title: 'Restablecer Contraseña',
+      subtitle: 'Crea una nueva contraseña',
+      body,
+      accentColor: 'orange'
+    })
+  });
+
+  if (error) {
+    console.error('[email] Error sending password reset email:', error);
+    throw new Error(error.message || 'Failed to send password reset email');
+  }
+
+  console.log('[email] Password reset email sent to:', to);
+  return { success: true, data };
+}
+
 export async function sendVerificationEmail(to: string, companyName: string, verificationToken: string, baseUrl: string) {
   const { client, fromEmail } = await getResendClient();
   const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;

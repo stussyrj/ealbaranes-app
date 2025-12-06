@@ -5,11 +5,11 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser, tenants, verificationTokens, users } from "@shared/schema";
+import { User as SelectUser, tenants, verificationTokens, users, passwordResetTokens } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import { getTenantForUser } from "./middleware/tenantAccess";
-import { sendWelcomeEmail, sendVerificationEmail } from "./email";
+import { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
 
 const resendLimits = new Map<string, { count: number; resetAt: number }>();
@@ -556,6 +556,152 @@ export function setupAuth(app: Express) {
     } catch (error) {
       console.error("[auth] Resend verification error:", error);
       res.status(500).json({ error: "Error al reenviar el email de verificación" });
+    }
+  });
+
+  // Forgot password - request password reset
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "El email es requerido" });
+      }
+
+      const emailStr = String(email).trim().toLowerCase();
+      
+      // Rate limiting: max 3 requests per hour per email
+      const key = `reset_${emailStr}`;
+      const now = Date.now();
+      const limit = resendLimits.get(key);
+      
+      if (limit) {
+        if (now < limit.resetAt) {
+          if (limit.count >= 3) {
+            const minutesLeft = Math.ceil((limit.resetAt - now) / 60000);
+            return res.status(429).json({ 
+              error: `Has alcanzado el límite de solicitudes. Intenta de nuevo en ${minutesLeft} minutos.`
+            });
+          }
+          limit.count++;
+        } else {
+          resendLimits.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 });
+        }
+      } else {
+        resendLimits.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(emailStr);
+      
+      // Always return success to avoid email enumeration
+      if (!user) {
+        return res.json({ success: true, message: "Si el email está registrado, recibirás un enlace para restablecer tu contraseña." });
+      }
+
+      // Invalidate existing password reset tokens for this user
+      await db.update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(and(
+          eq(passwordResetTokens.userId, user.id),
+          isNull(passwordResetTokens.usedAt)
+        ));
+
+      // Generate new reset token (expires in 1 hour)
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      
+      await db.insert(passwordResetTokens).values({
+        userId: user.id,
+        token,
+        expiresAt,
+      });
+
+      // Get base URL
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['host'];
+      const baseUrl = `${protocol}://${host}`;
+
+      // Send password reset email
+      await sendPasswordResetEmail(emailStr, user.displayName || user.username, token, baseUrl);
+
+      res.json({ success: true, message: "Si el email está registrado, recibirás un enlace para restablecer tu contraseña." });
+    } catch (error) {
+      console.error("[auth] Forgot password error:", error);
+      res.status(500).json({ error: "Error al procesar la solicitud" });
+    }
+  });
+
+  // Reset password - actually change the password
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: "Token de recuperación inválido" });
+      }
+      
+      if (!password) {
+        return res.status(400).json({ error: "La nueva contraseña es requerida" });
+      }
+
+      // Password strength validation
+      const passwordStr = String(password);
+      if (passwordStr.length < 8) {
+        return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
+      }
+      if (passwordStr.length > 128) {
+        return res.status(400).json({ error: "La contraseña no puede tener más de 128 caracteres" });
+      }
+
+      // Find the token
+      const [tokenRecord] = await db.select()
+        .from(passwordResetTokens)
+        .where(and(
+          eq(passwordResetTokens.token, token),
+          isNull(passwordResetTokens.usedAt),
+          gt(passwordResetTokens.expiresAt, new Date())
+        ));
+
+      if (!tokenRecord) {
+        return res.status(400).json({ 
+          error: "El enlace de recuperación ha expirado o ya fue utilizado. Por favor, solicita un nuevo enlace.",
+          expired: true
+        });
+      }
+
+      // Update user password
+      const hashedPassword = await hashPassword(passwordStr);
+      await storage.updateUserPassword(tokenRecord.userId, hashedPassword);
+
+      // Mark token as used
+      await db.update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(passwordResetTokens.id, tokenRecord.id));
+
+      // Invalidate all other tokens for this user
+      await db.update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(and(
+          eq(passwordResetTokens.userId, tokenRecord.userId),
+          isNull(passwordResetTokens.usedAt)
+        ));
+
+      // Log the password reset
+      const clientInfo = getClientInfo(req);
+      await logAudit({
+        userId: tokenRecord.userId,
+        action: 'password_reset',
+        entityType: 'user',
+        entityId: tokenRecord.userId,
+        ipAddress: clientInfo.ipAddress,
+        userAgent: clientInfo.userAgent,
+      });
+
+      res.json({ success: true, message: "Contraseña actualizada correctamente. Ya puedes iniciar sesión." });
+    } catch (error) {
+      console.error("[auth] Reset password error:", error);
+      res.status(500).json({ error: "Error al restablecer la contraseña" });
     }
   });
 

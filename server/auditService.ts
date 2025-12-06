@@ -6,6 +6,7 @@ export type AuditAction =
   | 'login_failed'
   | 'logout'
   | 'register'
+  | 'password_reset'
   | 'create_delivery_note'
   | 'update_delivery_note'
   | 'sign_delivery_note'
