@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import DashboardPage from "@/pages/DashboardPage";
 import WorkerDashboard from "@/pages/WorkerDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
+import MessagesPage from "@/pages/MessagesPage";
 import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/RegisterPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
@@ -23,6 +24,7 @@ function AdminRoutes() {
   return (
     <Switch>
       <Route path="/" component={DashboardPage} />
+      <Route path="/admin/messages" component={MessagesPage} />
       <Route path="/admin/users" component={UserManagement} />
       <Route component={DashboardPage} />
     </Switch>

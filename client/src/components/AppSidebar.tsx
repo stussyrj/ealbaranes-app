@@ -65,6 +65,14 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout, isLogoutPending } = useAuth();
   const { setOpenMobile, isMobile } = useSidebar();
+  
+  const isAdmin = user?.role === "admin";
+  
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ["/api/messages/unread-count"],
+    enabled: !!user && isAdmin,
+    refetchInterval: 30000,
+  });
 
   // Close sidebar only on mobile when location changes
   useEffect(() => {
@@ -77,8 +85,8 @@ export function AppSidebar() {
     return null;
   }
 
-  const isAdmin = user.role === "admin";
   const navItems = isAdmin ? adminNavItems : workerNavItems;
+  const unreadCount = unreadData?.count || 0;
   const displayName = user.displayName || user.username || "Usuario";
   const initials = String(displayName || "U").slice(0, 2).toUpperCase();
 
@@ -130,6 +138,7 @@ export function AppSidebar() {
                     href={item.url}
                     icon={item.icon}
                     title={item.title}
+                    badge={item.title === "Mensajes" ? unreadCount : undefined}
                   />
                 </SidebarMenuItem>
               ))}
