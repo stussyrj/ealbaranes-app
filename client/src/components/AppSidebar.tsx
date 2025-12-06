@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   LogOut,
   Users,
   X,
+  Mail,
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import {
@@ -26,6 +28,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const adminNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Mensajes", url: "/admin/messages", icon: Mail },
   { title: "Gestión de Usuarios", url: "/admin/users", icon: Users },
 ];
 
@@ -33,12 +36,11 @@ const workerNavItems = [
   { title: "Mis Servicios", url: "/", icon: LayoutDashboard },
 ];
 
-function NavLink({ href, icon: Icon, title }: any) {
+function NavLink({ href, icon: Icon, title, badge }: any) {
   const [location] = useLocation();
   const { setOpenMobile, isMobile } = useSidebar();
 
   const handleClick = (e: React.MouseEvent) => {
-    // Close sidebar only on mobile when clicking
     if (isMobile) {
       setOpenMobile(false);
     }
@@ -48,7 +50,12 @@ function NavLink({ href, icon: Icon, title }: any) {
     <Link href={href} onClick={handleClick}>
       <SidebarMenuButton isActive={location === href}>
         <Icon className="h-4 w-4" />
-        <span>{title}</span>
+        <span className="flex-1">{title}</span>
+        {badge !== undefined && badge > 0 && (
+          <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
       </SidebarMenuButton>
     </Link>
   );
