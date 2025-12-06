@@ -147,6 +147,13 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Cierre automático al navegar
   - Animaciones suaves (200ms cierre, 300ms apertura)
   - Funciona igual para empresas y trabajadores
+- **Tutorial de bienvenida (Onboarding)**:
+  - Aparece automáticamente en el primer inicio de sesión
+  - Pasos diferentes para empresa vs trabajador
+  - Empresa: 5 pasos (Dashboard, Trabajadores, Mensajes, Descargas)
+  - Trabajador: 5 pasos (Crear albarán, Foto, Firma, Completado)
+  - Se marca como completado en base de datos (hasCompletedOnboarding)
+  - No reaparece en sesiones posteriores
 
 ## Preferencias Usuario
 
