@@ -107,10 +107,9 @@ export default function DashboardPage() {
   
   // Helper to format a single origin display
   const formatOrigin = (origin: PickupOrigin): string => {
-    if (origin.name && origin.address) return `${origin.name} (${origin.address})`;
-    if (origin.name) return origin.name;
-    if (origin.address) return origin.address;
-    return 'N/A';
+    const from = origin.name || 'N/A';
+    const to = origin.address || 'N/A';
+    return `${from} → ${to}`;
   };
   
   // Helper to format multiple origins compactly
@@ -1528,75 +1527,72 @@ export default function DashboardPage() {
               />
             </div>
             
-            <div>
-              <label className="text-sm font-medium">Recogida <span className="text-destructive">*</span></label>
-              <AutocompleteInput
-                placeholder="Lugar de recogida (ej: Mediarent)"
-                value={formData.pickupOrigins[0]?.name || ""}
-                onChange={(value) => {
-                  const newOrigins = [...formData.pickupOrigins];
-                  if (newOrigins.length === 0) newOrigins.push({ name: "", address: "" });
-                  newOrigins[0] = { ...newOrigins[0], name: value };
-                  setFormData({ ...formData, pickupOrigins: newOrigins });
-                }}
-                suggestions={suggestions.originNames || []}
-                data-testid="input-pickup-origin-0"
-              />
-            </div>
-            
-            {formData.pickupOrigins.length > 1 && formData.pickupOrigins.slice(1).map((origin, index) => (
-              <div key={index + 1} className="flex items-center gap-2">
-                <div className="flex-1">
-                  <AutocompleteInput
-                    placeholder={`Recogida ${index + 2}`}
-                    value={origin.name}
-                    onChange={(value) => {
-                      const newOrigins = [...formData.pickupOrigins];
-                      newOrigins[index + 1] = { ...newOrigins[index + 1], name: value };
-                      setFormData({ ...formData, pickupOrigins: newOrigins });
-                    }}
-                    suggestions={suggestions.originNames || []}
-                    data-testid={`input-pickup-origin-${index + 1}`}
-                  />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ruta <span className="text-destructive">*</span></label>
+              
+              {formData.pickupOrigins.map((origin, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 border rounded-md bg-muted/30">
+                  <div className="flex-1 grid grid-cols-[1fr_auto_1fr] gap-1 items-center">
+                    <AutocompleteInput
+                      placeholder="De..."
+                      value={origin.name}
+                      onChange={(value) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = { ...newOrigins[index], name: value };
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                      suggestions={[...(suggestions.originNames || []), ...(suggestions.destinations || [])]}
+                      data-testid={`input-route-from-${index}`}
+                    />
+                    <span className="text-muted-foreground text-sm px-1">→</span>
+                    <AutocompleteInput
+                      placeholder="A..."
+                      value={origin.address}
+                      onChange={(value) => {
+                        const newOrigins = [...formData.pickupOrigins];
+                        newOrigins[index] = { ...newOrigins[index], address: value };
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                      suggestions={[...(suggestions.originNames || []), ...(suggestions.destinations || [])]}
+                      data-testid={`input-route-to-${index}`}
+                    />
+                  </div>
+                  {formData.pickupOrigins.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
+                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                      }}
+                      className="h-8 w-8 shrink-0"
+                      data-testid={`button-remove-route-${index}`}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index + 1);
-                    setFormData({ ...formData, pickupOrigins: newOrigins });
-                  }}
-                  className="h-9 w-9 shrink-0"
-                  data-testid={`button-remove-origin-${index + 1}`}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-            
-            <div>
-              <label className="text-sm font-medium">Entrega <span className="text-destructive">*</span></label>
-              <AutocompleteInput
-                placeholder="Lugar de entrega (ej: Bob)"
-                value={formData.destination}
-                onChange={(value) => setFormData({ ...formData, destination: value })}
-                suggestions={suggestions.destinations}
-                data-testid="input-destination"
-              />
+              ))}
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const lastDestination = formData.pickupOrigins[formData.pickupOrigins.length - 1]?.address || "";
+                  setFormData({ 
+                    ...formData, 
+                    pickupOrigins: [...formData.pickupOrigins, { name: lastDestination, address: "" }] 
+                  });
+                }}
+                className="w-full text-xs"
+                data-testid="button-add-route"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Añadir tramo
+              </Button>
             </div>
-            
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setFormData({ ...formData, pickupOrigins: [...formData.pickupOrigins, { name: "", address: "" }] })}
-              className="w-full text-xs"
-              data-testid="button-add-origin"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Añadir otra recogida
-            </Button>
             
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -1662,15 +1658,18 @@ export default function DashboardPage() {
                 Cancelar
               </Button>
               <Button
-                disabled={!formData.clientName.trim() || !formData.destination.trim() || (!formData.pickupOrigins[0]?.name?.trim())}
+                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim()}
                 onClick={async () => {
                   try {
+                    const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
+                    const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
+                    
                     const deliveryNoteData = {
                       quoteId: `custom-${Date.now()}`,
                       workerId: user?.id,
                       clientName: formData.clientName.trim(),
-                      pickupOrigins: formData.pickupOrigins.filter(o => o.name.trim() !== "" || o.address.trim() !== ""),
-                      destination: formData.destination.trim(),
+                      pickupOrigins: validRoutes,
+                      destination: lastDestination.trim(),
                       vehicleType: formData.vehicleType,
                       date: formData.date,
                       time: formData.time,

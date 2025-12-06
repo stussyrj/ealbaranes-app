@@ -4,12 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PickupOrigin } from "@shared/schema";
 
-// Helper to format origin text (name or address)
-const formatOriginText = (origin: PickupOrigin): string => {
-  if (origin.name && origin.address) return `${origin.name} (${origin.address})`;
-  if (origin.name) return origin.name;
-  if (origin.address) return origin.address;
-  return 'N/A';
+// Helper to format a route as "From → To"
+const formatRouteText = (origin: PickupOrigin): string => {
+  const from = origin.name || 'N/A';
+  const to = origin.address || 'N/A';
+  return `${from} → ${to}`;
 };
 
 interface DeliveryNoteCardProps {
@@ -131,22 +130,16 @@ export function DeliveryNoteCard({
             {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
               <>
                 <div className="space-y-1">
-                  <div className="flex items-start gap-2 text-sm">
-                    <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
-                    <span className="flex-1 min-w-0">{formatOriginText(note.pickupOrigins[0])}</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-sm">
-                    <span className="text-xs text-muted-foreground font-medium w-16 flex-shrink-0 pt-0.5">Entrega:</span>
-                    <span className="flex-1 min-w-0">{note.destination || 'N/A'}</span>
+                  <div className="text-sm">
+                    {formatRouteText(note.pickupOrigins[0])}
                   </div>
                 </div>
                 
                 {hasMultipleOrigins && showAllOrigins && (
-                  <div className="space-y-1 pt-1.5 border-t border-muted-foreground/10">
+                  <div className="space-y-1 pt-1">
                     {note.pickupOrigins.slice(1).map((origin, idx) => (
-                      <div key={idx + 1} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="text-xs font-medium w-16 flex-shrink-0 pt-0.5">Recogida:</span>
-                        <span className="flex-1 min-w-0">{formatOriginText(origin)}</span>
+                      <div key={idx + 1} className="text-sm">
+                        {formatRouteText(origin)}
                       </div>
                     ))}
                   </div>
@@ -159,23 +152,16 @@ export function DeliveryNoteCard({
                     data-testid={`button-toggle-origins-${note.id}`}
                   >
                     {showAllOrigins ? (
-                      <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas más</>
+                      <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} tramos</>
                     ) : (
-                      <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} recogidas más</>
+                      <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} tramos más</>
                     )}
                   </button>
                 )}
               </>
             ) : (
-              <div className="space-y-1">
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-xs font-medium w-16 flex-shrink-0">Recogida:</span>
-                  <span>N/A</span>
-                </div>
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-xs font-medium w-16 flex-shrink-0">Entrega:</span>
-                  <span>{note.destination || 'N/A'}</span>
-                </div>
+              <div className="text-sm text-muted-foreground">
+                Sin ruta definida
               </div>
             )}
           </div>
