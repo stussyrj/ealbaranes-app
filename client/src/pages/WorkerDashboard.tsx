@@ -58,7 +58,7 @@ export default function WorkerDashboard() {
   const formatOrigin = (origin: PickupOrigin): string => {
     const from = origin.name || 'N/A';
     const to = origin.address || 'N/A';
-    return `${from} → ${to}`;
+    return `Recogida: ${from} → Entrega: ${to}`;
   };
   
   // Helper to format multiple origins compactly

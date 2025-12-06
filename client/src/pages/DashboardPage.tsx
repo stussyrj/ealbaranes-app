@@ -109,7 +109,7 @@ export default function DashboardPage() {
   const formatOrigin = (origin: PickupOrigin): string => {
     const from = origin.name || 'N/A';
     const to = origin.address || 'N/A';
-    return `${from} → ${to}`;
+    return `Recogida: ${from} → Entrega: ${to}`;
   };
   
   // Helper to format multiple origins compactly
@@ -130,7 +130,7 @@ export default function DashboardPage() {
   
   const formatOriginsForPdf = (origins: PickupOrigin[] | null | undefined): string => {
     if (!origins || origins.length === 0) return 'N/A';
-    return origins.map(o => formatOrigin(o)).join(' → ');
+    return origins.map(o => formatOrigin(o)).join('\n');
   };
 
   const previewDeliveryNote = (photo: string) => {
@@ -721,10 +721,32 @@ export default function DashboardPage() {
                     
                     pdf.setFont('helvetica', 'normal');
                     pdf.setFontSize(10);
-                    const details = [
-                      ['Cliente:', note.clientName || 'No especificado'],
-                      ['Recogidas:', formatOriginsForPdf(note.pickupOrigins)],
-                      ['Destino:', note.destination || 'No especificado'],
+                    
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Cliente:', margin, yPos);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text(note.clientName || 'No especificado', margin + 30, yPos);
+                    yPos += 6;
+                    
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Ruta:', margin, yPos);
+                    yPos += 6;
+                    
+                    if (note.pickupOrigins && note.pickupOrigins.length > 0) {
+                      pdf.setFont('helvetica', 'normal');
+                      note.pickupOrigins.forEach((origin: PickupOrigin) => {
+                        const routeText = `Recogida: ${origin.name || 'N/A'} → Entrega: ${origin.address || 'N/A'}`;
+                        pdf.text(routeText, margin + 5, yPos);
+                        yPos += 5;
+                      });
+                    } else {
+                      pdf.setFont('helvetica', 'normal');
+                      pdf.text('Sin ruta definida', margin + 5, yPos);
+                      yPos += 5;
+                    }
+                    
+                    yPos += 2;
+                    const otherDetails = [
                       ['Vehículo:', note.vehicleType || 'No especificado'],
                       ['Fecha:', note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'No especificada'],
                       ['Hora:', note.time || 'No especificada'],
@@ -732,7 +754,7 @@ export default function DashboardPage() {
                       ['Observaciones:', note.observations || 'Sin observaciones']
                     ];
                     
-                    details.forEach(([label, value]) => {
+                    otherDetails.forEach(([label, value]) => {
                       pdf.setFont('helvetica', 'bold');
                       pdf.text(label, margin, yPos);
                       pdf.setFont('helvetica', 'normal');
@@ -834,10 +856,32 @@ export default function DashboardPage() {
                     
                     pdf.setFont('helvetica', 'normal');
                     pdf.setFontSize(10);
-                    const details = [
-                      ['Cliente:', note.clientName || 'No especificado'],
-                      ['Recogidas:', formatOriginsForPdf(note.pickupOrigins)],
-                      ['Destino:', note.destination || 'No especificado'],
+                    
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Cliente:', margin, yPos);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text(note.clientName || 'No especificado', margin + 30, yPos);
+                    yPos += 6;
+                    
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('Ruta:', margin, yPos);
+                    yPos += 6;
+                    
+                    if (note.pickupOrigins && note.pickupOrigins.length > 0) {
+                      pdf.setFont('helvetica', 'normal');
+                      note.pickupOrigins.forEach((origin: PickupOrigin) => {
+                        const routeText = `Recogida: ${origin.name || 'N/A'} → Entrega: ${origin.address || 'N/A'}`;
+                        pdf.text(routeText, margin + 5, yPos);
+                        yPos += 5;
+                      });
+                    } else {
+                      pdf.setFont('helvetica', 'normal');
+                      pdf.text('Sin ruta definida', margin + 5, yPos);
+                      yPos += 5;
+                    }
+                    
+                    yPos += 2;
+                    const cobradoDetails = [
                       ['Vehículo:', note.vehicleType || 'No especificado'],
                       ['Fecha:', note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'No especificada'],
                       ['Hora:', note.time || 'No especificada'],
@@ -845,7 +889,7 @@ export default function DashboardPage() {
                       ['Observaciones:', note.observations || 'Sin observaciones']
                     ];
                     
-                    details.forEach(([label, value]) => {
+                    cobradoDetails.forEach(([label, value]) => {
                       pdf.setFont('helvetica', 'bold');
                       pdf.text(label, margin, yPos);
                       pdf.setFont('helvetica', 'normal');

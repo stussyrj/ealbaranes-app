@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PickupOrigin } from "@shared/schema";
 
-// Helper to format a route as "From → To"
+// Helper to format a route as "Recogida: X → Entrega: Y"
 const formatRouteText = (origin: PickupOrigin): string => {
   const from = origin.name || 'N/A';
   const to = origin.address || 'N/A';
-  return `${from} → ${to}`;
+  return `Recogida: ${from} → Entrega: ${to}`;
 };
 
 interface DeliveryNoteCardProps {
