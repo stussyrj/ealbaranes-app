@@ -217,9 +217,12 @@ export function setupAuth(app: Express) {
         res.status(200).json({
           id: user.id,
           username: user.username,
+          displayName: user.displayName,
           isAdmin: user.isAdmin,
           workerId: user.workerId,
+          tenantId: user.tenantId,
           createdAt: user.createdAt,
+          hasCompletedOnboarding: user.hasCompletedOnboarding ?? false,
         });
       });
     })(req, res, next);
