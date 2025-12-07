@@ -18,10 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient as qc } from "@/lib/queryClient";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
 import {
   Dialog,
   DialogContent,
@@ -833,6 +829,7 @@ export default function DashboardPage() {
                 setIsDownloading(true);
                 toast({ title: "Generando PDF...", description: `Creando documento con ${notesWithPhotos.length} albarán(es)` });
                 try {
+                  const { default: jsPDF } = await import('jspdf');
                   const pdf = new jsPDF('p', 'mm', 'a4');
                   const pageWidth = pdf.internal.pageSize.getWidth();
                   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -1002,6 +999,7 @@ export default function DashboardPage() {
                 setIsDownloading(true);
                 toast({ title: "Generando PDF...", description: `Creando documento con ${notesWithPhotos.length} albarán(es) cobrado(s)` });
                 try {
+                  const { default: jsPDF } = await import('jspdf');
                   const pdf = new jsPDF('p', 'mm', 'a4');
                   const pageWidth = pdf.internal.pageSize.getWidth();
                   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -1177,6 +1175,7 @@ export default function DashboardPage() {
                 setIsDownloading(true);
                 toast({ title: "Generando PDF...", description: `Creando listado de ${filteredPendingNotes.length} albarán(es)` });
                 try {
+                  const { default: jsPDF } = await import('jspdf');
                   const pdf = new jsPDF('p', 'mm', 'a4');
                   const pageWidth = pdf.internal.pageSize.getWidth();
                   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -1624,6 +1623,7 @@ export default function DashboardPage() {
                           
                           setTimeout(async () => {
                             try {
+                              const { default: html2canvas } = await import('html2canvas');
                               const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#0f172a", useCORS: true, allowTaint: true, logging: false });
                               document.body.removeChild(clonedElement);
                               
