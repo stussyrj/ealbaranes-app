@@ -1,15 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
-import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
-import { DeliveryNoteGenerator } from "@/components/DeliveryNoteGenerator";
-import { SignaturePad } from "@/components/SignaturePad";
-import { OnboardingTutorial } from "@/components/OnboardingTutorial";
+import { LightPageBackground } from "@/components/LightPageBackground";
+
+const DriverDoorAnimation = lazy(() => import("@/components/DriverDoorAnimation").then(m => ({ default: m.DriverDoorAnimation })));
+const DeliveryNoteGenerator = lazy(() => import("@/components/DeliveryNoteGenerator").then(m => ({ default: m.DeliveryNoteGenerator })));
+const SignaturePad = lazy(() => import("@/components/SignaturePad").then(m => ({ default: m.SignaturePad })));
+const OnboardingTutorial = lazy(() => import("@/components/OnboardingTutorial").then(m => ({ default: m.OnboardingTutorial })));
 import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -700,17 +701,19 @@ export default function WorkerDashboard() {
 
   if (showAnimation) {
     return (
-      <DriverDoorAnimation 
-        onComplete={() => setShowAnimation(false)} 
-        userName={user?.displayName || user?.username}
-        subtitle="a tu panel de trabajador"
-      />
+      <Suspense fallback={<div className="fixed inset-0 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 z-50 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+        <DriverDoorAnimation 
+          onComplete={() => setShowAnimation(false)} 
+          userName={user?.displayName || user?.username}
+          subtitle="a tu panel de trabajador"
+        />
+      </Suspense>
     );
   }
 
   return (
     <div className="relative">
-      <AnimatedPageBackground />
+      <LightPageBackground />
       <div className="relative z-10 space-y-6 p-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
           <div>
@@ -1130,12 +1133,14 @@ export default function WorkerDashboard() {
         </DialogContent>
       </Dialog>
 
-      <DeliveryNoteGenerator
-        open={deliveryModalOpen}
-        onOpenChange={setDeliveryModalOpen}
-        quote={selectedOrder}
-        workerId={effectiveWorkerId}
-      />
+      <Suspense fallback={null}>
+        <DeliveryNoteGenerator
+          open={deliveryModalOpen}
+          onOpenChange={setDeliveryModalOpen}
+          quote={selectedOrder}
+          workerId={effectiveWorkerId}
+        />
+      </Suspense>
 
       {/* Edit Delivery Dialog */}
       <Dialog open={editDeliveryOpen} onOpenChange={setEditDeliveryOpen}>
@@ -1839,13 +1844,15 @@ export default function WorkerDashboard() {
               Pide al cliente que firme en el recuadro
             </DialogDescription>
           </DialogHeader>
-          <SignaturePad
-            onSave={saveSignature}
-            onCancel={() => {
-              setCaptureSignatureOpen(false);
-              setSelectedNoteForSignature(null);
-            }}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>}>
+            <SignaturePad
+              onSave={saveSignature}
+              onCancel={() => {
+                setCaptureSignatureOpen(false);
+                setSelectedNoteForSignature(null);
+              }}
+            />
+          </Suspense>
           {isUploadingSignature && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
               <p className="text-sm text-muted-foreground">Guardando firma...</p>
@@ -1855,11 +1862,13 @@ export default function WorkerDashboard() {
       </Dialog>
       
       {/* Onboarding Tutorial */}
-      <OnboardingTutorial
-        isOpen={showOnboarding}
-        onComplete={handleCompleteOnboarding}
-        userType="worker"
-      />
+      <Suspense fallback={null}>
+        <OnboardingTutorial
+          isOpen={showOnboarding}
+          onComplete={handleCompleteOnboarding}
+          userType="worker"
+        />
+      </Suspense>
     </div>
   );
 }

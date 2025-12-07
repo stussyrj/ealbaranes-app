@@ -1,18 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DriverDoorAnimation } from "@/components/DriverDoorAnimation";
 import { useToast } from "@/hooks/use-toast";
-import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
-import { WorkerAssignmentModal } from "@/components/WorkerAssignmentModal";
+import { LightPageBackground } from "@/components/LightPageBackground";
 import { DeliveryNoteCard } from "@/components/DeliveryNoteCard";
 import { AutocompleteInput } from "@/components/AutocompleteInput";
-import { SignaturePad } from "@/components/SignaturePad";
-import { OnboardingTutorial } from "@/components/OnboardingTutorial";
+
+const DriverDoorAnimation = lazy(() => import("@/components/DriverDoorAnimation").then(m => ({ default: m.DriverDoorAnimation })));
+const WorkerAssignmentModal = lazy(() => import("@/components/WorkerAssignmentModal").then(m => ({ default: m.WorkerAssignmentModal })));
+const SignaturePad = lazy(() => import("@/components/SignaturePad").then(m => ({ default: m.SignaturePad })));
+const OnboardingTutorial = lazy(() => import("@/components/OnboardingTutorial").then(m => ({ default: m.OnboardingTutorial })));
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -510,20 +511,22 @@ export default function DashboardPage() {
 
   if (showAnimation) {
     return (
-      <DriverDoorAnimation
-        onComplete={() => {
-          sessionStorage.setItem("hasSeenAdminAnimation", "true");
-          setShowAnimation(false);
-        }}
-        userName={user?.displayName || user?.username}
-        subtitle="a tu panel de empresa"
-      />
+      <Suspense fallback={<div className="fixed inset-0 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 z-50 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+        <DriverDoorAnimation
+          onComplete={() => {
+            sessionStorage.setItem("hasSeenAdminAnimation", "true");
+            setShowAnimation(false);
+          }}
+          userName={user?.displayName || user?.username}
+          subtitle="a tu panel de empresa"
+        />
+      </Suspense>
     );
   }
 
   return (
     <div className="relative">
-      <AnimatedPageBackground />
+      <LightPageBackground />
       <div className="relative z-10 space-y-3 sm:space-y-4 p-3 sm:p-6">
         {/* Header compacto */}
         <div className="flex items-center justify-between gap-2">
@@ -759,11 +762,13 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <WorkerAssignmentModal
-        open={assignmentModalOpen}
-        onOpenChange={setAssignmentModalOpen}
-        quote={selectedQuote}
-      />
+      <Suspense fallback={null}>
+        <WorkerAssignmentModal
+          open={assignmentModalOpen}
+          onOpenChange={setAssignmentModalOpen}
+          quote={selectedQuote}
+        />
+      </Suspense>
 
       {/* Modal de Descarga de Albaranes */}
       <Dialog open={downloadModalOpen} onOpenChange={(open) => {
@@ -2338,13 +2343,15 @@ export default function DashboardPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <SignaturePad
-            onSave={saveSignature}
-            onCancel={() => {
-              setCaptureSignatureOpen(false);
-              setSelectedNoteForSignature(null);
-            }}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+            <SignaturePad
+              onSave={saveSignature}
+              onCancel={() => {
+                setCaptureSignatureOpen(false);
+                setSelectedNoteForSignature(null);
+              }}
+            />
+          </Suspense>
           
           {isUploadingSignature && (
             <div className="flex items-center justify-center py-4">
@@ -2375,11 +2382,13 @@ export default function DashboardPage() {
       </Dialog>
       
       {/* Onboarding Tutorial */}
-      <OnboardingTutorial
-        isOpen={showOnboarding}
-        onComplete={handleCompleteOnboarding}
-        userType="company"
-      />
+      <Suspense fallback={null}>
+        <OnboardingTutorial
+          isOpen={showOnboarding}
+          onComplete={handleCompleteOnboarding}
+          userType="company"
+        />
+      </Suspense>
     </div>
   );
 }
