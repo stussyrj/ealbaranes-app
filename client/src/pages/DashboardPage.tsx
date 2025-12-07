@@ -528,256 +528,210 @@ export default function DashboardPage() {
   return (
     <div className="relative">
       <AnimatedPageBackground />
-      <div className="relative z-10 space-y-4 sm:space-y-6 p-4 sm:p-6">
-        {/* Header con botón de descarga y refrescar */}
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold">Panel de Empresa</h1>
-          </div>
-          <div className="flex items-center gap-2">
+      <div className="relative z-10 space-y-3 sm:space-y-4 p-3 sm:p-6">
+        {/* Header compacto */}
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-lg sm:text-xl font-semibold">Panel de Empresa</h1>
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
                 refetchDeliveryNotes();
                 refetchQuotes();
                 toast({ title: "Actualizando datos..." });
               }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate flex-shrink-0"
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm hover-elevate flex-shrink-0"
               data-testid="button-refresh-data"
             >
               {isLoadingNotes ? (
-                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary animate-spin" />
+                <Loader2 className="h-4 w-4 text-primary animate-spin" />
               ) : (
-                <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <RefreshCw className="h-4 w-4 text-primary" />
               )}
             </button>
             <button
               onClick={() => setDownloadModalOpen(true)}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 sm:p-4 text-center shadow-sm hover-elevate flex-shrink-0"
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm hover-elevate flex-shrink-0"
               data-testid="button-download-albaranes"
             >
-              <FileDown className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+              <FileDown className="h-4 w-4 text-blue-500" />
             </button>
           </div>
         </div>
 
-        {/* Resumen de Albaranes - Contadores */}
-        <div className="space-y-2">
-          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Resumen de Actividad
-          </h2>
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
-            {/* Hoy */}
-            <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-center shadow-sm">
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
+        {/* Resumen de Actividad - Compact horizontal strip with flex-wrap */}
+        <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm">
+          <div className="flex items-center justify-around gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <div className="text-base font-bold leading-none" data-testid="count-today">
+                  {isLoadingNotes ? "..." : notesCreatedToday}
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-today">
-                    {isLoadingNotes ? "..." : notesCreatedToday}
-                  </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Hoy</p>
-                </div>
+                <p className="text-[9px] text-muted-foreground">Hoy</p>
               </div>
             </div>
-
-            {/* Este Mes */}
-            <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-center shadow-sm">
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
+            <div className="flex items-center gap-1.5">
+              <div className="h-7 w-7 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                <Calendar className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <div className="text-base font-bold leading-none" data-testid="count-month">
+                  {isLoadingNotes ? "..." : notesCreatedThisMonth}
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-month">
-                    {isLoadingNotes ? "..." : notesCreatedThisMonth}
-                  </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Este mes</p>
-                </div>
+                <p className="text-[9px] text-muted-foreground">Mes</p>
               </div>
             </div>
-
-            {/* Total */}
-            <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-center shadow-sm">
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <Archive className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
+            <div className="flex items-center gap-1.5">
+              <div className="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                <Archive className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <div className="text-base font-bold leading-none" data-testid="count-total">
+                  {isLoadingNotes ? "..." : totalNotesAllTime}
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-total">
-                    {isLoadingNotes ? "..." : totalNotesAllTime}
-                  </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Total</p>
-                </div>
+                <p className="text-[9px] text-muted-foreground">Total</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Sección Empresa - Albaranes creados por la empresa */}
-        <div className="space-y-2">
-          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Mis Albaranes (Empresa)
-          </h2>
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
-            {/* Crear Albarán */}
-            <button
-              onClick={() => setCreateDeliveryOpen(true)}
-              className="rounded-lg bg-purple-600/85 hover:bg-purple-700/85 p-4 text-left shadow-sm text-white"
-              data-testid="button-create-albaran"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm sm:text-base font-bold">Crear</div>
-                  <p className="text-[10px] sm:text-xs text-white/80 truncate">Albarán</p>
-                </div>
-              </div>
-            </button>
+        {/* Botón Crear Albarán - Prominente */}
+        <button
+          onClick={() => setCreateDeliveryOpen(true)}
+          className="w-full rounded-lg bg-purple-600 hover:bg-purple-700 p-4 shadow-sm text-white flex items-center justify-center gap-3"
+          data-testid="button-create-albaran"
+        >
+          <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <Plus className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-base font-semibold">Crear Albarán</span>
+        </button>
 
+        {/* Albaranes Grid - Compact 2x2 layout */}
+        <div className="space-y-3">
+          {/* Empresa y Trabajadores en grid compacto 2x2 */}
+          <div className="grid grid-cols-2 gap-2">
             {/* Empresa Pendientes */}
             <button
               onClick={() => { setAlbaranesCreatorType("admin"); setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 min-h-[52px] shadow-sm hover-elevate"
               data-testid="button-view-empresa-pending"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
                   {isLoadingNotes ? (
-                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400 animate-spin" />
+                    <Loader2 className="h-4 w-4 text-orange-600 dark:text-orange-400 animate-spin" />
                   ) : (
-                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                    <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   )}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-empresa-pending">
+                <div className="min-w-0 flex-1">
+                  <div className="text-lg font-bold leading-none" data-testid="count-empresa-pending">
                     {isLoadingNotes ? "..." : empresaPendingNotes.length}
                   </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Emp. Pend.</p>
                 </div>
               </div>
             </button>
-
             {/* Empresa Firmados */}
             <button
               onClick={() => { setAlbaranesCreatorType("admin"); setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 min-h-[52px] shadow-sm hover-elevate"
               data-testid="button-view-empresa-signed"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                   {isLoadingNotes ? (
-                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400 animate-spin" />
+                    <Loader2 className="h-4 w-4 text-green-600 dark:text-green-400 animate-spin" />
                   ) : (
-                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                   )}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold" data-testid="count-empresa-signed">
+                <div className="min-w-0 flex-1">
+                  <div className="text-lg font-bold leading-none" data-testid="count-empresa-signed">
                     {isLoadingNotes ? "..." : empresaSignedNotes.length}
                   </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Emp. Firm.</p>
                 </div>
               </div>
             </button>
-          </div>
-        </div>
-
-        {/* Sección Trabajadores - Albaranes creados por trabajadores */}
-        <div className="space-y-2">
-          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-            <Truck className="h-4 w-4" />
-            Albaranes de Trabajadores
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {/* Trabajadores Pendientes */}
             <button
               onClick={() => { setAlbaranesCreatorType("worker"); setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 min-h-[52px] shadow-sm hover-elevate"
               data-testid="button-view-trabajadores-pending"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
                   {isLoadingNotes ? (
-                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400 animate-spin" />
+                    <Loader2 className="h-4 w-4 text-orange-600 dark:text-orange-400 animate-spin" />
                   ) : (
-                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                    <Truck className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   )}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{isLoadingNotes ? "..." : trabajadoresPendingNotes.length}</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes</p>
+                <div className="min-w-0 flex-1">
+                  <div className="text-lg font-bold leading-none">{isLoadingNotes ? "..." : trabajadoresPendingNotes.length}</div>
+                  <p className="text-[10px] text-muted-foreground truncate">Trab. Pend.</p>
                 </div>
               </div>
             </button>
-
             {/* Trabajadores Firmados */}
             <button
               onClick={() => { setAlbaranesCreatorType("worker"); setAlbaranesModalType("signed"); setAlbaranesModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
+              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 min-h-[52px] shadow-sm hover-elevate"
               data-testid="button-view-trabajadores-signed"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                   {isLoadingNotes ? (
-                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400 animate-spin" />
+                    <Loader2 className="h-4 w-4 text-green-600 dark:text-green-400 animate-spin" />
                   ) : (
-                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                    <Truck className="h-4 w-4 text-green-600 dark:text-green-400" />
                   )}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{isLoadingNotes ? "..." : trabajadoresSignedNotes.length}</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Firmados</p>
+                <div className="min-w-0 flex-1">
+                  <div className="text-lg font-bold leading-none">{isLoadingNotes ? "..." : trabajadoresSignedNotes.length}</div>
+                  <p className="text-[10px] text-muted-foreground truncate">Trab. Firm.</p>
                 </div>
               </div>
             </button>
           </div>
         </div>
 
-        {/* Sección Estado de Facturación - Solo albaranes firmados */}
-        <div className="space-y-2">
-          <h2 className="text-sm sm:text-base font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-            <Receipt className="h-4 w-4" />
-            Estado de Facturación
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {/* Cobrados */}
-            <button
-              onClick={() => { setInvoiceModalType("invoiced"); setInvoiceModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
-              data-testid="button-view-invoiced"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
-                  <Banknote className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{invoicedNotes.length}</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Cobrados</p>
-                </div>
+        {/* Facturación - misma estructura compacta */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => { setInvoiceModalType("invoiced"); setInvoiceModalOpen(true); }}
+            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 min-h-[52px] shadow-sm hover-elevate"
+            data-testid="button-view-invoiced"
+          >
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                <Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-            </button>
-
-            {/* Pendientes de cobro */}
-            <button
-              onClick={() => { setInvoiceModalType("pending"); setInvoiceModalOpen(true); }}
-              className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-4 text-left shadow-sm hover-elevate"
-              data-testid="button-view-pending-invoice"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-bold">{pendingInvoiceNotes.length}</div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pendientes de cobro</p>
-                </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-lg font-bold leading-none">{invoicedNotes.length}</div>
+                <p className="text-[10px] text-muted-foreground truncate">Cobrados</p>
               </div>
-            </button>
-          </div>
+            </div>
+          </button>
+          <button
+            onClick={() => { setInvoiceModalType("pending"); setInvoiceModalOpen(true); }}
+            className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 min-h-[52px] shadow-sm hover-elevate"
+            data-testid="button-view-pending-invoice"
+          >
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-lg font-bold leading-none">{pendingInvoiceNotes.length}</div>
+                <p className="text-[10px] text-muted-foreground truncate">Pte. cobro</p>
+              </div>
+            </div>
+          </button>
         </div>
 
         {/* Presupuestos Pendientes */}
