@@ -78,7 +78,7 @@ export default function LandingPage() {
               />
               <span className="text-xl font-bold text-foreground">eAlbarán</span>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-3">
               <Link href="/blog" className="hidden sm:block">
                 <Button variant="ghost" size="sm" data-testid="link-header-blog">
                   <BookOpen className="h-4 w-4 mr-1" />
@@ -87,13 +87,14 @@ export default function LandingPage() {
               </Link>
               <ThemeToggle />
               <Link href="/login">
-                <Button variant="ghost" size="sm" data-testid="link-header-login">
-                  Iniciar Sesión
+                <Button variant="ghost" className="min-h-[44px] min-w-[44px] px-3 sm:px-4 text-sm" data-testid="link-header-login">
+                  Entrar
                 </Button>
               </Link>
-              <Link href="/register" className="hidden sm:block">
-                <Button size="sm" data-testid="link-header-register">
-                  Registrarse
+              <Link href="/register">
+                <Button className="min-h-[44px] px-3 sm:px-4 text-sm" data-testid="link-header-register">
+                  <span className="hidden sm:inline">Registrarse</span>
+                  <span className="sm:hidden">Registro</span>
                 </Button>
               </Link>
             </div>
@@ -116,15 +117,15 @@ export default function LandingPage() {
               <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 Digitaliza los albaranes de tu empresa de transporte. Tus trabajadores crean albaranes con fotos y firmas desde el móvil, y tú lo controlas todo desde tu panel.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/register">
-                  <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-hero-register">
+                  <Button size="lg" className="w-full sm:w-auto gap-2 min-h-[48px] text-base" data-testid="button-hero-register">
                     Empezar Gratis
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="/login">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-hero-login">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-[48px] text-base" data-testid="button-hero-login">
                     Iniciar Sesión
                   </Button>
                 </Link>
