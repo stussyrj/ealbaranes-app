@@ -10,7 +10,6 @@ import {
   Users, 
   Shield, 
   Smartphone,
-  Clock,
   Download,
   CheckCircle,
   ArrowRight,
@@ -73,6 +72,9 @@ export default function LandingPage() {
                 src={logoImage} 
                 alt="eAlbarán Logo" 
                 className="h-10 w-10 rounded-lg object-cover"
+                width={40}
+                height={40}
+                decoding="async"
               />
               <span className="text-xl font-bold text-foreground">eAlbarán</span>
             </div>
@@ -351,6 +353,10 @@ export default function LandingPage() {
                   src={logoImage} 
                   alt="eAlbarán Logo" 
                   className="h-10 w-10 rounded-lg object-cover"
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                  decoding="async"
                 />
                 <span className="text-xl font-bold text-foreground">eAlbarán</span>
               </div>
