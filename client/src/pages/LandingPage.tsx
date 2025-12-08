@@ -13,7 +13,10 @@ import {
   Clock,
   Download,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  BookOpen,
+  Mail,
+  MapPin
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 
@@ -74,6 +77,12 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-foreground">eAlbarán</span>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
+              <Link href="/blog" className="hidden sm:block">
+                <Button variant="ghost" size="sm" data-testid="link-header-blog">
+                  <BookOpen className="h-4 w-4 mr-1" />
+                  Blog
+                </Button>
+              </Link>
               <ThemeToggle />
               <Link href="/login">
                 <Button variant="ghost" size="sm" data-testid="link-header-login">
@@ -333,20 +342,87 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t bg-background py-8 relative z-10">
+      <footer className="border-t bg-muted/30 py-12 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <img 
-                src={logoImage} 
-                alt="eAlbarán Logo" 
-                className="h-8 w-8 rounded-lg object-cover"
-              />
-              <span className="font-semibold text-foreground">eAlbarán</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <img 
+                  src={logoImage} 
+                  alt="eAlbarán Logo" 
+                  className="h-10 w-10 rounded-lg object-cover"
+                />
+                <span className="text-xl font-bold text-foreground">eAlbarán</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Digitaliza los albaranes de transporte de tu empresa. Gestión simple, rápida y segura.
+              </p>
             </div>
+            
+            <div>
+              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-primary" />
+                Blog
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link href="/blog">
+                    <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" data-testid="link-footer-blog">
+                      Ver todos los artículos
+                    </span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/blog/que-es-un-albaran-de-transporte">
+                    <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" data-testid="link-footer-article">
+                      ¿Qué es un albarán de transporte?
+                    </span>
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                Contacto
+              </h4>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <a 
+                    href="mailto:info@ealbaranes.es" 
+                    className="hover:text-foreground transition-colors"
+                    data-testid="link-footer-email"
+                  >
+                    info@ealbaranes.es
+                  </a>
+                </li>
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span>España</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2024 eAlbarán. Todos los derechos reservados.
+              © {new Date().getFullYear()} eAlbarán. Todos los derechos reservados.
             </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/blog">
+                <span className="hover:text-foreground cursor-pointer transition-colors">Blog</span>
+              </Link>
+              <span>•</span>
+              <Link href="/login">
+                <span className="hover:text-foreground cursor-pointer transition-colors">Iniciar Sesión</span>
+              </Link>
+              <span>•</span>
+              <Link href="/register">
+                <span className="hover:text-foreground cursor-pointer transition-colors">Registrarse</span>
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
