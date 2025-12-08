@@ -10,6 +10,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
+      className="min-h-[44px] min-w-[44px]"
       data-testid="button-theme-toggle"
     >
       {theme === "light" ? (
