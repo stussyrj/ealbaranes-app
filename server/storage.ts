@@ -11,6 +11,8 @@ import {
   type InsertDeliveryNote,
   type Message,
   type InsertMessage,
+  type BlogPost,
+  type InsertBlogPost,
   deliveryNotes as deliveryNotesTable,
   users as usersTable,
   tenants as tenantsTable,
@@ -20,10 +22,11 @@ import {
   verificationTokens as verificationTokensTable,
   auditLogs as auditLogsTable,
   messages as messagesTable,
+  blogPosts as blogPostsTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, sql, max, inArray } from "drizzle-orm";
+import { eq, and, sql, max, inArray, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { Pool } from "@neondatabase/serverless";
@@ -74,6 +77,14 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: string, tenantId: string): Promise<Message | undefined>;
   markAllMessagesAsRead(tenantId: string): Promise<void>;
+  
+  // Blog posts (public content, no tenant filtering)
+  getBlogPosts(publishedOnly?: boolean): Promise<BlogPost[]>;
+  getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
+  getBlogPost(id: string): Promise<BlogPost | undefined>;
+  createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
+  updateBlogPost(id: string, updates: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: string): Promise<boolean>;
 }
 
 const defaultVehicleTypes: VehicleType[] = [
@@ -833,6 +844,77 @@ export class MemStorage implements IStorage {
     await db.update(messagesTable)
       .set({ read: true })
       .where(eq(messagesTable.tenantId, tenantId));
+  }
+  
+  // Blog posts methods (public content, no tenant filtering)
+  async getBlogPosts(publishedOnly: boolean = false): Promise<BlogPost[]> {
+    try {
+      if (publishedOnly) {
+        return await db.select().from(blogPostsTable)
+          .where(eq(blogPostsTable.isPublished, true))
+          .orderBy(sql`${blogPostsTable.publishedAt} DESC NULLS LAST`);
+      }
+      return await db.select().from(blogPostsTable)
+        .orderBy(sql`${blogPostsTable.createdAt} DESC`);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      return [];
+    }
+  }
+  
+  async getBlogPostBySlug(slug: string): Promise<BlogPost | undefined> {
+    try {
+      const [post] = await db.select().from(blogPostsTable)
+        .where(eq(blogPostsTable.slug, slug));
+      return post;
+    } catch (error) {
+      console.error("Error fetching blog post by slug:", error);
+      return undefined;
+    }
+  }
+  
+  async getBlogPost(id: string): Promise<BlogPost | undefined> {
+    try {
+      const [post] = await db.select().from(blogPostsTable)
+        .where(eq(blogPostsTable.id, id));
+      return post;
+    } catch (error) {
+      console.error("Error fetching blog post by id:", error);
+      return undefined;
+    }
+  }
+  
+  async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
+    try {
+      const [created] = await db.insert(blogPostsTable).values(post).returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      throw error;
+    }
+  }
+  
+  async updateBlogPost(id: string, updates: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
+    try {
+      const [updated] = await db.update(blogPostsTable)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(blogPostsTable.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteBlogPost(id: string): Promise<boolean> {
+    try {
+      await db.delete(blogPostsTable).where(eq(blogPostsTable.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      return false;
+    }
   }
 }
 

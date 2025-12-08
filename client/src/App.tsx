@@ -17,6 +17,9 @@ const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
+const BlogPage = lazy(() => import("@/pages/BlogPage"));
+const BlogPostPage = lazy(() => import("@/pages/BlogPostPage"));
+const AdminBlogPage = lazy(() => import("@/pages/AdminBlogPage"));
 
 function PageLoader() {
   return (
@@ -47,6 +50,9 @@ function MainLayout() {
         <Route path="/login" component={AuthPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/blog" component={BlogPage} />
+        <Route path="/blog/:slug" component={BlogPostPage} />
+        <Route path="/admin-blog" component={AdminBlogPage} />
         <Route>
           {!user ? (
             <LandingPage />

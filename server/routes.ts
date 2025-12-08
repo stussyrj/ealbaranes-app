@@ -14,6 +14,7 @@ import {
   routeRequestSchema,
   calculateQuoteRequestSchema,
   insertVehicleTypeSchema,
+  insertBlogPostSchema,
   tenants,
 } from "@shared/schema";
 import { db } from "./db";
@@ -1082,6 +1083,137 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error marking all messages as read:", error);
       res.status(500).json({ error: "Error al marcar mensajes" });
+    }
+  });
+
+  // =====================================================
+  // BLOG ROUTES - Public read, private write with special password
+  // =====================================================
+  
+  const BLOG_ADMIN_PASSWORD = process.env.BLOG_ADMIN_PASSWORD || "ealbaranadmin2024";
+  
+  // Middleware to check blog admin access
+  const checkBlogAdmin = (req: Request, res: Response, next: () => void) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || authHeader !== `Bearer ${BLOG_ADMIN_PASSWORD}`) {
+      return res.status(401).json({ error: "Acceso no autorizado al blog" });
+    }
+    next();
+  };
+  
+  // PUBLIC: Get published blog posts
+  app.get("/api/blog", async (req, res) => {
+    try {
+      const posts = await storage.getBlogPosts(true); // Only published
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ error: "Error al obtener artículos" });
+    }
+  });
+  
+  // PUBLIC: Get single blog post by slug
+  app.get("/api/blog/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const post = await storage.getBlogPostBySlug(slug);
+      if (!post || !post.isPublished) {
+        return res.status(404).json({ error: "Artículo no encontrado" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ error: "Error al obtener artículo" });
+    }
+  });
+  
+  // ADMIN: Get all blog posts (including unpublished)
+  app.get("/api/admin-blog/posts", (req, res, next) => checkBlogAdmin(req, res, next), async (req, res) => {
+    try {
+      const posts = await storage.getBlogPosts(false); // All posts
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching all blog posts:", error);
+      res.status(500).json({ error: "Error al obtener artículos" });
+    }
+  });
+  
+  // ADMIN: Get single blog post by ID
+  app.get("/api/admin-blog/posts/:id", (req, res, next) => checkBlogAdmin(req, res, next), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const post = await storage.getBlogPost(id);
+      if (!post) {
+        return res.status(404).json({ error: "Artículo no encontrado" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ error: "Error al obtener artículo" });
+    }
+  });
+  
+  // ADMIN: Create blog post
+  app.post("/api/admin-blog/posts", (req, res, next) => checkBlogAdmin(req, res, next), async (req, res) => {
+    try {
+      const data = insertBlogPostSchema.parse(req.body);
+      // Auto-set publishedAt if publishing
+      if (data.isPublished && !data.publishedAt) {
+        data.publishedAt = new Date();
+      }
+      const post = await storage.createBlogPost(data);
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      res.status(400).json({ error: "Error al crear artículo" });
+    }
+  });
+  
+  // ADMIN: Update blog post
+  app.patch("/api/admin-blog/posts/:id", (req, res, next) => checkBlogAdmin(req, res, next), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      // Auto-set publishedAt if publishing for first time
+      if (updates.isPublished && !updates.publishedAt) {
+        const existing = await storage.getBlogPost(id);
+        if (existing && !existing.publishedAt) {
+          updates.publishedAt = new Date();
+        }
+      }
+      const post = await storage.updateBlogPost(id, updates);
+      if (!post) {
+        return res.status(404).json({ error: "Artículo no encontrado" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      res.status(400).json({ error: "Error al actualizar artículo" });
+    }
+  });
+  
+  // ADMIN: Delete blog post
+  app.delete("/api/admin-blog/posts/:id", (req, res, next) => checkBlogAdmin(req, res, next), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteBlogPost(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Artículo no encontrado" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ error: "Error al eliminar artículo" });
+    }
+  });
+  
+  // ADMIN: Verify blog admin password
+  app.post("/api/admin-blog/verify", (req, res) => {
+    const { password } = req.body;
+    if (password === BLOG_ADMIN_PASSWORD) {
+      res.json({ valid: true });
+    } else {
+      res.status(401).json({ valid: false, error: "Contraseña incorrecta" });
     }
   });
 
