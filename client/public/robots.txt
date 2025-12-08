@@ -1,0 +1,22 @@
+# robots.txt para eAlbarán
+# https://ealbaranes.replit.app/
+
+User-agent: *
+Allow: /
+
+# Páginas públicas indexables
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /terms
+Allow: /privacy
+
+# Páginas protegidas - no indexar
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://ealbaranes.replit.app/sitemap.xml
+
+# Crawl-delay para evitar sobrecarga (opcional)
+Crawl-delay: 1
