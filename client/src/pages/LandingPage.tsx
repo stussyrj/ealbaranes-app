@@ -366,17 +366,13 @@ export default function LandingPage() {
               </h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/blog">
-                    <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" data-testid="link-footer-blog">
-                      Ver todos los artículos
-                    </span>
+                  <Link href="/blog" data-testid="link-footer-blog" className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                    Ver todos los artículos
                   </Link>
                 </li>
                 <li>
-                  <Link href="/blog/que-es-un-albaran-de-transporte">
-                    <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" data-testid="link-footer-article">
-                      ¿Qué es un albarán de transporte?
-                    </span>
+                  <Link href="/blog/que-es-un-albaran-de-transporte" data-testid="link-footer-article" className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                    ¿Qué es un albarán de transporte?
                   </Link>
                 </li>
               </ul>
@@ -411,16 +407,16 @@ export default function LandingPage() {
               © {new Date().getFullYear()} eAlbarán. Todos los derechos reservados.
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <Link href="/blog">
-                <span className="hover:text-foreground cursor-pointer transition-colors">Blog</span>
+              <Link href="/blog" data-testid="link-footer-nav-blog" className="hover:text-foreground transition-colors">
+                Blog
               </Link>
               <span>•</span>
-              <Link href="/login">
-                <span className="hover:text-foreground cursor-pointer transition-colors">Iniciar Sesión</span>
+              <Link href="/login" data-testid="link-footer-nav-login" className="hover:text-foreground transition-colors">
+                Iniciar Sesión
               </Link>
               <span>•</span>
-              <Link href="/register">
-                <span className="hover:text-foreground cursor-pointer transition-colors">Registrarse</span>
+              <Link href="/register" data-testid="link-footer-nav-register" className="hover:text-foreground transition-colors">
+                Registrarse
               </Link>
             </div>
           </div>
