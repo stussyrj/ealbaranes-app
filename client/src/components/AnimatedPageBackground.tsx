@@ -1,4 +1,20 @@
+import { useState, useEffect } from "react";
+
 export function AnimatedPageBackground() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(() => setIsVisible(true), { timeout: 2000 });
+      return () => cancelIdleCallback(id);
+    } else {
+      const timer = setTimeout(() => setIsVisible(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  if (!isVisible) return null;
+
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 via-white/20 to-orange-50/30 dark:from-purple-950/30 dark:via-slate-950/20 dark:to-orange-950/20" />
