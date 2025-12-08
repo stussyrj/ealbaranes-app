@@ -17,7 +17,7 @@ import {
   Mail,
   MapPin
 } from "lucide-react";
-import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
+const logoImage = "/logo.webp";
 
 const features = [
   {
@@ -72,7 +72,7 @@ export default function LandingPage() {
                 className="h-10 w-10 rounded-lg object-cover"
                 width={40}
                 height={40}
-                decoding="async"
+                fetchPriority="high"
               />
               <span className="text-xl font-bold text-foreground">eAlbarán</span>
             </div>
@@ -108,11 +108,11 @@ export default function LandingPage() {
                 <Smartphone className="h-4 w-4" />
                 Disponible en móvil y escritorio
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+              <h1 className="hero-title text-foreground mb-6">
                 Gestión de Albaranes
                 <span className="text-primary block">100% Digital</span>
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              <p className="hero-subtitle text-muted-foreground mb-8 max-w-2xl mx-auto">
                 Digitaliza los albaranes de tu empresa de transporte. Tus trabajadores crean albaranes con fotos y firmas desde el móvil, y tú lo controlas todo desde tu panel.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">

@@ -122,6 +122,9 @@
       "inLanguage": "es"
     }
     </script>
+    <!-- Performance: Preload critical resources -->
+    <link rel="preload" href="/logo.webp" as="image" type="image/webp" />
+    
     <!-- Performance: System fonts para máximo rendimiento (sin requests externos) -->
     <style>
       :root {
@@ -129,12 +132,12 @@
         --font-serif: Georgia, 'Times New Roman', serif;
         --font-mono: ui-monospace, 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
       }
-      /* Critical CSS inline para FCP */
+      /* Critical CSS inline para FCP y LCP */
       body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
       #root { min-height: 100vh; }
-      .spinner-initial { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-      .spinner-initial svg { width: 2rem; height: 2rem; animation: spin 1s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
+      /* Hero critical styles for instant LCP */
+      .hero-title { font-size: clamp(2.25rem, 5vw, 3.75rem); font-weight: 700; line-height: 1.1; }
+      .hero-subtitle { font-size: clamp(1.125rem, 2vw, 1.25rem); }
     </style>
   </head>
   <body>
