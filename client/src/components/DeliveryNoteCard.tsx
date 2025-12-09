@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Clock, Truck, User, Calendar, FileText, CheckCircle, Timer, Camera, Edit2, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, FileText, CheckCircle, Timer, Camera, Edit2, ChevronDown, ChevronUp, MapPin, Navigation, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PickupOrigin } from "@shared/schema";
 
-// Helper to format a route as "Recogida: X → Entrega: Y" with styled labels
 const RouteDisplay = ({ origin }: { origin: PickupOrigin }) => {
   const from = origin.name || 'N/A';
   const to = origin.address || 'N/A';
@@ -30,6 +29,12 @@ interface DeliveryNoteCardProps {
     photo?: string | null;
     signature?: string | null;
     signedAt?: string | null;
+    originSignature?: string | null;
+    originSignatureDocument?: string | null;
+    originSignedAt?: string | null;
+    destinationSignature?: string | null;
+    destinationSignatureDocument?: string | null;
+    destinationSignedAt?: string | null;
     status?: string;
     workerName?: string | null;
   };
@@ -53,7 +58,10 @@ export function DeliveryNoteCard({
   onAddPhotoClick,
 }: DeliveryNoteCardProps) {
   const [showAllOrigins, setShowAllOrigins] = useState(false);
-  const isSigned = !!note.photo || !!note.signature;
+  const [showSignatures, setShowSignatures] = useState(false);
+  
+  const hasNewSignatures = !!note.originSignature || !!note.destinationSignature;
+  const isSigned = !!note.photo || !!note.signature || hasNewSignatures;
   const hasMultipleOrigins = note.pickupOrigins && note.pickupOrigins.length > 1;
   
   const formatWaitTime = (minutes: number) => {
@@ -197,13 +205,75 @@ export function DeliveryNoteCard({
             </div>
           )}
 
-          {note.signedAt && isSigned && (
+          {hasNewSignatures && (
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowSignatures(!showSignatures)}
+                className="flex items-center gap-1 text-xs text-primary hover:underline w-full justify-center"
+                data-testid={`button-toggle-signatures-${note.id}`}
+              >
+                {showSignatures ? (
+                  <><ChevronUp className="w-3 h-3" /> Ocultar firmas</>
+                ) : (
+                  <><ChevronDown className="w-3 h-3" /> Ver firmas ({note.originSignature ? '1' : '0'} origen, {note.destinationSignature ? '1' : '0'} destino)</>
+                )}
+              </button>
+
+              {showSignatures && (
+                <div className="grid grid-cols-2 gap-2">
+                  {note.originSignature && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-md p-2">
+                      <div className="flex items-center gap-1 mb-1">
+                        <MapPin className="w-3 h-3 text-blue-500" />
+                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Origen</span>
+                      </div>
+                      <img 
+                        src={note.originSignature} 
+                        alt="Firma origen" 
+                        className="w-full h-12 object-contain bg-white rounded border"
+                        data-testid={`img-origin-signature-${note.id}`}
+                      />
+                      {note.originSignatureDocument && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {note.originSignatureDocument}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {note.destinationSignature && (
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-md p-2">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Navigation className="w-3 h-3 text-green-500" />
+                        <span className="text-xs font-medium text-green-700 dark:text-green-300">Destino</span>
+                      </div>
+                      <img 
+                        src={note.destinationSignature} 
+                        alt="Firma destino" 
+                        className="w-full h-12 object-contain bg-white rounded border"
+                        data-testid={`img-destination-signature-${note.id}`}
+                      />
+                      {note.destinationSignatureDocument && (
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {note.destinationSignatureDocument}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {(note.signedAt || note.originSignedAt || note.destinationSignedAt) && isSigned && (
             <div className="flex items-start gap-2 bg-green-50 dark:bg-green-900/20 rounded-md p-2">
               <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-green-700 dark:text-green-300">Firmado</p>
                 <p className="text-sm font-semibold text-green-800 dark:text-green-200">
-                  {formatSignedDate(note.signedAt)}
+                  {formatSignedDate(note.destinationSignedAt || note.signedAt || '')}
                 </p>
               </div>
             </div>
