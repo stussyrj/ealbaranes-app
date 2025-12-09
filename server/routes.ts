@@ -564,6 +564,12 @@ export async function registerRoutes(
         signature: data.signature || null,
         signedAt: data.signedAt ? new Date(data.signedAt) : null,
         notes: data.notes || null,
+        originSignature: data.originSignature || null,
+        originSignatureDocument: data.originSignatureDocument || null,
+        originSignedAt: data.originSignedAt ? new Date(data.originSignedAt) : null,
+        destinationSignature: data.destinationSignature || null,
+        destinationSignatureDocument: data.destinationSignatureDocument || null,
+        destinationSignedAt: data.destinationSignedAt ? new Date(data.destinationSignedAt) : null,
       };
       const note = await storage.createDeliveryNote(noteData);
       

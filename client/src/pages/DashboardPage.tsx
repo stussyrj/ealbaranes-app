@@ -933,33 +933,113 @@ export default function DashboardPage() {
                       yPos += 15;
                     }
                     
-                    if (note.signature) {
+                    // Dual signature section (Origin and Destination)
+                    const hasOriginSig = note.originSignature;
+                    const hasDestSig = note.destinationSignature;
+                    const hasOldSig = note.signature && !hasOriginSig && !hasDestSig;
+                    
+                    if (hasOriginSig || hasDestSig || hasOldSig) {
                       pdf.setFont('helvetica', 'bold');
-                      pdf.setFontSize(9);
+                      pdf.setFontSize(10);
                       pdf.setTextColor(0, 0, 0);
-                      pdf.text('Firma digital del cliente:', margin, yPos);
-                      yPos += 4;
+                      pdf.text('Firmas Digitales:', margin, yPos);
+                      yPos += 6;
                       
-                      try {
-                        const sigResponse = await fetch(note.signature);
-                        const sigBlob = await sigResponse.blob();
-                        const sigBase64 = await new Promise<string>((resolve) => {
-                          const reader = new FileReader();
-                          reader.onloadend = () => resolve(reader.result as string);
-                          reader.readAsDataURL(sigBlob);
-                        });
-                        
-                        const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
-                        const sigWidth = 50;
-                        const sigImgHeight = 25;
-                        pdf.setFillColor(255, 255, 255);
-                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'F');
-                        pdf.setDrawColor(200, 200, 200);
-                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'S');
-                        pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 2, sigWidth, sigImgHeight, undefined, 'MEDIUM');
-                      } catch (sigError) {
+                      const sigWidth = 45;
+                      const sigHeight = 22;
+                      const colWidth = (pageWidth - margin * 2) / 2;
+                      
+                      // Origin signature (left column)
+                      if (hasOriginSig) {
+                        pdf.setFontSize(8);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setTextColor(37, 99, 235);
+                        pdf.text('ORIGEN - Entrega:', margin, yPos);
+                        pdf.setTextColor(0, 0, 0);
                         pdf.setFont('helvetica', 'normal');
-                        pdf.text('(Firma no disponible)', margin, yPos + 10);
+                        pdf.text(`Doc: ${note.originSignatureDocument || 'N/A'}`, margin, yPos + 4);
+                        
+                        try {
+                          let sigBase64 = note.originSignature;
+                          if (!sigBase64.startsWith('data:image')) {
+                            const sigResponse = await fetch(note.originSignature);
+                            const sigBlob = await sigResponse.blob();
+                            sigBase64 = await new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => resolve(reader.result as string);
+                              reader.readAsDataURL(sigBlob);
+                            });
+                          }
+                          const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                          pdf.setFillColor(255, 255, 255);
+                          pdf.rect(margin, yPos + 6, sigWidth + 4, sigHeight + 4, 'F');
+                          pdf.setDrawColor(180, 180, 180);
+                          pdf.rect(margin, yPos + 6, sigWidth + 4, sigHeight + 4, 'S');
+                          pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 8, sigWidth, sigHeight, undefined, 'MEDIUM');
+                        } catch (e) {
+                          pdf.text('(Firma no disponible)', margin, yPos + 15);
+                        }
+                      }
+                      
+                      // Destination signature (right column)
+                      if (hasDestSig) {
+                        const xOffset = margin + colWidth;
+                        pdf.setFontSize(8);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setTextColor(22, 163, 74);
+                        pdf.text('DESTINO - Recibe:', xOffset, yPos);
+                        pdf.setTextColor(0, 0, 0);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.text(`Doc: ${note.destinationSignatureDocument || 'N/A'}`, xOffset, yPos + 4);
+                        
+                        try {
+                          let sigBase64 = note.destinationSignature;
+                          if (!sigBase64.startsWith('data:image')) {
+                            const sigResponse = await fetch(note.destinationSignature);
+                            const sigBlob = await sigResponse.blob();
+                            sigBase64 = await new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => resolve(reader.result as string);
+                              reader.readAsDataURL(sigBlob);
+                            });
+                          }
+                          const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                          pdf.setFillColor(255, 255, 255);
+                          pdf.rect(xOffset, yPos + 6, sigWidth + 4, sigHeight + 4, 'F');
+                          pdf.setDrawColor(180, 180, 180);
+                          pdf.rect(xOffset, yPos + 6, sigWidth + 4, sigHeight + 4, 'S');
+                          pdf.addImage(sigBase64, sigFormat, xOffset + 2, yPos + 8, sigWidth, sigHeight, undefined, 'MEDIUM');
+                        } catch (e) {
+                          pdf.text('(Firma no disponible)', xOffset, yPos + 15);
+                        }
+                      }
+                      
+                      // Fallback: Old single signature for legacy notes
+                      if (hasOldSig) {
+                        pdf.setFontSize(8);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.text('Firma del cliente:', margin, yPos);
+                        try {
+                          let sigBase64 = note.signature;
+                          if (!sigBase64.startsWith('data:image')) {
+                            const sigResponse = await fetch(note.signature);
+                            const sigBlob = await sigResponse.blob();
+                            sigBase64 = await new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => resolve(reader.result as string);
+                              reader.readAsDataURL(sigBlob);
+                            });
+                          }
+                          const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                          pdf.setFillColor(255, 255, 255);
+                          pdf.rect(margin, yPos + 4, sigWidth + 4, sigHeight + 4, 'F');
+                          pdf.setDrawColor(180, 180, 180);
+                          pdf.rect(margin, yPos + 4, sigWidth + 4, sigHeight + 4, 'S');
+                          pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 6, sigWidth, sigHeight, undefined, 'MEDIUM');
+                        } catch (e) {
+                          pdf.setFont('helvetica', 'normal');
+                          pdf.text('(Firma no disponible)', margin, yPos + 10);
+                        }
                       }
                     }
                     
@@ -1106,36 +1186,110 @@ export default function DashboardPage() {
                       yPos += 15;
                     }
                     
-                    if (note.signature) {
+                    // Dual signature section (Origin and Destination)
+                    const hasOriginSig2 = note.originSignature;
+                    const hasDestSig2 = note.destinationSignature;
+                    const hasOldSig2 = note.signature && !hasOriginSig2 && !hasDestSig2;
+                    
+                    if (hasOriginSig2 || hasDestSig2 || hasOldSig2) {
                       pdf.setFont('helvetica', 'bold');
-                      pdf.setFontSize(9);
+                      pdf.setFontSize(10);
                       pdf.setTextColor(0, 0, 0);
-                      pdf.text('Firma digital del cliente:', margin, yPos);
-                      yPos += 4;
+                      pdf.text('Firmas Digitales:', margin, yPos);
+                      yPos += 6;
                       
-                      try {
-                        let sigBase64 = note.signature;
-                        if (!sigBase64.startsWith('data:image')) {
-                          const sigResponse = await fetch(note.signature);
-                          const sigBlob = await sigResponse.blob();
-                          sigBase64 = await new Promise<string>((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result as string);
-                            reader.readAsDataURL(sigBlob);
-                          });
-                        }
-                        
-                        const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
-                        const sigWidth = 50;
-                        const sigImgHeight = 25;
-                        pdf.setFillColor(255, 255, 255);
-                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'F');
-                        pdf.setDrawColor(200, 200, 200);
-                        pdf.rect(margin, yPos, sigWidth + 4, sigImgHeight + 4, 'S');
-                        pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 2, sigWidth, sigImgHeight, undefined, 'MEDIUM');
-                      } catch (sigError) {
+                      const sigWidth2 = 45;
+                      const sigHeight2 = 22;
+                      const colWidth2 = (pageWidth - margin * 2) / 2;
+                      
+                      if (hasOriginSig2) {
+                        pdf.setFontSize(8);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setTextColor(37, 99, 235);
+                        pdf.text('ORIGEN - Entrega:', margin, yPos);
+                        pdf.setTextColor(0, 0, 0);
                         pdf.setFont('helvetica', 'normal');
-                        pdf.text('(Firma no disponible)', margin, yPos + 10);
+                        pdf.text(`Doc: ${note.originSignatureDocument || 'N/A'}`, margin, yPos + 4);
+                        
+                        try {
+                          let sigBase64 = note.originSignature;
+                          if (!sigBase64.startsWith('data:image')) {
+                            const sigResponse = await fetch(note.originSignature);
+                            const sigBlob = await sigResponse.blob();
+                            sigBase64 = await new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => resolve(reader.result as string);
+                              reader.readAsDataURL(sigBlob);
+                            });
+                          }
+                          const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                          pdf.setFillColor(255, 255, 255);
+                          pdf.rect(margin, yPos + 6, sigWidth2 + 4, sigHeight2 + 4, 'F');
+                          pdf.setDrawColor(180, 180, 180);
+                          pdf.rect(margin, yPos + 6, sigWidth2 + 4, sigHeight2 + 4, 'S');
+                          pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 8, sigWidth2, sigHeight2, undefined, 'MEDIUM');
+                        } catch (e) {
+                          pdf.text('(Firma no disponible)', margin, yPos + 15);
+                        }
+                      }
+                      
+                      if (hasDestSig2) {
+                        const xOffset2 = margin + colWidth2;
+                        pdf.setFontSize(8);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setTextColor(22, 163, 74);
+                        pdf.text('DESTINO - Recibe:', xOffset2, yPos);
+                        pdf.setTextColor(0, 0, 0);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.text(`Doc: ${note.destinationSignatureDocument || 'N/A'}`, xOffset2, yPos + 4);
+                        
+                        try {
+                          let sigBase64 = note.destinationSignature;
+                          if (!sigBase64.startsWith('data:image')) {
+                            const sigResponse = await fetch(note.destinationSignature);
+                            const sigBlob = await sigResponse.blob();
+                            sigBase64 = await new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => resolve(reader.result as string);
+                              reader.readAsDataURL(sigBlob);
+                            });
+                          }
+                          const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                          pdf.setFillColor(255, 255, 255);
+                          pdf.rect(xOffset2, yPos + 6, sigWidth2 + 4, sigHeight2 + 4, 'F');
+                          pdf.setDrawColor(180, 180, 180);
+                          pdf.rect(xOffset2, yPos + 6, sigWidth2 + 4, sigHeight2 + 4, 'S');
+                          pdf.addImage(sigBase64, sigFormat, xOffset2 + 2, yPos + 8, sigWidth2, sigHeight2, undefined, 'MEDIUM');
+                        } catch (e) {
+                          pdf.text('(Firma no disponible)', xOffset2, yPos + 15);
+                        }
+                      }
+                      
+                      if (hasOldSig2) {
+                        pdf.setFontSize(8);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.text('Firma del cliente:', margin, yPos);
+                        try {
+                          let sigBase64 = note.signature;
+                          if (!sigBase64.startsWith('data:image')) {
+                            const sigResponse = await fetch(note.signature);
+                            const sigBlob = await sigResponse.blob();
+                            sigBase64 = await new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => resolve(reader.result as string);
+                              reader.readAsDataURL(sigBlob);
+                            });
+                          }
+                          const sigFormat = sigBase64.includes('data:image/png') ? 'PNG' : 'JPEG';
+                          pdf.setFillColor(255, 255, 255);
+                          pdf.rect(margin, yPos + 4, sigWidth2 + 4, sigHeight2 + 4, 'F');
+                          pdf.setDrawColor(180, 180, 180);
+                          pdf.rect(margin, yPos + 4, sigWidth2 + 4, sigHeight2 + 4, 'S');
+                          pdf.addImage(sigBase64, sigFormat, margin + 2, yPos + 6, sigWidth2, sigHeight2, undefined, 'MEDIUM');
+                        } catch (e) {
+                          pdf.setFont('helvetica', 'normal');
+                          pdf.text('(Firma no disponible)', margin, yPos + 10);
+                        }
                       }
                     }
                     
