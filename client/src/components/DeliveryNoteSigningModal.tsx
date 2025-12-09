@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,26 @@ interface SignatureCanvasProps {
 
 function SignatureCanvas({ onSignatureChange, label }: SignatureCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [hasSignature, setHasSignature] = useState(false);
+  const isInitializedRef = useRef(false);
+  const isDrawingRef = useRef(false);
+  const hasSignatureRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || isInitializedRef.current) return;
+    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    isInitializedRef.current = true;
+  }, []);
 
   const getCoordinates = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -49,7 +66,7 @@ function SignatureCanvas({ onSignatureChange, label }: SignatureCanvasProps) {
     const ctx = canvas?.getContext("2d");
     if (!ctx) return;
 
-    setIsDrawing(true);
+    isDrawingRef.current = true;
     lastPointRef.current = coords;
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
@@ -58,7 +75,7 @@ function SignatureCanvas({ onSignatureChange, label }: SignatureCanvasProps) {
   }, [getCoordinates]);
 
   const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing) return;
+    if (!isDrawingRef.current) return;
     e.preventDefault();
     const coords = getCoordinates(e);
     if (!coords) return;
@@ -78,19 +95,20 @@ function SignatureCanvas({ onSignatureChange, label }: SignatureCanvasProps) {
     ctx.stroke();
     lastPointRef.current = coords;
     
-    if (!hasSignature) {
-      setHasSignature(true);
+    if (!hasSignatureRef.current) {
+      hasSignatureRef.current = true;
       onSignatureChange(true, canvas?.toDataURL("image/png") || "");
+      forceUpdate(n => n + 1);
     }
-  }, [isDrawing, getCoordinates, hasSignature, onSignatureChange]);
+  }, [getCoordinates, onSignatureChange]);
 
   const stopDrawing = useCallback(() => {
-    if (isDrawing && canvasRef.current) {
+    if (isDrawingRef.current && canvasRef.current) {
       onSignatureChange(true, canvasRef.current.toDataURL("image/png"));
     }
-    setIsDrawing(false);
+    isDrawingRef.current = false;
     lastPointRef.current = null;
-  }, [isDrawing, onSignatureChange]);
+  }, [onSignatureChange]);
 
   const clearSignature = useCallback(() => {
     const canvas = canvasRef.current;
@@ -101,30 +119,17 @@ function SignatureCanvas({ onSignatureChange, label }: SignatureCanvasProps) {
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
-    setHasSignature(false);
+    hasSignatureRef.current = false;
     onSignatureChange(false, "");
+    forceUpdate(n => n + 1);
   }, [onSignatureChange]);
-
-  const initCanvas = useCallback((canvas: HTMLCanvasElement | null) => {
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-  }, []);
 
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">{label}</Label>
       <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg overflow-hidden bg-white">
         <canvas
-          ref={(el) => {
-            (canvasRef as any).current = el;
-            initCanvas(el);
-          }}
+          ref={canvasRef}
           width={400}
           height={120}
           className="w-full touch-none cursor-crosshair"
