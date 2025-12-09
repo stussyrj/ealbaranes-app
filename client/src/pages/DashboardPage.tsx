@@ -14,6 +14,7 @@ const DriverDoorAnimation = lazy(() => import("@/components/DriverDoorAnimation"
 const WorkerAssignmentModal = lazy(() => import("@/components/WorkerAssignmentModal").then(m => ({ default: m.WorkerAssignmentModal })));
 const SignaturePad = lazy(() => import("@/components/SignaturePad").then(m => ({ default: m.SignaturePad })));
 const OnboardingTutorial = lazy(() => import("@/components/OnboardingTutorial").then(m => ({ default: m.OnboardingTutorial })));
+import { DeliveryNoteSigningModal } from "@/components/DeliveryNoteSigningModal";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,6 +77,10 @@ export default function DashboardPage() {
   const [viewSignatureOpen, setViewSignatureOpen] = useState(false);
   const [signatureToView, setSignatureToView] = useState<string | null>(null);
   
+  // Dual signature signing modal state
+  const [signingModalOpen, setSigningModalOpen] = useState(false);
+  const [selectedNoteForSigning, setSelectedNoteForSigning] = useState<any>(null);
+  
   // Onboarding tutorial state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingManuallyCompleted, setOnboardingManuallyCompleted] = useState(false);
@@ -120,8 +125,15 @@ export default function DashboardPage() {
     });
   };
   
-  // Helper function to determine if a note is fully signed (has both photo and signature)
-  const isFullySigned = (note: any) => note.photo && note.signature;
+  // Helper function to determine if a note is fully signed (has dual signatures from origin and destination)
+  const isFullySigned = (note: any) => {
+    // New dual signature system: requires both origin and destination signatures with documents
+    const hasNewDualSignatures = note.originSignature && note.originSignatureDocument && 
+                                  note.destinationSignature && note.destinationSignatureDocument;
+    // Legacy: old notes may still use photo + signature
+    const hasLegacySignatures = note.photo && note.signature;
+    return hasNewDualSignatures || hasLegacySignatures;
+  };
   
   const isValidPhoto = (photo: string | null | undefined) => {
     if (!photo) return false;
@@ -1656,47 +1668,21 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {/* Button to add missing photo or signature */}
+                    {/* Button to open dual signature modal */}
                     {!isFullySigned(note) && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-xs"
-                            data-testid={`button-sign-${note.id}`}
-                          >
-                            <Pen className="w-3 h-3 mr-1" />
-                            Firmar Albarán
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center" className="w-48">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedNoteForPhoto(note);
-                              setCapturePhotoOpen(true);
-                            }}
-                            className="cursor-pointer"
-                            data-testid={`menu-add-photo-${note.id}`}
-                          >
-                            <Camera className="w-4 h-4 mr-2" />
-                            {note.photo ? "Cambiar Foto" : "Añadir Foto"}
-                            {note.photo && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedNoteForSignature(note);
-                              setCaptureSignatureOpen(true);
-                            }}
-                            className="cursor-pointer"
-                            data-testid={`menu-add-signature-${note.id}`}
-                          >
-                            <Pen className="w-4 h-4 mr-2" />
-                            {note.signature ? "Cambiar Firma" : "Añadir Firma Digital"}
-                            {note.signature && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => {
+                          setSelectedNoteForSigning(note);
+                          setSigningModalOpen(true);
+                        }}
+                        data-testid={`button-sign-${note.id}`}
+                      >
+                        <Pen className="w-3 h-3 mr-1" />
+                        Firmar Albarán
+                      </Button>
                     )}
 
                     {isFullySigned(note) && note.invoicedAt && (
@@ -2543,6 +2529,16 @@ export default function DashboardPage() {
           userType="company"
         />
       </Suspense>
+      
+      {/* Dual Signature Signing Modal */}
+      <DeliveryNoteSigningModal
+        open={signingModalOpen}
+        onOpenChange={(open) => {
+          setSigningModalOpen(open);
+          if (!open) setSelectedNoteForSigning(null);
+        }}
+        note={selectedNoteForSigning}
+      />
     </div>
   );
 }

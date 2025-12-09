@@ -11,6 +11,7 @@ const DriverDoorAnimation = lazy(() => import("@/components/DriverDoorAnimation"
 const DeliveryNoteGenerator = lazy(() => import("@/components/DeliveryNoteGenerator").then(m => ({ default: m.DeliveryNoteGenerator })));
 const SignaturePad = lazy(() => import("@/components/SignaturePad").then(m => ({ default: m.SignaturePad })));
 const OnboardingTutorial = lazy(() => import("@/components/OnboardingTutorial").then(m => ({ default: m.OnboardingTutorial })));
+import { DeliveryNoteSigningModal } from "@/components/DeliveryNoteSigningModal";
 import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -48,6 +49,11 @@ export default function WorkerDashboard() {
   const [captureSignatureOpen, setCaptureSignatureOpen] = useState(false);
   const [selectedNoteForSignature, setSelectedNoteForSignature] = useState<DeliveryNote | null>(null);
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  
+  // Dual signature signing modal state
+  const [signingModalOpen, setSigningModalOpen] = useState(false);
+  const [selectedNoteForSigning, setSelectedNoteForSigning] = useState<DeliveryNote | null>(null);
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const frameIdRef = useRef<number | null>(null);
@@ -158,8 +164,15 @@ export default function WorkerDashboard() {
     });
   };
 
-  // Helper function to determine if a note is fully signed (has both photo and signature)
-  const isFullySigned = (note: DeliveryNote) => note.photo && note.signature;
+  // Helper function to determine if a note is fully signed (has dual signatures from origin and destination)
+  const isFullySigned = (note: DeliveryNote) => {
+    // New dual signature system: requires both origin and destination signatures with documents
+    const hasNewDualSignatures = note.originSignature && note.originSignatureDocument && 
+                                  note.destinationSignature && note.destinationSignatureDocument;
+    // Legacy: old notes may still use photo + signature
+    const hasLegacySignatures = note.photo && note.signature;
+    return hasNewDualSignatures || hasLegacySignatures;
+  };
   
   // Helper to get missing signature info
   const getMissingSignatureInfo = (note: DeliveryNote) => {
@@ -645,54 +658,20 @@ export default function WorkerDashboard() {
             </div>
           )}
 
-          {/* Unified button for adding photo/signature */}
+          {/* Button to open dual signature modal */}
           {!isFullySigned(note) && (
-            <div className="space-y-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    data-testid={`button-sign-${note.id}`}
-                  >
-                    <Pen className="w-4 h-4 mr-2" />
-                    Firmar Albarán
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSelectedNoteForPhoto(note);
-                      setCapturePhotoOpen(true);
-                      setCapturedPhoto(null);
-                    }}
-                    className="cursor-pointer"
-                    data-testid={`menu-add-photo-${note.id}`}
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    {note.photo ? "Cambiar Foto" : "Añadir Foto"}
-                    {note.photo && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSelectedNoteForSignature(note);
-                      setCaptureSignatureOpen(true);
-                    }}
-                    className="cursor-pointer"
-                    data-testid={`menu-add-signature-${note.id}`}
-                  >
-                    <Pen className="w-4 h-4 mr-2" />
-                    {note.signature ? "Cambiar Firma" : "Añadir Firma Digital"}
-                    {note.signature && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {getMissingSignatureInfo(note) && (
-                <p className="text-xs text-muted-foreground text-center">
-                  {getMissingSignatureInfo(note)}
-                </p>
-              )}
-            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setSelectedNoteForSigning(note);
+                setSigningModalOpen(true);
+              }}
+              data-testid={`button-sign-${note.id}`}
+            >
+              <Pen className="w-4 h-4 mr-2" />
+              Firmar Albarán
+            </Button>
           )}
         </CardContent>
       </Card>
@@ -1059,53 +1038,21 @@ export default function WorkerDashboard() {
                           Editar
                         </Button>
                         {!isFullySigned(note) && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                data-testid={`button-sign-modal-${note.id}`}
-                              >
-                                <Pen className="w-3.5 h-3.5 mr-1.5" />
-                                Firmar
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="center" className="w-48">
-                              <DropdownMenuItem
-                                onClick={() => { 
-                                  setSelectedNoteForPhoto(note); 
-                                  setCapturePhotoOpen(true);
-                                  setCapturedPhoto(null);
-                                }}
-                                className="cursor-pointer"
-                                data-testid={`menu-add-photo-modal-${note.id}`}
-                              >
-                                <Camera className="w-4 h-4 mr-2" />
-                                {note.photo ? "Cambiar Foto" : "Añadir Foto"}
-                                {note.photo && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => { 
-                                  setSelectedNoteForSignature(note); 
-                                  setCaptureSignatureOpen(true); 
-                                }}
-                                className="cursor-pointer"
-                                data-testid={`menu-add-signature-modal-${note.id}`}
-                              >
-                                <Pen className="w-4 h-4 mr-2" />
-                                {note.signature ? "Cambiar Firma" : "Añadir Firma"}
-                                {note.signature && <CheckCircle className="w-3 h-3 ml-auto text-green-500" />}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              setSelectedNoteForSigning(note);
+                              setSigningModalOpen(true);
+                            }}
+                            data-testid={`button-sign-modal-${note.id}`}
+                          >
+                            <Pen className="w-3.5 h-3.5 mr-1.5" />
+                            Firmar
+                          </Button>
                         )}
                       </div>
-                      {getMissingSignatureInfo(note) && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          {getMissingSignatureInfo(note)}
-                        </p>
-                      )}
                     </div>
                   )}
 
@@ -1869,6 +1816,16 @@ export default function WorkerDashboard() {
           userType="worker"
         />
       </Suspense>
+      
+      {/* Dual Signature Signing Modal */}
+      <DeliveryNoteSigningModal
+        open={signingModalOpen}
+        onOpenChange={(open) => {
+          setSigningModalOpen(open);
+          if (!open) setSelectedNoteForSigning(null);
+        }}
+        note={selectedNoteForSigning}
+      />
     </div>
   );
 }

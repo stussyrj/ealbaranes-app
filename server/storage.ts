@@ -652,7 +652,7 @@ export class MemStorage implements IStorage {
         
         const result = await db
           .insert(deliveryNotesTable)
-          .values({ ...note, noteNumber: nextNumber })
+          .values({ ...note, noteNumber: nextNumber } as any)
           .returning();
         return result[0];
       } catch (error: any) {
@@ -669,7 +669,7 @@ export class MemStorage implements IStorage {
 
   async updateDeliveryNote(id: string, updates: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined> {
     try {
-      const result = await db.update(deliveryNotesTable).set(updates).where(eq(deliveryNotesTable.id, id)).returning();
+      const result = await db.update(deliveryNotesTable).set(updates as any).where(eq(deliveryNotesTable.id, id)).returning();
       return result[0];
     } catch (error) {
       console.error("Error updating delivery note in DB:", error);

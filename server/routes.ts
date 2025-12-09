@@ -710,10 +710,9 @@ export async function registerRoutes(
           return res.status(400).json({ error: "La firma es demasiado pequeña o está corrupta. Inténtalo de nuevo." });
         }
         
-        // Check if this is a signature-only update (photo or signature)
-        const isSignatureUpdate = Object.keys(data).every(key => 
-          key === 'photo' || key === 'signature'
-        );
+        // Check if this is a signature-only update (photo, signature, or dual signatures)
+        const signatureFields = ['photo', 'signature', 'status', 'originSignature', 'originSignatureDocument', 'originSignedAt', 'destinationSignature', 'destinationSignatureDocument', 'destinationSignedAt'];
+        const isSignatureUpdate = Object.keys(data).every(key => signatureFields.includes(key));
         
         // Allow adding photo or signature to partially signed notes
         // But block all other edits once note is fully signed
@@ -737,12 +736,29 @@ export async function registerRoutes(
         data.invoicedAt = new Date(data.invoicedAt);
       }
       
-      // Determine final state after update (photo and signature)
+      // Convert dual signature dates to Date objects if present
+      if (data.originSignedAt && typeof data.originSignedAt === 'string') {
+        data.originSignedAt = new Date(data.originSignedAt);
+      }
+      if (data.destinationSignedAt && typeof data.destinationSignedAt === 'string') {
+        data.destinationSignedAt = new Date(data.destinationSignedAt);
+      }
+      
+      // Determine final state after update (photo and signature OR dual signatures)
       const willHavePhoto = data.photo !== undefined ? data.photo : existingNote.photo;
       const willHaveSignature = data.signature !== undefined ? data.signature : existingNote.signature;
-      const willBeFullySigned = willHavePhoto && willHaveSignature;
+      const willHaveLegacySigning = willHavePhoto && willHaveSignature;
       
-      // Auto-set signedAt and status when both photo AND signature are present
+      // Check for new dual signature system
+      const willHaveOriginSignature = data.originSignature !== undefined ? data.originSignature : existingNote.originSignature;
+      const willHaveOriginDocument = data.originSignatureDocument !== undefined ? data.originSignatureDocument : existingNote.originSignatureDocument;
+      const willHaveDestSignature = data.destinationSignature !== undefined ? data.destinationSignature : existingNote.destinationSignature;
+      const willHaveDestDocument = data.destinationSignatureDocument !== undefined ? data.destinationSignatureDocument : existingNote.destinationSignatureDocument;
+      const willHaveDualSigning = willHaveOriginSignature && willHaveOriginDocument && willHaveDestSignature && willHaveDestDocument;
+      
+      const willBeFullySigned = willHaveLegacySigning || willHaveDualSigning;
+      
+      // Auto-set signedAt and status when fully signed (legacy or dual)
       if (willBeFullySigned && !existingNote.signedAt) {
         data.signedAt = new Date();
         data.status = "signed";
@@ -761,9 +777,16 @@ export async function registerRoutes(
       let auditAction: 'update_delivery_note' | 'sign_delivery_note' | 'invoice_delivery_note' = 'update_delivery_note';
       if (data.isInvoiced !== undefined) {
         auditAction = 'invoice_delivery_note';
-      } else if (data.photo !== undefined || data.signature !== undefined) {
+      } else if (data.photo !== undefined || data.signature !== undefined || 
+                 data.originSignature !== undefined || data.destinationSignature !== undefined) {
         auditAction = 'sign_delivery_note';
       }
+      
+      // Check if fully signed (legacy or dual)
+      const hasLegacySigning = !!(note.photo && note.signature);
+      const hasDualSigning = !!(note.originSignature && note.originSignatureDocument && 
+                                note.destinationSignature && note.destinationSignatureDocument);
+      const isFullySigned = hasLegacySigning || hasDualSigning;
       
       logAudit({
         tenantId: user.tenantId,
@@ -775,15 +798,18 @@ export async function registerRoutes(
           noteNumber: note.noteNumber, 
           changedFields: Object.keys(data),
           isInvoiced: note.isInvoiced,
-          isSigned: !!(note.photo && note.signature),
+          isSigned: isFullySigned,
         },
         ipAddress: clientInfo.ipAddress,
         userAgent: clientInfo.userAgent,
       });
       
       // Create internal message when note becomes fully signed (replaces email)
-      const wasFullySigned = existingNote.photo && existingNote.signature;
-      const isNowFullySigned = note.photo && note.signature;
+      const wasLegacyFullySigned = existingNote.photo && existingNote.signature;
+      const wasDualFullySigned = existingNote.originSignature && existingNote.originSignatureDocument && 
+                                  existingNote.destinationSignature && existingNote.destinationSignatureDocument;
+      const wasFullySigned = wasLegacyFullySigned || wasDualFullySigned;
+      const isNowFullySigned = isFullySigned;
       const justBecameFullySigned = !wasFullySigned && isNowFullySigned;
       
       if (justBecameFullySigned && existingNote.tenantId) {
