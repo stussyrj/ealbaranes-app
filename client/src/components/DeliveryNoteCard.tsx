@@ -8,9 +8,16 @@ const RouteDisplay = ({ origin }: { origin: PickupOrigin }) => {
   const from = origin.name || 'N/A';
   const to = origin.address || 'N/A';
   return (
-    <span>
-      <span className="text-muted-foreground">Recogida:</span> {from} <span className="text-muted-foreground">→</span> <span className="text-muted-foreground">Entrega:</span> {to}
-    </span>
+    <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 items-start text-sm">
+      <span className="text-muted-foreground text-xs flex items-center gap-1 pt-0.5">
+        <MapPin className="w-3 h-3 text-blue-500 flex-shrink-0" />
+      </span>
+      <span className="truncate font-medium" title={from}>{from}</span>
+      <span className="text-muted-foreground text-xs flex items-center gap-1 pt-0.5">
+        <Navigation className="w-3 h-3 text-green-500 flex-shrink-0" />
+      </span>
+      <span className="truncate font-medium" title={to}>{to}</span>
+    </div>
   );
 };
 
