@@ -130,6 +130,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       customerEmail?: string;
       taxRate: number;
       notes?: string;
+      issueDate: string;
       dueDate?: string;
       deliveryNoteIds?: string[];
       lineItems: { deliveryNoteId?: string; description: string; quantity: number; unitPrice: number }[];
@@ -217,6 +218,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       customerEmail,
       taxRate,
       notes,
+      issueDate: new Date().toISOString(),
       dueDate,
       deliveryNoteIds,
       lineItems: lineItems.map((item) => ({
