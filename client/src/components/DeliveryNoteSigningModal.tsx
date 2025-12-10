@@ -5,16 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Eraser, MapPin, Navigation, FileText, User } from "lucide-react";
+import { Check, Eraser, MapPin, Navigation, FileText, User, Camera, Save } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { DeliveryNote } from "@shared/schema";
 
 interface SignatureCanvasProps {
   onSignatureChange: (hasSignature: boolean, dataUrl: string) => void;
   label: string;
+  initialSignature?: string;
 }
 
-function SignatureCanvas({ onSignatureChange, label }: SignatureCanvasProps) {
+function SignatureCanvas({ onSignatureChange, label, initialSignature }: SignatureCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isInitializedRef = useRef(false);
   const isDrawingRef = useRef(false);
@@ -24,18 +25,32 @@ function SignatureCanvas({ onSignatureChange, label }: SignatureCanvasProps) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || isInitializedRef.current) return;
+    if (!canvas) return;
     
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
+    // Initialize canvas
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
+    
+    // Load initial signature if exists
+    if (initialSignature && initialSignature.length > 100) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        hasSignatureRef.current = true;
+        onSignatureChange(true, initialSignature);
+        forceUpdate(n => n + 1);
+      };
+      img.src = initialSignature;
+    }
+    
     isInitializedRef.current = true;
-  }, []);
+  }, [initialSignature, onSignatureChange]);
 
   const getCoordinates = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -169,14 +184,55 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("origin");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingOrigin, setIsSavingOrigin] = useState(false);
   
   const [originSignature, setOriginSignature] = useState("");
   const [originDocument, setOriginDocument] = useState("");
   const [hasOriginSignature, setHasOriginSignature] = useState(false);
+  const [originAlreadySaved, setOriginAlreadySaved] = useState(false);
   
   const [destinationSignature, setDestinationSignature] = useState("");
   const [destinationDocument, setDestinationDocument] = useState("");
   const [hasDestinationSignature, setHasDestinationSignature] = useState(false);
+  
+  // Photo for destination only
+  const [destinationPhoto, setDestinationPhoto] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load existing data when note changes
+  useEffect(() => {
+    if (note && open) {
+      // Load origin signature if exists
+      if (note.originSignature) {
+        setOriginSignature(note.originSignature);
+        setHasOriginSignature(true);
+        setOriginAlreadySaved(true);
+      }
+      if (note.originSignatureDocument) {
+        setOriginDocument(note.originSignatureDocument);
+      }
+      // If origin is already signed, go to destination tab
+      if (note.originSignature && note.originSignatureDocument) {
+        setActiveTab("destination");
+      }
+      // Load destination signature if exists (including legacy signature field)
+      if (note.destinationSignature) {
+        setDestinationSignature(note.destinationSignature);
+        setHasDestinationSignature(true);
+      } else if (note.signature) {
+        // Legacy: map old signature field to destination signature
+        setDestinationSignature(note.signature);
+        setHasDestinationSignature(true);
+      }
+      if (note.destinationSignatureDocument) {
+        setDestinationDocument(note.destinationSignatureDocument);
+      }
+      // Load photo if exists - keep it for display
+      if (note.photo) {
+        setDestinationPhoto(note.photo);
+      }
+    }
+  }, [note, open]);
 
   const handleOriginSignatureChange = useCallback((hasSig: boolean, dataUrl: string) => {
     setHasOriginSignature(hasSig);
@@ -189,18 +245,75 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
   }, []);
 
   const isOriginComplete = hasOriginSignature && originDocument.trim().length >= 8;
-  const isDestinationComplete = hasDestinationSignature && destinationDocument.trim().length >= 8;
-  const isFormComplete = isOriginComplete && isDestinationComplete;
+  // Photo is required - either we have one in state or on the server
+  const hasValidPhoto = destinationPhoto.length > 100 || (note?.photo && note.photo.length > 100);
+  // Legacy notes (signature + photo but no dual signatures) are ALREADY complete - treat as read-only
+  const isLegacyComplete = !!(note?.signature && note?.photo && !note?.originSignature);
+  // Destination is complete when we have signature + document + photo
+  const isDestinationComplete = hasDestinationSignature && destinationDocument.trim().length >= 8 && hasValidPhoto;
+  // Form is complete for submission: full dual signature OR legacy (read-only view)
+  const isFormComplete = (isOriginComplete && isDestinationComplete) || isLegacyComplete;
 
   const resetForm = () => {
     setOriginSignature("");
     setOriginDocument("");
     setHasOriginSignature(false);
+    setOriginAlreadySaved(false);
     setDestinationSignature("");
     setDestinationDocument("");
     setHasDestinationSignature(false);
+    setDestinationPhoto("");
     setActiveTab("origin");
     setIsSubmitting(false);
+    setIsSavingOrigin(false);
+  };
+
+  // Save only origin signature (partial save) - keeps modal open and switches to destination
+  const handleSaveOrigin = async () => {
+    if (!note || !isOriginComplete) {
+      console.error("Missing origin signature data");
+      return;
+    }
+
+    setIsSavingOrigin(true);
+
+    const payload = {
+      originSignature,
+      originSignatureDocument: originDocument.trim().toUpperCase(),
+      originSignedAt: new Date().toISOString(),
+    };
+
+    try {
+      await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload);
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      if (note.workerId) {
+        await queryClient.invalidateQueries({ queryKey: ["/api/workers", note.workerId, "delivery-notes"] });
+      }
+      
+      setOriginAlreadySaved(true);
+      setIsSavingOrigin(false);
+      // Keep modal open and switch to destination tab for seamless flow
+      setActiveTab("destination");
+    } catch (error) {
+      console.error("Error saving origin signature:", error);
+      setIsSavingOrigin(false);
+    }
+  };
+
+  // Handle photo capture for destination
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setDestinationPhoto(result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
@@ -211,15 +324,56 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
     setIsSubmitting(true);
 
-    const payload = {
-      status: "signed",
-      originSignature,
-      originSignatureDocument: originDocument.trim().toUpperCase(),
-      originSignedAt: new Date().toISOString(),
-      destinationSignature,
-      destinationSignatureDocument: destinationDocument.trim().toUpperCase(),
-      destinationSignedAt: new Date().toISOString(),
-    };
+    // Build payload preserving existing data - only send fields that have values
+    const payload: Record<string, any> = {};
+    
+    // Legacy notes already signed - just close the modal without changes
+    if (isLegacyComplete && !isDestinationComplete) {
+      // No changes needed for legacy signed notes
+      setIsSubmitting(false);
+      resetForm();
+      onOpenChange(false);
+      return;
+    }
+    
+    // Set status to signed only when destination is complete (full dual signature)
+    // AND we have a photo (either new or existing on server)
+    const photoExists = (destinationPhoto.length > 100) || (note?.photo && note.photo.length > 100);
+    if (isDestinationComplete && photoExists) {
+      payload.status = "signed";
+    }
+    
+    // Origin signature - only update if we have new data or it wasn't already saved
+    if (originSignature && originDocument.trim().length >= 8) {
+      payload.originSignature = originSignature;
+      payload.originSignatureDocument = originDocument.trim().toUpperCase();
+      // Only set originSignedAt if not already set
+      if (!note.originSignedAt) {
+        payload.originSignedAt = new Date().toISOString();
+      }
+    }
+    
+    // Destination signature - only send if we have both signature and document
+    if (destinationSignature && destinationDocument.trim().length >= 8) {
+      payload.destinationSignature = destinationSignature;
+      payload.destinationSignatureDocument = destinationDocument.trim().toUpperCase();
+      payload.destinationSignedAt = new Date().toISOString();
+      // Also set legacy signature field for compatibility
+      payload.signature = destinationSignature;
+    }
+    
+    // Photo - only update if we have a new photo (destinationPhoto has actual data and is different from existing)
+    if (destinationPhoto && destinationPhoto.length > 100 && destinationPhoto !== note.photo) {
+      payload.photo = destinationPhoto;
+    }
+
+    // If no changes to send, just close
+    if (Object.keys(payload).length === 0) {
+      setIsSubmitting(false);
+      resetForm();
+      onOpenChange(false);
+      return;
+    }
 
     try {
       await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload);
@@ -283,6 +437,58 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
             </div>
           )}
 
+          {/* Legacy signed notes: Read-only view - no form needed */}
+          {isLegacyComplete && note && (
+            <div className="space-y-4">
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-lg p-4 text-green-700 dark:text-green-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <Check className="w-5 h-5" />
+                  <span className="font-medium">Albarán completamente firmado</span>
+                </div>
+                <p className="text-sm opacity-80">Este albarán fue firmado con el sistema anterior (foto + firma digital) y no requiere acciones adicionales.</p>
+              </div>
+              
+              {/* Show existing signature */}
+              {note.signature && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Firma digital</Label>
+                  <div className="border rounded-lg overflow-hidden bg-white">
+                    <img 
+                      src={note.signature} 
+                      alt="Firma" 
+                      className="w-full h-24 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Show existing photo */}
+              {note.photo && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Foto de entrega</Label>
+                  <div className="border rounded-lg overflow-hidden">
+                    <img 
+                      src={note.photo} 
+                      alt="Foto de entrega" 
+                      className="w-full h-32 object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="w-full"
+                data-testid="button-close-legacy"
+              >
+                Cerrar
+              </Button>
+            </div>
+          )}
+
+          {/* New dual signature form - only show for non-legacy notes */}
+          {!isLegacyComplete && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="origin" className="relative" data-testid="tab-sign-origin">
@@ -307,6 +513,13 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 Firma de la persona que <strong>entrega</strong> el material en origen
               </div>
               
+              {originAlreadySaved && (
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2 text-sm text-green-700 dark:text-green-300 flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Firma de origen ya guardada
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="sign-origin-document">DNI / NIE / NIF del firmante</Label>
                 <Input
@@ -326,19 +539,34 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
               <SignatureCanvas 
                 onSignatureChange={handleOriginSignatureChange}
                 label="Firma origen"
+                initialSignature={note?.originSignature || undefined}
               />
 
-              {isOriginComplete && (
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setActiveTab("destination")}
-                  data-testid="button-next-to-destination"
-                >
-                  Continuar a Destino
-                  <Navigation className="w-4 h-4 ml-2" />
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {isOriginComplete && !originAlreadySaved && (
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={handleSaveOrigin}
+                    disabled={isSavingOrigin}
+                    data-testid="button-save-origin"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSavingOrigin ? "Guardando..." : "Guardar y Continuar Después"}
+                  </Button>
+                )}
+                {isOriginComplete && (
+                  <Button 
+                    variant="default" 
+                    className="flex-1"
+                    onClick={() => setActiveTab("destination")}
+                    data-testid="button-next-to-destination"
+                  >
+                    Continuar a Destino
+                    <Navigation className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="destination" className="space-y-3 mt-3">
@@ -366,7 +594,59 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
               <SignatureCanvas 
                 onSignatureChange={handleDestinationSignatureChange}
                 label="Firma destino"
+                initialSignature={note?.destinationSignature || note?.signature || undefined}
               />
+
+              {/* Photo capture for destination only */}
+              <div className="space-y-2">
+                <Label>Foto de entrega {note?.photo ? "(existente)" : "(obligatoria)"}</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  ref={fileInputRef}
+                  onChange={handlePhotoCapture}
+                  className="hidden"
+                  data-testid="input-destination-photo"
+                />
+                {destinationPhoto ? (
+                  <div className="relative">
+                    <img 
+                      src={destinationPhoto} 
+                      alt="Foto de entrega" 
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                    {note?.photo && destinationPhoto === note.photo && (
+                      <div className="absolute bottom-2 left-2 bg-green-600/90 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        Foto guardada
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => fileInputRef.current?.click()}
+                      data-testid="button-change-photo"
+                    >
+                      <Camera className="w-4 h-4 mr-1" />
+                      Cambiar
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-24 border-dashed"
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="button-take-photo"
+                  >
+                    <Camera className="w-6 h-6 mr-2" />
+                    Tomar foto de entrega
+                  </Button>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
 
@@ -406,9 +686,10 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
               ) : (
                 <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
               )}
-              Destino
+              Destino + Foto
             </div>
           </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

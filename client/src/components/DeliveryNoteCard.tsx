@@ -67,8 +67,19 @@ export function DeliveryNoteCard({
   const [showAllOrigins, setShowAllOrigins] = useState(false);
   const [showSignatures, setShowSignatures] = useState(false);
   
-  const hasNewSignatures = !!note.originSignature || !!note.destinationSignature;
-  const isSigned = !!note.photo || !!note.signature || hasNewSignatures;
+  // New dual signing system: fully signed = origin + destination + photo
+  const hasOriginSigned = !!note.originSignature && !!note.originSignatureDocument;
+  const hasDestinationSigned = !!note.destinationSignature && !!note.destinationSignatureDocument;
+  const hasPhoto = !!note.photo;
+  
+  // Fully signed requires: origin signature + destination signature + photo
+  const isFullySigned = hasOriginSigned && hasDestinationSigned && hasPhoto;
+  // Partially signed = only origin is signed
+  const isPartialSigned = hasOriginSigned && !isFullySigned;
+  // Legacy check for older albaranes
+  const hasLegacySigning = !!note.photo && !!note.signature;
+  const isSigned = isFullySigned || hasLegacySigning;
+  
   const hasMultipleOrigins = note.pickupOrigins && note.pickupOrigins.length > 1;
   
   const formatWaitTime = (minutes: number) => {
@@ -125,12 +136,16 @@ export function DeliveryNoteCard({
           <Badge 
             className={isSigned 
               ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
-              : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
+              : isPartialSigned
+                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 no-default-hover-elevate no-default-active-elevate"
+                : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
             }
             data-testid={`badge-status-${note.id}`}
           >
             {isSigned ? (
               <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
+            ) : isPartialSigned ? (
+              <><MapPin className="w-3 h-3 mr-1" /> Origen firmado</>
             ) : (
               <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
             )}
@@ -212,7 +227,7 @@ export function DeliveryNoteCard({
             </div>
           )}
 
-          {hasNewSignatures && (
+          {(hasOriginSigned || hasDestinationSigned) && (
             <div className="space-y-2">
               <button
                 onClick={() => setShowSignatures(!showSignatures)}
@@ -297,7 +312,7 @@ export function DeliveryNoteCard({
           )}
         </div>
 
-        {showActions && isPending && (
+        {showActions && (isPending || isPartialSigned) && (
           <div className="flex gap-2 pt-1">
             {onEditClick && (
               <Button 
