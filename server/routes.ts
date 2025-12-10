@@ -25,6 +25,7 @@ import { eq } from "drizzle-orm";
 // Email imports removed - now using internal messaging system
 // import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
+import { generateInvoicePdf } from "./invoicePdfService";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -1366,6 +1367,42 @@ export async function registerRoutes(
     }
   });
   
+  // Download invoice as PDF
+  app.get("/api/invoices/:id/pdf", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId) {
+      return res.status(403).json({ error: "Sin tenant asignado" });
+    }
+    try {
+      const { id } = req.params;
+      const invoice = await storage.getInvoice(id, user.tenantId);
+      if (!invoice) {
+        return res.status(404).json({ error: "Factura no encontrada" });
+      }
+      const lineItems = await storage.getInvoiceLineItems(id);
+      const template = await storage.getInvoiceTemplate(user.tenantId);
+      
+      const pdfBuffer = generateInvoicePdf({
+        ...invoice,
+        lineItems,
+        template,
+      });
+      
+      const filename = `Factura_${invoice.invoicePrefix || ""}${invoice.invoiceNumber}.pdf`;
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating invoice PDF:", error);
+      res.status(500).json({ error: "Error al generar PDF" });
+    }
+  });
+  
   // Create invoice with line items
   app.post("/api/invoices", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -1378,13 +1415,32 @@ export async function registerRoutes(
     try {
       const { lineItems, deliveryNoteIds, ...invoiceData } = req.body;
       
-      // Calculate totals
-      const subtotal = lineItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unitPrice), 0);
+      // Validate all delivery notes belong to current tenant before proceeding
+      if (deliveryNoteIds && deliveryNoteIds.length > 0) {
+        for (const noteId of deliveryNoteIds) {
+          const note = await storage.getDeliveryNote(noteId);
+          if (!note || note.tenantId !== user.tenantId) {
+            return res.status(403).json({ error: "Albarán no autorizado" });
+          }
+        }
+      }
+      
+      // Convert prices from euros to cents (multiply by 100)
+      const lineItemsInCents = lineItems.map((item: any) => ({
+        deliveryNoteId: item.deliveryNoteId || null,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: Math.round(parseFloat(item.unitPrice) * 100),
+        subtotal: Math.round(item.quantity * parseFloat(item.unitPrice) * 100),
+      }));
+      
+      // Calculate totals in cents
+      const subtotal = lineItemsInCents.reduce((sum: number, item: any) => sum + item.subtotal, 0);
       const taxRate = invoiceData.taxRate ?? 21;
-      const taxAmount = subtotal * (taxRate / 100);
+      const taxAmount = Math.round(subtotal * (taxRate / 100));
       const total = subtotal + taxAmount;
       
-      // Create invoice
+      // Create invoice with all amounts in cents
       const invoice = await storage.createInvoice({
         ...invoiceData,
         tenantId: user.tenantId,
@@ -1393,19 +1449,19 @@ export async function registerRoutes(
         total,
       });
       
-      // Create line items
-      for (const item of lineItems) {
+      // Create line items (all amounts in cents)
+      for (const item of lineItemsInCents) {
         await storage.createInvoiceLineItem({
           invoiceId: invoice.id,
-          deliveryNoteId: item.deliveryNoteId || null,
+          deliveryNoteId: item.deliveryNoteId,
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          subtotal: item.quantity * item.unitPrice,
+          subtotal: item.subtotal,
         });
       }
       
-      // Mark delivery notes as invoiced
+      // Mark delivery notes as invoiced (already validated above)
       if (deliveryNoteIds && deliveryNoteIds.length > 0) {
         for (const noteId of deliveryNoteIds) {
           await storage.updateDeliveryNote(noteId, { 

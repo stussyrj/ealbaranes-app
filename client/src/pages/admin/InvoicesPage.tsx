@@ -10,6 +10,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   FileText, 
   Settings, 
@@ -23,10 +39,13 @@ import {
   Building2,
   CreditCard,
   Image,
+  Truck,
+  Download,
+  Eye,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
-import type { InvoiceTemplate, Invoice } from "@shared/schema";
+import type { InvoiceTemplate, Invoice, DeliveryNote } from "@shared/schema";
 
 function InvoiceTemplateSkeleton() {
   return (
@@ -60,6 +79,474 @@ function InvoiceListSkeleton() {
         </Card>
       ))}
     </div>
+  );
+}
+
+interface LineItemPrice {
+  deliveryNoteId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+interface CreateInvoiceModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
+  const { toast } = useToast();
+  const [step, setStep] = useState<"select" | "price" | "review">("select");
+  const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
+  const [lineItems, setLineItems] = useState<LineItemPrice[]>([]);
+  const [customerName, setCustomerName] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerTaxId, setCustomerTaxId] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [notes, setNotes] = useState("");
+  const [taxRate, setTaxRate] = useState(21);
+  const [paymentDays, setPaymentDays] = useState(30);
+
+  const { data: deliveryNotes, isLoading: loadingNotes } = useQuery<DeliveryNote[]>({
+    queryKey: ["/api/delivery-notes"],
+    enabled: open,
+  });
+
+  const { data: template } = useQuery<InvoiceTemplate>({
+    queryKey: ["/api/invoice-template"],
+    enabled: open,
+  });
+
+  const signedNotes = deliveryNotes?.filter(
+    (note) => note.photo && note.signature && !note.isInvoiced
+  ) || [];
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (data: {
+      customerName: string;
+      customerAddress?: string;
+      customerTaxId?: string;
+      customerEmail?: string;
+      taxRate: number;
+      notes?: string;
+      dueDate?: string;
+      deliveryNoteIds?: string[];
+      lineItems: { deliveryNoteId?: string; description: string; quantity: number; unitPrice: number }[];
+    }) => {
+      return apiRequest("POST", "/api/invoices", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Factura creada correctamente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      onOpenChange(false);
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error al crear factura", 
+        description: error.message || "Por favor, inténtalo de nuevo",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setStep("select");
+    setSelectedNotes([]);
+    setLineItems([]);
+    setCustomerName("");
+    setCustomerAddress("");
+    setCustomerTaxId("");
+    setCustomerEmail("");
+    setNotes("");
+    setTaxRate(template?.defaultTaxRate || 21);
+    setPaymentDays(30);
+  };
+
+  const toggleNoteSelection = (noteId: string) => {
+    setSelectedNotes((prev) =>
+      prev.includes(noteId)
+        ? prev.filter((id) => id !== noteId)
+        : [...prev, noteId]
+    );
+  };
+
+  const handleProceedToPricing = () => {
+    if (selectedNotes.length === 0) {
+      toast({ title: "Selecciona al menos un albarán", variant: "destructive" });
+      return;
+    }
+    const selected = signedNotes.filter((note) => selectedNotes.includes(note.id));
+    if (selected.length > 0 && !customerName) {
+      setCustomerName(selected[0].clientName || "");
+    }
+    const items: LineItemPrice[] = selected.map((note) => ({
+      deliveryNoteId: note.id,
+      description: `Albarán #${note.noteNumber} - ${note.destination || "Sin destino"}`,
+      quantity: 1,
+      unitPrice: 0,
+    }));
+    setLineItems(items);
+    setStep("price");
+  };
+
+  const handleProceedToReview = () => {
+    const hasEmptyPrices = lineItems.some((item) => item.unitPrice <= 0);
+    if (hasEmptyPrices) {
+      toast({ title: "Por favor, introduce el precio para todos los conceptos", variant: "destructive" });
+      return;
+    }
+    if (!customerName.trim()) {
+      toast({ title: "El nombre del cliente es obligatorio", variant: "destructive" });
+      return;
+    }
+    setStep("review");
+  };
+
+  const handleCreateInvoice = () => {
+    const dueDate = addDays(new Date(), paymentDays).toISOString();
+    const deliveryNoteIds = lineItems
+      .map((item) => item.deliveryNoteId)
+      .filter((id): id is string => !!id);
+    createInvoiceMutation.mutate({
+      customerName,
+      customerAddress,
+      customerTaxId,
+      customerEmail,
+      taxRate,
+      notes,
+      dueDate,
+      deliveryNoteIds,
+      lineItems: lineItems.map((item) => ({
+        deliveryNoteId: item.deliveryNoteId,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+    });
+  };
+
+  const updateLineItemPrice = (index: number, price: number) => {
+    setLineItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, unitPrice: price } : item))
+    );
+  };
+
+  const updateLineItemDescription = (index: number, description: string) => {
+    setLineItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, description } : item))
+    );
+  };
+
+  const subtotal = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const taxAmount = subtotal * (taxRate / 100);
+  const total = subtotal + taxAmount;
+
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) resetForm();
+      onOpenChange(isOpen);
+    }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Crear Factura
+          </DialogTitle>
+          <DialogDescription>
+            {step === "select" && "Selecciona los albaranes firmados para incluir en la factura"}
+            {step === "price" && "Añade los precios para cada concepto"}
+            {step === "review" && "Revisa los datos antes de crear la factura"}
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === "select" && (
+          <div className="space-y-4">
+            {loadingNotes ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : signedNotes.length === 0 ? (
+              <div className="text-center p-8">
+                <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  No hay albaranes firmados disponibles para facturar
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                {signedNotes.map((note) => (
+                  <Card
+                    key={note.id}
+                    className={`cursor-pointer transition-colors ${
+                      selectedNotes.includes(note.id) 
+                        ? "ring-2 ring-primary" 
+                        : "hover-elevate"
+                    }`}
+                    onClick={() => toggleNoteSelection(note.id)}
+                  >
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedNotes.includes(note.id)}
+                        onCheckedChange={() => toggleNoteSelection(note.id)}
+                        data-testid={`checkbox-note-${note.id}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Albarán #{note.noteNumber}</span>
+                          <Badge variant="default" className="bg-green-500">
+                            <Check className="h-3 w-3 mr-1" />
+                            Firmado
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {note.clientName} - {note.destination}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {note.date && format(new Date(note.date), "d MMM yyyy", { locale: es })}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === "price" && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Datos del Cliente</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="customerName">Nombre/Razón Social *</Label>
+                    <Input
+                      id="customerName"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Empresa Cliente S.L."
+                      data-testid="input-customer-name"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="customerTaxId">CIF/NIF</Label>
+                    <Input
+                      id="customerTaxId"
+                      value={customerTaxId}
+                      onChange={(e) => setCustomerTaxId(e.target.value)}
+                      placeholder="B12345678"
+                      data-testid="input-customer-tax-id"
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <Label htmlFor="customerAddress">Dirección</Label>
+                    <Input
+                      id="customerAddress"
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      placeholder="Calle Principal 123, 28001 Madrid"
+                      data-testid="input-customer-address"
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <Label htmlFor="customerEmail">Email</Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="cliente@empresa.es"
+                      data-testid="input-customer-email"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Conceptos a Facturar</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {lineItems.map((item, index) => (
+                  <div key={item.deliveryNoteId} className="p-3 bg-muted/50 rounded-lg space-y-2">
+                    <div className="space-y-1">
+                      <Label>Descripción</Label>
+                      <Input
+                        value={item.description}
+                        onChange={(e) => updateLineItemDescription(index, e.target.value)}
+                        data-testid={`input-description-${index}`}
+                      />
+                    </div>
+                    <div className="flex gap-3 items-end">
+                      <div className="flex-1 space-y-1">
+                        <Label>Precio unitario (sin IVA)</Label>
+                        <div className="relative">
+                          <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.unitPrice || ""}
+                            onChange={(e) => updateLineItemPrice(index, parseFloat(e.target.value) || 0)}
+                            className="pl-9"
+                            placeholder="0.00"
+                            data-testid={`input-price-${index}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Configuración</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>IVA (%)</Label>
+                    <Select value={taxRate.toString()} onValueChange={(v) => setTaxRate(parseInt(v))}>
+                      <SelectTrigger data-testid="select-tax-rate">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">0% (Exento)</SelectItem>
+                        <SelectItem value="4">4% (Superreducido)</SelectItem>
+                        <SelectItem value="10">10% (Reducido)</SelectItem>
+                        <SelectItem value="21">21% (General)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Vencimiento</Label>
+                    <Select value={paymentDays.toString()} onValueChange={(v) => setPaymentDays(parseInt(v))}>
+                      <SelectTrigger data-testid="select-payment-days">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Al contado</SelectItem>
+                        <SelectItem value="15">15 días</SelectItem>
+                        <SelectItem value="30">30 días</SelectItem>
+                        <SelectItem value="60">60 días</SelectItem>
+                        <SelectItem value="90">90 días</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>Notas adicionales</Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Observaciones o notas para la factura..."
+                    rows={2}
+                    data-testid="input-notes"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {step === "review" && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Resumen de la Factura</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Cliente</p>
+                  <p className="font-medium">{customerName}</p>
+                  {customerTaxId && <p className="text-sm text-muted-foreground">{customerTaxId}</p>}
+                  {customerAddress && <p className="text-sm text-muted-foreground">{customerAddress}</p>}
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium mb-2">Conceptos</p>
+                  {lineItems.map((item, index) => (
+                    <div key={index} className="flex justify-between py-2 border-b last:border-b-0">
+                      <span className="text-sm">{item.description}</span>
+                      <span className="font-medium">{item.unitPrice.toFixed(2)} €</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t pt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>{subtotal.toFixed(2)} €</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>IVA ({taxRate}%)</span>
+                    <span>{taxAmount.toFixed(2)} €</span>
+                  </div>
+                  <div className="flex justify-between font-medium text-lg pt-2 border-t">
+                    <span>Total</span>
+                    <span>{total.toFixed(2)} €</span>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Fecha de vencimiento: {format(addDays(new Date(), paymentDays), "d MMMM yyyy", { locale: es })}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          {step !== "select" && (
+            <Button
+              variant="outline"
+              onClick={() => setStep(step === "review" ? "price" : "select")}
+              data-testid="button-back"
+            >
+              Atrás
+            </Button>
+          )}
+          {step === "select" && (
+            <Button 
+              onClick={handleProceedToPricing} 
+              disabled={selectedNotes.length === 0}
+              data-testid="button-next-pricing"
+            >
+              Continuar ({selectedNotes.length} seleccionados)
+            </Button>
+          )}
+          {step === "price" && (
+            <Button 
+              onClick={handleProceedToReview}
+              data-testid="button-next-review"
+            >
+              Revisar Factura
+            </Button>
+          )}
+          {step === "review" && (
+            <Button 
+              onClick={handleCreateInvoice}
+              disabled={createInvoiceMutation.isPending}
+              data-testid="button-create-invoice"
+            >
+              {createInvoiceMutation.isPending ? "Creando..." : "Crear Factura"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -403,14 +890,27 @@ function InvoiceList() {
                   )}
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-semibold flex items-center gap-1 justify-end">
-                  <Euro className="h-4 w-4" />
-                  {(invoice.total / 100).toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  IVA incl.
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-lg font-semibold flex items-center gap-1 justify-end">
+                    <Euro className="h-4 w-4" />
+                    {(invoice.total / 100).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    IVA incl.
+                  </p>
+                </div>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`/api/invoices/${invoice.id}/pdf`, '_blank');
+                  }}
+                  data-testid={`button-download-pdf-${invoice.id}`}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -421,6 +921,8 @@ function InvoiceList() {
 }
 
 export default function InvoicesPage() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
   return (
     <div className="container max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -433,6 +935,13 @@ export default function InvoicesPage() {
             Gestiona tus facturas y configura tu plantilla
           </p>
         </div>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          data-testid="button-create-invoice"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Factura
+        </Button>
       </div>
 
       <Tabs defaultValue="invoices" className="space-y-4">
@@ -455,6 +964,11 @@ export default function InvoicesPage() {
           <TemplateEditor />
         </TabsContent>
       </Tabs>
+
+      <CreateInvoiceModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+      />
     </div>
   );
 }
