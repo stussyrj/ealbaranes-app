@@ -183,12 +183,26 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
     if (selected.length > 0 && !customerName) {
       setCustomerName(selected[0].clientName || "");
     }
-    const items: LineItemPrice[] = selected.map((note) => ({
-      deliveryNoteId: note.id,
-      description: `Albarán #${note.noteNumber} - ${note.destination || "Sin destino"}`,
-      quantity: 1,
-      unitPrice: 0,
-    }));
+    const items: LineItemPrice[] = selected.map((note) => {
+      // Format pickup origins
+      const pickupOrigins = note.pickupOrigins as { name: string; address: string }[] | null;
+      let pickupText = "Sin origen";
+      if (pickupOrigins && pickupOrigins.length > 0) {
+        pickupText = pickupOrigins
+          .map((o) => o.name || o.address || "")
+          .filter(Boolean)
+          .join(", ");
+      }
+      
+      const destinationText = note.destination || "Sin destino";
+      
+      return {
+        deliveryNoteId: note.id,
+        description: `Albarán #${note.noteNumber} | Recogida: ${pickupText} | Entrega: ${destinationText}`,
+        quantity: 1,
+        unitPrice: 0,
+      };
+    });
     setLineItems(items);
     setStep("price");
   };
