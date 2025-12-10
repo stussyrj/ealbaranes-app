@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw, Chrome } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
@@ -190,6 +190,25 @@ export default function AuthPage() {
                     data-testid="button-empresa-login"
                   >
                     {isLoginPending ? "Iniciando..." : "Iniciar Sesión"}
+                  </Button>
+
+                  <div className="relative py-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border/50"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card dark:bg-card px-2 text-muted-foreground">O</span>
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={() => window.location.href = "/api/auth/google"}
+                    variant="outline" 
+                    className="w-full gap-2"
+                    data-testid="button-google-login"
+                  >
+                    <Chrome className="h-4 w-4" />
+                    Acceder con Google
                   </Button>
                   
                   <div className="text-center pt-4 border-t border-border/50">

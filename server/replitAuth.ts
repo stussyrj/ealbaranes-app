@@ -1,11 +1,9 @@
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
 import passport from "passport";
-import type { Express, RequestHandler } from "express";
+import type { Express } from "express";
 import memoize from "memoizee";
 import { storage } from "./storage";
-import { randomBytes } from "crypto";
-import { hashPassword } from "./auth";
 
 const getOidcConfig = memoize(
   async () => {
@@ -17,69 +15,31 @@ const getOidcConfig = memoize(
   { maxAge: 3600 * 1000 }
 );
 
-interface OAuthUserClaims {
+interface OAuthClaims {
   sub: string;
   email?: string;
   first_name?: string;
   last_name?: string;
-  profile_image_url?: string;
+  [key: string]: any;
 }
 
-async function findOrCreateUserFromOAuth(claims: OAuthUserClaims) {
+async function handleOAuthLogin(claims: OAuthClaims) {
   const email = claims.email;
   
   if (!email) {
-    throw new Error("Se requiere un email para iniciar sesión");
+    throw new Error("Se requiere un email para iniciar sesión con Google");
   }
   
-  let user = await storage.getUserByEmail(email);
-  
-  if (user) {
-    return user;
+  const user = await storage.getUserByEmail(email);
+  if (!user) {
+    throw new Error("USER_NOT_FOUND");
   }
-  
-  const displayName = [claims.first_name, claims.last_name].filter(Boolean).join(" ") || email.split("@")[0];
-  const username = email.split("@")[0] + "_" + randomBytes(4).toString("hex");
-  const randomPassword = await hashPassword(randomBytes(32).toString("hex"));
-  
-  const tenant = await storage.createTenant({
-    companyName: displayName,
-    subscriptionStatus: "active",
-  });
-  
-  user = await storage.createUser({
-    username,
-    email,
-    displayName,
-    password: randomPassword,
-    isAdmin: true,
-    tenantId: tenant.id,
-  });
-  
-  await storage.updateTenantAdminUser(tenant.id, user.id);
-  
-  if (user.email) {
-    await storage.markEmailVerified(user.id);
-  }
-  
-  console.log(`[replitAuth] Created new user via Google OAuth: ${email}`);
   
   return user;
 }
 
-function updateUserSession(
-  sessionUser: any,
-  tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
-) {
-  sessionUser.claims = tokens.claims();
-  sessionUser.access_token = tokens.access_token;
-  sessionUser.refresh_token = tokens.refresh_token;
-  sessionUser.expires_at = sessionUser.claims?.exp;
-}
-
 export async function setupReplitAuth(app: Express) {
   const config = await getOidcConfig();
-
   const registeredStrategies = new Set<string>();
 
   const ensureStrategy = (domain: string) => {
@@ -90,21 +50,12 @@ export async function setupReplitAuth(app: Express) {
         verified: passport.AuthenticateCallback
       ) => {
         try {
-          const claims = tokens.claims() as OAuthUserClaims;
-          const user = await findOrCreateUserFromOAuth(claims);
-          
-          const sessionUser = {
-            ...user,
-            claims,
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            expires_at: claims.exp,
-          };
-          
+          const claims = tokens.claims() as OAuthClaims;
+          const user = await handleOAuthLogin(claims);
           verified(null, user);
-        } catch (error) {
-          console.error("[replitAuth] Error in OAuth verify:", error);
-          verified(error as Error, undefined);
+        } catch (error: any) {
+          console.error("[replitAuth] OAuth error:", error.message);
+          verified(error, undefined);
         }
       };
 
@@ -112,7 +63,7 @@ export async function setupReplitAuth(app: Express) {
         {
           name: strategyName,
           config,
-          scope: "openid email profile offline_access",
+          scope: "openid email profile",
           callbackURL: `https://${domain}/api/auth/callback`,
         },
         verify,
@@ -125,8 +76,7 @@ export async function setupReplitAuth(app: Express) {
   app.get("/api/auth/google", (req, res, next) => {
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
+      scope: ["openid", "email", "profile"],
     })(req, res, next);
   });
 

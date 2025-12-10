@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, initializeAdminUser } from "./auth";
+import { setupReplitAuth } from "./replitAuth";
 import {
   geocodeAddress,
   getRouteDistance,
@@ -33,6 +34,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   setupAuth(app);
+  await setupReplitAuth(app);
   await initializeAdminUser();
   
   app.get("/api/address-suggestions", async (req, res) => {
