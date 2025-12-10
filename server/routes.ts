@@ -1275,6 +1275,7 @@ export async function registerRoutes(
           tenantId: user.tenantId,
           name: 'Plantilla Principal',
           logoUrl: null,
+          logoImageBase64: null,
           companyName: null,
           companyAddress: null,
           companyCity: null,

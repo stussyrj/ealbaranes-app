@@ -22,6 +22,17 @@ export function generateInvoicePdf(invoice: InvoiceWithDetails): Buffer {
 
   doc.setFont("helvetica");
 
+  // Add company logo if available
+  if (template?.logoImageBase64) {
+    try {
+      // jspdf can accept the full data URL directly
+      doc.addImage(template.logoImageBase64, "PNG", margin, yPos, 30, 15);
+      yPos += 20;
+    } catch (error) {
+      console.error("Error adding logo to PDF:", error);
+    }
+  }
+
   if (template?.companyName) {
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");

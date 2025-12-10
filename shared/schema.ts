@@ -326,6 +326,7 @@ export const invoiceTemplates = pgTable("invoice_templates", {
   tenantId: varchar("tenant_id").notNull(),
   name: text("name").notNull().default("Plantilla Principal"),
   logoUrl: text("logo_url"),
+  logoImageBase64: text("logo_image_base64"),
   companyName: text("company_name"),
   companyAddress: text("company_address"),
   companyCity: text("company_city"),

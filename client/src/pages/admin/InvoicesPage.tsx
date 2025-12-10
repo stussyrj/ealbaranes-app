@@ -42,6 +42,7 @@ import {
   Truck,
   Download,
   Eye,
+  X,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -686,29 +687,67 @@ function TemplateEditor() {
             Logo de la Empresa
           </CardTitle>
           <CardDescription>
-            URL de la imagen del logo (opcional)
+            Sube una imagen PNG de tu logo (máximo 500KB)
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="logoUrl">URL del Logo</Label>
-            <Input
-              id="logoUrl"
-              placeholder="https://miempresa.es/logo.png"
-              value={getValue("logoUrl") as string}
-              onChange={(e) => updateField("logoUrl", e.target.value)}
-              data-testid="input-logo-url"
-            />
-            {getValue("logoUrl") && (
-              <div className="mt-4 p-4 border rounded-lg bg-muted/50">
-                <img
-                  src={getValue("logoUrl") as string}
-                  alt="Vista previa del logo"
-                  className="max-h-20 object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="logoFile">Seleccionar Logo</Label>
+              <Input
+                id="logoFile"
+                type="file"
+                accept="image/png"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 500 * 1024) {
+                      toast({
+                        title: "Error",
+                        description: "La imagen no puede superar 500KB",
+                        variant: "destructive",
+                      });
+                      e.target.value = "";
+                      return;
+                    }
+                    if (!file.type.includes("png")) {
+                      toast({
+                        title: "Error",
+                        description: "Solo se permiten imágenes PNG",
+                        variant: "destructive",
+                      });
+                      e.target.value = "";
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      updateField("logoImageBase64", reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                data-testid="input-logo-file"
+              />
+            </div>
+            {getValue("logoImageBase64") && (
+              <div className="p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between gap-4">
+                  <img
+                    src={getValue("logoImageBase64") as string}
+                    alt="Vista previa del logo"
+                    className="max-h-20 object-contain"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateField("logoImageBase64", "")}
+                    data-testid="button-remove-logo"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Eliminar
+                  </Button>
+                </div>
               </div>
             )}
           </div>
