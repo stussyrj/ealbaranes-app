@@ -17,14 +17,17 @@ export type AuditAction =
   | 'create_quote'
   | 'update_quote_status'
   | 'assign_worker_to_quote'
-  | 'tenant_deleted';
+  | 'tenant_deleted'
+  | 'create_invoice'
+  | 'update_invoice';
 
 export type AuditEntityType = 
   | 'user'
   | 'delivery_note'
   | 'worker'
   | 'quote'
-  | 'tenant';
+  | 'tenant'
+  | 'invoice';
 
 interface AuditLogParams {
   tenantId?: string | null;

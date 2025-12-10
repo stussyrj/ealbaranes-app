@@ -15,6 +15,9 @@ import {
   calculateQuoteRequestSchema,
   insertVehicleTypeSchema,
   insertBlogPostSchema,
+  insertInvoiceSchema,
+  insertInvoiceTemplateSchema,
+  insertInvoiceLineItemSchema,
   tenants,
 } from "@shared/schema";
 import { db } from "./db";
@@ -1246,6 +1249,239 @@ export async function registerRoutes(
       res.json({ valid: true });
     } else {
       res.status(401).json({ valid: false, error: "Contraseña incorrecta" });
+    }
+  });
+
+  // ===========================================
+  // INVOICE ROUTES (Requires authentication)
+  // ===========================================
+  
+  // Get invoice template for tenant
+  app.get("/api/invoice-template", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId) {
+      return res.status(403).json({ error: "Sin tenant asignado" });
+    }
+    try {
+      let template = await storage.getInvoiceTemplate(user.tenantId);
+      // If no template exists, return empty template structure
+      if (!template) {
+        template = {
+          id: '',
+          tenantId: user.tenantId,
+          name: 'Plantilla Principal',
+          logoUrl: null,
+          companyName: null,
+          companyAddress: null,
+          companyCity: null,
+          companyPostalCode: null,
+          companyCountry: 'España',
+          companyTaxId: null,
+          companyPhone: null,
+          companyEmail: null,
+          bankName: null,
+          bankIban: null,
+          bankSwift: null,
+          defaultTaxRate: 21,
+          defaultPaymentTerms: 'Pago a 30 días',
+          footerText: null,
+          createdAt: null,
+          updatedAt: null,
+        };
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching invoice template:", error);
+      res.status(500).json({ error: "Error al obtener plantilla" });
+    }
+  });
+  
+  // Create or update invoice template
+  app.post("/api/invoice-template", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden configurar plantillas" });
+    }
+    try {
+      const existing = await storage.getInvoiceTemplate(user.tenantId);
+      const data = { ...req.body, tenantId: user.tenantId };
+      
+      if (existing) {
+        const updated = await storage.updateInvoiceTemplate(existing.id, user.tenantId, data);
+        res.json(updated);
+      } else {
+        const created = await storage.createInvoiceTemplate(data);
+        res.status(201).json(created);
+      }
+    } catch (error) {
+      console.error("Error saving invoice template:", error);
+      res.status(400).json({ error: "Error al guardar plantilla" });
+    }
+  });
+  
+  // Get all invoices for tenant
+  app.get("/api/invoices", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId) {
+      return res.status(403).json({ error: "Sin tenant asignado" });
+    }
+    try {
+      const invoices = await storage.getInvoices(user.tenantId);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ error: "Error al obtener facturas" });
+    }
+  });
+  
+  // Get single invoice with line items
+  app.get("/api/invoices/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId) {
+      return res.status(403).json({ error: "Sin tenant asignado" });
+    }
+    try {
+      const { id } = req.params;
+      const invoice = await storage.getInvoice(id, user.tenantId);
+      if (!invoice) {
+        return res.status(404).json({ error: "Factura no encontrada" });
+      }
+      const lineItems = await storage.getInvoiceLineItems(id);
+      res.json({ ...invoice, lineItems });
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ error: "Error al obtener factura" });
+    }
+  });
+  
+  // Create invoice with line items
+  app.post("/api/invoices", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden crear facturas" });
+    }
+    try {
+      const { lineItems, deliveryNoteIds, ...invoiceData } = req.body;
+      
+      // Calculate totals
+      const subtotal = lineItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unitPrice), 0);
+      const taxRate = invoiceData.taxRate ?? 21;
+      const taxAmount = subtotal * (taxRate / 100);
+      const total = subtotal + taxAmount;
+      
+      // Create invoice
+      const invoice = await storage.createInvoice({
+        ...invoiceData,
+        tenantId: user.tenantId,
+        subtotal,
+        taxAmount,
+        total,
+      });
+      
+      // Create line items
+      for (const item of lineItems) {
+        await storage.createInvoiceLineItem({
+          invoiceId: invoice.id,
+          deliveryNoteId: item.deliveryNoteId || null,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: item.quantity * item.unitPrice,
+        });
+      }
+      
+      // Mark delivery notes as invoiced
+      if (deliveryNoteIds && deliveryNoteIds.length > 0) {
+        for (const noteId of deliveryNoteIds) {
+          await storage.updateDeliveryNote(noteId, { 
+            isInvoiced: true, 
+            invoicedAt: new Date() 
+          });
+        }
+      }
+      
+      // Log audit
+      await logAudit({
+        tenantId: user.tenantId,
+        userId: user.id,
+        action: 'create_invoice',
+        entityType: 'invoice',
+        entityId: invoice.id,
+        details: { invoiceNumber: invoice.invoiceNumber, total },
+        ...getClientInfo(req),
+      });
+      
+      const createdLineItems = await storage.getInvoiceLineItems(invoice.id);
+      res.status(201).json({ ...invoice, lineItems: createdLineItems });
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      res.status(400).json({ error: "Error al crear factura" });
+    }
+  });
+  
+  // Update invoice status
+  app.patch("/api/invoices/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden actualizar facturas" });
+    }
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      // If marking as paid, set paidAt
+      if (updates.status === 'paid' && !updates.paidAt) {
+        updates.paidAt = new Date();
+      }
+      
+      const invoice = await storage.updateInvoice(id, user.tenantId, updates);
+      if (!invoice) {
+        return res.status(404).json({ error: "Factura no encontrada" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      res.status(400).json({ error: "Error al actualizar factura" });
+    }
+  });
+  
+  // Delete invoice
+  app.delete("/api/invoices/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden eliminar facturas" });
+    }
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteInvoice(id, user.tenantId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Factura no encontrada" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ error: "Error al eliminar factura" });
     }
   });
 

@@ -319,3 +319,100 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
 
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 export type BlogPost = typeof blogPosts.$inferSelect;
+
+// Invoice templates for each tenant
+export const invoiceTemplates = pgTable("invoice_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  name: text("name").notNull().default("Plantilla Principal"),
+  logoUrl: text("logo_url"),
+  companyName: text("company_name"),
+  companyAddress: text("company_address"),
+  companyCity: text("company_city"),
+  companyPostalCode: text("company_postal_code"),
+  companyCountry: text("company_country").default("España"),
+  companyTaxId: text("company_tax_id"),
+  companyPhone: text("company_phone"),
+  companyEmail: text("company_email"),
+  bankName: text("bank_name"),
+  bankIban: text("bank_iban"),
+  bankSwift: text("bank_swift"),
+  defaultTaxRate: real("default_tax_rate").default(21),
+  defaultPaymentTerms: text("default_payment_terms").default("Pago a 30 días"),
+  footerText: text("footer_text"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertInvoiceTemplateSchema = createInsertSchema(invoiceTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertInvoiceTemplate = z.infer<typeof insertInvoiceTemplateSchema>;
+export type InvoiceTemplate = typeof invoiceTemplates.$inferSelect;
+
+// Invoice status enum
+export const invoiceStatusEnum = pgEnum('invoice_status', [
+  'draft',
+  'sent',
+  'paid',
+  'cancelled'
+]);
+
+// Invoices
+export const invoices = pgTable("invoices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  invoiceNumber: integer("invoice_number").notNull(),
+  invoicePrefix: text("invoice_prefix").default("FAC"),
+  templateId: varchar("template_id"),
+  status: invoiceStatusEnum("status").default('draft'),
+  customerName: text("customer_name").notNull(),
+  customerAddress: text("customer_address"),
+  customerCity: text("customer_city"),
+  customerPostalCode: text("customer_postal_code"),
+  customerTaxId: text("customer_tax_id"),
+  customerEmail: text("customer_email"),
+  issueDate: text("issue_date").notNull(),
+  dueDate: text("due_date"),
+  subtotal: real("subtotal").notNull().default(0),
+  taxRate: real("tax_rate").default(21),
+  taxAmount: real("tax_amount").notNull().default(0),
+  total: real("total").notNull().default(0),
+  notes: text("notes"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  invoiceNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type Invoice = typeof invoices.$inferSelect;
+
+// Invoice line items
+export const invoiceLineItems = pgTable("invoice_line_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").notNull(),
+  deliveryNoteId: varchar("delivery_note_id"),
+  description: text("description").notNull(),
+  quantity: real("quantity").notNull().default(1),
+  unitPrice: real("unit_price").notNull(),
+  subtotal: real("subtotal").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertInvoiceLineItemSchema = createInsertSchema(invoiceLineItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertInvoiceLineItem = z.infer<typeof insertInvoiceLineItemSchema>;
+export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;

@@ -13,6 +13,12 @@ import {
   type InsertMessage,
   type BlogPost,
   type InsertBlogPost,
+  type Invoice,
+  type InsertInvoice,
+  type InvoiceLineItem,
+  type InsertInvoiceLineItem,
+  type InvoiceTemplate,
+  type InsertInvoiceTemplate,
   deliveryNotes as deliveryNotesTable,
   users as usersTable,
   tenants as tenantsTable,
@@ -23,6 +29,9 @@ import {
   auditLogs as auditLogsTable,
   messages as messagesTable,
   blogPosts as blogPostsTable,
+  invoices as invoicesTable,
+  invoiceLineItems as invoiceLineItemsTable,
+  invoiceTemplates as invoiceTemplatesTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -85,6 +94,24 @@ export interface IStorage {
   createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
   updateBlogPost(id: string, updates: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: string): Promise<boolean>;
+  
+  // Invoice templates
+  getInvoiceTemplate(tenantId: string): Promise<InvoiceTemplate | undefined>;
+  createInvoiceTemplate(template: InsertInvoiceTemplate): Promise<InvoiceTemplate>;
+  updateInvoiceTemplate(id: string, tenantId: string, updates: Partial<InsertInvoiceTemplate>): Promise<InvoiceTemplate | undefined>;
+  
+  // Invoices
+  getInvoices(tenantId: string): Promise<Invoice[]>;
+  getInvoice(id: string, tenantId: string): Promise<Invoice | undefined>;
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(id: string, tenantId: string, updates: Partial<InsertInvoice>): Promise<Invoice | undefined>;
+  deleteInvoice(id: string, tenantId: string): Promise<boolean>;
+  getNextInvoiceNumber(tenantId: string): Promise<number>;
+  
+  // Invoice line items
+  getInvoiceLineItems(invoiceId: string): Promise<InvoiceLineItem[]>;
+  createInvoiceLineItem(item: InsertInvoiceLineItem): Promise<InvoiceLineItem>;
+  deleteInvoiceLineItems(invoiceId: string): Promise<boolean>;
 }
 
 const defaultVehicleTypes: VehicleType[] = [
@@ -913,6 +940,160 @@ export class MemStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting blog post:", error);
+      return false;
+    }
+  }
+  
+  // Invoice template methods
+  async getInvoiceTemplate(tenantId: string): Promise<InvoiceTemplate | undefined> {
+    try {
+      const [template] = await db.select().from(invoiceTemplatesTable)
+        .where(eq(invoiceTemplatesTable.tenantId, tenantId));
+      return template;
+    } catch (error) {
+      console.error("Error fetching invoice template:", error);
+      return undefined;
+    }
+  }
+  
+  async createInvoiceTemplate(template: InsertInvoiceTemplate): Promise<InvoiceTemplate> {
+    try {
+      const [created] = await db.insert(invoiceTemplatesTable).values(template).returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating invoice template:", error);
+      throw error;
+    }
+  }
+  
+  async updateInvoiceTemplate(id: string, tenantId: string, updates: Partial<InsertInvoiceTemplate>): Promise<InvoiceTemplate | undefined> {
+    try {
+      const [updated] = await db.update(invoiceTemplatesTable)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(
+          eq(invoiceTemplatesTable.id, id),
+          eq(invoiceTemplatesTable.tenantId, tenantId)
+        ))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating invoice template:", error);
+      return undefined;
+    }
+  }
+  
+  // Invoice methods
+  async getInvoices(tenantId: string): Promise<Invoice[]> {
+    try {
+      return await db.select().from(invoicesTable)
+        .where(eq(invoicesTable.tenantId, tenantId))
+        .orderBy(desc(invoicesTable.createdAt));
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      return [];
+    }
+  }
+  
+  async getInvoice(id: string, tenantId: string): Promise<Invoice | undefined> {
+    try {
+      const [invoice] = await db.select().from(invoicesTable)
+        .where(and(
+          eq(invoicesTable.id, id),
+          eq(invoicesTable.tenantId, tenantId)
+        ));
+      return invoice;
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      return undefined;
+    }
+  }
+  
+  async getNextInvoiceNumber(tenantId: string): Promise<number> {
+    try {
+      const result = await db
+        .select({ maxNumber: max(invoicesTable.invoiceNumber) })
+        .from(invoicesTable)
+        .where(eq(invoicesTable.tenantId, tenantId));
+      return (result[0]?.maxNumber ?? 0) + 1;
+    } catch (error) {
+      console.error("Error getting next invoice number:", error);
+      return 1;
+    }
+  }
+  
+  async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
+    try {
+      const invoiceNumber = await this.getNextInvoiceNumber(invoice.tenantId);
+      const [created] = await db.insert(invoicesTable)
+        .values({ ...invoice, invoiceNumber } as any)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      throw error;
+    }
+  }
+  
+  async updateInvoice(id: string, tenantId: string, updates: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    try {
+      const [updated] = await db.update(invoicesTable)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(
+          eq(invoicesTable.id, id),
+          eq(invoicesTable.tenantId, tenantId)
+        ))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteInvoice(id: string, tenantId: string): Promise<boolean> {
+    try {
+      // First delete line items
+      await db.delete(invoiceLineItemsTable).where(eq(invoiceLineItemsTable.invoiceId, id));
+      // Then delete invoice
+      await db.delete(invoicesTable)
+        .where(and(
+          eq(invoicesTable.id, id),
+          eq(invoicesTable.tenantId, tenantId)
+        ));
+      return true;
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      return false;
+    }
+  }
+  
+  // Invoice line items methods
+  async getInvoiceLineItems(invoiceId: string): Promise<InvoiceLineItem[]> {
+    try {
+      return await db.select().from(invoiceLineItemsTable)
+        .where(eq(invoiceLineItemsTable.invoiceId, invoiceId));
+    } catch (error) {
+      console.error("Error fetching invoice line items:", error);
+      return [];
+    }
+  }
+  
+  async createInvoiceLineItem(item: InsertInvoiceLineItem): Promise<InvoiceLineItem> {
+    try {
+      const [created] = await db.insert(invoiceLineItemsTable).values(item).returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating invoice line item:", error);
+      throw error;
+    }
+  }
+  
+  async deleteInvoiceLineItems(invoiceId: string): Promise<boolean> {
+    try {
+      await db.delete(invoiceLineItemsTable).where(eq(invoiceLineItemsTable.invoiceId, invoiceId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting invoice line items:", error);
       return false;
     }
   }

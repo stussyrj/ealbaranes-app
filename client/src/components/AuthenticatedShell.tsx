@@ -10,6 +10,7 @@ const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const WorkerDashboard = lazy(() => import("@/pages/WorkerDashboard"));
 const UserManagement = lazy(() => import("@/pages/admin/UserManagement"));
 const MessagesPage = lazy(() => import("@/pages/MessagesPage"));
+const InvoicesPage = lazy(() => import("@/pages/admin/InvoicesPage"));
 
 function PageLoader() {
   return (
@@ -25,6 +26,7 @@ function AdminRoutes() {
       <Switch>
         <Route path="/" component={DashboardPage} />
         <Route path="/admin/messages" component={MessagesPage} />
+        <Route path="/admin/invoices" component={InvoicesPage} />
         <Route path="/admin/users" component={UserManagement} />
         <Route component={DashboardPage} />
       </Switch>
