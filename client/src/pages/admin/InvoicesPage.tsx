@@ -43,6 +43,7 @@ import {
   Download,
   Eye,
   X,
+  Trash2,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -84,7 +85,7 @@ function InvoiceListSkeleton() {
 }
 
 interface LineItemPrice {
-  deliveryNoteId: string;
+  deliveryNoteId?: string;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -108,6 +109,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
   const [taxRate, setTaxRate] = useState(21);
   const [paymentDays, setPaymentDays] = useState(30);
   const [includeObservations, setIncludeObservations] = useState(false);
+  const [optionalLineItems, setOptionalLineItems] = useState<LineItemPrice[]>([]);
 
   const { data: deliveryNotes, isLoading: loadingNotes } = useQuery<DeliveryNote[]>({
     queryKey: ["/api/delivery-notes"],
@@ -122,6 +124,29 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
   const signedNotes = deliveryNotes?.filter(
     (note) => note.photo && note.signature && !note.isInvoiced
   ) || [];
+
+  const allLineItems = [...lineItems, ...optionalLineItems];
+  const subtotal = allLineItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  const taxAmount = Math.round((subtotal * taxRate) * 100) / 100;
+  const total = subtotal + taxAmount;
+
+  const addOptionalLineItem = () => {
+    setOptionalLineItems([...optionalLineItems, {
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+    }]);
+  };
+
+  const updateOptionalLineItem = (index: number, field: keyof LineItemPrice, value: any) => {
+    const updated = [...optionalLineItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setOptionalLineItems(updated);
+  };
+
+  const removeOptionalLineItem = (index: number) => {
+    setOptionalLineItems(optionalLineItems.filter((_, i) => i !== index));
+  };
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (data: {
@@ -158,6 +183,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
     setStep("select");
     setSelectedNotes([]);
     setLineItems([]);
+    setOptionalLineItems([]);
     setCustomerName("");
     setCustomerAddress("");
     setCustomerTaxId("");
@@ -220,8 +246,9 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
 
   const handleProceedToReview = () => {
     const hasEmptyPrices = lineItems.some((item) => item.unitPrice <= 0);
-    if (hasEmptyPrices) {
-      toast({ title: "Por favor, introduce el precio para todos los conceptos", variant: "destructive" });
+    const hasEmptyOptionalPrices = optionalLineItems.some((item) => !item.description.trim() || item.unitPrice < 0);
+    if (hasEmptyPrices || hasEmptyOptionalPrices) {
+      toast({ title: "Por favor, completa todos los conceptos y precios", variant: "destructive" });
       return;
     }
     if (!customerName.trim()) {
@@ -246,7 +273,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       issueDate: new Date().toISOString(),
       dueDate,
       deliveryNoteIds,
-      lineItems: lineItems.map((item) => ({
+      lineItems: [...lineItems, ...optionalLineItems].map((item) => ({
         deliveryNoteId: item.deliveryNoteId,
         description: item.description,
         quantity: item.quantity,
@@ -266,10 +293,6 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       prev.map((item, i) => (i === index ? { ...item, description } : item))
     );
   };
-
-  const subtotal = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-  const taxAmount = subtotal * (taxRate / 100);
-  const total = subtotal + taxAmount;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -453,6 +476,71 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
 
             <Card>
               <CardHeader className="pb-3">
+                <CardTitle className="text-base">Conceptos Adicionales</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {optionalLineItems.length > 0 && (
+                  <div className="space-y-3">
+                    {optionalLineItems.map((item, index) => (
+                      <div key={index} className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg space-y-2">
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-1 space-y-1">
+                            <Label>Descripción (Ej: Atraso, Cancelación)</Label>
+                            <Input
+                              value={item.description}
+                              onChange={(e) => updateOptionalLineItem(index, "description", e.target.value)}
+                              placeholder="Concepto adicional..."
+                              data-testid={`input-optional-description-${index}`}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeOptionalLineItem(index)}
+                            className="mt-6"
+                            data-testid={`button-remove-optional-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-3 items-end">
+                          <div className="flex-1 space-y-1">
+                            <Label>Precio (sin IVA)</Label>
+                            <div className="relative">
+                              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={item.unitPrice || ""}
+                                onChange={(e) => updateOptionalLineItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                className="pl-9"
+                                placeholder="0.00"
+                                data-testid={`input-optional-price-${index}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={addOptionalLineItem}
+                  data-testid="button-add-optional-item"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Concepto Adicional
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
                 <CardTitle className="text-base">Configuración</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -518,10 +606,13 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
 
                 <div className="border-t pt-4">
                   <p className="text-sm font-medium mb-2">Conceptos</p>
-                  {lineItems.map((item, index) => (
+                  {allLineItems.map((item, index) => (
                     <div key={index} className="flex justify-between py-2 border-b last:border-b-0">
-                      <span className="text-sm">{item.description}</span>
-                      <span className="font-medium">{item.unitPrice.toFixed(2)} €</span>
+                      <div className="flex-1">
+                        <span className="text-sm">{item.description}</span>
+                        {!item.deliveryNoteId && <span className="text-xs text-amber-600 ml-2">(Adicional)</span>}
+                      </div>
+                      <span className="font-medium ml-4">{(item.unitPrice * item.quantity).toFixed(2)} €</span>
                     </div>
                   ))}
                 </div>
