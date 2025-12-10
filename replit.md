@@ -53,6 +53,7 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 ### Rutas Protegidas (Empresa)
 - `/` - Dashboard con resumen de albaranes
 - `/admin/users` - Gestión de trabajadores
+- `/admin/invoices` - Sistema de facturación (crear, ver, descargar PDF)
 
 ### Rutas Protegidas (Trabajador)
 - `/` - Panel de trabajador para crear/gestionar albaranes
@@ -76,6 +77,14 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - `POST /api/delivery-notes` - Crea albarán (requiere tenantId, genera noteNumber único)
 - `PATCH /api/delivery-notes/:id` - Actualiza albarán (verifica propiedad del tenant)
 - `GET /api/workers/:workerId/delivery-notes` - Albaranes de un trabajador (filtrado por tenant)
+
+### Facturas (todos requieren autenticación y filtran por tenant)
+- `GET /api/invoices` - Lista facturas (filtrado por tenant)
+- `POST /api/invoices` - Crea factura con líneas de artículos (valida albaranes pertenezcan al tenant)
+- `PATCH /api/invoices/:id` - Actualiza estado de factura (pending/paid/cancelled)
+- `GET /api/invoices/:id/pdf` - Descarga factura en formato PDF
+- `GET /api/invoice-template` - Obtener plantilla de factura del tenant
+- `PUT /api/invoice-template` - Guardar/actualizar plantilla de factura
 
 ## Modelo de Datos - Pickup Origins
 
@@ -177,6 +186,17 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Formulario de nueva contraseña con confirmación
   - Registro de auditoría de password_reset
   - No permite enumerar emails (siempre devuelve éxito genérico)
+- **Sistema completo de facturación**:
+  - Editor de plantilla de factura (logo empresa, datos fiscales, información bancaria)
+  - Conversión de albaranes firmados a facturas con wizard/modal guiado
+  - Líneas de artículos editables con precios por unidad
+  - Cálculo automático de subtotal, IVA (21%) y total
+  - Generación de PDF profesional con datos de empresa y cliente
+  - Numeración secuencial de facturas por tenant (prefijo + número)
+  - Estados de factura: Pendiente, Pagada, Cancelada
+  - Descarga de PDF individual por factura
+  - Validación de tenant en todas las operaciones (seguridad multi-tenant)
+  - Todos los valores monetarios almacenados en céntimos para precisión
 
 ## Preferencias Usuario
 
