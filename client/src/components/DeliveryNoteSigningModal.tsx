@@ -489,23 +489,24 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
           {/* New dual signature form - only show for non-legacy notes */}
           {!isLegacyComplete && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="origin" className="relative" data-testid="tab-sign-origin">
-                <MapPin className="w-3.5 h-3.5 mr-1.5" />
-                Origen
-                {isOriginComplete && (
-                  <Check className="w-3.5 h-3.5 text-green-500 ml-1.5" />
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="destination" className="relative" data-testid="tab-sign-destination">
-                <Navigation className="w-3.5 h-3.5 mr-1.5" />
-                Destino
-                {isDestinationComplete && (
-                  <Check className="w-3.5 h-3.5 text-green-500 ml-1.5" />
-                )}
-              </TabsTrigger>
-            </TabsList>
+            <div className="space-y-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="origin" className="relative" data-testid="tab-sign-origin">
+                    <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                    Origen
+                    {isOriginComplete && (
+                      <Check className="w-3.5 h-3.5 text-green-500 ml-1.5" />
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="destination" className="relative" data-testid="tab-sign-destination">
+                    <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                    Destino
+                    {isDestinationComplete && (
+                      <Check className="w-3.5 h-3.5 text-green-500 ml-1.5" />
+                    )}
+                  </TabsTrigger>
+                </TabsList>
 
             <TabsContent value="origin" className="space-y-3 mt-3">
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
@@ -647,48 +648,49 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                   </Button>
                 )}
               </div>
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+              </Tabs>
 
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-              disabled={isSubmitting}
-              data-testid="button-cancel-signing"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!isFormComplete || isSubmitting}
-              className="flex-1 bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white backdrop-blur-sm border border-green-500/40"
-              data-testid="button-confirm-signing"
-            >
-              <Check className="w-4 h-4 mr-1.5" />
-              {isSubmitting ? "Firmando..." : "Firmar Albarán"}
-            </Button>
-          </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="flex-1"
+                  disabled={isSubmitting}
+                  data-testid="button-cancel-signing"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isFormComplete || isSubmitting}
+                  className="flex-1 bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white backdrop-blur-sm border border-green-500/40"
+                  data-testid="button-confirm-signing"
+                >
+                  <Check className="w-4 h-4 mr-1.5" />
+                  {isSubmitting ? "Firmando..." : "Firmar Albarán"}
+                </Button>
+              </div>
 
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              {isOriginComplete ? (
-                <Check className="w-3.5 h-3.5 text-green-500" />
-              ) : (
-                <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
-              )}
-              Origen
+              <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  {isOriginComplete ? (
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                  ) : (
+                    <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
+                  )}
+                  Origen
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {isDestinationComplete ? (
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                  ) : (
+                    <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
+                  )}
+                  Destino + Foto
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              {isDestinationComplete ? (
-                <Check className="w-3.5 h-3.5 text-green-500" />
-              ) : (
-                <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
-              )}
-              Destino + Foto
-            </div>
-          </div>
           )}
         </div>
       </DialogContent>
