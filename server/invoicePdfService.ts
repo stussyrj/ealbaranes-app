@@ -25,8 +25,11 @@ export function generateInvoicePdf(invoice: InvoiceWithDetails): Buffer {
   // Add company logo if available
   if (template?.logoImageBase64) {
     try {
+      // Detect image format from data URL (e.g., data:image/png;base64,...)
+      const formatMatch = template.logoImageBase64.match(/^data:image\/(\w+);/);
+      const format = formatMatch ? formatMatch[1].toUpperCase() : "PNG";
       // jspdf can accept the full data URL directly
-      doc.addImage(template.logoImageBase64, "PNG", margin, yPos, 30, 15);
+      doc.addImage(template.logoImageBase64, format, margin, yPos, 30, 15);
       yPos += 20;
     } catch (error) {
       console.error("Error adding logo to PDF:", error);

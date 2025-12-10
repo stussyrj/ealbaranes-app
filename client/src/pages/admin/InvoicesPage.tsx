@@ -687,7 +687,7 @@ function TemplateEditor() {
             Logo de la Empresa
           </CardTitle>
           <CardDescription>
-            Sube una imagen PNG de tu logo (máximo 500KB)
+            Sube una imagen de tu logo (PNG, JPEG, etc. - máximo 500KB)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -697,7 +697,7 @@ function TemplateEditor() {
               <Input
                 id="logoFile"
                 type="file"
-                accept="image/png"
+                accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
@@ -710,10 +710,10 @@ function TemplateEditor() {
                       e.target.value = "";
                       return;
                     }
-                    if (!file.type.includes("png")) {
+                    if (!file.type.startsWith("image/")) {
                       toast({
                         title: "Error",
-                        description: "Solo se permiten imágenes PNG",
+                        description: "Solo se permiten archivos de imagen",
                         variant: "destructive",
                       });
                       e.target.value = "";
