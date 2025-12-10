@@ -200,6 +200,9 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       
       // Build description with optional observations
       let description = `Albarán #${note.noteNumber} | Recogida: ${pickupText} | Entrega: ${destinationText}`;
+      if (note.vehicleType) {
+        description += ` | Vehículo: ${note.vehicleType}`;
+      }
       if (includeObservations && note.observations) {
         description += ` | Obs: ${note.observations}`;
       }
