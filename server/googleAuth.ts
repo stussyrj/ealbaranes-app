@@ -56,6 +56,8 @@ async function handleGoogleLogin(profile: GoogleProfile) {
     await db.update(users).set({ emailVerified: true }).where(eq(users.id, user.id));
     
     console.log(`[googleAuth] Created new account via Google: ${email}`);
+  } else {
+    console.log(`[googleAuth] User already exists: ${email}`);
   }
   
   return user;
@@ -67,39 +69,59 @@ export function setupGoogleAuth(app: Express) {
   const callbackURL = process.env.GOOGLE_CALLBACK_URL || "http://localhost:5000/api/auth/callback";
   
   if (!clientID || !clientSecret) {
-    console.log("[googleAuth] Google OAuth credentials not configured, Google Auth disabled");
+    console.log("[googleAuth] Google OAuth credentials not configured");
+    console.log(`[googleAuth] GOOGLE_CLIENT_ID: ${clientID ? "✓" : "✗"}`);
+    console.log(`[googleAuth] GOOGLE_CLIENT_SECRET: ${clientSecret ? "✓" : "✗"}`);
+    console.log("[googleAuth] Google Auth disabled");
     return;
   }
 
   try {
-    passport.use(
-      new GoogleStrategy(
-        {
-          clientID,
-          clientSecret,
-          callbackURL,
-        },
-        async (accessToken: any, refreshToken: any, profile: any, done: any) => {
-          try {
-            const user = await handleGoogleLogin(profile);
-            done(null, user);
-          } catch (error: any) {
-            console.error("[googleAuth] Error in strategy:", error.message);
-            done(error);
-          }
+    console.log(`[googleAuth] Setting up Google OAuth with callback: ${callbackURL}`);
+    
+    const strategy = new GoogleStrategy(
+      {
+        clientID,
+        clientSecret,
+        callbackURL,
+      },
+      async (accessToken: any, refreshToken: any, profile: any, done: any) => {
+        try {
+          console.log(`[googleAuth] Google OAuth callback received for: ${profile.emails?.[0]?.value}`);
+          const user = await handleGoogleLogin(profile);
+          done(null, user);
+        } catch (error: any) {
+          console.error("[googleAuth] Error in strategy:", error.message);
+          done(error);
         }
-      )
+      }
     );
+    
+    passport.use("google", strategy);
+    console.log("[googleAuth] Google strategy registered");
 
+    // Initiate Google OAuth flow
     app.get(
       "/api/auth/google",
-      passport.authenticate("google", { scope: ["profile", "email"] })
+      (req, res, next) => {
+        console.log("[googleAuth] /api/auth/google endpoint called");
+        passport.authenticate("google", { 
+          scope: ["profile", "email"],
+          accessType: "offline",
+          prompt: "consent"
+        })(req, res, next);
+      }
     );
 
+    // Google OAuth callback
     app.get(
       "/api/auth/callback",
-      passport.authenticate("google", { failureRedirect: "/login?error=oauth_failed" }),
+      passport.authenticate("google", { 
+        failureRedirect: "/login?error=oauth_failed",
+        failureMessage: true
+      }),
       (req, res) => {
+        console.log("[googleAuth] OAuth callback successful, redirecting to /");
         res.redirect("/");
       }
     );
@@ -107,6 +129,5 @@ export function setupGoogleAuth(app: Express) {
     console.log("[googleAuth] Google OAuth setup complete");
   } catch (error) {
     console.error("[googleAuth] Error setting up Google OAuth:", error);
-    console.log("[googleAuth] Google Auth disabled due to configuration error");
   }
 }

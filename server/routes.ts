@@ -2,7 +2,6 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, initializeAdminUser } from "./auth";
-import { setupReplitAuth } from "./replitAuth";
 import { setupGoogleAuth } from "./googleAuth";
 import {
   geocodeAddress,
@@ -35,7 +34,6 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   setupAuth(app);
-  await setupReplitAuth(app);
   setupGoogleAuth(app);
   await initializeAdminUser();
   
