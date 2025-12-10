@@ -39,8 +39,15 @@ async function handleOAuthLogin(claims: OAuthClaims) {
 }
 
 export async function setupReplitAuth(app: Express) {
-  const config = await getOidcConfig();
-  const registeredStrategies = new Set<string>();
+  // Google Auth is optional - only setup if REPL_ID is available
+  if (!process.env.REPL_ID) {
+    console.log("[replitAuth] REPL_ID not configured, Google Auth disabled");
+    return;
+  }
+
+  try {
+    const config = await getOidcConfig();
+    const registeredStrategies = new Set<string>();
 
   const ensureStrategy = (domain: string) => {
     const strategyName = `replitauth:${domain}`;
@@ -80,11 +87,17 @@ export async function setupReplitAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/auth/callback", (req, res, next) => {
-    ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successRedirect: "/",
-      failureRedirect: "/login?error=oauth_failed",
-    })(req, res, next);
-  });
+    app.get("/api/auth/callback", (req, res, next) => {
+      ensureStrategy(req.hostname);
+      passport.authenticate(`replitauth:${req.hostname}`, {
+        successRedirect: "/",
+        failureRedirect: "/login?error=oauth_failed",
+      })(req, res, next);
+    });
+
+    console.log("[replitAuth] Google Auth setup complete");
+  } catch (error) {
+    console.error("[replitAuth] Error setting up Google Auth:", error);
+    console.log("[replitAuth] Google Auth disabled due to configuration error");
+  }
 }

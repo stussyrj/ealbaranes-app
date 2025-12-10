@@ -197,6 +197,20 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Descarga de PDF individual por factura
   - Validación de tenant en todas las operaciones (seguridad multi-tenant)
   - Todos los valores monetarios almacenados en céntimos para precisión
+- **Autenticación con Google/Gmail**:
+  - Integración con Replit Auth (OpenID Connect)
+  - Botón "Acceder con Google" en página de login (pestaña Empresa)
+  - Login automático para usuarios con email existente
+  - Fallback graceful si REPL_ID no está configurado
+  - Rutas: /api/auth/google y /api/auth/callback
+- **Artículos de Blog SEO-optimizados**:
+  - Publicado: "5 Beneficios de Digitalizar tus Albaranes de Transporte"
+  - >2500 palabras con estructura H1/H2/H3
+  - Meta descripción y excerpt optimizados
+  - Accesible en `/blog`
+- **Corrección de Cálculos Financieros**:
+  - Fórmula de IVA corregida: `subtotal * (taxRate / 100)` en lugar de `subtotal * taxRate`
+  - Resumen de factura ahora muestra valores correctos
 
 ## Preferencias Usuario
 
