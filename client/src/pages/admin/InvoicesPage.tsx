@@ -107,6 +107,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
   const [notes, setNotes] = useState("");
   const [taxRate, setTaxRate] = useState(21);
   const [paymentDays, setPaymentDays] = useState(30);
+  const [includeObservations, setIncludeObservations] = useState(false);
 
   const { data: deliveryNotes, isLoading: loadingNotes } = useQuery<DeliveryNote[]>({
     queryKey: ["/api/delivery-notes"],
@@ -164,6 +165,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
     setNotes("");
     setTaxRate(template?.defaultTaxRate || 21);
     setPaymentDays(30);
+    setIncludeObservations(false);
   };
 
   const toggleNoteSelection = (noteId: string) => {
@@ -196,9 +198,15 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       
       const destinationText = note.destination || "Sin destino";
       
+      // Build description with optional observations
+      let description = `Albarán #${note.noteNumber} | Recogida: ${pickupText} | Entrega: ${destinationText}`;
+      if (includeObservations && note.observations) {
+        description += ` | Obs: ${note.observations}`;
+      }
+      
       return {
         deliveryNoteId: note.id,
-        description: `Albarán #${note.noteNumber} | Recogida: ${pickupText} | Entrega: ${destinationText}`,
+        description,
         quantity: 1,
         unitPrice: 0,
       };
@@ -294,42 +302,57 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {signedNotes.map((note) => (
-                  <Card
-                    key={note.id}
-                    className={`cursor-pointer transition-colors ${
-                      selectedNotes.includes(note.id) 
-                        ? "ring-2 ring-primary" 
-                        : "hover-elevate"
-                    }`}
-                    onClick={() => toggleNoteSelection(note.id)}
-                  >
-                    <CardContent className="p-3 flex items-center gap-3">
-                      <Checkbox
-                        checked={selectedNotes.includes(note.id)}
-                        onCheckedChange={() => toggleNoteSelection(note.id)}
-                        data-testid={`checkbox-note-${note.id}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Albarán #{note.noteNumber}</span>
-                          <Badge variant="default" className="bg-green-500">
-                            <Check className="h-3 w-3 mr-1" />
-                            Firmado
-                          </Badge>
+              <>
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  {signedNotes.map((note) => (
+                    <Card
+                      key={note.id}
+                      className={`cursor-pointer transition-colors ${
+                        selectedNotes.includes(note.id) 
+                          ? "ring-2 ring-primary" 
+                          : "hover-elevate"
+                      }`}
+                      onClick={() => toggleNoteSelection(note.id)}
+                    >
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedNotes.includes(note.id)}
+                          onCheckedChange={() => toggleNoteSelection(note.id)}
+                          data-testid={`checkbox-note-${note.id}`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Albarán #{note.noteNumber}</span>
+                            <Badge variant="default" className="bg-green-500">
+                              <Check className="h-3 w-3 mr-1" />
+                              Firmado
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {note.clientName} - {note.destination}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {note.date && format(new Date(note.date), "d MMM yyyy", { locale: es })}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {note.clientName} - {note.destination}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {note.date && format(new Date(note.date), "d MMM yyyy", { locale: es })}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                <div className="pt-4 border-t">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="includeObservations"
+                      checked={includeObservations}
+                      onCheckedChange={(checked) => setIncludeObservations(checked === true)}
+                      data-testid="checkbox-include-observations"
+                    />
+                    <Label htmlFor="includeObservations" className="cursor-pointer text-sm">
+                      Incluir observaciones de los albaranes en la descripción
+                    </Label>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}
