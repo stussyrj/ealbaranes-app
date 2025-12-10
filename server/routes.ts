@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, initializeAdminUser } from "./auth";
 import { setupReplitAuth } from "./replitAuth";
+import { setupGoogleAuth } from "./googleAuth";
 import {
   geocodeAddress,
   getRouteDistance,
@@ -35,6 +36,7 @@ export async function registerRoutes(
   
   setupAuth(app);
   await setupReplitAuth(app);
+  setupGoogleAuth(app);
   await initializeAdminUser();
   
   app.get("/api/address-suggestions", async (req, res) => {
