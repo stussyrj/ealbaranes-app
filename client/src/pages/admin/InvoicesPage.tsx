@@ -127,7 +127,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
 
   const allLineItems = [...lineItems, ...optionalLineItems];
   const subtotal = allLineItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-  const taxAmount = Math.round((subtotal * taxRate) * 100) / 100;
+  const taxAmount = Math.round((subtotal * (taxRate / 100)) * 100) / 100;
   const total = subtotal + taxAmount;
 
   const addOptionalLineItem = () => {
