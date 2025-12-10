@@ -1,8 +1,8 @@
 # eAlbarán - Gestión Digital de Albaranes de Transporte
 
-## Status: OPERATIONAL - Acceso Gratuito ([REDACTED-STRIPE] Eliminado)
+## Status: OPERATIONAL - Google OAuth Implementado
 
-**La aplicación está funcionando con acceso gratuito. El código de [REDACTED-STRIPE] fue eliminado para permitir publicación.**
+**La aplicación está funcionando con acceso gratuito y autenticación Google OAuth 2.0 completamente configurada en Railway.**
 
 ## Overview
 
@@ -197,12 +197,14 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Descarga de PDF individual por factura
   - Validación de tenant en todas las operaciones (seguridad multi-tenant)
   - Todos los valores monetarios almacenados en céntimos para precisión
-- **Autenticación con Google/Gmail**:
-  - Integración con Replit Auth (OpenID Connect)
+- **Autenticación con Google OAuth 2.0** (✅ COMPLETADO):
+  - Implementación con passport-google-oauth20
   - Botón "Acceder con Google" en página de login (pestaña Empresa)
-  - Login automático para usuarios con email existente
-  - Fallback graceful si REPL_ID no está configurado
+  - **Auto-crear cuentas** si el email no existe (genera username + tenant automáticamente)
+  - Email marcado como verificado automáticamente para usuarios OAuth
   - Rutas: /api/auth/google y /api/auth/callback
+  - Secrets configurados SOLO en Railway (NO en Git por seguridad)
+  - Fallback graceful si credenciales no están configuradas
 - **Artículos de Blog SEO-optimizados**:
   - Publicado: "5 Beneficios de Digitalizar tus Albaranes de Transporte"
   - >2500 palabras con estructura H1/H2/H3
