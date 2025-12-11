@@ -39,7 +39,7 @@ async function handleGoogleLogin(profile: GoogleProfile) {
       subscriptionStatus: "active",
     });
     
-    // Create new user as admin of that tenant
+    // Create new user as admin of that tenant with setupRequired flag
     user = await storage.createUser({
       username,
       email,
@@ -47,6 +47,7 @@ async function handleGoogleLogin(profile: GoogleProfile) {
       password: randomPassword,
       isAdmin: true,
       tenantId,
+      setupRequired: true,
     });
     
     // Update tenant with admin user

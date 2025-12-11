@@ -1544,5 +1544,58 @@ export async function registerRoutes(
     }
   });
 
+  // Profile setup for OAuth users
+  app.post("/api/profile-setup", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    
+    const user = req.user as any;
+    if (!user.setupRequired) {
+      return res.status(400).json({ error: "Usuario ya completó setup" });
+    }
+    
+    try {
+      const { companyName, username, password } = req.body;
+      
+      if (!companyName || !username || !password) {
+        return res.status(400).json({ error: "Todos los campos son requeridos" });
+      }
+      
+      if (username.length < 3) {
+        return res.status(400).json({ error: "Usuario debe tener al menos 3 caracteres" });
+      }
+      
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Contraseña debe tener al menos 8 caracteres" });
+      }
+      
+      // Import hashPassword from auth
+      const { hashPassword } = await import("./auth");
+      const hashedPassword = await hashPassword(password);
+      
+      // Update user
+      const updatedUser = await storage.updateUser(user.id, {
+        username,
+        password: hashedPassword,
+        setupRequired: false,
+      });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Error al actualizar usuario" });
+      }
+      
+      // Update tenant with company name
+      if (user.tenantId) {
+        await db.update(tenants).set({ companyName }).where(eq(tenants.id, user.tenantId));
+      }
+      
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      console.error("Error in profile setup:", error);
+      res.status(500).json({ error: "Error al completar setup" });
+    }
+  });
+
   return httpServer;
 }

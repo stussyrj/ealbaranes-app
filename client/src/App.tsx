@@ -20,6 +20,7 @@ const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const BlogPage = lazy(() => import("@/pages/BlogPage"));
 const BlogPostPage = lazy(() => import("@/pages/BlogPostPage"));
 const AdminBlogPage = lazy(() => import("@/pages/AdminBlogPage"));
+const ProfileSetupPage = lazy(() => import("@/pages/ProfileSetupPage"));
 
 function PageLoader() {
   return (
@@ -34,6 +35,14 @@ function AuthenticatedRoute() {
 
   if (isLoading || !user) {
     return <LandingPage />;
+  }
+
+  if (user.setupRequired) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <ProfileSetupPage />
+      </Suspense>
+    );
   }
 
   return (

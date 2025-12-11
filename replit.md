@@ -205,6 +205,19 @@ pickupOrigins: PickupOrigin[] // Array de objetos
   - Rutas: /api/auth/google y /api/auth/callback
   - Secrets configurados SOLO en Railway (NO en Git por seguridad)
   - Fallback graceful si credenciales no están configuradas
+- **Flujo de Setup Obligatorio para OAuth** (✅ COMPLETADO):
+  - Usuarios OAuth están marcados con `setupRequired: true` en BD
+  - Al ingresar, aparece Modal de ProfileSetupPage pidiendo:
+    - Nombre de Empresa (requerido)
+    - Usuario (mínimo 3 caracteres, requerido)
+    - Contraseña (mínimo 8 caracteres, requerido)
+  - Endpoint POST /api/profile-setup:
+    - Valida todos los campos
+    - Hashea la contraseña con scrypt
+    - Actualiza usuario con nuevo username/password y setupRequired=false
+    - Actualiza tenant con companyName
+  - Después de setup, usuario es redirigido al dashboard normal
+  - No requiere reautenticación (sesión persiste)
 - **Artículos de Blog SEO-optimizados**:
   - Publicado: "5 Beneficios de Digitalizar tus Albaranes de Transporte"
   - >2500 palabras con estructura H1/H2/H3

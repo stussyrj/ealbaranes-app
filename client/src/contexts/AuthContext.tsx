@@ -15,12 +15,14 @@ interface ServerUser {
   id: string;
   username: string;
   displayName?: string | null;
+  email?: string | null;
   isAdmin?: boolean;
   workerId?: string | null;
   tenantId?: string | null;
   createdAt?: string;
   subscription?: SubscriptionInfo | null;
   hasCompletedOnboarding?: boolean;
+  setupRequired?: boolean;
 }
 
 export interface AuthUser {
@@ -33,6 +35,7 @@ export interface AuthUser {
   isAdmin?: boolean;
   subscription?: SubscriptionInfo;
   hasCompletedOnboarding?: boolean;
+  setupRequired?: boolean;
 }
 
 interface AuthContextType {
@@ -71,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     id: serverUser.id,
     username: serverUser.username,
     displayName: serverUser.displayName,
+    email: serverUser.email,
     role: serverUser.isAdmin ? "admin" : "worker",
     workerId: serverUser.workerId,
     isAdmin: serverUser.isAdmin ?? false,
@@ -80,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isReadOnly: serverUser.subscription.isReadOnly,
     } : undefined,
     hasCompletedOnboarding: serverUser.hasCompletedOnboarding ?? false,
+    setupRequired: serverUser.setupRequired ?? false,
   } : null;
 
   const loginMutation = useMutation({

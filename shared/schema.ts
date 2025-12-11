@@ -44,6 +44,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   emailVerified: boolean("email_verified").default(false),
   hasCompletedOnboarding: boolean("has_completed_onboarding").default(false),
+  setupRequired: boolean("setup_required").default(false),
   workerId: varchar("worker_id"),
   tenantId: varchar("tenant_id"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -91,6 +92,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   isAdmin: true,
   workerId: true,
   tenantId: true,
+  setupRequired: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
