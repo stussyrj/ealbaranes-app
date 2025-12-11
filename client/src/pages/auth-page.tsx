@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw, Chrome } from "lucide-react";
+import { Lock, User, Mail, Building2, AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import { AnimatedPageBackground } from "@/components/AnimatedPageBackground";
@@ -201,15 +202,14 @@ export default function AuthPage() {
                     </div>
                   </div>
 
-                  <Button 
+                  <button 
                     onClick={() => window.location.href = "/api/auth/google"}
-                    variant="outline" 
-                    className="w-full gap-2"
+                    className="w-full h-10 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg border border-gray-300 dark:border-gray-600 flex items-center justify-center gap-3 transition-colors"
                     data-testid="button-google-login"
                   >
-                    <Chrome className="h-4 w-4" />
-                    Acceder con Google
-                  </Button>
+                    <SiGoogle className="h-5 w-5" />
+                    <span>Continuar con Google</span>
+                  </button>
                   
                   <div className="text-center pt-4 border-t border-border/50">
                     <p className="text-sm text-muted-foreground mb-2">
