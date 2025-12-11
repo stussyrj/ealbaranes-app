@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { InvoiceHelpModal } from "@/components/InvoiceHelpModal";
 import {
   Dialog,
   DialogContent,
@@ -1094,6 +1095,7 @@ function InvoiceList() {
 
 export default function InvoicesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   return (
     <div className="container max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
@@ -1107,13 +1109,23 @@ export default function InvoicesPage() {
             Gestiona tus facturas y configura tu plantilla
           </p>
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          data-testid="button-create-invoice"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Factura
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowHelpModal(true)}
+            data-testid="button-invoice-help"
+          >
+            ?
+          </Button>
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            data-testid="button-create-invoice"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Factura
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="invoices" className="space-y-4">
@@ -1140,6 +1152,11 @@ export default function InvoicesPage() {
       <CreateInvoiceModal
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
+      />
+
+      <InvoiceHelpModal
+        open={showHelpModal}
+        onOpenChange={setShowHelpModal}
       />
     </div>
   );

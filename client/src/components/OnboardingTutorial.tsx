@@ -11,7 +11,8 @@ import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  Truck
+  Truck,
+  Euro
 } from "lucide-react";
 
 interface OnboardingStep {
@@ -75,6 +76,17 @@ const companySteps: OnboardingStep[] = [
       "Exporta albaranes cobrados por separado",
       "Genera listados de albaranes pendientes",
       "Cada PDF incluye todos los datos del albarán"
+    ]
+  },
+  {
+    title: "Sistema de Facturación",
+    description: "Convierte albaranes en facturas profesionales",
+    icon: <Euro className="w-16 h-16 text-primary" />,
+    details: [
+      "Configura tu plantilla de factura con logo y datos",
+      "Selecciona albaranes firmados para facturar",
+      "Añade líneas de artículos para servicios adicionales",
+      "Genera PDFs profesionales y gestiona estados de pago"
     ]
   }
 ];
