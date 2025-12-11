@@ -218,6 +218,12 @@ pickupOrigins: PickupOrigin[] // Array de objetos
     - Actualiza tenant con companyName
   - Después de setup, usuario es redirigido al dashboard normal
   - No requiere reautenticación (sesión persiste)
+- **Botón de Google Mejorado** (✅ COMPLETADO):
+  - Estilo oficial de Google con ícono SiGoogle
+  - Texto "Continuar con Google"
+  - Fondo gris claro con hover effect
+  - Soporte light/dark mode
+  - Dependencia `react-icons` agregada al proyecto
 - **Artículos de Blog SEO-optimizados**:
   - Publicado: "5 Beneficios de Digitalizar tus Albaranes de Transporte"
   - >2500 palabras con estructura H1/H2/H3
