@@ -357,7 +357,8 @@ export class MemStorage implements IStorage {
         email: insertUser.email ?? null,
         displayName: insertUser.displayName ?? null,
         password: insertUser.password,
-        isAdmin: insertUser.isAdmin ?? false, 
+        isAdmin: insertUser.isAdmin ?? false,
+        setupRequired: insertUser.setupRequired ?? false,
         workerId: insertUser.workerId ?? null,
         tenantId: insertUser.tenantId ?? null,
       }).returning();
