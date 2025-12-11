@@ -261,11 +261,13 @@ export function setupAuth(app: Express) {
       id: user.id,
       username: user.username,
       displayName: user.displayName,
+      email: user.email,
       isAdmin: user.isAdmin,
       workerId: user.workerId,
       tenantId: user.tenantId,
       createdAt: user.createdAt,
       hasCompletedOnboarding: user.hasCompletedOnboarding ?? false,
+      setupRequired: (user as any).setupRequired ?? false,
       subscription: tenantContext ? {
         status: tenantContext.subscriptionStatus,
         isReadOnly: tenantContext.isReadOnly,
