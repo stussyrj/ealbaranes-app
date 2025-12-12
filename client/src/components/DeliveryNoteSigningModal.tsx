@@ -148,9 +148,9 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       return;
     }
 
-    // Validate that signature exists (document is optional for now, required only at final submit)
-    if (!hasOriginSignature) {
-      alert("Falta la firma de origen. Por favor captura una firma antes de guardar.");
+    // Validate that BOTH signature and document exist
+    if (!hasOriginSignature || !hasOriginDocument) {
+      alert("Falta información de origen:\n- Firma: " + (hasOriginSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasOriginDocument ? "✓" : "Falta"));
       return;
     }
 
@@ -158,13 +158,9 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
     const payload: Record<string, any> = {
       originSignature,
+      originSignatureDocument: originDocument.trim().toUpperCase(),
       originSignedAt: new Date().toISOString(),
     };
-    
-    // Include document only if provided
-    if (hasOriginDocument) {
-      payload.originSignatureDocument = originDocument.trim().toUpperCase();
-    }
 
     try {
       await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload);
@@ -465,7 +461,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
               </Button>
 
               <div className="flex gap-2">
-                {hasOriginSignature && (
+                {isOriginComplete && (
                   <Button 
                     variant="default" 
                     className="flex-1"
