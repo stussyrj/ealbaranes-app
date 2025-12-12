@@ -134,12 +134,18 @@ export function SignatureModalDialog({
     hasSignatureRef.current = false;
   }, []);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     const canvas = canvasRef.current;
-    if (canvas && hasSignatureRef.current) {
+    if (!canvas || !hasSignatureRef.current) return;
+    
+    try {
       const dataUrl = canvas.toDataURL("image/png");
       onConfirm(dataUrl);
+      // Close modal after confirming
+      await new Promise(resolve => setTimeout(resolve, 0));
       onOpenChange(false);
+    } catch (error) {
+      console.error("Error confirming signature:", error);
     }
   }, [onConfirm, onOpenChange]);
 

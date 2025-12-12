@@ -97,6 +97,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
   }, []);
 
   const handleSignatureModalConfirm = useCallback((signature: string) => {
+    console.log("Signature confirmed:", signatureModalType, signature.length);
     if (signatureModalType === "origin") {
       setOriginSignature(signature);
       setHasOriginSignature(true);
@@ -106,6 +107,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       setDestinationSignature(signature);
       setHasDestinationSignature(true);
     }
+    setSignatureModalOpen(false);
   }, [signatureModalType]);
 
   const isOriginComplete = hasOriginSignature && originDocument.trim().length >= 8;

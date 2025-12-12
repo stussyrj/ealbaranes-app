@@ -1,8 +1,8 @@
 # eAlbarán - Gestión Digital de Albaranes de Transporte
 
-## Status: OPERATIONAL - Google OAuth Implementado
+## Status: OPERATIONAL - Modal de Firma Mejorado
 
-**La aplicación está funcionando con acceso gratuito y autenticación Google OAuth 2.0 completamente configurada en Railway.**
+**La aplicación está funcionando con modal separado para firmas digitales con más espacio.**
 
 ## Overview
 
@@ -14,6 +14,26 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 - Base de datos: PostgreSQL via Neon con Drizzle ORM
 - Pagos: Sin pagos (código de [REDACTED-STRIPE] eliminado)
 - UI Framework: shadcn/ui con Tailwind CSS
+
+## Últimos Cambios
+
+### Modal de Firma Digital Separado (Diciembre 12, 2025)
+- **SignatureModalDialog.tsx**: Nuevo componente modal independiente para capturar firmas
+  - Canvas de tamaño completo (max-w-4xl, h-[90vh]) para mejor experiencia
+  - Soporte completo de mouse y touch
+  - Botones para limpiar y confirmar
+  - Auto-cierra después de confirmar
+
+- **DeliveryNoteSigningModal.tsx**: Actualizado para usar el nuevo modal
+  - Botones "Capturar firma de origen/destino" reemplazan canvas inline
+  - Al hacer click, abre modal separado para firma
+  - Dirty-tracking mejorado para documento DNI
+  - Auto-save de firma de origen al cambiar tabs
+
+### Bug Fixes
+- Resolver pérdida de datos en firmas de origen al cerrar app
+- Agregar tracking de cambios para documento DNI
+- Confirmación al cerrar modal con datos sin guardar
 
 ## Modelo de Usuarios
 
@@ -100,138 +120,40 @@ pickupOrigins: PickupOrigin[] // Array de objetos
 ## Estado Actual
 
 ### ✅ Completado
-- **Sistema multi-tenant con aislamiento de datos completo**:
-  - Todos los endpoints de albaranes requieren autenticación
-  - Filtrado por tenantId en todas las consultas
-  - Verificación de propiedad al acceder a albaranes individuales
-  - Creación de albaranes solo permitida con tenantId válido
-  - Endpoint de seed deshabilitado en producción
-  - **Endpoints de quotes con aislamiento de tenant** (GET/PATCH/confirm/assign-worker)
-  - **Endpoints de workers con aislamiento de tenant** (GET/POST/PATCH/DELETE)
-  - Defense-in-depth: storage.getQuote verifica tenantId en capa de datos
-  - Rechazo estricto de registros con tenantId nulo o no coincidente
-  - Cookies de sesión seguras en producción (secure + sameSite strict)
-  - Credenciales por defecto deshabilitadas en producción
-- **Rate limiting en login** (protección anti brute-force):
-  - Máximo 5 intentos fallidos por IP
-  - Bloqueo de 15 minutos tras exceder límite
-  - Se resetea automáticamente tras login exitoso
-- **Sistema de auditoría** (tabla audit_logs en PostgreSQL):
-  - Registra: login, login_failed, logout, create/update/sign/invoice delivery notes
-  - Almacena: tenantId, userId, entityType, entityId, IP, user-agent, timestamp
-- **Validación estricta de registro**:
-  - Usuario: 3-50 caracteres, solo alfanuméricos/guiones/underscore
-  - Contraseña: mínimo 8 caracteres, máximo 128
-  - Email: validación de formato, máximo 254 caracteres
-  - Nombre empresa: máximo 200 caracteres
-  - Todos los valores sanitizados (trim, lowercase para email) antes de guardar
+- Sistema multi-tenant con aislamiento de datos completo
+- Rate limiting en login (protección anti brute-force)
+- Sistema de auditoría (tabla audit_logs en PostgreSQL)
+- Validación estricta de registro
 - Registro de empresas con creación automática de tenant
-- **Verificación de email ACTIVA** - Las empresas deben verificar su email antes de iniciar sesión
-- **[REDACTED-STRIPE] ELIMINADO** - Código de pagos eliminado para permitir publicación
-- Middleware de acceso por tenant (acceso completo sin verificar suscripción)
+- Verificación de email ACTIVA
+- Middleware de acceso por tenant
 - Frontend React con rutas públicas y protegidas
 - Tema claro/spooky (Halloween: naranja, púrpura, negro)
-- Sidebar simplificado (Dashboard + Gestión de Usuarios)
-- Panel de trabajador para albaranes
 - Números de albarán únicos (Albarán #X) con generación automática
-- Renombrado de app: DirectTransports → eAlbarán
-- Terminología actualizada: Admin → Empresa
-- Página de login con pestañas (Empresa/Trabajador) y toggle de tema
 - Descarga de albaranes para seguridad (fotos firmados / CSV pendientes)
-- Sesiones persistentes en PostgreSQL (no requiere re-login al recargar)
-- Usuarios persistidos en base de datos (consistencia entre reinicios)
+- Sesiones persistentes en PostgreSQL
+- Usuarios persistidos en base de datos
 - Login con email O nombre de usuario para empresas
-- Lookup de nombres de trabajador con fallback a tabla de usuarios
-- Emails vía Resend con diseño spooky (fondo oscuro, colores naranja/púrpura, patrón telaraña)
-- Email de contacto: info@ealbaranes.es (incluido en footer de todos los emails)
-- Tipos de email: bienvenida, verificación, nuevo albarán, albarán firmado
+- Emails vía Resend con diseño spooky
 - Sistema de facturación de albaranes (Cobrados/Pendientes de cobro)
-- Filtrado de albaranes por rango de fechas
-- **Dashboard con contadores resumen** (Hoy, Este mes, Total):
-  - Muestra número de albaranes creados hoy
-  - Muestra número de albaranes creados este mes
-  - Muestra total de albaranes de todos los tiempos
-  - Utiliza `normalizeToLocalDateStr` para manejo correcto de timezone
-- **Modal de descarga mejorado**:
-  - Selector de rango de fechas (Desde/Hasta)
-  - Filtro aplicado a todas las descargas (firmados, cobrados, pendientes)
-  - Filtros se resetean al cerrar el modal
-  - Manejo de timezone consistente
+- Dashboard con contadores resumen (Hoy, Este mes, Total)
+- Modal de descarga mejorado con selector de rango de fechas
 - Sistema de firma dual: albarán solo "firmado" cuando tiene AMBOS foto Y firma digital
 - Componente SignaturePad para captura de firmas táctiles
 - Autocomplete para campos de cliente, origen y destino
 - Badges separados mostrando estado de foto y firma
-- Solo albaranes completamente firmados pueden facturarse
 - Orígenes de recogida con campos separados de nombre y dirección (JSONB)
-- Formulario dinámico para añadir/eliminar múltiples recogidas con nombre y dirección
-- Sidebar móvil optimizado con:
-  - Botón X visible para cerrar (esquina superior derecha)
-  - Overlay oscuro con desenfoque - click para cerrar
-  - Cierre automático al navegar
-  - Animaciones suaves (200ms cierre, 300ms apertura)
-  - Funciona igual para empresas y trabajadores
-- **Tutorial de bienvenida (Onboarding)**:
-  - Aparece automáticamente en el primer inicio de sesión
-  - Pasos diferentes para empresa vs trabajador
-  - Empresa: 5 pasos (Dashboard, Trabajadores, Mensajes, Descargas)
-  - Trabajador: 5 pasos (Crear albarán, Foto, Firma, Completado)
-  - Se marca como completado en base de datos (hasCompletedOnboarding)
-  - No reaparece en sesiones posteriores
-- **Sistema de recuperación de contraseña**:
-  - Enlace "¿Olvidaste tu contraseña?" en ambas pestañas del login (Empresa/Trabajador)
-  - Formulario de solicitud de recuperación vía email
-  - Token único de un solo uso con expiración de 1 hora
-  - Rate limiting: máximo 3 solicitudes por hora por email
-  - Email con tema spooky coherente con el resto de la app
-  - Formulario de nueva contraseña con confirmación
-  - Registro de auditoría de password_reset
-  - No permite enumerar emails (siempre devuelve éxito genérico)
-- **Sistema completo de facturación**:
-  - Editor de plantilla de factura (logo empresa, datos fiscales, información bancaria)
-  - Conversión de albaranes firmados a facturas con wizard/modal guiado
-  - Líneas de artículos editables con precios por unidad
-  - Cálculo automático de subtotal, IVA (21%) y total
-  - Generación de PDF profesional con datos de empresa y cliente
-  - Numeración secuencial de facturas por tenant (prefijo + número)
-  - Estados de factura: Pendiente, Pagada, Cancelada
-  - Descarga de PDF individual por factura
-  - Validación de tenant en todas las operaciones (seguridad multi-tenant)
-  - Todos los valores monetarios almacenados en céntimos para precisión
-- **Autenticación con Google OAuth 2.0** (✅ COMPLETADO):
-  - Implementación con passport-google-oauth20
-  - Botón "Acceder con Google" en página de login (pestaña Empresa)
-  - **Auto-crear cuentas** si el email no existe (genera username + tenant automáticamente)
-  - Email marcado como verificado automáticamente para usuarios OAuth
-  - Rutas: /api/auth/google y /api/auth/callback
-  - Secrets configurados SOLO en Railway (NO en Git por seguridad)
-  - Fallback graceful si credenciales no están configuradas
-- **Flujo de Setup Obligatorio para OAuth** (✅ COMPLETADO):
-  - Usuarios OAuth están marcados con `setupRequired: true` en BD
-  - Al ingresar, aparece Modal de ProfileSetupPage pidiendo:
-    - Nombre de Empresa (requerido)
-    - Usuario (mínimo 3 caracteres, requerido)
-    - Contraseña (mínimo 8 caracteres, requerido)
-  - Endpoint POST /api/profile-setup:
-    - Valida todos los campos
-    - Hashea la contraseña con scrypt
-    - Actualiza usuario con nuevo username/password y setupRequired=false
-    - Actualiza tenant con companyName
-  - Después de setup, usuario es redirigido al dashboard normal
-  - No requiere reautenticación (sesión persiste)
-- **Botón de Google Mejorado** (✅ COMPLETADO):
-  - Estilo oficial de Google con ícono SiGoogle
-  - Texto "Continuar con Google"
-  - Fondo gris claro con hover effect
-  - Soporte light/dark mode
-  - Dependencia `react-icons` agregada al proyecto
-- **Artículos de Blog SEO-optimizados**:
-  - Publicado: "5 Beneficios de Digitalizar tus Albaranes de Transporte"
-  - >2500 palabras con estructura H1/H2/H3
-  - Meta descripción y excerpt optimizados
-  - Accesible en `/blog`
-- **Corrección de Cálculos Financieros**:
-  - Fórmula de IVA corregida: `subtotal * (taxRate / 100)` en lugar de `subtotal * taxRate`
-  - Resumen de factura ahora muestra valores correctos
+- Sidebar móvil optimizado
+- **Tutorial de bienvenida (Onboarding)** con pasos diferentes para empresa vs trabajador
+- **Sistema de recuperación de contraseña** con tokens y rate limiting
+- **Sistema completo de facturación** (plantilla, wizard, PDF, numeración secuencial)
+- **Autenticación con Google OAuth 2.0** con auto-creación de cuentas
+- **Flujo de Setup Obligatorio para OAuth** (empresa, usuario, contraseña)
+- **Artículos de Blog SEO-optimizados**
+- **Corrección de Cálculos Financieros** (IVA correcto)
+- **Modal de firma separado** con canvas de tamaño completo
+- **Dirty-tracking para firma y documento DNI**
+- **Auto-save de firma de origen** al cambiar tabs
 
 ## Preferencias Usuario
 
