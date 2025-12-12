@@ -148,24 +148,23 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       return;
     }
 
-    // Validate what's missing
+    // Validate that signature exists (document is optional for now, required only at final submit)
     if (!hasOriginSignature) {
       alert("Falta la firma de origen. Por favor captura una firma antes de guardar.");
       return;
     }
 
-    if (!hasOriginDocument) {
-      alert("Falta el DNI / NIE / NIF del firmante de origen. Por favor ingresa un documento válido (mínimo 8 caracteres).");
-      return;
-    }
-
     setIsSavingOrigin(true);
 
-    const payload = {
+    const payload: Record<string, any> = {
       originSignature,
-      originSignatureDocument: originDocument.trim().toUpperCase(),
       originSignedAt: new Date().toISOString(),
     };
+    
+    // Include document only if provided
+    if (hasOriginDocument) {
+      payload.originSignatureDocument = originDocument.trim().toUpperCase();
+    }
 
     try {
       await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload);
