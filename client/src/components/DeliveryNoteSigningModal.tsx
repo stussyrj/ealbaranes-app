@@ -10,7 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { DeliveryNote } from "@shared/schema";
 
 interface SignatureCanvasProps {
-  onSignatureChange: (hasSignature: boolean, dataUrl: string) => void;
+  onSignatureChange: (hasSignature: boolean, dataUrl: string, isInitialLoad?: boolean) => void;
   label: string;
   initialSignature?: string;
 }
@@ -43,7 +43,7 @@ function SignatureCanvas({ onSignatureChange, label, initialSignature }: Signatu
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         hasSignatureRef.current = true;
-        onSignatureChange(true, initialSignature);
+        onSignatureChange(true, initialSignature, true);
         forceUpdate(n => n + 1);
       };
       img.src = initialSignature;
@@ -190,6 +190,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
   const [originDocument, setOriginDocument] = useState("");
   const [hasOriginSignature, setHasOriginSignature] = useState(false);
   const [originAlreadySaved, setOriginAlreadySaved] = useState(false);
+  const [originWasModified, setOriginWasModified] = useState(false);
   
   const [destinationSignature, setDestinationSignature] = useState("");
   const [destinationDocument, setDestinationDocument] = useState("");
@@ -234,14 +235,24 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     }
   }, [note, open]);
 
-  const handleOriginSignatureChange = useCallback((hasSig: boolean, dataUrl: string) => {
+  const handleOriginSignatureChange = useCallback((hasSig: boolean, dataUrl: string, isInitialLoad?: boolean) => {
     setHasOriginSignature(hasSig);
     setOriginSignature(dataUrl);
+    if (!isInitialLoad) {
+      setOriginWasModified(true);
+      setOriginAlreadySaved(false);
+    }
   }, []);
 
   const handleDestinationSignatureChange = useCallback((hasSig: boolean, dataUrl: string) => {
     setHasDestinationSignature(hasSig);
     setDestinationSignature(dataUrl);
+  }, []);
+
+  const handleOriginDocumentChange = useCallback((value: string) => {
+    setOriginDocument(value);
+    setOriginWasModified(true);
+    setOriginAlreadySaved(false);
   }, []);
 
   const isOriginComplete = hasOriginSignature && originDocument.trim().length >= 8;
@@ -259,6 +270,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     setOriginDocument("");
     setHasOriginSignature(false);
     setOriginAlreadySaved(false);
+    setOriginWasModified(false);
     setDestinationSignature("");
     setDestinationDocument("");
     setHasDestinationSignature(false);
@@ -292,6 +304,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       }
       
       setOriginAlreadySaved(true);
+      setOriginWasModified(false);
       setIsSavingOrigin(false);
       // Keep modal open and switch to destination tab for seamless flow
       setActiveTab("destination");
@@ -401,11 +414,22 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     return 'N/A';
   };
 
-  return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
+  const hasUnsavedOrigin = isOriginComplete && originWasModified;
+  
+  const handleClose = (isOpen: boolean) => {
+    if (!isOpen && hasUnsavedOrigin) {
+      if (window.confirm("ATENCION: Tienes una firma de origen sin guardar.\n\n¿Estás seguro de que quieres cerrar? Se perderán los datos.")) {
+        resetForm();
+        onOpenChange(false);
+      }
+    } else {
       if (!isOpen) resetForm();
       onOpenChange(isOpen);
-    }}>
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -527,7 +551,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                   id="sign-origin-document"
                   placeholder="Ej: 12345678A"
                   value={originDocument}
-                  onChange={(e) => setOriginDocument(e.target.value)}
+                  onChange={(e) => handleOriginDocumentChange(e.target.value)}
                   className="uppercase"
                   maxLength={15}
                   data-testid="input-sign-origin-document"
@@ -544,27 +568,32 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
               />
 
               <div className="flex gap-2">
-                {isOriginComplete && !originAlreadySaved && (
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={handleSaveOrigin}
-                    disabled={isSavingOrigin}
-                    data-testid="button-save-origin"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {isSavingOrigin ? "Guardando..." : "Guardar y Continuar Después"}
-                  </Button>
-                )}
                 {isOriginComplete && (
                   <Button 
                     variant="default" 
                     className="flex-1"
-                    onClick={() => setActiveTab("destination")}
+                    onClick={async () => {
+                      if (!originAlreadySaved) {
+                        await handleSaveOrigin();
+                      } else {
+                        setActiveTab("destination");
+                      }
+                    }}
+                    disabled={isSavingOrigin}
                     data-testid="button-next-to-destination"
                   >
-                    Continuar a Destino
-                    <Navigation className="w-4 h-4 ml-2" />
+                    {isSavingOrigin ? (
+                      <>
+                        <Save className="w-4 h-4 mr-2 animate-pulse" />
+                        Guardando firma...
+                      </>
+                    ) : (
+                      <>
+                        {!originAlreadySaved && <Save className="w-4 h-4 mr-2" />}
+                        Guardar y Continuar a Destino
+                        <Navigation className="w-4 h-4 ml-2" />
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
@@ -654,7 +683,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => handleClose(false)}
                   className="flex-1"
                   disabled={isSubmitting}
                   data-testid="button-cancel-signing"
