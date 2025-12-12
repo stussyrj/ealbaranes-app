@@ -534,7 +534,6 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   ref={fileInputRef}
                   onChange={handlePhotoCapture}
                   className="hidden"
@@ -574,7 +573,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                     data-testid="button-take-photo"
                   >
                     <Camera className="w-6 h-6 mr-2" />
-                    Tomar foto de entrega
+                    Añadir foto (cámara o galería)
                   </Button>
                 )}
               </div>
