@@ -22,6 +22,7 @@ export function SignatureModalDialog({
   const isDrawingRef = useRef(false);
   const hasSignatureRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const [hasSignature, setHasSignature] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -40,9 +41,11 @@ export function SignatureModalDialog({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    ctx.lineWidth = 3.5;
+    ctx.miterLimit = 10;
 
     // Load initial signature if exists
     if (initialSignature && initialSignature.length > 100) {
@@ -115,6 +118,7 @@ export function SignatureModalDialog({
 
     if (!hasSignatureRef.current) {
       hasSignatureRef.current = true;
+      setHasSignature(true);
     }
   }, [getCoordinates]);
 
@@ -132,6 +136,7 @@ export function SignatureModalDialog({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     hasSignatureRef.current = false;
+    setHasSignature(false);
   }, []);
 
   const handleConfirm = useCallback(async () => {
@@ -197,7 +202,7 @@ export function SignatureModalDialog({
               <Button
                 type="button"
                 onClick={handleConfirm}
-                disabled={!hasSignatureRef.current}
+                disabled={!hasSignature}
                 className="gap-2"
                 data-testid="button-confirm-signature-modal"
               >
