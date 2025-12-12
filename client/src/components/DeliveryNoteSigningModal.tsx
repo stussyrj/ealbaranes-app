@@ -7,172 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Eraser, MapPin, Navigation, FileText, User, Camera, Save } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { SignatureModalDialog } from "@/components/SignatureModalDialog";
 import type { DeliveryNote } from "@shared/schema";
 
-interface SignatureCanvasProps {
-  onSignatureChange: (hasSignature: boolean, dataUrl: string, isInitialLoad?: boolean) => void;
-  label: string;
-  initialSignature?: string;
-}
-
-function SignatureCanvas({ onSignatureChange, label, initialSignature }: SignatureCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isInitializedRef = useRef(false);
-  const isDrawingRef = useRef(false);
-  const hasSignatureRef = useRef(false);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
-  const [, forceUpdate] = useState(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    // Initialize canvas
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    
-    // Load initial signature if exists
-    if (initialSignature && initialSignature.length > 100) {
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        hasSignatureRef.current = true;
-        onSignatureChange(true, initialSignature, true);
-        forceUpdate(n => n + 1);
-      };
-      img.src = initialSignature;
-    }
-    
-    isInitializedRef.current = true;
-  }, [initialSignature, onSignatureChange]);
-
-  const getCoordinates = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    if ("touches" in e) {
-      const touch = e.touches[0];
-      if (!touch) return null;
-      return {
-        x: (touch.clientX - rect.left) * scaleX,
-        y: (touch.clientY - rect.top) * scaleY,
-      };
-    }
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
-  }, []);
-
-  const startDrawing = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    const coords = getCoordinates(e);
-    if (!coords) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!ctx) return;
-
-    isDrawingRef.current = true;
-    lastPointRef.current = coords;
-    ctx.beginPath();
-    ctx.moveTo(coords.x, coords.y);
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
-  }, [getCoordinates]);
-
-  const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawingRef.current) return;
-    e.preventDefault();
-    const coords = getCoordinates(e);
-    if (!coords) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!ctx) return;
-
-    const lastPoint = lastPointRef.current;
-    if (!lastPoint) {
-      lastPointRef.current = coords;
-      return;
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(lastPoint.x, lastPoint.y);
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
-    lastPointRef.current = coords;
-    
-    if (!hasSignatureRef.current) {
-      hasSignatureRef.current = true;
-      onSignatureChange(true, canvas?.toDataURL("image/png") || "");
-      forceUpdate(n => n + 1);
-    }
-  }, [getCoordinates, onSignatureChange]);
-
-  const stopDrawing = useCallback(() => {
-    if (isDrawingRef.current && canvasRef.current) {
-      onSignatureChange(true, canvasRef.current.toDataURL("image/png"));
-    }
-    isDrawingRef.current = false;
-    lastPointRef.current = null;
-  }, [onSignatureChange]);
-
-  const clearSignature = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!ctx || !canvas) return;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    hasSignatureRef.current = false;
-    onSignatureChange(false, "");
-    forceUpdate(n => n + 1);
-  }, [onSignatureChange]);
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
-      <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg overflow-hidden bg-white">
-        <canvas
-          ref={canvasRef}
-          width={400}
-          height={120}
-          className="w-full touch-none cursor-crosshair"
-          style={{ touchAction: "none" }}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-          data-testid={`canvas-signature-${label.toLowerCase().replace(/\s/g, '-')}`}
-        />
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={clearSignature}
-        className="w-full"
-        data-testid={`button-clear-${label.toLowerCase().replace(/\s/g, '-')}`}
-      >
-        <Eraser className="w-3.5 h-3.5 mr-1.5" />
-        Borrar firma
-      </Button>
-    </div>
-  );
-}
 
 interface DeliveryNoteSigningModalProps {
   open: boolean;
@@ -195,6 +32,10 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
   const [destinationSignature, setDestinationSignature] = useState("");
   const [destinationDocument, setDestinationDocument] = useState("");
   const [hasDestinationSignature, setHasDestinationSignature] = useState(false);
+  
+  // Signature modal
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false);
+  const [signatureModalType, setSignatureModalType] = useState<"origin" | "destination">("origin");
   
   // Photo for destination only
   const [destinationPhoto, setDestinationPhoto] = useState("");
@@ -254,6 +95,18 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     setOriginWasModified(true);
     setOriginAlreadySaved(false);
   }, []);
+
+  const handleSignatureModalConfirm = useCallback((signature: string) => {
+    if (signatureModalType === "origin") {
+      setOriginSignature(signature);
+      setHasOriginSignature(true);
+      setOriginWasModified(true);
+      setOriginAlreadySaved(false);
+    } else {
+      setDestinationSignature(signature);
+      setHasDestinationSignature(true);
+    }
+  }, [signatureModalType]);
 
   const isOriginComplete = hasOriginSignature && originDocument.trim().length >= 8;
   // Photo is required - either we have one in state or on the server
@@ -561,11 +414,19 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 )}
               </div>
 
-              <SignatureCanvas 
-                onSignatureChange={handleOriginSignatureChange}
-                label="Firma origen"
-                initialSignature={note?.originSignature || undefined}
-              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-24"
+                onClick={() => {
+                  setSignatureModalType("origin");
+                  setSignatureModalOpen(true);
+                }}
+                data-testid="button-capture-origin-signature"
+              >
+                <Camera className="w-6 h-6 mr-2" />
+                {hasOriginSignature ? "Cambiar firma de origen" : "Capturar firma de origen"}
+              </Button>
 
               <div className="flex gap-2">
                 {isOriginComplete && (
@@ -621,11 +482,19 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 )}
               </div>
 
-              <SignatureCanvas 
-                onSignatureChange={handleDestinationSignatureChange}
-                label="Firma destino"
-                initialSignature={note?.destinationSignature || note?.signature || undefined}
-              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-24"
+                onClick={() => {
+                  setSignatureModalType("destination");
+                  setSignatureModalOpen(true);
+                }}
+                data-testid="button-capture-destination-signature"
+              >
+                <Camera className="w-6 h-6 mr-2" />
+                {hasDestinationSignature ? "Cambiar firma de destino" : "Capturar firma de destino"}
+              </Button>
 
               {/* Photo capture for destination only */}
               <div className="space-y-2">
@@ -723,6 +592,14 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
           )}
         </div>
       </DialogContent>
+
+      <SignatureModalDialog
+        open={signatureModalOpen}
+        onOpenChange={setSignatureModalOpen}
+        onConfirm={handleSignatureModalConfirm}
+        initialSignature={signatureModalType === "origin" ? originSignature : destinationSignature}
+        title={signatureModalType === "origin" ? "Capturar firma de origen" : "Capturar firma de destino"}
+      />
     </Dialog>
   );
 }
