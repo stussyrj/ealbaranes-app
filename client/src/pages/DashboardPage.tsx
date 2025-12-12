@@ -892,7 +892,9 @@ export default function DashboardPage() {
                     if (note.pickupOrigins && note.pickupOrigins.length > 0) {
                       pdf.setFont('helvetica', 'normal');
                       note.pickupOrigins.forEach((origin: PickupOrigin) => {
-                        const routeText = `Recogida: ${origin.name || 'N/A'} → Entrega: ${origin.address || 'N/A'}`;
+                        const name = String(origin.name || 'N/A').trim();
+                        const address = String(origin.address || 'N/A').trim();
+                        const routeText = `Recogida: ${name} → Entrega: ${address}`;
                         pdf.text(routeText, margin + 5, yPos);
                         yPos += 5;
                       });
@@ -1142,7 +1144,9 @@ export default function DashboardPage() {
                     if (note.pickupOrigins && note.pickupOrigins.length > 0) {
                       pdf.setFont('helvetica', 'normal');
                       note.pickupOrigins.forEach((origin: PickupOrigin) => {
-                        const routeText = `Recogida: ${origin.name || 'N/A'} → Entrega: ${origin.address || 'N/A'}`;
+                        const name = String(origin.name || 'N/A').trim();
+                        const address = String(origin.address || 'N/A').trim();
+                        const routeText = `Recogida: ${name} → Entrega: ${address}`;
                         pdf.text(routeText, margin + 5, yPos);
                         yPos += 5;
                       });
@@ -1402,7 +1406,8 @@ export default function DashboardPage() {
                     const truncate = (str: string, len: number) => str && str.length > len ? str.substring(0, len) + '...' : (str || '-');
                     
                     pdf.text(String(note.noteNumber || '-'), margin + 2, yPos);
-                    pdf.text(truncate(formatOrigins(note.pickupOrigins, 1), 18), margin + 15, yPos);
+                    const originDisplay = String(formatOrigins(note.pickupOrigins, 1)).trim();
+                    pdf.text(truncate(originDisplay, 18), margin + 15, yPos);
                     pdf.text(truncate(note.destination, 18), margin + 55, yPos);
                     pdf.text(truncate(note.clientName, 18), margin + 95, yPos);
                     pdf.text(note.date ? new Date(note.date).toLocaleDateString('es-ES') : '-', margin + 135, yPos);
