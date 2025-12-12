@@ -110,13 +110,19 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     setSignatureModalOpen(false);
   }, [signatureModalType]);
 
-  const isOriginComplete = hasOriginSignature && originDocument.trim().length >= 8;
+  // Origin: Firma es independiente del documento
+  const hasOriginDocument = originDocument.trim().length >= 8;
+  const isOriginComplete = hasOriginSignature && hasOriginDocument;
+  
+  // Destination: Firma es independiente del documento
+  const hasDestinationDocument = destinationDocument.trim().length >= 8;
+  
   // Photo is required - either we have one in state or on the server
   const hasValidPhoto = destinationPhoto.length > 100 || (note?.photo && note.photo.length > 100);
   // Legacy notes (signature + photo but no dual signatures) are ALREADY complete - treat as read-only
   const isLegacyComplete = !!(note?.signature && note?.photo && !note?.originSignature);
   // Destination is complete when we have signature + document + photo
-  const isDestinationComplete = hasDestinationSignature && destinationDocument.trim().length >= 8 && hasValidPhoto;
+  const isDestinationComplete = hasDestinationSignature && hasDestinationDocument && hasValidPhoto;
   // Form is complete for submission: full dual signature OR legacy (read-only view)
   const isFormComplete = (isOriginComplete && isDestinationComplete) || isLegacyComplete;
 
@@ -137,8 +143,19 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
   // Save only origin signature (partial save) - keeps modal open and switches to destination
   const handleSaveOrigin = async () => {
-    if (!note || !isOriginComplete) {
-      console.error("Missing origin signature data");
+    if (!note) {
+      console.error("Missing note data");
+      return;
+    }
+
+    // Validate what's missing
+    if (!hasOriginSignature) {
+      alert("Falta la firma de origen. Por favor captura una firma antes de guardar.");
+      return;
+    }
+
+    if (!hasOriginDocument) {
+      alert("Falta el DNI / NIE / NIF del firmante de origen. Por favor ingresa un documento válido (mínimo 8 caracteres).");
       return;
     }
 
@@ -185,7 +202,25 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
   };
 
   const handleSubmit = async () => {
-    if (!note || !isFormComplete) {
+    if (!note) {
+      console.error("Missing note data");
+      return;
+    }
+
+    // Validate what's missing before submit
+    if (!isFormComplete) {
+      if (!hasOriginSignature || !hasOriginDocument) {
+        alert("Falta información de origen:\n- Firma: " + (hasOriginSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasOriginDocument ? "✓" : "Falta"));
+        return;
+      }
+      if (!hasDestinationSignature || !hasDestinationDocument) {
+        alert("Falta información de destino:\n- Firma: " + (hasDestinationSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasDestinationDocument ? "✓" : "Falta"));
+        return;
+      }
+      if (!hasValidPhoto) {
+        alert("Falta la foto de entrega. Por favor captura una foto.");
+        return;
+      }
       console.error("Missing required fields");
       return;
     }
@@ -431,7 +466,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
               </Button>
 
               <div className="flex gap-2">
-                {isOriginComplete && (
+                {hasOriginSignature && (
                   <Button 
                     variant="default" 
                     className="flex-1"
