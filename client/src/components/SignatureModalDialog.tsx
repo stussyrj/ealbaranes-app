@@ -39,17 +39,16 @@ export function SignatureModalDialog({
     canvas.height = canvas.offsetHeight * dpr;
     ctx.scale(dpr, dpr);
     
-    // Initialize canvas with high quality settings
+    // Initialize canvas with pen-like quality settings
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#1a1a1a";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "square";
+    ctx.lineJoin = "miter";
     ctx.miterLimit = 10;
     ctx.globalCompositeOperation = "source-over";
-    (ctx as any).imageSmoothingEnabled = true;
-    (ctx as any).imageSmoothingQuality = "high";
+    (ctx as any).imageSmoothingEnabled = false;
 
     // Reset state when opening modal
     hasSignatureRef.current = false;
@@ -119,22 +118,12 @@ export function SignatureModalDialog({
       return;
     }
 
-    // High-quality smooth drawing with better interpolation
-    const dx = coords.x - lastPoint.x;
-    const dy = coords.y - lastPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const steps = Math.max(Math.ceil(distance), 1);
-    
+    // Direct pen-like drawing - straight lines for crisp, professional look
     ctx.beginPath();
     ctx.moveTo(lastPoint.x, lastPoint.y);
-    
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      const x = lastPoint.x + dx * t;
-      const y = lastPoint.y + dy * t;
-      ctx.lineTo(x, y);
-    }
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
+    
     lastPointRef.current = coords;
 
     if (!hasSignatureRef.current) {
