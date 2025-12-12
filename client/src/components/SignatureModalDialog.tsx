@@ -30,28 +30,29 @@ export function SignatureModalDialog({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    // Set canvas size to fill available space
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-
+    // Set canvas size with device pixel ratio for crisp rendering
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    
     // Initialize canvas
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = 5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.lineWidth = 3.5;
     ctx.miterLimit = 10;
 
     // Load initial signature if exists
     if (initialSignature && initialSignature.length > 100) {
       const img = new Image();
       img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.offsetWidth, canvas.offsetHeight);
         hasSignatureRef.current = true;
       };
       img.src = initialSignature;
@@ -110,9 +111,21 @@ export function SignatureModalDialog({
       return;
     }
 
+    // Smooth drawing with interpolation
+    const dx = coords.x - lastPoint.x;
+    const dy = coords.y - lastPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const steps = Math.ceil(distance / 2);
+    
     ctx.beginPath();
     ctx.moveTo(lastPoint.x, lastPoint.y);
-    ctx.lineTo(coords.x, coords.y);
+    
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const x = lastPoint.x + dx * t;
+      const y = lastPoint.y + dy * t;
+      ctx.lineTo(x, y);
+    }
     ctx.stroke();
     lastPointRef.current = coords;
 
@@ -133,8 +146,9 @@ export function SignatureModalDialog({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const dpr = window.devicePixelRatio || 1;
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     hasSignatureRef.current = false;
     setHasSignature(false);
   }, []);
