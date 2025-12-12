@@ -48,12 +48,17 @@ export function SignatureModalDialog({
     ctx.lineJoin = "round";
     ctx.miterLimit = 10;
 
+    // Reset state when opening modal
+    hasSignatureRef.current = false;
+    setHasSignature(false);
+
     // Load initial signature if exists
     if (initialSignature && initialSignature.length > 100) {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.offsetWidth, canvas.offsetHeight);
         hasSignatureRef.current = true;
+        setHasSignature(true);
       };
       img.src = initialSignature;
     }
