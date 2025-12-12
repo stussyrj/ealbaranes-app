@@ -39,14 +39,17 @@ export function SignatureModalDialog({
     canvas.height = canvas.offsetHeight * dpr;
     ctx.scale(dpr, dpr);
     
-    // Initialize canvas
+    // Initialize canvas with high quality settings
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.miterLimit = 10;
+    ctx.globalCompositeOperation = "source-over";
+    (ctx as any).imageSmoothingEnabled = true;
+    (ctx as any).imageSmoothingQuality = "high";
 
     // Reset state when opening modal
     hasSignatureRef.current = false;
@@ -116,11 +119,11 @@ export function SignatureModalDialog({
       return;
     }
 
-    // Smooth drawing with interpolation
+    // High-quality smooth drawing with better interpolation
     const dx = coords.x - lastPoint.x;
     const dy = coords.y - lastPoint.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const steps = Math.ceil(distance / 2);
+    const steps = Math.max(Math.ceil(distance), 1);
     
     ctx.beginPath();
     ctx.moveTo(lastPoint.x, lastPoint.y);
