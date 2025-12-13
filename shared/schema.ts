@@ -207,6 +207,8 @@ export const deliveryNotes = pgTable("delivery_notes", {
   invoicedAt: timestamp("invoiced_at"),
   tenantId: varchar("tenant_id"),
   createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: varchar("deleted_by"),
 });
 
 export const insertDeliveryNoteSchema = createInsertSchema(deliveryNotes).omit({
