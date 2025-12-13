@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, FileText, CheckCircle, Timer, Camera, Edit2, ChevronDown, ChevronUp, MapPin, Navigation, User } from "lucide-react";
+import { Clock, FileText, CheckCircle, Timer, Camera, Edit2, ChevronDown, ChevronUp, MapPin, Navigation, User, Trash2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PickupOrigin } from "@shared/schema";
@@ -49,9 +49,15 @@ interface DeliveryNoteCardProps {
   showPhoto?: boolean;
   showActions?: boolean;
   isPending?: boolean;
+  showDeleteButton?: boolean;
+  showRestoreButton?: boolean;
+  isDeleting?: boolean;
+  isRestoring?: boolean;
   onPhotoClick?: () => void;
   onEditClick?: () => void;
   onAddPhotoClick?: () => void;
+  onDeleteClick?: () => void;
+  onRestoreClick?: () => void;
 }
 
 export function DeliveryNoteCard({
@@ -60,9 +66,15 @@ export function DeliveryNoteCard({
   showPhoto = true,
   showActions = false,
   isPending = false,
+  showDeleteButton = false,
+  showRestoreButton = false,
+  isDeleting = false,
+  isRestoring = false,
   onPhotoClick,
   onEditClick,
   onAddPhotoClick,
+  onDeleteClick,
+  onRestoreClick,
 }: DeliveryNoteCardProps) {
   const [showAllOrigins, setShowAllOrigins] = useState(false);
   const [showSignatures, setShowSignatures] = useState(false);
@@ -338,6 +350,38 @@ export function DeliveryNoteCard({
                 Foto
               </Button>
             )}
+          </div>
+        )}
+
+        {showDeleteButton && onDeleteClick && (
+          <div className="pt-1">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="w-full text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
+              onClick={onDeleteClick}
+              disabled={isDeleting}
+              data-testid={`button-delete-${note.id}`}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              {isDeleting ? "Borrando..." : "Borrar"}
+            </Button>
+          </div>
+        )}
+
+        {showRestoreButton && onRestoreClick && (
+          <div className="pt-1">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="w-full text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20"
+              onClick={onRestoreClick}
+              disabled={isRestoring}
+              data-testid={`button-restore-${note.id}`}
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+              {isRestoring ? "Restaurando..." : "Restaurar"}
+            </Button>
           </div>
         )}
       </div>

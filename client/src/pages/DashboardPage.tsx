@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot } from "lucide-react";
+import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -365,6 +365,78 @@ export default function DashboardPage() {
     retry: false,
     staleTime: 60000,
   });
+
+  // Query for deleted notes (admin only)
+  const { data: deletedNotes = [], refetch: refetchDeletedNotes } = useQuery({
+    queryKey: ["/api/delivery-notes/deleted"],
+    queryFn: async () => {
+      const res = await fetch("/api/delivery-notes/deleted", { credentials: "include" });
+      if (!res.ok) {
+        return [];
+      }
+      return res.json();
+    },
+    enabled: user?.isAdmin === true,
+    retry: false,
+    staleTime: 0,
+  });
+
+  // Delete delivery note mutation
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
+  const deleteNoteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      setDeletingNoteId(noteId);
+      const res = await fetch(`/api/delivery-notes/${noteId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Error al borrar albarán");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Albarán borrado", description: "Se ha movido a la papelera" });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes/deleted"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSettled: () => {
+      setDeletingNoteId(null);
+    },
+  });
+
+  // Restore delivery note mutation (admin only)
+  const [restoringNoteId, setRestoringNoteId] = useState<string | null>(null);
+  const restoreNoteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      setRestoringNoteId(noteId);
+      const res = await fetch(`/api/delivery-notes/${noteId}/restore`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Error al restaurar albarán");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Albarán restaurado", description: "El albarán ha sido restaurado" });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes/deleted"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSettled: () => {
+      setRestoringNoteId(null);
+    },
+  });
+
+  // Deleted notes modal state
+  const [deletedNotesModalOpen, setDeletedNotesModalOpen] = useState(false);
 
   // Refetch data when user changes
   useEffect(() => {
@@ -744,6 +816,25 @@ export default function DashboardPage() {
             </div>
           </button>
         </div>
+
+        {/* Papelera - Solo visible para admin con albaranes borrados */}
+        {user?.isAdmin && Array.isArray(deletedNotes) && deletedNotes.length > 0 && (
+          <button
+            onClick={() => setDeletedNotesModalOpen(true)}
+            className="w-full rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 min-h-[52px] shadow-sm hover-elevate"
+            data-testid="button-view-deleted-notes"
+          >
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <div className="text-lg font-bold leading-none text-red-700 dark:text-red-300">{deletedNotes.length}</div>
+                <p className="text-[10px] text-red-600 dark:text-red-400 truncate">Papelera</p>
+              </div>
+            </div>
+          </button>
+        )}
 
         {/* Presupuestos Pendientes */}
         {pendingQuotes.length > 0 && (
@@ -1850,6 +1941,19 @@ export default function DashboardPage() {
                       )}
                     </Button>
                   )}
+                  
+                  {/* Delete button */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs h-8 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    onClick={() => deleteNoteMutation.mutate(note.id)}
+                    disabled={deletingNoteId === note.id}
+                    data-testid={`button-delete-${note.id}`}
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    {deletingNoteId === note.id ? "Borrando..." : "Borrar albarán"}
+                  </Button>
                 </div>
               </div>
             ));
@@ -2544,6 +2648,96 @@ export default function DashboardPage() {
         }}
         note={selectedNoteForSigning}
       />
+
+      {/* Deleted Notes Modal (Papelera) */}
+      <Dialog open={deletedNotesModalOpen} onOpenChange={setDeletedNotesModalOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[95vw] p-3 rounded-lg top-[5vh] translate-y-0">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-red-500" />
+              Papelera ({Array.isArray(deletedNotes) ? deletedNotes.length : 0})
+            </DialogTitle>
+            <DialogDescription>
+              Albaranes borrados. Puedes restaurarlos para recuperarlos.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            {Array.isArray(deletedNotes) && deletedNotes.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No hay albaranes borrados
+              </p>
+            ) : (
+              Array.isArray(deletedNotes) && deletedNotes.map((note: any) => (
+                <div key={note.id} className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10 overflow-hidden shadow-sm">
+                  <div className="p-3 space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">
+                        Albarán #{note.noteNumber || '—'}
+                      </span>
+                      <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 no-default-hover-elevate no-default-active-elevate">
+                        <Trash2 className="w-3 h-3 mr-1" /> Borrado
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold">{note.clientName || 'Cliente N/A'}</p>
+                      <p className="text-xs text-muted-foreground">({note.workerName || 'Trabajador'})</p>
+                      
+                      {note.pickupOrigins && note.pickupOrigins[0] && (
+                        <div className="bg-muted/20 rounded-md p-2">
+                          <div className="text-sm">
+                            <RouteDisplay origin={note.pickupOrigins[0]} />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <p className="text-muted-foreground">Vehículo</p>
+                          <p className="font-medium truncate">{note.vehicleType || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Fecha</p>
+                          <p className="font-medium">{note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Hora</p>
+                          <p className="font-medium">{note.time || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      {note.deletedAt && (
+                        <div className="flex items-start gap-2 bg-red-100 dark:bg-red-900/20 rounded-md p-2">
+                          <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs text-red-700 dark:text-red-300">Borrado el</p>
+                            <p className="text-sm font-semibold text-red-800 dark:text-red-200">
+                              {new Date(note.deletedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs h-8 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      onClick={() => restoreNoteMutation.mutate(note.id)}
+                      disabled={restoringNoteId === note.id}
+                      data-testid={`button-restore-${note.id}`}
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      {restoringNoteId === note.id ? "Restaurando..." : "Restaurar albarán"}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
