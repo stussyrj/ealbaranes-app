@@ -886,6 +886,95 @@ export async function registerRoutes(
     }
   });
 
+  // Get deleted delivery notes (admin only)
+  app.get("/api/delivery-notes/deleted", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo las empresas pueden ver albaranes borrados" });
+      }
+      
+      const tenantId = user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      const notes = await storage.getDeletedDeliveryNotes(tenantId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching deleted delivery notes:", error);
+      res.status(500).json({ error: "Error al obtener albaranes borrados" });
+    }
+  });
+
+  // Soft delete delivery note
+  app.delete("/api/delivery-notes/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const { id } = req.params;
+      const user = req.user as any;
+      const tenantId = user.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      // Verify note belongs to tenant
+      const existingNote = await storage.getDeliveryNote(id);
+      if (!existingNote || existingNote.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      
+      const deletedNote = await storage.softDeleteDeliveryNote(id, tenantId, user.id);
+      if (!deletedNote) {
+        return res.status(500).json({ error: "Error al borrar el albarán" });
+      }
+      
+      res.json({ success: true, note: deletedNote });
+    } catch (error) {
+      console.error("Error soft deleting delivery note:", error);
+      res.status(500).json({ error: "Error al borrar el albarán" });
+    }
+  });
+
+  // Restore deleted delivery note (admin only)
+  app.post("/api/delivery-notes/:id/restore", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const { id } = req.params;
+      const user = req.user as any;
+      
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo las empresas pueden restaurar albaranes" });
+      }
+      
+      const tenantId = user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      const restoredNote = await storage.restoreDeliveryNote(id, tenantId);
+      if (!restoredNote) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      
+      res.json({ success: true, note: restoredNote });
+    } catch (error) {
+      console.error("Error restoring delivery note:", error);
+      res.status(500).json({ error: "Error al restaurar el albarán" });
+    }
+  });
+
   // Seed random delivery notes for testing - DISABLED in production for security
   app.post("/api/seed-delivery-notes", async (req, res) => {
     // Disable in production to prevent data poisoning

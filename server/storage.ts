@@ -35,7 +35,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, sql, max, inArray, desc } from "drizzle-orm";
+import { eq, and, sql, max, inArray, desc, isNull, isNotNull } from "drizzle-orm";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { Pool } from "@neondatabase/serverless";
@@ -76,9 +76,12 @@ export interface IStorage {
   assignQuoteToWorker(quoteId: string, tenantId: string, workerId: string): Promise<Quote | undefined>;
   
   getDeliveryNotes(tenantId: string, quoteId?: string, workerId?: string): Promise<DeliveryNote[]>;
+  getDeletedDeliveryNotes(tenantId: string): Promise<DeliveryNote[]>;
   getDeliveryNote(id: string): Promise<DeliveryNote | undefined>;
   createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote>;
   updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
+  softDeleteDeliveryNote(id: string, tenantId: string, deletedBy: string): Promise<DeliveryNote | undefined>;
+  restoreDeliveryNote(id: string, tenantId: string): Promise<DeliveryNote | undefined>;
   getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], originNames: string[], originAddresses: string[], destinations: string[] }>;
   
   getMessages(tenantId: string): Promise<Message[]>;
@@ -616,8 +619,11 @@ export class MemStorage implements IStorage {
       
       let notes: DeliveryNote[] = [];
       
-      // Build conditions array for filtering - always include tenantId
-      const conditions = [eq(deliveryNotesTable.tenantId, tenantId)];
+      // Build conditions array for filtering - always include tenantId and exclude deleted
+      const conditions = [
+        eq(deliveryNotesTable.tenantId, tenantId),
+        isNull(deliveryNotesTable.deletedAt)
+      ];
       
       if (quoteId) {
         conditions.push(eq(deliveryNotesTable.quoteId, quoteId));
@@ -627,7 +633,7 @@ export class MemStorage implements IStorage {
         conditions.push(eq(deliveryNotesTable.workerId, workerId));
       }
       
-      // Apply conditions (always has at least tenantId)
+      // Apply conditions (always has at least tenantId and not deleted)
       notes = await db.select().from(deliveryNotesTable)
         .where(and(...conditions));
       
@@ -702,6 +708,68 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error("Error updating delivery note in DB:", error);
       return undefined;
+    }
+  }
+
+  async softDeleteDeliveryNote(id: string, tenantId: string, deletedBy: string): Promise<DeliveryNote | undefined> {
+    try {
+      const result = await db.update(deliveryNotesTable)
+        .set({ deletedAt: new Date(), deletedBy } as any)
+        .where(and(eq(deliveryNotesTable.id, id), eq(deliveryNotesTable.tenantId, tenantId)))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error soft deleting delivery note:", error);
+      return undefined;
+    }
+  }
+
+  async restoreDeliveryNote(id: string, tenantId: string): Promise<DeliveryNote | undefined> {
+    try {
+      const result = await db.update(deliveryNotesTable)
+        .set({ deletedAt: null, deletedBy: null } as any)
+        .where(and(eq(deliveryNotesTable.id, id), eq(deliveryNotesTable.tenantId, tenantId)))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error restoring delivery note:", error);
+      return undefined;
+    }
+  }
+
+  async getDeletedDeliveryNotes(tenantId: string): Promise<(DeliveryNote & { workerName?: string })[]> {
+    try {
+      if (!tenantId) {
+        console.error("[storage] getDeletedDeliveryNotes called without tenantId");
+        return [];
+      }
+      
+      const notes = await db.select().from(deliveryNotesTable)
+        .where(and(
+          eq(deliveryNotesTable.tenantId, tenantId),
+          isNotNull(deliveryNotesTable.deletedAt)
+        ));
+      
+      const notesWithWorkerNames = await Promise.all(notes.map(async (note) => {
+        const worker = await this.getWorker(note.workerId);
+        if (worker?.name) {
+          return { ...note, workerName: worker.name };
+        }
+        const user = await this.getUser(note.workerId);
+        if (user) {
+          return { ...note, workerName: user.displayName || user.username || 'Desconocido' };
+        }
+        return { ...note, workerName: 'Desconocido' };
+      }));
+      
+      return notesWithWorkerNames.sort((a, b) => {
+        const dateA = a.deletedAt ? new Date(a.deletedAt).getTime() : 0;
+        const dateB = b.deletedAt ? new Date(b.deletedAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    } catch (error) {
+      console.error("Error fetching deleted delivery notes:", error);
+      return [];
     }
   }
 
