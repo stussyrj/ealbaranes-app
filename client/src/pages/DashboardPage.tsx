@@ -200,7 +200,7 @@ export default function DashboardPage() {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
+        const img = document.createElement('img') as HTMLImageElement;
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let { width, height } = img;
@@ -367,16 +367,20 @@ export default function DashboardPage() {
   });
 
   // Query for deleted notes (admin only)
-  const { data: deletedNotes = [], refetch: refetchDeletedNotes } = useQuery({
+  const { data: deletedNotes = [], refetch: refetchDeletedNotes, isLoading: isDeletionLoading } = useQuery({
     queryKey: ["/api/delivery-notes/deleted"],
     queryFn: async () => {
+      console.log("[DashboardPage] Fetching deleted notes...");
       const res = await fetch("/api/delivery-notes/deleted", { credentials: "include" });
       if (!res.ok) {
+        console.log("[DashboardPage] Failed to fetch deleted notes:", res.status);
         return [];
       }
-      return res.json();
+      const data = await res.json();
+      console.log("[DashboardPage] Deleted notes loaded:", data?.length || 0);
+      return data;
     },
-    enabled: user?.isAdmin === true,
+    enabled: !!user?.isAdmin,
     retry: false,
     staleTime: 0,
   });
@@ -422,10 +426,12 @@ export default function DashboardPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({ title: "Albarán restaurado", description: "El albarán ha sido restaurado" });
-      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes/deleted"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] }),
+        refetchDeletedNotes()
+      ]);
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -449,10 +455,12 @@ export default function DashboardPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({ title: "Albarán eliminado", description: "El albarán ha sido eliminado permanentemente" });
-      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes/deleted"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] }),
+        refetchDeletedNotes()
+      ]);
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
