@@ -141,7 +141,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     setIsSavingOrigin(false);
   };
 
-  // Save only origin signature (partial save) - keeps modal open and switches to destination
+  // Save only origin signature (partial save) - closes modal and saves in background
   const handleSaveOrigin = async () => {
     if (!note) {
       console.error("Missing note data");
@@ -154,31 +154,32 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       return;
     }
 
-    setIsSavingOrigin(true);
-
     const payload: Record<string, any> = {
       originSignature,
       originSignatureDocument: originDocument.trim().toUpperCase(),
       originSignedAt: new Date().toISOString(),
     };
 
-    try {
-      await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload);
-      
-      await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-      if (note.workerId) {
-        await queryClient.invalidateQueries({ queryKey: ["/api/workers", note.workerId, "delivery-notes"] });
-      }
-      
-      setOriginAlreadySaved(true);
-      setOriginWasModified(false);
-      setIsSavingOrigin(false);
-      // Keep modal open and switch to destination tab for seamless flow
-      setActiveTab("destination");
-    } catch (error) {
-      console.error("Error saving origin signature:", error);
-      setIsSavingOrigin(false);
-    }
+    // Update state immediately for UX feedback, then switch to destination tab
+    setOriginAlreadySaved(true);
+    setOriginWasModified(false);
+    setActiveTab("destination");
+
+    // Save in background without blocking UI
+    apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload)
+      .then(() => {
+        // Invalidate queries in background without await
+        queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+        if (note.workerId) {
+          queryClient.invalidateQueries({ queryKey: ["/api/workers", note.workerId, "delivery-notes"] });
+        }
+      })
+      .catch((error) => {
+        console.error("Error saving origin signature:", error);
+        // Revert optimistic update on error
+        setOriginAlreadySaved(false);
+        setOriginWasModified(true);
+      });
   };
 
   // Handle photo capture for destination
@@ -267,26 +268,27 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
     // If no changes to send, just close
     if (Object.keys(payload).length === 0) {
-      setIsSubmitting(false);
       resetForm();
       onOpenChange(false);
       return;
     }
 
-    try {
-      await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload);
-      
-      await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-      if (note.workerId) {
-        await queryClient.invalidateQueries({ queryKey: ["/api/workers", note.workerId, "delivery-notes"] });
-      }
-      
-      resetForm();
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Error signing delivery note:", error);
-      setIsSubmitting(false);
-    }
+    // Close modal immediately for fast UX
+    resetForm();
+    onOpenChange(false);
+
+    // Save in background without blocking UI
+    apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload)
+      .then(() => {
+        // Invalidate queries in background without await
+        queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+        if (note.workerId) {
+          queryClient.invalidateQueries({ queryKey: ["/api/workers", note.workerId, "delivery-notes"] });
+        }
+      })
+      .catch((error) => {
+        console.error("Error signing delivery note:", error);
+      });
   };
 
   const getFirstOriginName = () => {
