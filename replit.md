@@ -154,6 +154,12 @@ pickupOrigins: PickupOrigin[] // Array de objetos
 - **Modal de firma separado** con canvas de tamaño completo
 - **Dirty-tracking para firma y documento DNI**
 - **Auto-save de firma de origen** al cambiar tabs
+- **Sistema de borrado de albaranes (Papelera)** - Soft delete con restauración para admin
+
+## Endpoints de Borrado de Albaranes
+- `DELETE /api/delivery-notes/:id` - Borrar albarán (soft delete, marca deletedAt/deletedBy)
+- `GET /api/delivery-notes/deleted` - Lista albaranes borrados (solo admin)
+- `POST /api/delivery-notes/:id/restore` - Restaurar albarán borrado (solo admin)
 
 ## Preferencias Usuario
 
