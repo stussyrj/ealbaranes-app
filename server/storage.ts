@@ -82,6 +82,7 @@ export interface IStorage {
   updateDeliveryNote(id: string, note: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
   softDeleteDeliveryNote(id: string, tenantId: string, deletedBy: string): Promise<DeliveryNote | undefined>;
   restoreDeliveryNote(id: string, tenantId: string): Promise<DeliveryNote | undefined>;
+  permanentDeleteDeliveryNote(id: string, tenantId: string): Promise<boolean>;
   getDeliveryNoteSuggestions(tenantId: string): Promise<{ clients: string[], originNames: string[], originAddresses: string[], destinations: string[] }>;
   
   getMessages(tenantId: string): Promise<Message[]>;
@@ -734,6 +735,17 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error("Error restoring delivery note:", error);
       return undefined;
+    }
+  }
+
+  async permanentDeleteDeliveryNote(id: string, tenantId: string): Promise<boolean> {
+    try {
+      const result = await db.delete(deliveryNotesTable)
+        .where(and(eq(deliveryNotesTable.id, id), eq(deliveryNotesTable.tenantId, tenantId)));
+      return true;
+    } catch (error) {
+      console.error("Error permanently deleting delivery note:", error);
+      return false;
     }
   }
 

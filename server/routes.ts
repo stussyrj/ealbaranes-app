@@ -975,6 +975,43 @@ export async function registerRoutes(
     }
   });
 
+  // Permanently delete delivery note (admin only)
+  app.delete("/api/delivery-notes/:id/permanent", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const { id } = req.params;
+      const user = req.user as any;
+      
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo las empresas pueden eliminar albaranes" });
+      }
+      
+      const tenantId = user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      // Verify note belongs to tenant before deleting
+      const existingNote = await storage.getDeliveryNote(id);
+      if (!existingNote || existingNote.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      
+      const success = await storage.permanentDeleteDeliveryNote(id, tenantId);
+      if (!success) {
+        return res.status(500).json({ error: "Error al eliminar el albarán" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error permanently deleting delivery note:", error);
+      res.status(500).json({ error: "Error al eliminar el albarán" });
+    }
+  });
+
   // Seed random delivery notes for testing - DISABLED in production for security
   app.post("/api/seed-delivery-notes", async (req, res) => {
     // Disable in production to prevent data poisoning

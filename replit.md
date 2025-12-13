@@ -17,6 +17,15 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 
 ## Últimos Cambios
 
+### Sistema de Eliminación Definitiva de Albaranes (Diciembre 13, 2025)
+- **Endpoint DELETE /api/delivery-notes/:id/permanent**: Elimina albaranes permanentemente del cesto
+- **Modal "Papelera" mejorado**: Ahora tiene dos botones:
+  - "Restaurar": Devuelve albarán a lista normal
+  - "Eliminar": Elimina definitivamente (hard delete)
+- **Método permanentDeleteDeliveryNote** en storage.ts para hacer hard delete
+- **Flujo**: Admin puede ver papelera → restaurar albaranes → O eliminar permanentemente
+- Solo disponible para admins (empresas)
+
 ### Modal de Firma Digital Separado (Diciembre 12, 2025)
 - **SignatureModalDialog.tsx**: Nuevo componente modal independiente para capturar firmas
   - Canvas de tamaño completo (max-w-4xl, h-[90vh]) para mejor experiencia
@@ -97,6 +106,10 @@ La aplicación tiene dos tipos de usuarios claramente diferenciados:
 - `POST /api/delivery-notes` - Crea albarán (requiere tenantId, genera noteNumber único)
 - `PATCH /api/delivery-notes/:id` - Actualiza albarán (verifica propiedad del tenant)
 - `GET /api/workers/:workerId/delivery-notes` - Albaranes de un trabajador (filtrado por tenant)
+- `DELETE /api/delivery-notes/:id` - Soft delete (mueve a papelera)
+- `GET /api/delivery-notes/deleted` - Lista albaranes borrados en papelera (solo admin)
+- `POST /api/delivery-notes/:id/restore` - Restaurar albarán desde papelera (solo admin)
+- `DELETE /api/delivery-notes/:id/permanent` - Elimina permanentemente del cesto (solo admin, hard delete)
 
 ### Facturas (todos requieren autenticación y filtran por tenant)
 - `GET /api/invoices` - Lista facturas (filtrado por tenant)

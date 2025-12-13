@@ -435,6 +435,33 @@ export default function DashboardPage() {
     },
   });
 
+  // Permanently delete delivery note mutation (admin only)
+  const [permanentlyDeletingNoteId, setPermanentlyDeletingNoteId] = useState<string | null>(null);
+  const permanentDeleteNoteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      setPermanentlyDeletingNoteId(noteId);
+      const res = await fetch(`/api/delivery-notes/${noteId}/permanent`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Error al eliminar albarán");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Albarán eliminado", description: "El albarán ha sido eliminado permanentemente" });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes/deleted"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSettled: () => {
+      setPermanentlyDeletingNoteId(null);
+    },
+  });
+
   // Deleted notes modal state
   const [deletedNotesModalOpen, setDeletedNotesModalOpen] = useState(false);
 
@@ -2720,17 +2747,30 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs h-8 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20"
-                      onClick={() => restoreNoteMutation.mutate(note.id)}
-                      disabled={restoringNoteId === note.id}
-                      data-testid={`button-restore-${note.id}`}
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      {restoringNoteId === note.id ? "Restaurando..." : "Restaurar albarán"}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20"
+                        onClick={() => restoreNoteMutation.mutate(note.id)}
+                        disabled={restoringNoteId === note.id}
+                        data-testid={`button-restore-${note.id}`}
+                      >
+                        <RotateCcw className="w-3 h-3 mr-1" />
+                        {restoringNoteId === note.id ? "Restaurando..." : "Restaurar"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => permanentDeleteNoteMutation.mutate(note.id)}
+                        disabled={permanentlyDeletingNoteId === note.id}
+                        data-testid={`button-permanent-delete-${note.id}`}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        {permanentlyDeletingNoteId === note.id ? "Eliminando..." : "Eliminar"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))
