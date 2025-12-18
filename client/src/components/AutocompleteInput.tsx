@@ -29,21 +29,12 @@ export function AutocompleteInput({
     
     const lowerValue = value.toLowerCase();
     
-    // Separar coincidencias que empiezan con el texto vs que lo contienen
-    const startsWith: string[] = [];
-    const contains: string[] = [];
-    
-    suggestions.forEach((suggestion) => {
-      const lowerSuggestion = suggestion.toLowerCase();
-      if (lowerSuggestion.startsWith(lowerValue)) {
-        startsWith.push(suggestion);
-      } else if (lowerSuggestion.includes(lowerValue)) {
-        contains.push(suggestion);
-      }
-    });
-    
-    // Combinar y limitar a 10 resultados
-    return [...startsWith, ...contains].slice(0, 10);
+    // Solo mostrar coincidencias que empiezan con el texto, limitado a 10 resultados
+    return suggestions
+      .filter((suggestion) =>
+        suggestion.toLowerCase().startsWith(lowerValue)
+      )
+      .slice(0, 10);
   }, [suggestions, value]);
 
   const showSuggestions = isOpen && value.length > 0 && filteredSuggestions.length > 0;
