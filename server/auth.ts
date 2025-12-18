@@ -115,6 +115,9 @@ export async function initializeAdminUser() {
 
 export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
+  // Replit uses HTTPS even in development, so we need secure cookies
+  const isReplit = !!process.env.REPL_ID || !!process.env.REPLIT_DEPLOYMENT;
+  const useSecureCookies = isProduction || isReplit;
   
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -122,9 +125,9 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: isProduction, // HTTPS only in production
+      secure: useSecureCookies, // HTTPS required in production and Replit
       httpOnly: true,
-      sameSite: isProduction ? 'strict' : 'lax', // CSRF protection in production
+      sameSite: 'lax', // Allow cookies to be sent with top-level navigations
       maxAge: 24 * 60 * 60 * 1000,
     },
   };
