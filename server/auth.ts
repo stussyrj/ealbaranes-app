@@ -14,11 +14,18 @@ import { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from 
 import { logAudit, getClientInfo } from "./auditService";
 
 // JWT configuration
-const JWT_SECRET = process.env.SESSION_SECRET || 'fallback-secret-key';
+const JWT_SECRET = process.env.SESSION_SECRET;
 const JWT_EXPIRES_IN = '7d'; // Token expires in 7 days
+
+if (!JWT_SECRET) {
+  console.error("[auth] CRITICAL: SESSION_SECRET environment variable is not set!");
+}
 
 // Generate JWT token for user
 export function generateToken(user: SelectUser): string {
+  if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET not configured");
+  }
   return jwt.sign(
     { 
       userId: user.id,
@@ -30,12 +37,18 @@ export function generateToken(user: SelectUser): string {
   );
 }
 
-// Verify JWT token
+// Verify JWT token - returns null if invalid, expired, or malformed
 export function verifyToken(token: string): { userId: string; tenantId: string; isAdmin: boolean } | null {
+  if (!JWT_SECRET) {
+    console.error("[auth] Cannot verify token: JWT_SECRET not configured");
+    return null;
+  }
   try {
+    // jwt.verify automatically checks expiration and throws if expired
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; tenantId: string; isAdmin: boolean };
     return decoded;
   } catch (error) {
+    // Token is invalid, expired, or malformed
     return null;
   }
 }
