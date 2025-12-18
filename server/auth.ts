@@ -452,16 +452,23 @@ export function setupAuth(app: Express) {
     // If not authenticated via session, try JWT token
     if (!req.isAuthenticated() || !user) {
       const authHeader = req.headers.authorization;
+      console.log("[auth] /api/user - No session, checking JWT. Auth header present:", !!authHeader);
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
+        console.log("[auth] /api/user - Token length:", token.length);
         const decoded = verifyToken(token);
+        console.log("[auth] /api/user - Token decoded:", decoded ? "success" : "failed");
         if (decoded) {
           user = await storage.getUser(decoded.userId) || undefined;
+          console.log("[auth] /api/user - User found:", !!user);
         }
       }
     }
     
-    if (!user) return res.sendStatus(401);
+    if (!user) {
+      console.log("[auth] /api/user - No user found, returning 401");
+      return res.sendStatus(401);
+    }
     
     const tenantContext = await getTenantForUser(user.id);
     
