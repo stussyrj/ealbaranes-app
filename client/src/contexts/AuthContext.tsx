@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn, setAuthToken, clearAuthToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export type UserRole = "admin" | "worker";
@@ -23,6 +23,7 @@ interface ServerUser {
   subscription?: SubscriptionInfo | null;
   hasCompletedOnboarding?: boolean;
   setupRequired?: boolean;
+  token?: string;
 }
 
 export interface AuthUser {
@@ -104,7 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (userData: ServerUser) => {
       setLoginError(null);
+      
+      if (userData.token) {
+        setAuthToken(userData.token);
+      }
+      
       queryClient.setQueryData(["/api/user"], userData);
+      
+      console.log("User logged in, refetching data...");
+      queryClient.invalidateQueries();
     },
     onError: (error: any) => {
       const errorCode = error?.code;
@@ -127,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      clearAuthToken();
       queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Sesión cerrada",

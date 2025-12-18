@@ -1,7 +1,7 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, initializeAdminUser } from "./auth";
+import { setupAuth, initializeAdminUser, verifyToken } from "./auth";
 import { setupGoogleAuth } from "./googleAuth";
 import {
   geocodeAddress,
@@ -36,6 +36,33 @@ export async function registerRoutes(
   setupAuth(app);
   setupGoogleAuth(app);
   await initializeAdminUser();
+  
+  // JWT Authentication Middleware - adds user to request if valid JWT token is present
+  app.use(async (req: Request, res: Response, next: NextFunction) => {
+    // Skip if already authenticated via session
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      return next();
+    }
+    
+    // Check for JWT token in Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+      
+      if (decoded) {
+        // Get user from database and attach to request
+        const user = await storage.getUser(decoded.userId);
+        if (user) {
+          (req as any).user = user;
+          // Make isAuthenticated return true for JWT authenticated users
+          (req as any).isAuthenticated = () => true;
+        }
+      }
+    }
+    
+    next();
+  });
   
   app.get("/api/address-suggestions", async (req, res) => {
     try {
