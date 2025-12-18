@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw } from "lucide-react";
+import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   const [dateFilterStart, setDateFilterStart] = useState<string>("");
   const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
+  const [workerSearchFilter, setWorkerSearchFilter] = useState<string>("");
   
   // Photo capture states for signing
   const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
@@ -1583,6 +1584,7 @@ export default function DashboardPage() {
         if (!open) {
           setDateFilterStart("");
           setDateFilterEnd("");
+          setWorkerSearchFilter("");
         }
       }}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[95vw] p-3 rounded-lg top-[5vh] translate-y-0">
@@ -1643,6 +1645,13 @@ export default function DashboardPage() {
                 notes = albaranesModalType === "pending" ? trabajadoresPendingNotes : trabajadoresSignedNotes;
               }
               
+              // Aplicar filtro de búsqueda por trabajador
+              if (workerSearchFilter && albaranesCreatorType === "worker") {
+                notes = notes.filter((note: any) => 
+                  (note.workerName || "").toLowerCase().includes(workerSearchFilter.toLowerCase())
+                );
+              }
+              
               // Aplicar filtro de fechas
               if (dateFilterStart || dateFilterEnd) {
                 notes = notes.filter((note: any) => {
@@ -1662,7 +1671,9 @@ export default function DashboardPage() {
               
               return notes.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  {(dateFilterStart || dateFilterEnd) 
+                  {workerSearchFilter && albaranesCreatorType === "worker"
+                    ? "No hay albaranes de ese trabajador"
+                    : (dateFilterStart || dateFilterEnd) 
                     ? "No hay albaranes en el rango de fechas seleccionado"
                     : "No hay albaranes en esta categoría"
                   }
