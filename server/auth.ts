@@ -117,10 +117,8 @@ export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   // Replit uses HTTPS even in development, so we need secure cookies
   const isReplit = !!process.env.REPL_ID || !!process.env.REPLIT_DEPLOYMENT;
-  // For now, always use secure:false to debug cookie issues
-  const useSecureCookies = false;
   
-  console.log("[auth] Session config:", { isProduction, isReplit, useSecureCookies });
+  console.log("[auth] Session config:", { isProduction, isReplit });
   
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -129,9 +127,9 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     name: 'ealbaran.sid', // Custom session cookie name
     cookie: {
-      secure: useSecureCookies, // Temporarily disable secure for debugging
+      secure: isReplit || isProduction, // HTTPS required in Replit and production
       httpOnly: true,
-      sameSite: 'lax', // Allow cookies to be sent with top-level navigations
+      sameSite: 'none', // Required for cross-site cookies with secure:true
       maxAge: 24 * 60 * 60 * 1000,
     },
   };
