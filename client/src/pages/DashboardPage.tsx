@@ -1991,7 +1991,7 @@ export default function DashboardPage() {
                     )}
                   </div>
 
-                  {isFullySigned(note) && (
+                  {isFullySigned(note) && note.isInvoiced && (
                     <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
                       <Button
                         size="sm"
