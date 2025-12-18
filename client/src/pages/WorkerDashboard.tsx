@@ -190,12 +190,7 @@ export default function WorkerDashboard() {
     try {
       const hasPhoto = selectedNoteForSignature.photo;
       
-      const response = await fetch(`/api/delivery-notes/${selectedNoteForSignature.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signature: signatureDataUrl }),
-        credentials: "include",
-      });
+      const response = await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForSignature.id}`, { signature: signatureDataUrl });
       
       if (response.ok) {
         const willBeComplete = hasPhoto;
@@ -1253,12 +1248,7 @@ export default function WorkerDashboard() {
                       waitTime: formData.waitTime || null,
                     };
 
-                    const response = await fetch(`/api/delivery-notes/${selectedNoteToEdit.id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(updateData),
-                      credentials: "include",
-                    });
+                    const response = await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteToEdit.id}`, updateData);
 
                     if (response.status === 403) {
                       alert("No se pueden editar albaranes firmados");
@@ -1708,15 +1698,10 @@ export default function WorkerDashboard() {
                     
                     try {
                       const now = new Date().toISOString();
-                      const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ 
-                          photo: capturedPhoto,
-                          status: "confirmado",
-                          signedAt: now
-                        }),
-                        credentials: "include",
+                      const response = await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPhoto.id}`, { 
+                        photo: capturedPhoto,
+                        status: "confirmado",
+                        signedAt: now
                       });
                       
                       if (response.ok) {

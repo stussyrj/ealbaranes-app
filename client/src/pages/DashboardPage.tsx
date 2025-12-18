@@ -246,12 +246,7 @@ export default function DashboardPage() {
     try {
       const hasSignature = selectedNoteForPhoto.signature;
       
-      const response = await fetch(`/api/delivery-notes/${selectedNoteForPhoto.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photo: capturedPhoto }),
-        credentials: "include",
-      });
+      const response = await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPhoto.id}`, { photo: capturedPhoto });
       
       if (response.ok) {
         const willBeComplete = hasSignature;
@@ -284,12 +279,7 @@ export default function DashboardPage() {
     try {
       const hasPhoto = selectedNoteForSignature.photo;
       
-      const response = await fetch(`/api/delivery-notes/${selectedNoteForSignature.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signature: signatureDataUrl }),
-        credentials: "include",
-      });
+      const response = await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForSignature.id}`, { signature: signatureDataUrl });
       
       if (response.ok) {
         const willBeComplete = hasPhoto;
@@ -391,10 +381,7 @@ export default function DashboardPage() {
   const deleteNoteMutation = useMutation({
     mutationFn: async (noteId: string) => {
       setDeletingNoteId(noteId);
-      const res = await fetch(`/api/delivery-notes/${noteId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await apiRequest("DELETE", `/api/delivery-notes/${noteId}`);
       if (!res.ok) {
         throw new Error("Error al borrar albarán");
       }
@@ -418,12 +405,7 @@ export default function DashboardPage() {
   const [editingObservationsText, setEditingObservationsText] = useState("");
   const updateObservationsMutation = useMutation({
     mutationFn: async ({ noteId, observations }: { noteId: string; observations: string }) => {
-      const res = await fetch(`/api/delivery-notes/${noteId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ observations: observations.trim() || null }),
-        credentials: "include",
-      });
+      const res = await apiRequest("PATCH", `/api/delivery-notes/${noteId}`, { observations: observations.trim() || null });
       if (!res.ok) {
         throw new Error("Error al actualizar observaciones");
       }
@@ -443,12 +425,7 @@ export default function DashboardPage() {
   // Arrival/Departure time tracking mutations
   const updateTimeMutation = useMutation({
     mutationFn: async ({ noteId, arrivedAt, departedAt }: { noteId: string; arrivedAt?: string; departedAt?: string }) => {
-      const res = await fetch(`/api/delivery-notes/${noteId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ arrivedAt: arrivedAt || null, departedAt: departedAt || null }),
-        credentials: "include",
-      });
+      const res = await apiRequest("PATCH", `/api/delivery-notes/${noteId}`, { arrivedAt: arrivedAt || null, departedAt: departedAt || null });
       if (!res.ok) {
         throw new Error("Error al registrar tiempo");
       }
@@ -511,10 +488,7 @@ export default function DashboardPage() {
   const restoreNoteMutation = useMutation({
     mutationFn: async (noteId: string) => {
       setRestoringNoteId(noteId);
-      const res = await fetch(`/api/delivery-notes/${noteId}/restore`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await apiRequest("POST", `/api/delivery-notes/${noteId}/restore`);
       if (!res.ok) {
         throw new Error("Error al restaurar albarán");
       }
@@ -540,10 +514,7 @@ export default function DashboardPage() {
   const permanentDeleteNoteMutation = useMutation({
     mutationFn: async (noteId: string) => {
       setPermanentlyDeletingNoteId(noteId);
-      const res = await fetch(`/api/delivery-notes/${noteId}/permanent`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await apiRequest("DELETE", `/api/delivery-notes/${noteId}/permanent`);
       if (!res.ok) {
         throw new Error("Error al eliminar albarán");
       }
@@ -2071,14 +2042,7 @@ export default function DashboardPage() {
                       className={`w-full text-xs h-8 ${!note.isInvoiced ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
                       onClick={async () => {
                         try {
-                          const response = await fetch(`/api/delivery-notes/${note.id}`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              isInvoiced: !note.isInvoiced
-                            }),
-                            credentials: "include",
-                          });
+                          const response = await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, { isInvoiced: !note.isInvoiced });
 
                           if (response.ok) {
                             toast({ 
@@ -2601,14 +2565,7 @@ export default function DashboardPage() {
                       className={`w-full text-xs h-8 ${!note.isInvoiced ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
                       onClick={async () => {
                         try {
-                          const response = await fetch(`/api/delivery-notes/${note.id}`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              isInvoiced: !note.isInvoiced
-                            }),
-                            credentials: "include",
-                          });
+                          const response = await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, { isInvoiced: !note.isInvoiced });
 
                           if (response.ok) {
                             toast({ 
