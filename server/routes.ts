@@ -57,6 +57,10 @@ export async function registerRoutes(
           (req as any).user = user;
           // Make isAuthenticated return true for JWT authenticated users
           (req as any).isAuthenticated = () => true;
+          // Don't log on every request to reduce noise
+          if (req.path.includes('/delivery-notes')) {
+            console.log(`[auth] JWT user authenticated for ${req.method} ${req.path}`);
+          }
         }
       }
     }
@@ -742,8 +746,10 @@ export async function registerRoutes(
     try {
       // Require authentication for tenant isolation
       if (!req.isAuthenticated() || !req.user) {
+        console.log(`[auth] PATCH /api/delivery-notes/:id - Auth failed. isAuthenticated: ${req.isAuthenticated()}, hasUser: ${!!(req.user)}`);
         return res.status(401).json({ error: "No autenticado" });
       }
+      console.log(`[auth] PATCH /api/delivery-notes/:id - Auth success for user ${(req.user as any).id}`);
       
       const { id } = req.params;
       const data = req.body;
