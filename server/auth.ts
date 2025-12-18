@@ -1,9 +1,10 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import jwt from "jsonwebtoken";
 import { storage } from "./storage";
 import { User as SelectUser, tenants, verificationTokens, users, passwordResetTokens } from "@shared/schema";
 import { db } from "./db";
@@ -11,6 +12,61 @@ import { eq, and, gt, isNull } from "drizzle-orm";
 import { getTenantForUser } from "./middleware/tenantAccess";
 import { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
+
+// JWT configuration
+const JWT_SECRET = process.env.SESSION_SECRET || 'fallback-secret-key';
+const JWT_EXPIRES_IN = '7d'; // Token expires in 7 days
+
+// Generate JWT token for user
+export function generateToken(user: SelectUser): string {
+  return jwt.sign(
+    { 
+      userId: user.id,
+      tenantId: user.tenantId,
+      isAdmin: user.isAdmin
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+}
+
+// Verify JWT token
+export function verifyToken(token: string): { userId: string; tenantId: string; isAdmin: boolean } | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; tenantId: string; isAdmin: boolean };
+    return decoded;
+  } catch (error) {
+    return null;
+  }
+}
+
+// JWT authentication middleware - checks both session and token
+export async function authenticateJWT(req: Request, res: Response, next: NextFunction) {
+  // First check if user is already authenticated via session
+  if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+    return next();
+  }
+  
+  // Check for JWT token in Authorization header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    
+    if (decoded) {
+      // Get user from database
+      const user = await storage.getUser(decoded.userId);
+      if (user) {
+        // Attach user to request
+        (req as any).user = user;
+        return next();
+      }
+    }
+  }
+  
+  // No valid authentication found
+  return res.status(401).json({ error: "No autenticado" });
+}
 
 const resendLimits = new Map<string, { count: number; resetAt: number }>();
 
@@ -243,6 +299,9 @@ export function setupAuth(app: Express) {
           userAgent: clientInfo.userAgent,
         });
         
+        // Generate JWT token
+        const token = generateToken(user);
+        
         res.status(200).json({
           id: user.id,
           username: user.username,
@@ -252,6 +311,7 @@ export function setupAuth(app: Express) {
           tenantId: user.tenantId,
           createdAt: user.createdAt,
           hasCompletedOnboarding: user.hasCompletedOnboarding ?? false,
+          token, // Include JWT token in response
         });
       });
     })(req, res, next);
@@ -331,6 +391,9 @@ export function setupAuth(app: Express) {
           userAgent: clientInfo.userAgent,
         });
         
+        // Generate JWT token
+        const token = generateToken(user);
+        
         res.status(200).json({
           id: user.id,
           username: user.username,
@@ -340,6 +403,7 @@ export function setupAuth(app: Express) {
           tenantId: user.tenantId,
           createdAt: user.createdAt,
           hasCompletedOnboarding: user.hasCompletedOnboarding ?? false,
+          token, // Include JWT token in response
         });
       });
     })(req, res, next);
@@ -369,8 +433,22 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const user = req.user!;
+    // Check session authentication first
+    let user = req.user;
+    
+    // If not authenticated via session, try JWT token
+    if (!req.isAuthenticated() || !user) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const decoded = verifyToken(token);
+        if (decoded) {
+          user = await storage.getUser(decoded.userId) || undefined;
+        }
+      }
+    }
+    
+    if (!user) return res.sendStatus(401);
     
     const tenantContext = await getTenantForUser(user.id);
     
