@@ -215,8 +215,15 @@ export function setupAuth(app: Express) {
       // Clear failed login attempts on successful login
       clearFailedLogins(clientIP);
       
-      req.login(user, async (loginErr) => {
-        if (loginErr) return next(loginErr);
+      // Set session data directly (more reliable than req.login())
+      req.session.userId = user.id;
+      req.session.user = user;
+      
+      req.session.save(async (saveErr) => {
+        if (saveErr) {
+          console.error("[auth] Session save error:", saveErr);
+          return next(saveErr);
+        }
         
         // Log successful login
         const clientInfo = getClientInfo(req);
@@ -293,8 +300,15 @@ export function setupAuth(app: Express) {
       // Clear failed login attempts on successful login
       clearFailedLogins(clientIP);
       
-      req.login(user, async (loginErr) => {
-        if (loginErr) return next(loginErr);
+      // Set session data directly (more reliable than req.login())
+      req.session.userId = user.id;
+      req.session.user = user;
+      
+      req.session.save(async (saveErr) => {
+        if (saveErr) {
+          console.error("[auth] Session save error:", saveErr);
+          return next(saveErr);
+        }
         
         // Log successful login
         const clientInfo = getClientInfo(req);
