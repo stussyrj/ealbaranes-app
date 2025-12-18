@@ -720,14 +720,18 @@ export async function registerRoutes(
         const signatureFields = ['photo', 'signature', 'status', 'originSignature', 'originSignatureDocument', 'originSignedAt', 'destinationSignature', 'destinationSignatureDocument', 'destinationSignedAt'];
         const isSignatureUpdate = Object.keys(data).every(key => signatureFields.includes(key));
         
+        // Check if this is a timing/tracking update (arrivedAt, departedAt, observations)
+        const timingFields = ['arrivedAt', 'departedAt', 'observations'];
+        const isTimingUpdate = Object.keys(data).every(key => timingFields.includes(key));
+        
         // Allow adding photo or signature to partially signed notes
-        // But block all other edits once note is fully signed
-        if (existingNote.signedAt && !isSignatureUpdate) {
+        // But block all other edits once note is fully signed (except timing/observations updates)
+        if (existingNote.signedAt && !isSignatureUpdate && !isTimingUpdate) {
           return res.status(403).json({ error: "No se pueden editar albaranes completamente firmados" });
         }
         
-        // Block all edits (except signature) once note is fully signed (has both photo AND signature)
-        if (existingNote.photo && existingNote.signature && !isSignatureUpdate) {
+        // Block all edits (except signature and timing) once note is fully signed (has both photo AND signature)
+        if (existingNote.photo && existingNote.signature && !isSignatureUpdate && !isTimingUpdate) {
           return res.status(403).json({ error: "No se pueden editar albaranes completamente firmados" });
         }
       }
@@ -748,6 +752,14 @@ export async function registerRoutes(
       }
       if (data.destinationSignedAt && typeof data.destinationSignedAt === 'string') {
         data.destinationSignedAt = new Date(data.destinationSignedAt);
+      }
+      
+      // Convert arrival/departure dates to Date objects if present
+      if (data.arrivedAt && typeof data.arrivedAt === 'string') {
+        data.arrivedAt = new Date(data.arrivedAt);
+      }
+      if (data.departedAt && typeof data.departedAt === 'string') {
+        data.departedAt = new Date(data.departedAt);
       }
       
       // Determine final state after update (photo and signature OR dual signatures)
