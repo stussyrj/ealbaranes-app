@@ -413,6 +413,33 @@ export default function DashboardPage() {
     },
   });
 
+  // Edit observations state and mutation
+  const [editingObservationsId, setEditingObservationsId] = useState<string | null>(null);
+  const [editingObservationsText, setEditingObservationsText] = useState("");
+  const updateObservationsMutation = useMutation({
+    mutationFn: async ({ noteId, observations }: { noteId: string; observations: string }) => {
+      const res = await fetch(`/api/delivery-notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ observations: observations.trim() || null }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Error al actualizar observaciones");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Observaciones actualizadas", description: "Los cambios se han guardado" });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      setEditingObservationsId(null);
+      setEditingObservationsText("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   // Restore delivery note mutation (admin only)
   const [restoringNoteId, setRestoringNoteId] = useState<string | null>(null);
   const restoreNoteMutation = useMutation({
@@ -1839,15 +1866,25 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {note.observations && note.observations.trim() && (
-                      <div className="flex items-start gap-2 bg-muted/30 rounded-md p-2">
-                        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs text-muted-foreground">Observaciones</p>
-                          <p className="text-sm line-clamp-2">{note.observations}</p>
-                        </div>
+                    <div className="flex items-start gap-2 bg-muted/30 rounded-md p-2">
+                      <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground">Observaciones</p>
+                        <p className="text-sm line-clamp-2">{note.observations || "Sin observaciones"}</p>
                       </div>
-                    )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 flex-shrink-0"
+                        onClick={() => {
+                          setEditingObservationsId(note.id);
+                          setEditingObservationsText(note.observations || "");
+                        }}
+                        data-testid={`button-edit-observations-${note.id}`}
+                      >
+                        <Pen className="w-3 h-3" />
+                      </Button>
+                    </div>
 
                     {note.signature && (
                       <Button
@@ -2794,6 +2831,58 @@ export default function DashboardPage() {
                 </div>
               ))
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para editar observaciones */}
+      <Dialog open={editingObservationsId !== null} onOpenChange={(open) => {
+        if (!open) {
+          setEditingObservationsId(null);
+          setEditingObservationsText("");
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Observaciones</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Añade observaciones..."
+              value={editingObservationsText}
+              onChange={(e) => setEditingObservationsText(e.target.value)}
+              rows={4}
+              className="text-sm"
+              data-testid="input-edit-observations"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setEditingObservationsId(null);
+                  setEditingObservationsText("");
+                }}
+                data-testid="button-cancel-edit-observations"
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  if (editingObservationsId) {
+                    updateObservationsMutation.mutate({
+                      noteId: editingObservationsId,
+                      observations: editingObservationsText,
+                    });
+                  }
+                }}
+                disabled={updateObservationsMutation.isPending}
+                data-testid="button-save-edit-observations"
+              >
+                {updateObservationsMutation.isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
