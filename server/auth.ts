@@ -195,6 +195,20 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
       }
       
+      // SECURITY: Only admins (companies) can login via this endpoint
+      if (!user.isAdmin) {
+        recordFailedLogin(clientIP);
+        const clientInfo = getClientInfo(req);
+        logAudit({
+          action: 'login_failed',
+          entityType: 'user',
+          details: { username: req.body.username, reason: 'worker_cannot_login_as_company' },
+          ipAddress: clientInfo.ipAddress,
+          userAgent: clientInfo.userAgent,
+        });
+        return res.status(403).json({ error: "Solo las empresas pueden iniciar sesión aquí. Los trabajadores deben usar el login de trabajador." });
+      }
+      
       // Clear failed login attempts on successful login
       clearFailedLogins(clientIP);
       
@@ -210,6 +224,84 @@ export function setupAuth(app: Express) {
           entityType: 'user',
           entityId: user.id,
           details: { username: user.username, isAdmin: user.isAdmin },
+          ipAddress: clientInfo.ipAddress,
+          userAgent: clientInfo.userAgent,
+        });
+        
+        res.status(200).json({
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          isAdmin: user.isAdmin,
+          workerId: user.workerId,
+          tenantId: user.tenantId,
+          createdAt: user.createdAt,
+          hasCompletedOnboarding: user.hasCompletedOnboarding ?? false,
+        });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/worker-login", (req, res, next) => {
+    const clientIP = getClientIP(req);
+    
+    // Check rate limit before attempting login
+    const rateCheck = checkLoginRateLimit(clientIP);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({ 
+        error: `Demasiados intentos fallidos. Intenta de nuevo en ${rateCheck.remainingTime} minutos.`,
+        code: "RATE_LIMITED"
+      });
+    }
+    
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) {
+        // Record failed login attempt
+        recordFailedLogin(clientIP);
+        
+        // Log failed login attempt
+        const clientInfo = getClientInfo(req);
+        logAudit({
+          action: 'login_failed',
+          entityType: 'user',
+          details: { username: req.body.username, reason: info?.message || 'invalid_credentials' },
+          ipAddress: clientInfo.ipAddress,
+          userAgent: clientInfo.userAgent,
+        });
+        
+        return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+      }
+      
+      // SECURITY: Only workers (non-admins) can login via this endpoint
+      if (user.isAdmin) {
+        recordFailedLogin(clientIP);
+        const clientInfo = getClientInfo(req);
+        logAudit({
+          action: 'login_failed',
+          entityType: 'user',
+          details: { username: req.body.username, reason: 'company_cannot_login_as_worker' },
+          ipAddress: clientInfo.ipAddress,
+          userAgent: clientInfo.userAgent,
+        });
+        return res.status(403).json({ error: "Las empresas no pueden iniciar sesión aquí. Usa el login de empresa." });
+      }
+      
+      // Clear failed login attempts on successful login
+      clearFailedLogins(clientIP);
+      
+      req.login(user, async (loginErr) => {
+        if (loginErr) return next(loginErr);
+        
+        // Log successful login
+        const clientInfo = getClientInfo(req);
+        await logAudit({
+          tenantId: user.tenantId,
+          userId: user.id,
+          action: 'login',
+          entityType: 'user',
+          entityId: user.id,
+          details: { username: user.username, isAdmin: user.isAdmin, loginType: 'worker' },
           ipAddress: clientInfo.ipAddress,
           userAgent: clientInfo.userAgent,
         });

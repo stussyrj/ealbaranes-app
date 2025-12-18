@@ -60,13 +60,13 @@ export default function AuthPage() {
   const handleEmpresaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     clearLoginError();
-    login(empresaEmail, empresaPassword);
+    login(empresaEmail, empresaPassword, "company");
   };
 
   const handleTrabajadorSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     clearLoginError();
-    login(trabajadorUsername, trabajadorPassword);
+    login(trabajadorUsername, trabajadorPassword, "worker");
   };
 
   const handleResendVerification = () => {

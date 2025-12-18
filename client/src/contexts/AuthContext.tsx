@@ -29,7 +29,7 @@ export interface AuthUser {
   id: string;
   username: string;
   displayName?: string | null;
-  email?: string;
+  email?: string | null;
   role: UserRole;
   workerId?: string | null;
   isAdmin?: boolean;
@@ -42,7 +42,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   setUser: (user: AuthUser | null) => void;
-  login: (username: string, password: string) => void;
+  login: (username: string, password: string, userType?: "company" | "worker") => void;
   logout: () => void;
   refetchUser: () => Promise<void>;
   isLoginPending: boolean;
@@ -88,8 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } : null;
 
   const loginMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const res = await fetch("/api/login", {
+    mutationFn: async ({ username, password, userType = "company" }: { username: string; password: string; userType?: "company" | "worker" }) => {
+      const endpoint = userType === "worker" ? "/api/worker-login" : "/api/login";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -142,8 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = (username: string, password: string) => {
-    loginMutation.mutate({ username, password });
+  const login = (username: string, password: string, userType: "company" | "worker" = "company") => {
+    loginMutation.mutate({ username, password, userType });
   };
 
   const logout = () => {
