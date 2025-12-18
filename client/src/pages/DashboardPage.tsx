@@ -481,24 +481,28 @@ export default function DashboardPage() {
       const minutes = durationMinutes % 60;
       const durationText = `Duración: ${hours}h ${minutes}m`;
       
-      let updatedObservations = note.observations || "";
-      if (updatedObservations && !updatedObservations.includes("Duración:")) {
-        updatedObservations += ` | ${durationText}`;
-      } else if (!updatedObservations) {
-        updatedObservations = durationText;
-      }
-      
       await updateTimeMutation.mutateAsync({ 
         noteId: note.id, 
         departedAt: now 
       });
       
-      await updateObservationsMutation.mutateAsync({
-        noteId: note.id,
-        observations: updatedObservations,
-      });
-      
-      toast({ title: "Hora de salida registrada", description: `Duración registrada: ${hours}h ${minutes}m` });
+      // Only add duration to observations if it's greater than 20 minutes
+      if (durationMinutes > 20) {
+        let updatedObservations = note.observations || "";
+        if (updatedObservations && !updatedObservations.includes("Duración:")) {
+          updatedObservations += ` | ${durationText}`;
+        } else if (!updatedObservations) {
+          updatedObservations = durationText;
+        }
+        
+        await updateObservationsMutation.mutateAsync({
+          noteId: note.id,
+          observations: updatedObservations,
+        });
+        toast({ title: "Hora de salida registrada", description: `Duración registrada: ${hours}h ${minutes}m` });
+      } else {
+        toast({ title: "Hora de salida registrada", description: `Duración: ${minutes}m (no se añade a observaciones por ser menor a 20 minutos)` });
+      }
     }
   };
 
