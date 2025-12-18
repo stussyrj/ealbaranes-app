@@ -39,11 +39,17 @@ export function AutocompleteInput({
     setHighlightedIndex(-1);
   }, [onChange]);
 
-  const handleSuggestionClick = useCallback((suggestion: string) => {
+  const handleSuggestionClick = useCallback((suggestion: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     onChange(suggestion);
     setIsOpen(false);
     setHighlightedIndex(-1);
-    inputRef.current?.focus();
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   }, [onChange]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -85,9 +91,9 @@ export function AutocompleteInput({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, []);
 
@@ -128,7 +134,10 @@ export function AutocompleteInput({
                 "w-full px-3 py-2 text-left text-sm hover-elevate cursor-pointer",
                 index === highlightedIndex && "bg-accent text-accent-foreground"
               )}
-              onClick={() => handleSuggestionClick(suggestion)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
+              onClick={(e) => handleSuggestionClick(suggestion, e)}
               data-testid={testId ? `${testId}-suggestion-${index}` : undefined}
             >
               {suggestion}
