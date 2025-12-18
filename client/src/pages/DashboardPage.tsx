@@ -440,6 +440,68 @@ export default function DashboardPage() {
     },
   });
 
+  // Arrival/Departure time tracking mutations
+  const updateTimeMutation = useMutation({
+    mutationFn: async ({ noteId, arrivedAt, departedAt }: { noteId: string; arrivedAt?: string; departedAt?: string }) => {
+      const res = await fetch(`/api/delivery-notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ arrivedAt: arrivedAt || null, departedAt: departedAt || null }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Error al registrar tiempo");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleArrivalDeparture = async (note: any, type: 'arrival' | 'departure') => {
+    if (type === 'arrival') {
+      const now = new Date().toISOString();
+      await updateTimeMutation.mutateAsync({ noteId: note.id, arrivedAt: now });
+      toast({ title: "Hora de llegada registrada", description: "Se ha marcado la hora de llegada" });
+    } else {
+      if (!note.arrivedAt) {
+        toast({ title: "Error", description: "Debe marcar primero la hora de llegada", variant: "destructive" });
+        return;
+      }
+      const now = new Date().toISOString();
+      const arrived = new Date(note.arrivedAt);
+      const departed = new Date(now);
+      const durationMs = departed.getTime() - arrived.getTime();
+      const durationMinutes = Math.floor(durationMs / 60000);
+      const hours = Math.floor(durationMinutes / 60);
+      const minutes = durationMinutes % 60;
+      const durationText = `Duración: ${hours}h ${minutes}m`;
+      
+      let updatedObservations = note.observations || "";
+      if (updatedObservations && !updatedObservations.includes("Duración:")) {
+        updatedObservations += ` | ${durationText}`;
+      } else if (!updatedObservations) {
+        updatedObservations = durationText;
+      }
+      
+      await updateTimeMutation.mutateAsync({ 
+        noteId: note.id, 
+        departedAt: now 
+      });
+      
+      await updateObservationsMutation.mutateAsync({
+        noteId: note.id,
+        observations: updatedObservations,
+      });
+      
+      toast({ title: "Hora de salida registrada", description: `Duración registrada: ${hours}h ${minutes}m` });
+    }
+  };
+
   // Restore delivery note mutation (admin only)
   const [restoringNoteId, setRestoringNoteId] = useState<string | null>(null);
   const restoreNoteMutation = useMutation({
@@ -1863,6 +1925,28 @@ export default function DashboardPage() {
                             {new Date(note.invoicedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
+                      </div>
+                    )}
+
+                    {!isFullySigned(note) && (
+                      <div className="flex gap-2 pt-1">
+                        {!note.departedAt && (
+                          <Button
+                            size="sm"
+                            className={`flex-1 text-xs h-8 ${!note.arrivedAt ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'}`}
+                            onClick={() => handleArrivalDeparture(note, note.arrivedAt ? 'departure' : 'arrival')}
+                            disabled={updateTimeMutation.isPending}
+                            data-testid={`button-${note.arrivedAt ? 'departure' : 'arrival'}-${note.id}`}
+                          >
+                            <Clock className="w-3 h-3 mr-1" />
+                            {note.arrivedAt ? 'He salido' : 'He llegado'}
+                          </Button>
+                        )}
+                        {note.arrivedAt && note.departedAt && (
+                          <div className="flex-1 flex items-center justify-center bg-green-100 dark:bg-green-900/20 rounded-md text-xs text-green-700 dark:text-green-300">
+                            ✓ Registrado
+                          </div>
+                        )}
                       </div>
                     )}
 
