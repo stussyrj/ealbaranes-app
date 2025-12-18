@@ -2087,7 +2087,7 @@ export default function DashboardPage() {
                         newOrigins[index] = { ...newOrigins[index], name: value };
                         setFormData({ ...formData, pickupOrigins: newOrigins });
                       }}
-                      suggestions={[...(suggestions.originNames || []), ...(suggestions.destinations || [])]}
+                      suggestions={suggestions.originNames || []}
                       data-testid={`input-route-from-${index}`}
                     />
                     <span className="text-muted-foreground text-sm px-1">→</span>
@@ -2099,7 +2099,7 @@ export default function DashboardPage() {
                         newOrigins[index] = { ...newOrigins[index], address: value };
                         setFormData({ ...formData, pickupOrigins: newOrigins });
                       }}
-                      suggestions={[...(suggestions.originNames || []), ...(suggestions.destinations || [])]}
+                      suggestions={suggestions.destinations || []}
                       data-testid={`input-route-to-${index}`}
                     />
                   </div>
