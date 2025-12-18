@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Clock, FileText, CheckCircle, Timer, Camera, Edit2, ChevronDown, ChevronUp, MapPin, Navigation, User, Trash2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ interface DeliveryNoteCardProps {
   onRestoreClick?: () => void;
 }
 
-export function DeliveryNoteCard({
+export const DeliveryNoteCard = memo(function DeliveryNoteCard({
   note,
   showWorkerName = false,
   showPhoto = true,
@@ -387,4 +387,4 @@ export function DeliveryNoteCard({
       </div>
     </div>
   );
-}
+});

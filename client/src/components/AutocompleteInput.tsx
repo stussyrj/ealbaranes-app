@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -24,8 +24,11 @@ export function AutocompleteInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredSuggestions = suggestions.filter((suggestion) =>
-    suggestion.toLowerCase().includes(value.toLowerCase())
+  const filteredSuggestions = useMemo(() => 
+    suggestions.filter((suggestion) =>
+      suggestion.toLowerCase().includes(value.toLowerCase())
+    ),
+    [suggestions, value]
   );
 
   const showSuggestions = isOpen && value.length > 0 && filteredSuggestions.length > 0;
