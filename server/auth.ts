@@ -117,15 +117,19 @@ export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   // Replit uses HTTPS even in development, so we need secure cookies
   const isReplit = !!process.env.REPL_ID || !!process.env.REPLIT_DEPLOYMENT;
-  const useSecureCookies = isProduction || isReplit;
+  // For now, always use secure:false to debug cookie issues
+  const useSecureCookies = false;
+  
+  console.log("[auth] Session config:", { isProduction, isReplit, useSecureCookies });
   
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Force save session on every request
+    saveUninitialized: true, // Save uninitialized sessions
     store: storage.sessionStore,
+    name: 'ealbaran.sid', // Custom session cookie name
     cookie: {
-      secure: useSecureCookies, // HTTPS required in production and Replit
+      secure: useSecureCookies, // Temporarily disable secure for debugging
       httpOnly: true,
       sameSite: 'lax', // Allow cookies to be sent with top-level navigations
       maxAge: 24 * 60 * 60 * 1000,
@@ -215,15 +219,18 @@ export function setupAuth(app: Express) {
       // Clear failed login attempts on successful login
       clearFailedLogins(clientIP);
       
-      // Set session data directly (more reliable than req.login())
-      req.session.userId = user.id;
-      req.session.user = user;
-      
-      req.session.save(async (saveErr) => {
-        if (saveErr) {
-          console.error("[auth] Session save error:", saveErr);
-          return next(saveErr);
+      req.login(user, async (loginErr) => {
+        if (loginErr) {
+          console.error("[auth] Login error:", loginErr);
+          return next(loginErr);
         }
+        
+        // Force session save
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[auth] Session save error:", saveErr);
+          }
+        });
         
         // Log successful login
         const clientInfo = getClientInfo(req);
@@ -300,15 +307,18 @@ export function setupAuth(app: Express) {
       // Clear failed login attempts on successful login
       clearFailedLogins(clientIP);
       
-      // Set session data directly (more reliable than req.login())
-      req.session.userId = user.id;
-      req.session.user = user;
-      
-      req.session.save(async (saveErr) => {
-        if (saveErr) {
-          console.error("[auth] Session save error:", saveErr);
-          return next(saveErr);
+      req.login(user, async (loginErr) => {
+        if (loginErr) {
+          console.error("[auth] Worker login error:", loginErr);
+          return next(loginErr);
         }
+        
+        // Force session save
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[auth] Session save error:", saveErr);
+          }
+        });
         
         // Log successful login
         const clientInfo = getClientInfo(req);
