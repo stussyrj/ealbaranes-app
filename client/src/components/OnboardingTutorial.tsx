@@ -41,7 +41,7 @@ const companySteps: OnboardingStep[] = [
     details: [
       "Ve los albaranes pendientes y firmados",
       "Filtra por fechas para buscar albaranes específicos",
-      "Marca albaranes como cobrados",
+      "Marca albaranes como facturados",
       "Descarga albaranes en formato PDF"
     ]
   },
@@ -73,7 +73,7 @@ const companySteps: OnboardingStep[] = [
     icon: <Download className="w-16 h-16 text-primary" />,
     details: [
       "Descarga albaranes firmados en PDF con foto y firma",
-      "Exporta albaranes cobrados por separado",
+      "Exporta albaranes facturados por separado",
       "Genera listados de albaranes pendientes",
       "Cada PDF incluye todos los datos del albarán"
     ]

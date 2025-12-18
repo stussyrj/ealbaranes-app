@@ -832,7 +832,7 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-lg font-bold leading-none">{invoicedNotes.length}</div>
-                <p className="text-[10px] text-muted-foreground truncate">Cobrados</p>
+                <p className="text-[10px] text-muted-foreground truncate">Facturados</p>
               </div>
             </div>
           </button>
@@ -1219,11 +1219,11 @@ export default function DashboardPage() {
               onClick={async () => {
                 const notesWithPhotos = filterNotesByDateRange(invoicedNotes.filter((n: any) => n.photo));
                 if (notesWithPhotos.length === 0) {
-                  toast({ title: "Sin fotos", description: "No hay albaranes cobrados con foto para descargar", variant: "destructive" });
+                  toast({ title: "Sin fotos", description: "No hay albaranes facturados con foto para descargar", variant: "destructive" });
                   return;
                 }
                 setIsDownloading(true);
-                toast({ title: "Generando PDF...", description: `Creando documento con ${notesWithPhotos.length} albarán(es) cobrado(s)` });
+                toast({ title: "Generando PDF...", description: `Creando documento con ${notesWithPhotos.length} albarán(es) facturado(s)` });
                 try {
                   const { default: jsPDF } = await import('jspdf');
                   const pdf = new jsPDF('p', 'mm', 'a4');
@@ -1284,7 +1284,7 @@ export default function DashboardPage() {
                     }
                     
                     yPos += 2;
-                    const cobradoDetails = [
+                    const facturadoDetails = [
                       ['Vehículo:', note.vehicleType || 'No especificado'],
                       ['Fecha:', note.date ? new Date(note.date).toLocaleDateString('es-ES') : 'No especificada'],
                       ['Hora:', note.time || 'No especificada'],
@@ -1292,7 +1292,7 @@ export default function DashboardPage() {
                       ['Observaciones:', note.observations || 'Sin observaciones']
                     ];
                     
-                    cobradoDetails.forEach(([label, value]) => {
+                    facturadoDetails.forEach(([label, value]) => {
                       pdf.setFont('helvetica', 'bold');
                       pdf.text(label, margin, yPos);
                       pdf.setFont('helvetica', 'normal');
@@ -1302,11 +1302,11 @@ export default function DashboardPage() {
                     
                     yPos += 5;
                     pdf.setFont('helvetica', 'bold');
-                    pdf.text('Foto del albarán cobrado:', margin, yPos);
+                    pdf.text('Foto del albarán facturado:', margin, yPos);
                     yPos += 5;
                     
-                    const cobradoSignatureHeight = note.signature ? 35 : 0;
-                    const cobradoPhotoMaxHeight = pageHeight - yPos - margin - 20 - cobradoSignatureHeight;
+                    const facturadoSignatureHeight = note.signature ? 35 : 0;
+                    const facturadoPhotoMaxHeight = pageHeight - yPos - margin - 20 - facturadoSignatureHeight;
                     
                     try {
                       let base64 = note.photo;
@@ -1322,8 +1322,8 @@ export default function DashboardPage() {
                       
                       const imgFormat = base64.includes('data:image/png') ? 'PNG' : 'JPEG';
                       const imgWidth = pageWidth - (margin * 2);
-                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, cobradoPhotoMaxHeight, undefined, 'MEDIUM');
-                      yPos += cobradoPhotoMaxHeight + 5;
+                      pdf.addImage(base64, imgFormat, margin, yPos, imgWidth, facturadoPhotoMaxHeight, undefined, 'MEDIUM');
+                      yPos += facturadoPhotoMaxHeight + 5;
                     } catch (imgError) {
                       pdf.text('(Imagen no disponible)', margin, yPos + 10);
                       yPos += 15;
@@ -1441,8 +1441,8 @@ export default function DashboardPage() {
                     pdf.text(`Generado el ${new Date().toLocaleDateString('es-ES')} - eAlbarán`, margin, pageHeight - 8);
                   }
                   
-                  pdf.save(`albaranes-cobrados-${new Date().toISOString().split('T')[0]}.pdf`);
-                  toast({ title: "PDF generado", description: `Se descargó el PDF con ${notesWithPhotos.length} albarán(es) cobrado(s)` });
+                  pdf.save(`albaranes-facturados-${new Date().toISOString().split('T')[0]}.pdf`);
+                  toast({ title: "PDF generado", description: `Se descargó el PDF con ${notesWithPhotos.length} albarán(es) facturado(s)` });
                 } catch (error) {
                   console.error("PDF generation error:", error);
                   toast({ title: "Error", description: "No se pudo generar el PDF", variant: "destructive" });
@@ -1458,7 +1458,7 @@ export default function DashboardPage() {
                   <Banknote className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold">Albaranes Cobrados (PDF)</p>
+                  <p className="font-semibold">Albaranes Facturados (PDF)</p>
                   <p className="text-xs text-muted-foreground">{filterNotesByDateRange(invoicedNotes.filter((n: any) => n.photo)).length} albarán(es) con foto</p>
                 </div>
               </div>
@@ -1716,7 +1716,7 @@ export default function DashboardPage() {
                           : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 no-default-hover-elevate no-default-active-elevate"
                         }>
                           {note.isInvoiced ? (
-                            <><Banknote className="w-3 h-3 mr-1" /> Cobrado</>
+                            <><Banknote className="w-3 h-3 mr-1" /> Facturado</>
                           ) : (
                             <><Clock className="w-3 h-3 mr-1" /> Pendiente cobro</>
                           )}
@@ -1831,7 +1831,7 @@ export default function DashboardPage() {
                       <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md p-2">
                         <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs text-emerald-700 dark:text-emerald-300">Cobrado el</p>
+                          <p className="text-xs text-emerald-700 dark:text-emerald-300">Facturado el</p>
                           <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
                             {new Date(note.invoicedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -1955,7 +1955,7 @@ export default function DashboardPage() {
 
                           if (response.ok) {
                             toast({ 
-                              title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como cobrado",
+                              title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como facturado",
                               description: `Albarán #${note.noteNumber} actualizado`
                             });
                             await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
@@ -1982,7 +1982,7 @@ export default function DashboardPage() {
                       ) : (
                         <>
                           <Banknote className="w-3 h-3 mr-1" />
-                          Marcar como cobrado
+                          Marcar como facturado
                         </>
                       )}
                     </Button>
@@ -2279,7 +2279,7 @@ export default function DashboardPage() {
               {invoiceModalType === "invoiced" ? (
                 <>
                   <Banknote className="h-5 w-5 text-emerald-500" />
-                  Albaranes Cobrados
+                  Albaranes Facturados
                 </>
               ) : (
                 <>
@@ -2358,7 +2358,7 @@ export default function DashboardPage() {
                   {(dateFilterStart || dateFilterEnd) 
                     ? "No hay albaranes en el rango de fechas seleccionado"
                     : invoiceModalType === "invoiced" 
-                      ? "No hay albaranes marcados como cobrados"
+                      ? "No hay albaranes marcados como facturados"
                       : "No hay albaranes pendientes de cobro"
                   }
                 </p>
@@ -2385,7 +2385,7 @@ export default function DashboardPage() {
                           Albarán #{note.noteNumber}
                         </span>
                         <Badge className={note.isInvoiced ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"}>
-                          {note.isInvoiced ? "Cobrado" : "Pendiente"}
+                          {note.isInvoiced ? "Facturado" : "Pendiente"}
                         </Badge>
                       </div>
                     </div>
@@ -2460,7 +2460,7 @@ export default function DashboardPage() {
                       <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md p-2 text-xs">
                         <Banknote className="w-3 h-3 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-emerald-700 dark:text-emerald-300">Cobrado el</p>
+                          <p className="text-emerald-700 dark:text-emerald-300">Facturado el</p>
                           <p className="font-semibold text-emerald-800 dark:text-emerald-200">
                             {new Date(note.invoicedAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -2485,7 +2485,7 @@ export default function DashboardPage() {
 
                           if (response.ok) {
                             toast({ 
-                              title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como cobrado",
+                              title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como facturado",
                               description: `Albarán #${note.noteNumber} actualizado`
                             });
                             await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
@@ -2512,7 +2512,7 @@ export default function DashboardPage() {
                       ) : (
                         <>
                           <Banknote className="w-3 h-3 mr-1" />
-                          Marcar como cobrado
+                          Marcar como facturado
                         </>
                       )}
                     </Button>

@@ -148,7 +148,7 @@ pickupOrigins: PickupOrigin[] // Array de objetos
 - Usuarios persistidos en base de datos
 - Login con email O nombre de usuario para empresas
 - Emails vía Resend con diseño spooky
-- Sistema de facturación de albaranes (Cobrados/Pendientes de cobro)
+- Sistema de facturación de albaranes (Facturados/Pendientes de facturación)
 - Dashboard con contadores resumen (Hoy, Este mes, Total)
 - Modal de descarga mejorado con selector de rango de fechas
 - Sistema de firma dual: albarán solo "firmado" cuando tiene AMBOS foto Y firma digital
