@@ -129,7 +129,7 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: isReplit || isProduction, // HTTPS required in Replit and production
       httpOnly: true,
-      sameSite: 'none', // Required for cross-site cookies with secure:true
+      sameSite: isReplit ? 'none' : 'lax', // 'none' required for Replit cross-site
       maxAge: 24 * 60 * 60 * 1000,
     },
   };

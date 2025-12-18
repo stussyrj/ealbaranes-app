@@ -37,6 +37,15 @@ export function log(message: string, source = "express") {
 
   app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 
+  // Debug middleware to log cookie info
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api") && req.path !== "/api/login") {
+      const cookieHeader = req.headers.cookie || 'NO COOKIES';
+      console.log(`[cookie-debug] ${req.method} ${req.path} - Cookies: ${cookieHeader.substring(0, 100)}`);
+    }
+    next();
+  });
+
   app.use((req, res, next) => {
     const start = Date.now();
     const path = req.path;
