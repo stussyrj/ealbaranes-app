@@ -664,6 +664,54 @@ export async function registerRoutes(
     }
   });
 
+  // List all delivery notes - MUST be before /:id route
+  app.get("/api/delivery-notes", async (req, res) => {
+    try {
+      // Require authentication for tenant isolation
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      // Filter by tenant for data isolation
+      const notes = await storage.getDeliveryNotes(tenantId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching all delivery notes:", error);
+      res.status(500).json({ error: "Error al obtener albaranes" });
+    }
+  });
+
+  // Get deleted delivery notes (admin only) - MUST be before /:id route
+  app.get("/api/delivery-notes/deleted", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo las empresas pueden ver albaranes borrados" });
+      }
+      
+      const tenantId = user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      const notes = await storage.getDeletedDeliveryNotes(tenantId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching deleted delivery notes:", error);
+      res.status(500).json({ error: "Error al obtener albaranes borrados" });
+    }
+  });
+
+  // Get specific delivery note by ID
   app.get("/api/delivery-notes/:id", async (req, res) => {
     try {
       // Require authentication for tenant isolation
@@ -922,31 +970,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching worker delivery notes:", error);
       res.status(500).json({ error: "Error al obtener albaranes" });
-    }
-  });
-
-  // Get deleted delivery notes (admin only)
-  app.get("/api/delivery-notes/deleted", async (req, res) => {
-    try {
-      if (!req.isAuthenticated() || !req.user) {
-        return res.status(401).json({ error: "No autenticado" });
-      }
-      
-      const user = req.user as any;
-      if (!user.isAdmin) {
-        return res.status(403).json({ error: "Solo las empresas pueden ver albaranes borrados" });
-      }
-      
-      const tenantId = user.tenantId;
-      if (!tenantId) {
-        return res.status(400).json({ error: "Empresa no encontrada" });
-      }
-      
-      const notes = await storage.getDeletedDeliveryNotes(tenantId);
-      res.json(notes);
-    } catch (error) {
-      console.error("Error fetching deleted delivery notes:", error);
-      res.status(500).json({ error: "Error al obtener albaranes borrados" });
     }
   });
 
