@@ -57,11 +57,19 @@ export async function registerRoutes(
           (req as any).user = user;
           // Make isAuthenticated return true for JWT authenticated users
           (req as any).isAuthenticated = () => true;
-          // Don't log on every request to reduce noise
-          if (req.path.includes('/delivery-notes')) {
-            console.log(`[auth] JWT user authenticated for ${req.method} ${req.path}`);
+          if (req.path.includes('/api/')) {
+            console.log(`[auth] JWT user ${user.id} authenticated for ${req.method} ${req.path}`);
           }
+        } else {
+          console.log(`[auth] JWT token valid but user ${decoded.userId} not found in DB`);
         }
+      } else {
+        console.log(`[auth] JWT token invalid or expired for ${req.method} ${req.path}`);
+      }
+    } else {
+      // No token in header - this is ok for public routes
+      if (req.path.includes('/api/delivery-notes') || req.path.includes('/api/quotes')) {
+        console.log(`[auth] No JWT token for ${req.method} ${req.path}`);
       }
     }
     
