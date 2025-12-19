@@ -1675,89 +1675,96 @@ export default function DashboardPage() {
           setWorkerSearchFilter("");
         }
       }}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[95vw] p-3 rounded-lg top-[5vh] translate-y-0">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-base sm:text-lg">
-              Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"} - {albaranesCreatorType === "admin" ? "Empresa" : "Trabajadores"}
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[95vw] p-4 rounded-lg top-[5vh] translate-y-0">
+          <DialogHeader className="pb-4 border-b border-muted-foreground/10">
+            <DialogTitle className="text-lg font-semibold">
+              Albaranes {albaranesModalType === "pending" ? "Pendientes" : "Firmados"}
+              <span className="text-sm text-muted-foreground ml-2">({albaranesCreatorType === "admin" ? "Empresa" : "Trabajadores"})</span>
             </DialogTitle>
           </DialogHeader>
           
-          {/* Filtro de fechas */}
-          <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Filter className="w-4 h-4" />
-              Filtrar por fechas
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-muted-foreground">Desde</label>
-                <Input
-                  type="date"
-                  value={dateFilterStart}
-                  onChange={(e) => setDateFilterStart(e.target.value)}
-                  className="h-9 text-sm"
-                  data-testid="input-date-filter-start"
-                />
+          {/* Filtros unificados */}
+          <div className="bg-muted/25 rounded-lg p-4 space-y-4 border border-muted-foreground/5">
+            {/* Filtro de fechas */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <Filter className="w-3.5 h-3.5" />
+                Fechas
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Hasta</label>
-                <Input
-                  type="date"
-                  value={dateFilterEnd}
-                  onChange={(e) => setDateFilterEnd(e.target.value)}
-                  className="h-9 text-sm"
-                  data-testid="input-date-filter-end"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground block">Desde</label>
+                  <Input
+                    type="date"
+                    value={dateFilterStart}
+                    onChange={(e) => setDateFilterStart(e.target.value)}
+                    className="h-9 text-sm"
+                    data-testid="input-date-filter-start"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground block">Hasta</label>
+                  <Input
+                    type="date"
+                    value={dateFilterEnd}
+                    onChange={(e) => setDateFilterEnd(e.target.value)}
+                    className="h-9 text-sm"
+                    data-testid="input-date-filter-end"
+                  />
+                </div>
               </div>
-            </div>
-            {(dateFilterStart || dateFilterEnd) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7 w-full"
-                onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
-                data-testid="button-clear-date-filter"
-              >
-                <X className="w-3 h-3 mr-1" />
-                Limpiar filtro
-              </Button>
-            )}
-          </div>
-
-          {/* Filtro por nombre de trabajador - solo visible en sección Trabajadores */}
-          {albaranesCreatorType === "worker" && (
-            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Search className="w-4 h-4" />
-                Buscar por trabajador
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Nombre del trabajador..."
-                  value={workerSearchFilter}
-                  onChange={(e) => setWorkerSearchFilter(e.target.value)}
-                  className="h-9 text-sm pl-9"
-                  data-testid="input-worker-search"
-                />
-              </div>
-              {workerSearchFilter && (
+              {(dateFilterStart || dateFilterEnd) && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs h-7 w-full"
-                  onClick={() => setWorkerSearchFilter("")}
-                  data-testid="button-clear-worker-filter"
+                  className="text-xs h-7 w-full mt-1"
+                  onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
+                  data-testid="button-clear-date-filter"
                 >
                   <X className="w-3 h-3 mr-1" />
-                  Limpiar búsqueda
+                  Limpiar fechas
                 </Button>
               )}
             </div>
-          )}
 
-          <div className="space-y-3 overflow-hidden">
+            {/* Filtro por nombre de trabajador - solo visible en sección Trabajadores */}
+            {albaranesCreatorType === "worker" && (
+              <>
+                <div className="border-t border-muted-foreground/10"></div>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    <Search className="w-3.5 h-3.5" />
+                    Trabajador
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar nombre..."
+                      value={workerSearchFilter}
+                      onChange={(e) => setWorkerSearchFilter(e.target.value)}
+                      className="h-9 text-sm pl-9"
+                      data-testid="input-worker-search"
+                    />
+                  </div>
+                  {workerSearchFilter && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-7 w-full mt-1"
+                      onClick={() => setWorkerSearchFilter("")}
+                      data-testid="button-clear-worker-filter"
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Limpiar búsqueda
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="space-y-3 overflow-hidden mt-4">
             {(() => {
               let notes: any[] = [];
               if (albaranesCreatorType === "admin") {
