@@ -1,8 +1,8 @@
 # eAlbarán - Gestión Digital de Albaranes de Transporte
 
-## Status: OPERATIONAL - Modal de Firma Mejorado
+## Status: OPERATIONAL - Tracking de Tiempos Funcionando
 
-**La aplicación está funcionando con modal separado para firmas digitales con más espacio.**
+**La aplicación está funcionando con tracking de hora de llegada/salida para albaranes.**
 
 ## Overview
 
@@ -16,6 +16,13 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 - UI Framework: shadcn/ui con Tailwind CSS
 
 ## Últimos Cambios
+
+### Sistema de Tracking de Tiempos (Diciembre 19, 2025)
+- **Columnas `arrivedAt` y `departedAt`**: Añadidas a tabla delivery_notes
+- **Botón "He llegado"**: Registra hora de llegada del trabajador
+- **Botón "He salido"**: Registra hora de salida del trabajador
+- **Cálculo automático de duración**: Si estancia > 20 minutos, se añade a observaciones
+- **Uso**: Trabajador pulsa "He llegado" al llegar → realiza trabajo → pulsa "He salido"
 
 ### Sistema de Eliminación Definitiva de Albaranes (Diciembre 13, 2025)
 - **Endpoint DELETE /api/delivery-notes/:id/permanent**: Elimina albaranes permanentemente del cesto

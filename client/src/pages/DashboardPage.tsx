@@ -446,15 +446,11 @@ export default function DashboardPage() {
   // Arrival/Departure time tracking mutations
   const updateTimeMutation = useMutation({
     mutationFn: async ({ noteId, arrivedAt, departedAt }: { noteId: string; arrivedAt?: string; departedAt?: string }) => {
-      console.log("[updateTimeMutation] Sending PATCH request to /api/delivery-notes/" + noteId, { arrivedAt, departedAt });
       const body: { arrivedAt?: string | null; departedAt?: string | null } = {};
       if (arrivedAt !== undefined) body.arrivedAt = arrivedAt;
       if (departedAt !== undefined) body.departedAt = departedAt;
       const res = await apiRequest("PATCH", `/api/delivery-notes/${noteId}`, body);
-      console.log("[updateTimeMutation] Response status:", res.status);
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("[updateTimeMutation] Error response:", errorText);
         throw new Error("Error al registrar tiempo");
       }
       return res.json();
