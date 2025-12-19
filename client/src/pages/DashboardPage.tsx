@@ -1683,82 +1683,76 @@ export default function DashboardPage() {
             </DialogTitle>
           </DialogHeader>
           
-          {/* Filtros unificados */}
-          <div className="bg-muted/25 rounded-lg p-3 space-y-3 border border-muted-foreground/5">
-            {/* Filtro de fechas */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <Filter className="w-3 h-3" />
+          {/* Filtros compactos */}
+          <div className="bg-muted/25 rounded-lg p-2 space-y-2 border border-muted-foreground/5">
+            {/* Filtro de fechas - inline compacto */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase">
+                <Filter className="w-2.5 h-2.5" />
                 Fechas
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground block">Desde</label>
-                  <Input
-                    type="date"
-                    value={dateFilterStart}
-                    onChange={(e) => setDateFilterStart(e.target.value)}
-                    className="h-8 text-xs"
-                    data-testid="input-date-filter-start"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground block">Hasta</label>
-                  <Input
-                    type="date"
-                    value={dateFilterEnd}
-                    onChange={(e) => setDateFilterEnd(e.target.value)}
-                    className="h-8 text-xs"
-                    data-testid="input-date-filter-end"
-                  />
-                </div>
+              <div className="flex gap-1.5 items-center">
+                <Input
+                  type="date"
+                  value={dateFilterStart}
+                  onChange={(e) => setDateFilterStart(e.target.value)}
+                  className="h-7 text-xs flex-1"
+                  placeholder="Desde"
+                  data-testid="input-date-filter-start"
+                />
+                <Input
+                  type="date"
+                  value={dateFilterEnd}
+                  onChange={(e) => setDateFilterEnd(e.target.value)}
+                  className="h-7 text-xs flex-1"
+                  placeholder="Hasta"
+                  data-testid="input-date-filter-end"
+                />
+                {(dateFilterStart || dateFilterEnd) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7 px-2 flex-shrink-0"
+                    onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
+                    data-testid="button-clear-date-filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
-              {(dateFilterStart || dateFilterEnd) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-7 w-full mt-1"
-                  onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
-                  data-testid="button-clear-date-filter"
-                >
-                  <X className="w-3 h-3 mr-1" />
-                  Limpiar fechas
-                </Button>
-              )}
             </div>
 
             {/* Filtro por nombre de trabajador - solo visible en sección Trabajadores */}
             {albaranesCreatorType === "worker" && (
               <>
                 <div className="border-t border-muted-foreground/10"></div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    <Search className="w-3 h-3" />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase">
+                    <Search className="w-2.5 h-2.5" />
                     Trabajador
                   </div>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="relative flex gap-1.5">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
                     <Input
                       type="text"
-                      placeholder="Buscar nombre..."
+                      placeholder="Buscar..."
                       value={workerSearchFilter}
                       onChange={(e) => setWorkerSearchFilter(e.target.value)}
-                      className="h-8 text-xs pl-9"
+                      className="h-7 text-xs pl-8 flex-1"
                       data-testid="input-worker-search"
                     />
+                    {workerSearchFilter && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7 px-2 flex-shrink-0"
+                        onClick={() => setWorkerSearchFilter("")}
+                        data-testid="button-clear-worker-filter"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    )}
                   </div>
-                  {workerSearchFilter && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7 w-full mt-1"
-                      onClick={() => setWorkerSearchFilter("")}
-                      data-testid="button-clear-worker-filter"
-                    >
-                      <X className="w-3 h-3 mr-1" />
-                      Limpiar búsqueda
-                    </Button>
-                  )}
                 </div>
               </>
             )}
