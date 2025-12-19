@@ -752,18 +752,23 @@ export async function registerRoutes(
 
   app.patch("/api/delivery-notes/:id", async (req, res) => {
     try {
+      console.log(`[PATCH] /api/delivery-notes/:id - Request received with id: ${req.params.id}`);
+      console.log(`[PATCH] Request body:`, JSON.stringify(req.body, null, 2));
+      
       // Require authentication for tenant isolation
       if (!req.isAuthenticated() || !req.user) {
-        console.log(`[auth] PATCH /api/delivery-notes/:id - Auth failed. isAuthenticated: ${req.isAuthenticated()}, hasUser: ${!!(req.user)}`);
+        console.log(`[PATCH] Auth failed. isAuthenticated: ${req.isAuthenticated()}, hasUser: ${!!(req.user)}`);
         return res.status(401).json({ error: "No autenticado" });
       }
-      console.log(`[auth] PATCH /api/delivery-notes/:id - Auth success for user ${(req.user as any).id}`);
+      console.log(`[PATCH] Auth success for user ${(req.user as any).id}, tenantId: ${(req.user as any).tenantId}`);
       
       const { id } = req.params;
       const data = req.body;
       
       // Get existing note to check if it's signed
+      console.log(`[PATCH] Looking up delivery note with id: ${id}`);
       const existingNote = await storage.getDeliveryNote(id);
+      console.log(`[PATCH] Delivery note found:`, existingNote ? `id=${existingNote.id}, tenantId=${existingNote.tenantId}` : 'NOT FOUND');
       if (!existingNote) {
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
