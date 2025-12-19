@@ -1107,11 +1107,13 @@ export default function DashboardPage() {
                     if (note.pickupOrigins && note.pickupOrigins.length > 0) {
                       pdf.setFont('helvetica', 'normal');
                       note.pickupOrigins.forEach((origin: PickupOrigin) => {
-                        const name = String(origin.name || 'N/A').trim();
-                        const address = String(origin.address || 'N/A').trim();
-                        const routeText = `Recogida: ${name} → Entrega: ${address}`;
-                        pdf.text(routeText, margin + 5, yPos);
-                        yPos += 5;
+                        const originName = (origin.name || 'N/A').toString();
+                        const originAddress = (origin.address || 'N/A').toString();
+                        const pickupLine = `Recogida: ${originName.trim()}`;
+                        const deliveryLine = `Entrega: ${originAddress.trim()}`;
+                        pdf.text(pickupLine, margin + 5, yPos);
+                        pdf.text(deliveryLine, margin + 5, yPos + 4);
+                        yPos += 9;
                       });
                     } else {
                       pdf.setFont('helvetica', 'normal');
@@ -1359,11 +1361,13 @@ export default function DashboardPage() {
                     if (note.pickupOrigins && note.pickupOrigins.length > 0) {
                       pdf.setFont('helvetica', 'normal');
                       note.pickupOrigins.forEach((origin: PickupOrigin) => {
-                        const name = String(origin.name || 'N/A').trim();
-                        const address = String(origin.address || 'N/A').trim();
-                        const routeText = `Recogida: ${name} → Entrega: ${address}`;
-                        pdf.text(routeText, margin + 5, yPos);
-                        yPos += 5;
+                        const originName = (origin.name || 'N/A').toString();
+                        const originAddress = (origin.address || 'N/A').toString();
+                        const pickupLine = `Recogida: ${originName.trim()}`;
+                        const deliveryLine = `Entrega: ${originAddress.trim()}`;
+                        pdf.text(pickupLine, margin + 5, yPos);
+                        pdf.text(deliveryLine, margin + 5, yPos + 4);
+                        yPos += 9;
                       });
                     } else {
                       pdf.setFont('helvetica', 'normal');
