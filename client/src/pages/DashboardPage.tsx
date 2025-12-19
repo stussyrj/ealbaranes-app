@@ -1724,6 +1724,39 @@ export default function DashboardPage() {
             )}
           </div>
 
+          {/* Filtro por nombre de trabajador - solo visible en sección Trabajadores */}
+          {albaranesCreatorType === "worker" && (
+            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Search className="w-4 h-4" />
+                Buscar por trabajador
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Nombre del trabajador..."
+                  value={workerSearchFilter}
+                  onChange={(e) => setWorkerSearchFilter(e.target.value)}
+                  className="h-9 text-sm pl-9"
+                  data-testid="input-worker-search"
+                />
+              </div>
+              {workerSearchFilter && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 w-full"
+                  onClick={() => setWorkerSearchFilter("")}
+                  data-testid="button-clear-worker-filter"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Limpiar búsqueda
+                </Button>
+              )}
+            </div>
+          )}
+
           <div className="space-y-3 overflow-hidden">
             {(() => {
               let notes: any[] = [];
