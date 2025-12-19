@@ -1684,31 +1684,31 @@ export default function DashboardPage() {
           </DialogHeader>
           
           {/* Filtros unificados */}
-          <div className="bg-muted/25 rounded-lg p-4 space-y-4 border border-muted-foreground/5">
+          <div className="bg-muted/25 rounded-lg p-3 space-y-3 border border-muted-foreground/5">
             {/* Filtro de fechas */}
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <Filter className="w-3.5 h-3.5" />
+                <Filter className="w-3 h-3" />
                 Fechas
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground block">Desde</label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground block">Desde</label>
                   <Input
                     type="date"
                     value={dateFilterStart}
                     onChange={(e) => setDateFilterStart(e.target.value)}
-                    className="h-9 text-sm"
+                    className="h-8 text-xs"
                     data-testid="input-date-filter-start"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground block">Hasta</label>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground block">Hasta</label>
                   <Input
                     type="date"
                     value={dateFilterEnd}
                     onChange={(e) => setDateFilterEnd(e.target.value)}
-                    className="h-9 text-sm"
+                    className="h-8 text-xs"
                     data-testid="input-date-filter-end"
                   />
                 </div>
@@ -1731,9 +1731,9 @@ export default function DashboardPage() {
             {albaranesCreatorType === "worker" && (
               <>
                 <div className="border-t border-muted-foreground/10"></div>
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    <Search className="w-3.5 h-3.5" />
+                    <Search className="w-3 h-3" />
                     Trabajador
                   </div>
                   <div className="relative">
@@ -1743,7 +1743,7 @@ export default function DashboardPage() {
                       placeholder="Buscar nombre..."
                       value={workerSearchFilter}
                       onChange={(e) => setWorkerSearchFilter(e.target.value)}
-                      className="h-9 text-sm pl-9"
+                      className="h-8 text-xs pl-9"
                       data-testid="input-worker-search"
                     />
                   </div>
@@ -1764,7 +1764,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="space-y-3 overflow-hidden mt-4">
+          <div className="space-y-2 overflow-hidden mt-3">
             {(() => {
               let notes: any[] = [];
               if (albaranesCreatorType === "admin") {
