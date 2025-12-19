@@ -766,9 +766,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Resumen de Actividad - Compact horizontal strip with flex-wrap */}
-        <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm">
-          <div className="flex items-center justify-around gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5">
+        <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 shadow-sm">
+          <div className="flex items-center justify-around gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                 <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
               </div>
@@ -817,9 +817,9 @@ export default function DashboardPage() {
         </button>
 
         {/* Albaranes Grid - Compact 2x2 layout */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Empresa y Trabajadores en grid compacto 2x2 */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {/* Empresa Pendientes */}
             <button
               onClick={() => { setAlbaranesCreatorType("admin"); setAlbaranesModalType("pending"); setAlbaranesModalOpen(true); }}
@@ -908,7 +908,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Facturación - misma estructura compacta */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => { setInvoiceModalType("invoiced"); setInvoiceModalOpen(true); }}
             className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 min-h-[52px] shadow-sm hover-elevate"
@@ -963,11 +963,11 @@ export default function DashboardPage() {
         {/* Presupuestos Pendientes */}
         {pendingQuotes.length > 0 && (
           <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
-            <CardHeader className="py-3 px-4 sm:py-4 sm:px-6">
+            <CardHeader className="py-4 px-4 sm:py-5 sm:px-6">
               <CardTitle className="text-sm sm:text-base">Presupuestos Pendientes ({pendingQuotes.length})</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-              <div className="space-y-3">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <div className="space-y-4">
                 {pendingQuotes.map((quote: any) => renderQuoteCard(quote, true))}
               </div>
             </CardContent>
@@ -977,11 +977,11 @@ export default function DashboardPage() {
         {/* Presupuestos Firmados */}
         {signedQuotes.length > 0 && (
           <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
-            <CardHeader className="py-3 px-4 sm:py-4 sm:px-6">
+            <CardHeader className="py-4 px-4 sm:py-5 sm:px-6">
               <CardTitle className="text-sm sm:text-base">Presupuestos Firmados ({signedQuotes.length})</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-              <div className="space-y-3">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <div className="space-y-4">
                 {signedQuotes.map((quote: any) => renderQuoteCard(quote, false))}
               </div>
             </CardContent>

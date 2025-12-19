@@ -137,8 +137,8 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
         </div>
       )}
       
-      <div className="p-3 space-y-3">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <span 
             className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded"
             data-testid={`note-number-${note.id}`}
@@ -164,15 +164,15 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
           </Badge>
         </div>
 
-        <div className="space-y-2">
-          <div className="space-y-1">
+        <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-sm font-semibold">{note.clientName || 'Cliente N/A'}</p>
             {showWorkerName && (
               <p className="text-xs text-muted-foreground">({note.workerName || 'Trabajador'})</p>
             )}
           </div>
 
-          <div className="bg-muted/20 rounded-md p-2 space-y-1.5">
+          <div className="bg-muted/20 rounded-md p-3 space-y-2">
             {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
               <>
                 <div className="space-y-1">
