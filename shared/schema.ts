@@ -205,6 +205,8 @@ export const deliveryNotes = pgTable("delivery_notes", {
   notes: text("notes"),
   isInvoiced: boolean("is_invoiced").default(false),
   invoicedAt: timestamp("invoiced_at"),
+  arrivedAt: timestamp("arrived_at"),
+  departedAt: timestamp("departed_at"),
   tenantId: varchar("tenant_id"),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
