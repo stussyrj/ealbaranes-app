@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest, queryClient as qc } from "@/lib/queryClient";
+import { apiRequest, queryClient as qc, getAuthToken } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -310,10 +310,22 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Helper function to get auth headers for fetch calls
+  const getAuthHeaders = (): HeadersInit => {
+    const token = getAuthToken();
+    if (token) {
+      return { 'Authorization': `Bearer ${token}` };
+    }
+    return {};
+  };
+
   const { data: quotes = [], refetch: refetchQuotes } = useQuery({
     queryKey: ["/api/quotes"],
     queryFn: async () => {
-      const res = await fetch("/api/quotes", { credentials: "include" });
+      const res = await fetch("/api/quotes", { 
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error("No autorizado");
@@ -329,7 +341,10 @@ export default function DashboardPage() {
   const { data: deliveryNotes = [], refetch: refetchDeliveryNotes, isLoading: isLoadingNotes, error: notesError } = useQuery({
     queryKey: ["/api/delivery-notes"],
     queryFn: async () => {
-      const res = await fetch("/api/delivery-notes", { credentials: "include" });
+      const res = await fetch("/api/delivery-notes", { 
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error("No autorizado");
@@ -347,7 +362,10 @@ export default function DashboardPage() {
   const { data: suggestions = { clients: [], originNames: [], originAddresses: [], destinations: [] } } = useQuery<{ clients: string[], originNames: string[], originAddresses: string[], destinations: string[] }>({
     queryKey: ["/api/delivery-notes/suggestions"],
     queryFn: async () => {
-      const res = await fetch("/api/delivery-notes/suggestions", { credentials: "include" });
+      const res = await fetch("/api/delivery-notes/suggestions", { 
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) {
         return { clients: [], originNames: [], originAddresses: [], destinations: [] };
       }
@@ -362,7 +380,10 @@ export default function DashboardPage() {
     queryKey: ["/api/delivery-notes/deleted"],
     queryFn: async () => {
       console.log("[DashboardPage] Fetching deleted notes...");
-      const res = await fetch("/api/delivery-notes/deleted", { credentials: "include" });
+      const res = await fetch("/api/delivery-notes/deleted", { 
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) {
         console.log("[DashboardPage] Failed to fetch deleted notes:", res.status);
         return [];
