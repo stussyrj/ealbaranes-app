@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Eraser, MapPin, Navigation, FileText, User, Camera, Save } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { SignatureModalDialog } from "@/components/SignatureModalDialog";
 import type { DeliveryNote } from "@shared/schema";
 
@@ -19,6 +20,7 @@ interface DeliveryNoteSigningModalProps {
 
 export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryNoteSigningModalProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("origin");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingOrigin, setIsSavingOrigin] = useState(false);
@@ -141,7 +143,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     setIsSavingOrigin(false);
   };
 
-  // Save only origin signature (partial save) - closes modal and saves in background
+  // Save only origin signature (partial save)
   const handleSaveOrigin = async () => {
     if (!note) {
       console.error("Missing note data");
@@ -150,36 +152,64 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
     // Validate that BOTH signature and document exist
     if (!hasOriginSignature || !hasOriginDocument) {
-      alert("Falta información de origen:\n- Firma: " + (hasOriginSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasOriginDocument ? "✓" : "Falta"));
+      toast({
+        title: "Información incompleta",
+        description: "Falta información de origen:\n- Firma: " + (hasOriginSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasOriginDocument ? "✓" : "Falta"),
+        variant: "destructive",
+      });
       return;
     }
 
+    const documentTrimmed = originDocument.trim().toUpperCase();
+    if (documentTrimmed.length < 8) {
+      toast({
+        title: "Documento inválido",
+        description: "El documento debe tener al menos 8 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingOrigin(true);
+
     const payload: Record<string, any> = {
       originSignature,
-      originSignatureDocument: originDocument.trim().toUpperCase(),
+      originSignatureDocument: documentTrimmed,
       originSignedAt: new Date().toISOString(),
     };
 
-    // Update state immediately for UX feedback, then switch to destination tab
-    setOriginAlreadySaved(true);
-    setOriginWasModified(false);
-    setActiveTab("destination");
-
-    // Save in background without blocking UI
-    apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload)
-      .then(() => {
-        // Invalidate queries in background without await
-        queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-        if (note.workerId) {
-          queryClient.invalidateQueries({ queryKey: ["/api/workers", note.workerId, "delivery-notes"] });
-        }
-      })
-      .catch((error) => {
-        console.error("Error saving origin signature:", error);
-        // Revert optimistic update on error
-        setOriginAlreadySaved(false);
-        setOriginWasModified(true);
+    try {
+      // Wait for the save to complete before switching tabs
+      await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, payload);
+      
+      // Only switch tabs and show success after confirmed save
+      setOriginAlreadySaved(true);
+      setOriginWasModified(false);
+      
+      toast({
+        title: "Firma de origen guardada",
+        description: "La firma de origen se guardó correctamente",
       });
+      
+      // Switch to destination tab after successful save
+      setActiveTab("destination");
+      
+      // Invalidate queries in background
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      if (note.workerId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/workers", note.workerId, "delivery-notes"] });
+      }
+    } catch (error) {
+      console.error("Error saving origin signature:", error);
+      toast({
+        title: "Error al guardar",
+        description: "No se pudo guardar la firma de origen. Intenta de nuevo.",
+        variant: "destructive",
+      });
+      // Don't change tabs on error
+    } finally {
+      setIsSavingOrigin(false);
+    }
   };
 
   // Handle photo capture for destination
