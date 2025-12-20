@@ -1297,12 +1297,7 @@ export default function WorkerDashboard() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={createDeliveryOpen} onOpenChange={(open) => {
-        setCreateDeliveryOpen(open);
-        if (open) {
-          setIsCreateDeliverySubmitted(false);
-        }
-      }}>
+      <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuevo Albarán</DialogTitle>
