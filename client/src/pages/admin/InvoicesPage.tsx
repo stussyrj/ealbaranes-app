@@ -647,26 +647,16 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                     ))}
                   </div>
                 )}
-                <div className="flex gap-2">
+                <div>
                   <Button
                     type="button"
                     variant="outline"
-                    className="flex-1"
+                    className="w-full"
                     onClick={addOptionalLineItem}
                     data-testid="button-add-optional-item"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Concepto Adicional
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={addWaitTimeItem}
-                    data-testid="button-add-wait-time"
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    Tiempo de Espera
                   </Button>
                 </div>
               </CardContent>
