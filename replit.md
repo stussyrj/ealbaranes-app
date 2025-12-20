@@ -20,10 +20,15 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 ### Precificación de Tiempo de Espera en Facturas (Diciembre 20, 2025)
 - **Función `downloadFile()`**: Nueva función en queryClient.ts que descarga archivos incluyendo JWT token en headers
 - **Descarga de facturas mejorada**: Botón PDF usa downloadFile() en lugar de window.open(), resuelve errores de autenticación
-- **Precificación de tiempo de espera**: En el modal de creación de facturas:
-  - Si un albarán tiene > 20 minutos de espera, se muestra un campo para precificarlo
-  - El tiempo de espera y su precio se incluyen automáticamente en la descripción final
+- **Tiempo de Espera como Concepto a Facturar**:
+  - En el modal de creación de facturas, paso "Precios", nueva sección "Conceptos Adicionales"
+  - Botón "Tiempo de Espera" (con icono de reloj) permite agregar líneas de tiempo de espera
+  - Para cada tiempo de espera: especificar minutos y precio por espera
+  - Se incluye en la descripción: "Tiempo de espera: XX min"
   - El precio se suma al total de la factura
+  - Funciona independientemente del tracking de "He llegado"/"He salido"
+- **Precificación automática**: Si un albarán tiene > 20 minutos de espera (tracked):
+  - Se muestra campo adicional en ese albarán para especificar precio
   - Formato: "... | Tiempo de espera: XX min - €YY.YY"
 
 ### Sistema de Tracking de Tiempos (Diciembre 19, 2025)

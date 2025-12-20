@@ -92,6 +92,8 @@ interface LineItemPrice {
   unitPrice: number;
   waitTime?: number;
   waitTimePrice?: number;
+  isWaitTime?: boolean;
+  waitTimeMinutes?: number;
 }
 
 interface CreateInvoiceModalProps {
@@ -113,6 +115,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
   const [paymentDays, setPaymentDays] = useState(30);
   const [includeObservations, setIncludeObservations] = useState(false);
   const [optionalLineItems, setOptionalLineItems] = useState<LineItemPrice[]>([]);
+  const [waitTimeItems, setWaitTimeItems] = useState<LineItemPrice[]>([]);
 
   const { data: deliveryNotes, isLoading: loadingNotes } = useQuery<DeliveryNote[]>({
     queryKey: ["/api/delivery-notes"],
@@ -128,7 +131,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
     (note) => note.photo && note.signature && !note.isInvoiced
   ) || [];
 
-  const allLineItems = [...lineItems, ...optionalLineItems];
+  const allLineItems = [...lineItems, ...optionalLineItems, ...waitTimeItems];
   const subtotal = allLineItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
   const taxAmount = Math.round((subtotal * (taxRate / 100)) * 100) / 100;
   const total = subtotal + taxAmount;
@@ -149,6 +152,26 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
 
   const removeOptionalLineItem = (index: number) => {
     setOptionalLineItems(optionalLineItems.filter((_, i) => i !== index));
+  };
+
+  const addWaitTimeItem = () => {
+    setWaitTimeItems([...waitTimeItems, {
+      description: "Tiempo de espera",
+      quantity: 1,
+      unitPrice: 0,
+      isWaitTime: true,
+      waitTimeMinutes: 30,
+    }]);
+  };
+
+  const updateWaitTimeItem = (index: number, field: keyof LineItemPrice, value: any) => {
+    const updated = [...waitTimeItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setWaitTimeItems(updated);
+  };
+
+  const removeWaitTimeItem = (index: number) => {
+    setWaitTimeItems(waitTimeItems.filter((_, i) => i !== index));
   };
 
   const createInvoiceMutation = useMutation({
@@ -187,6 +210,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
     setSelectedNotes([]);
     setLineItems([]);
     setOptionalLineItems([]);
+    setWaitTimeItems([]);
     setCustomerName("");
     setCustomerAddress("");
     setCustomerTaxId("");
@@ -278,9 +302,13 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       issueDate: new Date().toISOString(),
       dueDate,
       deliveryNoteIds,
-      lineItems: [...lineItems, ...optionalLineItems].map((item) => {
+      lineItems: [...lineItems, ...optionalLineItems, ...waitTimeItems].map((item) => {
         let finalDescription = item.description;
-        // Add wait time and price to description if applicable
+        // Add wait time minutes to description if it's a wait time item
+        if (item.isWaitTime && item.waitTimeMinutes) {
+          finalDescription = `Tiempo de espera: ${item.waitTimeMinutes} min`;
+        }
+        // Add wait time and price to description if applicable (from delivery note)
         if (item.waitTime && item.waitTime > 0 && item.waitTimePrice && item.waitTimePrice > 0) {
           const minutes = Math.round(item.waitTime / 60);
           finalDescription += ` | Tiempo de espera: ${minutes} min - €${item.waitTimePrice.toFixed(2)}`;
@@ -567,16 +595,77 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                     ))}
                   </div>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={addOptionalLineItem}
-                  data-testid="button-add-optional-item"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Concepto Adicional
-                </Button>
+                {waitTimeItems.length > 0 && (
+                  <div className="space-y-3">
+                    {waitTimeItems.map((item, index) => (
+                      <div key={`wait-${index}`} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg space-y-2">
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-1 space-y-1">
+                            <Label>Minutos de espera</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={item.waitTimeMinutes || ""}
+                              onChange={(e) => updateWaitTimeItem(index, "waitTimeMinutes", parseInt(e.target.value) || 0)}
+                              placeholder="30"
+                              data-testid={`input-wait-time-minutes-${index}`}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeWaitTimeItem(index)}
+                            className="mt-6"
+                            data-testid={`button-remove-wait-time-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-3 items-end">
+                          <div className="flex-1 space-y-1">
+                            <Label>Precio por espera (sin IVA)</Label>
+                            <div className="relative">
+                              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={item.unitPrice || ""}
+                                onChange={(e) => updateWaitTimeItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                className="pl-9"
+                                placeholder="0.00"
+                                data-testid={`input-wait-time-price-${index}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={addOptionalLineItem}
+                    data-testid="button-add-optional-item"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Concepto Adicional
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={addWaitTimeItem}
+                    data-testid="button-add-wait-time"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Tiempo de Espera
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
