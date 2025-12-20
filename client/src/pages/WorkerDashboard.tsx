@@ -169,10 +169,10 @@ export default function WorkerDashboard() {
   // Helper function to determine if a note is fully signed (has dual signatures from origin and destination)
   const isFullySigned = (note: DeliveryNote): boolean => {
     // New dual signature system: requires both origin and destination signatures with documents
-    const hasNewDualSignatures = note.originSignature && note.originSignatureDocument && 
-                                  note.destinationSignature && note.destinationSignatureDocument;
+    const hasNewDualSignatures = Boolean(note.originSignature && note.originSignatureDocument && 
+                                  note.destinationSignature && note.destinationSignatureDocument);
     // Legacy: old notes may still use photo + signature
-    const hasLegacySignatures = note.photo && note.signature;
+    const hasLegacySignatures = Boolean(note.photo && note.signature);
     return hasNewDualSignatures || hasLegacySignatures;
   };
   
@@ -1485,8 +1485,8 @@ export default function WorkerDashboard() {
 
                       const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
 
-                      if (response && response.id) {
-                        const newDeliveryNote = response as DeliveryNote;
+                      if (response && (response as unknown as DeliveryNote).id) {
+                        const newDeliveryNote = response as unknown as DeliveryNote;
                         
                         toast({ title: "Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
                         
