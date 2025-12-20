@@ -1437,15 +1437,7 @@ export default function WorkerDashboard() {
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={() => {
-                  // CLOSE MODAL IMMEDIATELY - FIRST OPERATION
-                  setCreateDeliveryOpen(false);
-                  
-                  // Prevent double submissions
-                  if (isSubmittingRef.current) {
-                    return;
-                  }
-                  
-                  // Capture data synchronously
+                  // Capture data synchronously (no state updates)
                   const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                   const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
                   
@@ -1462,24 +1454,29 @@ export default function WorkerDashboard() {
                     status: "pending",
                   };
                   
-                  isSubmittingRef.current = true;
-                  setIsCreatingDelivery(true);
+                  // Close modal EXACTLY like the X button does - single synchronous operation
+                  setCreateDeliveryOpen(false);
                   
-                  // Reset form immediately
-                  const now = new Date();
-                  setFormData({
-                    clientName: "",
-                    pickupOrigins: [{ name: "", address: "" }],
-                    destination: "",
-                    vehicleType: "Furgoneta",
-                    date: now.toISOString().split("T")[0],
-                    time: now.toTimeString().slice(0, 5),
-                    observations: "",
-                    waitTime: 0,
-                  });
-                  
-                  // Execute API request in background without blocking
+                  // Everything else happens in background
                   (async () => {
+                    if (isSubmittingRef.current) return;
+                    
+                    isSubmittingRef.current = true;
+                    setIsCreatingDelivery(true);
+                    
+                    // Reset form
+                    const now = new Date();
+                    setFormData({
+                      clientName: "",
+                      pickupOrigins: [{ name: "", address: "" }],
+                      destination: "",
+                      vehicleType: "Furgoneta",
+                      date: now.toISOString().split("T")[0],
+                      time: now.toTimeString().slice(0, 5),
+                      observations: "",
+                      waitTime: 0,
+                    });
+                    
                     try {
                       if (!effectiveWorkerId) {
                         console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
