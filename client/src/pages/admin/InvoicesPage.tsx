@@ -45,6 +45,7 @@ import {
   Eye,
   X,
   Trash2,
+  Edit,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -116,6 +117,8 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
   const [includeObservations, setIncludeObservations] = useState(false);
   const [optionalLineItems, setOptionalLineItems] = useState<LineItemPrice[]>([]);
   const [waitTimeItems, setWaitTimeItems] = useState<LineItemPrice[]>([]);
+  const [editingWaitTimeIndex, setEditingWaitTimeIndex] = useState<number | null>(null);
+  const [editedWaitTimeValues, setEditedWaitTimeValues] = useState<Record<string, number>>({});
 
   const { data: deliveryNotes, isLoading: loadingNotes } = useQuery<DeliveryNote[]>({
     queryKey: ["/api/delivery-notes"],
@@ -490,9 +493,11 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
               <CardContent className="space-y-3">
                 {lineItems.map((item, index) => {
                   const currentNote = signedNotes.find(n => n.id === item.deliveryNoteId);
-                  const waitTimeMinutes = currentNote && currentNote.arrivedAt && currentNote.departedAt 
+                  const originalWaitTimeMinutes = currentNote && currentNote.arrivedAt && currentNote.departedAt 
                     ? Math.round((new Date(currentNote.departedAt).getTime() - new Date(currentNote.arrivedAt).getTime()) / 1000 / 60)
                     : null;
+                  const displayWaitTimeMinutes = editedWaitTimeValues[item.deliveryNoteId!] ?? originalWaitTimeMinutes;
+                  const isEditingThis = editingWaitTimeIndex === index;
                   
                   return (
                   <div key={item.deliveryNoteId} className="p-3 bg-muted/50 rounded-lg space-y-2">
@@ -522,9 +527,52 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                         </div>
                       </div>
                     </div>
-                    {waitTimeMinutes && waitTimeMinutes > 0 && (
+                    {displayWaitTimeMinutes && displayWaitTimeMinutes > 0 && (
                       <div className="pt-2 border-t space-y-2">
-                        <p className="text-sm font-medium">Tiempo de espera: {waitTimeMinutes} minutos</p>
+                        {!isEditingThis ? (
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm font-medium">Tiempo de espera: {displayWaitTimeMinutes} minutos</p>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingWaitTimeIndex(index);
+                                setEditedWaitTimeValues(prev => ({
+                                  ...prev,
+                                  [item.deliveryNoteId!]: displayWaitTimeMinutes
+                                }));
+                              }}
+                              data-testid={`button-edit-wait-time-${index}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 items-end">
+                            <div className="flex-1 space-y-1">
+                              <Input
+                                type="number"
+                                min="1"
+                                value={editedWaitTimeValues[item.deliveryNoteId!] || ""}
+                                onChange={(e) => setEditedWaitTimeValues(prev => ({
+                                  ...prev,
+                                  [item.deliveryNoteId!]: parseInt(e.target.value) || 0
+                                }))}
+                                data-testid={`input-edit-wait-time-${index}`}
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingWaitTimeIndex(null)}
+                              data-testid={`button-confirm-edit-${index}`}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                         <div className="space-y-1">
                           <Label className="text-sm">Precio de espera (sin IVA)</Label>
                           <div className="relative">
