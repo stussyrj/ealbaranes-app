@@ -218,8 +218,8 @@ export function setupAuth(app: Express) {
       if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false, { message: "Credenciales incorrectas" });
       }
-      // Check email verification only for admin/company users (not workers)
-      if (user.isAdmin && !user.emailVerified) {
+      // Check email verification only for admin/company users in production
+      if (user.isAdmin && !user.emailVerified && process.env.NODE_ENV === 'production') {
         return done(null, false, { message: "EMAIL_NOT_VERIFIED" });
       }
       return done(null, user);
