@@ -1437,10 +1437,15 @@ export default function WorkerDashboard() {
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={() => {
-                  // CLOSE MODAL IMMEDIATELY - FIRST OPERATION ONLY
+                  // CLOSE MODAL IMMEDIATELY - FIRST OPERATION
                   setCreateDeliveryOpen(false);
                   
-                  // Capture data synchronously before anything async happens
+                  // Prevent double submissions
+                  if (isSubmittingRef.current) {
+                    return;
+                  }
+                  
+                  // Capture data synchronously
                   const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                   const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
                   
@@ -1457,68 +1462,60 @@ export default function WorkerDashboard() {
                     status: "pending",
                   };
                   
-                  // Do everything else AFTER the modal closes
-                  setTimeout(() => {
-                    // Prevent double submissions
-                    if (isSubmittingRef.current) {
-                      return;
-                    }
-                    
-                    isSubmittingRef.current = true;
-                    setIsCreatingDelivery(true);
-                    
-                    // Reset form
-                    const now = new Date();
-                    setFormData({
-                      clientName: "",
-                      pickupOrigins: [{ name: "", address: "" }],
-                      destination: "",
-                      vehicleType: "Furgoneta",
-                      date: now.toISOString().split("T")[0],
-                      time: now.toTimeString().slice(0, 5),
-                      observations: "",
-                      waitTime: 0,
-                    });
-                    
-                    // Execute API request in background
-                    (async () => {
-                      try {
-                        if (!effectiveWorkerId) {
-                          console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
-                          return;
-                        }
-
-                        const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
-
-                        if (response && response.id) {
-                          const newDeliveryNote = response as DeliveryNote;
-                          
-                          toast({ title: "Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
-                          
-                          const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
-                          const adminKey = ["/api/delivery-notes"];
-                          
-                          const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
-                          queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
-                          
-                          const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
-                          queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
-                          
-                          queryClient.invalidateQueries({ queryKey: workerKey });
-                          queryClient.invalidateQueries({ queryKey: adminKey });
-                        } else {
-                          console.error("[WorkerDashboard] Failed to create delivery note. Response:", response);
-                          toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
-                        }
-                      } catch (error) {
-                        console.error("[WorkerDashboard] Error creating delivery note:", error);
-                        toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
-                      } finally {
-                        isSubmittingRef.current = false;
-                        setIsCreatingDelivery(false);
+                  isSubmittingRef.current = true;
+                  setIsCreatingDelivery(true);
+                  
+                  // Reset form immediately
+                  const now = new Date();
+                  setFormData({
+                    clientName: "",
+                    pickupOrigins: [{ name: "", address: "" }],
+                    destination: "",
+                    vehicleType: "Furgoneta",
+                    date: now.toISOString().split("T")[0],
+                    time: now.toTimeString().slice(0, 5),
+                    observations: "",
+                    waitTime: 0,
+                  });
+                  
+                  // Execute API request in background without blocking
+                  (async () => {
+                    try {
+                      if (!effectiveWorkerId) {
+                        console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
+                        return;
                       }
-                    })();
-                  }, 0);
+
+                      const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
+
+                      if (response && response.id) {
+                        const newDeliveryNote = response as DeliveryNote;
+                        
+                        toast({ title: "Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
+                        
+                        const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
+                        const adminKey = ["/api/delivery-notes"];
+                        
+                        const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                        queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
+                        
+                        const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                        queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
+                        
+                        queryClient.invalidateQueries({ queryKey: workerKey });
+                        queryClient.invalidateQueries({ queryKey: adminKey });
+                      } else {
+                        console.error("[WorkerDashboard] Failed to create delivery note. Response:", response);
+                        toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
+                      }
+                    } catch (error) {
+                      console.error("[WorkerDashboard] Error creating delivery note:", error);
+                      toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
+                    } finally {
+                      isSubmittingRef.current = false;
+                      setIsCreatingDelivery(false);
+                    }
+                  })();
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
