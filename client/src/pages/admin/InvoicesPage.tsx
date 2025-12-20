@@ -265,7 +265,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
         description,
         quantity: 1,
         unitPrice: 0,
-        waitTime: note.waitTime && note.waitTime > 1200 ? note.waitTime : undefined,
+        waitTime: note.waitTime && note.waitTime > 0 ? note.waitTime : undefined,
         waitTimePrice: undefined,
       };
     });
