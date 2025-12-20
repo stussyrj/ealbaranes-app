@@ -455,10 +455,37 @@ export default function DashboardPage() {
       }
       return res.json();
     },
+    onMutate: async ({ noteId, arrivedAt, departedAt }) => {
+      // Cancel any outgoing refetches so they don't overwrite optimistic update
+      await queryClient.cancelQueries({ queryKey: ["/api/delivery-notes"] });
+
+      // Snapshot previous state for rollback
+      const previousData = queryClient.getQueryData<any[]>(["/api/delivery-notes"]);
+
+      // Optimistic update
+      queryClient.setQueryData(["/api/delivery-notes"], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map((note) =>
+          note.id === noteId
+            ? {
+                ...note,
+                ...(arrivedAt !== undefined && { arrivedAt }),
+                ...(departedAt !== undefined && { departedAt }),
+              }
+            : note
+        );
+      });
+
+      return { previousData };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _variables, context: any) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/delivery-notes"], context.previousData);
+      }
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
