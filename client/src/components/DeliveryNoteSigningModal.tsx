@@ -432,7 +432,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 </div>
               )}
               
-              <div className="space-y-2">
+              <div className="space-y-2 w-2/5">
                 <Label htmlFor="sign-origin-document">DNI / NIE / NIF del firmante</Label>
                 <Input
                   id="sign-origin-document"
@@ -520,7 +520,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 Firma de la persona que <strong>recibe</strong> el material en destino
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-2 w-2/5">
                 <Label htmlFor="sign-destination-document">DNI / NIE / NIF del firmante</Label>
                 <Input
                   id="sign-destination-document"
