@@ -1437,13 +1437,9 @@ export default function WorkerDashboard() {
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={() => {
-                  // Close modal FIRST - EXACTLY like the X button (single synchronous operation)
                   setCreateDeliveryOpen(false);
-                  
-                  // Capture data synchronously (no state updates)
                   const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                   const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
-                  
                   const deliveryNoteData = {
                     quoteId: `custom-${Date.now()}`,
                     workerId: effectiveWorkerId,
@@ -1456,15 +1452,10 @@ export default function WorkerDashboard() {
                     observations: formData.observations.trim() || null,
                     status: "pending",
                   };
-                  
-                  // Everything else happens in background
                   (async () => {
                     if (isSubmittingRef.current) return;
-                    
                     isSubmittingRef.current = true;
                     setIsCreatingDelivery(true);
-                    
-                    // Reset form
                     const now = new Date();
                     setFormData({
                       clientName: "",
@@ -1476,29 +1467,21 @@ export default function WorkerDashboard() {
                       observations: "",
                       waitTime: 0,
                     });
-                    
                     try {
                       if (!effectiveWorkerId) {
                         console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
                         return;
                       }
-
                       const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
-
                       if (response && (response as unknown as DeliveryNote).id) {
                         const newDeliveryNote = response as unknown as DeliveryNote;
-                        
                         toast({ title: "Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
-                        
                         const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
                         const adminKey = ["/api/delivery-notes"];
-                        
                         const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
                         queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
-                        
                         const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
                         queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
-                        
                         queryClient.invalidateQueries({ queryKey: workerKey });
                         queryClient.invalidateQueries({ queryKey: adminKey });
                       } else {
