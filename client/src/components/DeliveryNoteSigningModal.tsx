@@ -462,6 +462,19 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 {hasOriginSignature ? "Cambiar firma de origen" : "Capturar firma de origen"}
               </Button>
 
+              {hasOriginSignature && originSignature && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Previsualización de firma</Label>
+                  <div className="border-2 border-green-200 dark:border-green-900/40 rounded-lg overflow-hidden bg-green-50 dark:bg-green-950/20">
+                    <img 
+                      src={originSignature} 
+                      alt="Firma de origen" 
+                      className="w-full h-20 object-contain p-2"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 {isOriginComplete && (
                   <Button 
@@ -529,6 +542,19 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 <Camera className="w-6 h-6 mr-2" />
                 {hasDestinationSignature ? "Cambiar firma de destino" : "Capturar firma de destino"}
               </Button>
+
+              {hasDestinationSignature && destinationSignature && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Previsualización de firma</Label>
+                  <div className="border-2 border-green-200 dark:border-green-900/40 rounded-lg overflow-hidden bg-green-50 dark:bg-green-950/20">
+                    <img 
+                      src={destinationSignature} 
+                      alt="Firma de destino" 
+                      className="w-full h-20 object-contain p-2"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Photo capture for destination only */}
               <div className="space-y-2">
