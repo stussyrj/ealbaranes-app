@@ -1437,13 +1437,16 @@ export default function WorkerDashboard() {
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={() => {
+                  // CLOSE MODAL FIRST AND IMMEDIATELY
+                  setCreateDeliveryOpen(false);
+                  
                   // Prevent double submissions using ref
                   if (isSubmittingRef.current) {
                     console.warn("[WorkerDashboard] Already submitting, ignoring click");
                     return;
                   }
                   
-                  // Capture data FIRST before anything else
+                  // Capture data
                   const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                   const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
                   
@@ -1462,9 +1465,6 @@ export default function WorkerDashboard() {
                   
                   isSubmittingRef.current = true;
                   setIsCreatingDelivery(true);
-                  
-                  // Close modal immediately (no animation delay)
-                  setCreateDeliveryOpen(false);
                   
                   // Reset form immediately
                   const now = new Date();
