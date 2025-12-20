@@ -537,7 +537,7 @@ export default function WorkerDashboard() {
                 </Badge>
               </div>
               <CardTitle className="text-lg line-clamp-2">
-                {note.pickupOrigins?.length && note.destination ? `${formatOrigins(note.pickupOrigins)} → ${note.destination}` : note.quoteId}
+                {note.pickupOrigins?.length && note.destination ? `${formatOrigins(note.pickupOrigins)} → ${note.destination}` : (note.quoteId || 'N/A')}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 {note.clientName && `Cliente: ${note.clientName}`}
