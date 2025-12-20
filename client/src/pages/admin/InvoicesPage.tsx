@@ -160,7 +160,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       quantity: 1,
       unitPrice: 0,
       isWaitTime: true,
-      waitTimeMinutes: 30,
+      waitTimeMinutes: 0,
     }]);
   };
 
@@ -517,10 +517,22 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                       </div>
                     </div>
                     {item.waitTime && item.waitTime > 0 && (
-                      <div className="pt-2 border-t">
+                      <div className="pt-2 border-t space-y-2">
+                        <div className="space-y-1">
+                          <Label className="text-amber-700 dark:text-amber-300">Minutos de espera detectados: {Math.round(item.waitTime / 60)} min</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={item.waitTime ? Math.round(item.waitTime / 60) : ""}
+                            disabled
+                            className="bg-muted"
+                            data-testid={`input-wait-time-minutes-auto-${index}`}
+                          />
+                        </div>
                         <div className="flex gap-3 items-end">
                           <div className="flex-1 space-y-1">
-                            <Label className="text-amber-700 dark:text-amber-300">Tiempo de espera: {Math.round(item.waitTime / 60)} min</Label>
+                            <Label>Precio por minuto (sin IVA)</Label>
                             <div className="relative">
                               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                               <Input
@@ -530,7 +542,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                                 value={item.waitTimePrice || ""}
                                 onChange={(e) => updateLineItemWaitTimePrice(index, parseFloat(e.target.value) || 0)}
                                 className="pl-9"
-                                placeholder="Precio por espera..."
+                                placeholder="Ej: 0.50..."
                                 data-testid={`input-wait-time-price-${index}`}
                               />
                             </div>
@@ -599,32 +611,20 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                   <div className="space-y-3">
                     {waitTimeItems.map((item, index) => (
                       <div key={`wait-${index}`} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg space-y-2">
-                        <div className="flex gap-2 items-start">
-                          <div className="flex-1 space-y-1">
-                            <Label>Minutos de espera</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={item.waitTimeMinutes || ""}
-                              onChange={(e) => updateWaitTimeItem(index, "waitTimeMinutes", parseInt(e.target.value) || 0)}
-                              placeholder="30"
-                              data-testid={`input-wait-time-minutes-${index}`}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeWaitTimeItem(index)}
-                            className="mt-6"
-                            data-testid={`button-remove-wait-time-${index}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <div className="space-y-1">
+                          <Label>Minutos de espera *</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.waitTimeMinutes || ""}
+                            onChange={(e) => updateWaitTimeItem(index, "waitTimeMinutes", parseInt(e.target.value) || 0)}
+                            placeholder="Ej: 65"
+                            data-testid={`input-wait-time-minutes-${index}`}
+                          />
                         </div>
                         <div className="flex gap-3 items-end">
                           <div className="flex-1 space-y-1">
-                            <Label>Precio por espera (sin IVA)</Label>
+                            <Label>Precio (sin IVA)</Label>
                             <div className="relative">
                               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                               <Input
@@ -634,11 +634,20 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                                 value={item.unitPrice || ""}
                                 onChange={(e) => updateWaitTimeItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
                                 className="pl-9"
-                                placeholder="0.00"
+                                placeholder="Ej: 32.50"
                                 data-testid={`input-wait-time-price-${index}`}
                               />
                             </div>
                           </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeWaitTimeItem(index)}
+                            data-testid={`button-remove-wait-time-${index}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
