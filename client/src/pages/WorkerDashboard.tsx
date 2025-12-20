@@ -35,6 +35,7 @@ export default function WorkerDashboard() {
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
   const [isCreatingDelivery, setIsCreatingDelivery] = useState(false);
+  const [isCreateDeliverySubmitted, setIsCreateDeliverySubmitted] = useState(false);
   const [editDeliveryOpen, setEditDeliveryOpen] = useState(false);
   const [selectedNoteToEdit, setSelectedNoteToEdit] = useState<DeliveryNote | null>(null);
   const [albaranesModalOpen, setAlbaranesModalOpen] = useState(false);
@@ -1296,7 +1297,12 @@ export default function WorkerDashboard() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
+      <Dialog open={createDeliveryOpen} onOpenChange={(open) => {
+        setCreateDeliveryOpen(open);
+        if (open) {
+          setIsCreateDeliverySubmitted(false);
+        }
+      }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuevo Albarán</DialogTitle>
@@ -1435,8 +1441,9 @@ export default function WorkerDashboard() {
                 Cancelar
               </Button>
               <Button
-                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
+                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery || isCreateDeliverySubmitted}
                 onClick={() => {
+                  setIsCreateDeliverySubmitted(true);
                   const clickTime = Date.now();
                   console.log(`[Modal Close] Click at ${clickTime}`);
                   setCreateDeliveryOpen(false);
