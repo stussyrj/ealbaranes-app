@@ -28,11 +28,11 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
   - El precio se suma al total de la factura
   - Funciona independientemente del tracking de "He llegado"/"He salido"
 - **Precificación automática**: Si un albarán tiene tiempo de espera registrado (tracked con "He llegado"/"He salido"):
-  - Se muestra sección separada en ese albarán para especificar precio por minuto
-  - Muestra tiempo EXACTO en minutos en campo deshabilitado (ej: 62 min)
-  - Permite especificar precio por minuto o precio total
+  - Se muestra automáticamente con el tiempo EXACTO en minutos (ej: "Tiempo de espera: 62 minutos")
+  - El tiempo viene automáticamente del albarán, usuario NO lo edita
+  - Usuario solo especifica el PRECIO de ese tiempo de espera
   - Formato en descripción: "... | Tiempo de espera: XX min - €YY.YY"
-  - Se calcula correctamente cualquier duración (no solo >20 min)
+  - Se calcula correctamente cualquier duración (sin límite de minutos)
 
 ### Sistema de Tracking de Tiempos (Diciembre 19, 2025)
 - **Columnas `arrivedAt` y `departedAt`**: Añadidas a tabla delivery_notes

@@ -518,34 +518,25 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                     </div>
                     {item.waitTime && item.waitTime > 0 && (
                       <div className="pt-2 border-t space-y-2">
-                        <div className="space-y-1">
-                          <Label className="text-amber-700 dark:text-amber-300">Minutos de espera detectados: {Math.round(item.waitTime / 60)} min</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={item.waitTime ? Math.round(item.waitTime / 60) : ""}
-                            disabled
-                            className="bg-muted"
-                            data-testid={`input-wait-time-minutes-auto-${index}`}
-                          />
+                        <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded border border-amber-200 dark:border-amber-800">
+                          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                            Tiempo de espera: {Math.round(item.waitTime / 60)} minutos
+                          </p>
                         </div>
-                        <div className="flex gap-3 items-end">
-                          <div className="flex-1 space-y-1">
-                            <Label>Precio por minuto (sin IVA)</Label>
-                            <div className="relative">
-                              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={item.waitTimePrice || ""}
-                                onChange={(e) => updateLineItemWaitTimePrice(index, parseFloat(e.target.value) || 0)}
-                                className="pl-9"
-                                placeholder="Ej: 0.50..."
-                                data-testid={`input-wait-time-price-${index}`}
-                              />
-                            </div>
+                        <div className="space-y-1">
+                          <Label>Precio de espera (sin IVA)</Label>
+                          <div className="relative">
+                            <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.waitTimePrice || ""}
+                              onChange={(e) => updateLineItemWaitTimePrice(index, parseFloat(e.target.value) || 0)}
+                              className="pl-9"
+                              placeholder="Ej: 32.50"
+                              data-testid={`input-wait-time-price-${index}`}
+                            />
                           </div>
                         </div>
                       </div>
