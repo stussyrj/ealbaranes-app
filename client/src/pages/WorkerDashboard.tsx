@@ -1438,13 +1438,10 @@ export default function WorkerDashboard() {
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery || isCreateDeliverySubmitted}
                 onClick={() => {
-                  setIsCreateDeliverySubmitted(true);
-                  const clickTime = Date.now();
-                  console.log(`[Modal Close] Click at ${clickTime}`);
-                  setCreateDeliveryOpen(false);
-                  console.log(`[Modal Close] State set to false, elapsed: ${Date.now() - clickTime}ms`);
                   if (isSubmittingRef.current) return;
                   isSubmittingRef.current = true;
+                  setIsCreateDeliverySubmitted(true);
+                  setCreateDeliveryOpen(false);
                   setIsCreatingDelivery(true);
                   const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                   const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
