@@ -1457,15 +1457,10 @@ export default function WorkerDashboard() {
                       status: "pending",
                     };
 
-                    const response = await fetch("/api/delivery-notes", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(deliveryNoteData),
-                      credentials: "include",
-                    });
+                    const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
 
-                    if (response.ok) {
-                      const newDeliveryNote = await response.json();
+                    if (response && response.id) {
+                      const newDeliveryNote = response;
                       setCreateDeliveryOpen(false);
                       
                       const now = new Date();
@@ -1494,11 +1489,12 @@ export default function WorkerDashboard() {
                       queryClient.invalidateQueries({ queryKey: workerKey });
                       queryClient.invalidateQueries({ queryKey: adminKey });
                     } else {
+                      console.error("[WorkerDashboard] Failed to create delivery note. Response:", response);
                       toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
                     }
                   } catch (error) {
-                    console.error("Error guardando albarán:", error);
-                    toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
+                    console.error("[WorkerDashboard] Error creating delivery note:", error);
+                    toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
                   }
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
