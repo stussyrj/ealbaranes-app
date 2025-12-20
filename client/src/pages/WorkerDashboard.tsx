@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, lazy, Suspense } from "react";
+import { useState, useRef, useEffect, lazy, Suspense, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +62,8 @@ export default function WorkerDashboard() {
   const frameIdRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isSubmittingRef = useRef(false);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  const isCreateDeliveryLockedRef = useRef(false);
   const [formData, setFormData] = useState({
     clientName: "",
     pickupOrigins: [{ name: "", address: "" }] as PickupOrigin[],
@@ -1297,7 +1300,17 @@ export default function WorkerDashboard() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
+      <Dialog open={createDeliveryOpen} onOpenChange={(open) => {
+        if (open) {
+          isCreateDeliveryLockedRef.current = false;
+          isSubmittingRef.current = false;
+          setIsCreateDeliverySubmitted(false);
+          if (createButtonRef.current) {
+            createButtonRef.current.disabled = false;
+          }
+        }
+        setCreateDeliveryOpen(open);
+      }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuevo Albarán</DialogTitle>
@@ -1436,16 +1449,17 @@ export default function WorkerDashboard() {
                 Cancelar
               </Button>
               <Button
+                ref={createButtonRef}
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery || isCreateDeliverySubmitted}
-                style={{ pointerEvents: isCreatingDelivery || isCreateDeliverySubmitted ? 'none' : 'auto' }}
                 onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (isSubmittingRef.current) return;
-                  isSubmittingRef.current = true;
-                  setIsCreateDeliverySubmitted(true);
-                  setCreateDeliveryOpen(false);
-                  setIsCreatingDelivery(true);
+                  if (isCreateDeliveryLockedRef.current) return;
+                  isCreateDeliveryLockedRef.current = true;
+                  
+                  if (createButtonRef.current) {
+                    createButtonRef.current.disabled = true;
+                    createButtonRef.current.style.pointerEvents = 'none';
+                  }
+                  
                   const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                   const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
                   const deliveryNoteData = {
@@ -1460,6 +1474,13 @@ export default function WorkerDashboard() {
                     observations: formData.observations.trim() || null,
                     status: "pending",
                   };
+                  
+                  flushSync(() => {
+                    setIsCreateDeliverySubmitted(true);
+                    setIsCreatingDelivery(true);
+                    setCreateDeliveryOpen(false);
+                  });
+                  
                   const now = new Date();
                   setFormData({
                     clientName: "",
@@ -1471,7 +1492,8 @@ export default function WorkerDashboard() {
                     observations: "",
                     waitTime: 0,
                   });
-                  (async () => {
+                  
+                  queueMicrotask(async () => {
                     try {
                       if (!effectiveWorkerId) {
                         console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
@@ -1497,10 +1519,9 @@ export default function WorkerDashboard() {
                       console.error("[WorkerDashboard] Error creating delivery note:", error);
                       toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
                     } finally {
-                      isSubmittingRef.current = false;
                       setIsCreatingDelivery(false);
                     }
-                  })();
+                  });
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
