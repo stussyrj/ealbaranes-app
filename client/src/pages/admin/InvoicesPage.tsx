@@ -488,7 +488,13 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                 <CardTitle className="text-base">Conceptos a Facturar</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {lineItems.map((item, index) => (
+                {lineItems.map((item, index) => {
+                  const currentNote = signedNotes.find(n => n.id === item.deliveryNoteId);
+                  const waitTimeMinutes = currentNote && currentNote.arrivedAt && currentNote.departedAt 
+                    ? Math.round((new Date(currentNote.departedAt).getTime() - new Date(currentNote.arrivedAt).getTime()) / 1000 / 60)
+                    : null;
+                  
+                  return (
                   <div key={item.deliveryNoteId} className="p-3 bg-muted/50 rounded-lg space-y-2">
                     <div className="space-y-1">
                       <Label>Descripción</Label>
@@ -516,15 +522,11 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                         </div>
                       </div>
                     </div>
-                    {item.waitTime && item.waitTime > 0 && (
-                      <div className="pt-2 border-t space-y-2">
-                        <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded border border-amber-200 dark:border-amber-800">
-                          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                            Tiempo de espera: {Math.round(item.waitTime / 60)} minutos
-                          </p>
-                        </div>
+                    {waitTimeMinutes && waitTimeMinutes > 0 && (
+                      <div className="pt-2 border-t space-y-2 bg-amber-50 dark:bg-amber-900/30 -mx-3 -mb-2 px-3 py-2 rounded-b-lg">
+                        <Label className="text-amber-900 dark:text-amber-200 font-semibold">Tiempo de espera: {waitTimeMinutes} minutos</Label>
                         <div className="space-y-1">
-                          <Label>Precio de espera (sin IVA)</Label>
+                          <Label className="text-sm">Precio de espera (sin IVA)</Label>
                           <div className="relative">
                             <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -542,7 +544,8 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
 
