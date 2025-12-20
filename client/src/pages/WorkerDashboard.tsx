@@ -34,6 +34,7 @@ export default function WorkerDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Quote | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
+  const [isCreatingDelivery, setIsCreatingDelivery] = useState(false);
   const [editDeliveryOpen, setEditDeliveryOpen] = useState(false);
   const [selectedNoteToEdit, setSelectedNoteToEdit] = useState<DeliveryNote | null>(null);
   const [albaranesModalOpen, setAlbaranesModalOpen] = useState(false);
@@ -1433,8 +1434,9 @@ export default function WorkerDashboard() {
                 Cancelar
               </Button>
               <Button
-                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim()}
+                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={async () => {
+                  setIsCreatingDelivery(true);
                   try {
                     if (!effectiveWorkerId) {
                       console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
@@ -1460,7 +1462,7 @@ export default function WorkerDashboard() {
                     const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
 
                     if (response && response.id) {
-                      const newDeliveryNote = response;
+                      const newDeliveryNote = response as DeliveryNote;
                       setCreateDeliveryOpen(false);
                       
                       const now = new Date();
@@ -1495,11 +1497,13 @@ export default function WorkerDashboard() {
                   } catch (error) {
                     console.error("[WorkerDashboard] Error creating delivery note:", error);
                     toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
+                  } finally {
+                    setIsCreatingDelivery(false);
                   }
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
-                Crear Albarán
+                {isCreatingDelivery ? "Creando..." : "Crear Albarán"}
               </Button>
             </div>
           </div>
