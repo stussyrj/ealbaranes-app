@@ -1438,21 +1438,21 @@ export default function WorkerDashboard() {
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={() => {
                   setCreateDeliveryOpen(false);
-                  const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
-                  const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
-                  const deliveryNoteData = {
-                    quoteId: `custom-${Date.now()}`,
-                    workerId: effectiveWorkerId,
-                    clientName: formData.clientName.trim(),
-                    pickupOrigins: validRoutes,
-                    destination: lastDestination.trim(),
-                    vehicleType: formData.vehicleType,
-                    date: formData.date,
-                    time: formData.time,
-                    observations: formData.observations.trim() || null,
-                    status: "pending",
-                  };
-                  setTimeout(() => {
+                  requestAnimationFrame(() => {
+                    const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
+                    const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
+                    const deliveryNoteData = {
+                      quoteId: `custom-${Date.now()}`,
+                      workerId: effectiveWorkerId,
+                      clientName: formData.clientName.trim(),
+                      pickupOrigins: validRoutes,
+                      destination: lastDestination.trim(),
+                      vehicleType: formData.vehicleType,
+                      date: formData.date,
+                      time: formData.time,
+                      observations: formData.observations.trim() || null,
+                      status: "pending",
+                    };
                     (async () => {
                       if (isSubmittingRef.current) return;
                       isSubmittingRef.current = true;
@@ -1497,7 +1497,7 @@ export default function WorkerDashboard() {
                         setIsCreatingDelivery(false);
                       }
                     })();
-                  }, 0);
+                  });
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
