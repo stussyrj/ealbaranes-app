@@ -583,8 +583,8 @@ export async function registerRoutes(
       console.log("[routes] Creating delivery note. User:", user?.id, "isAdmin:", user?.isAdmin);
       
       // Validate required fields
-      if (!data.workerId || !data.quoteId) {
-        return res.status(400).json({ error: "workerId y quoteId son requeridos" });
+      if (!data.workerId) {
+        return res.status(400).json({ error: "workerId es requerido" });
       }
       
       // Determine creatorType based on authenticated user
@@ -593,7 +593,7 @@ export async function registerRoutes(
       
       // Map camelCase to snake_case for DB columns
       const noteData = {
-        quoteId: data.quoteId,
+        quoteId: data.quoteId || null,
         workerId: data.workerId,
         creatorType: creatorType,
         tenantId: user.tenantId,
