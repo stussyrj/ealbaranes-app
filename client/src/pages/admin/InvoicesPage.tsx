@@ -90,6 +90,8 @@ interface LineItemPrice {
   description: string;
   quantity: number;
   unitPrice: number;
+  waitTime?: number;
+  waitTimePrice?: number;
 }
 
 interface CreateInvoiceModalProps {
@@ -230,11 +232,6 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       if (note.vehicleType) {
         description += ` | Vehículo: ${note.vehicleType}`;
       }
-      // Include wait time if > 20 minutes
-      if (note.waitTime && note.waitTime > 1200) {
-        const minutes = Math.round(note.waitTime / 60);
-        description += ` | Tiempo de espera: ${minutes} min`;
-      }
       if (includeObservations && note.observations) {
         description += ` | Obs: ${note.observations}`;
       }
@@ -244,6 +241,8 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
         description,
         quantity: 1,
         unitPrice: 0,
+        waitTime: note.waitTime && note.waitTime > 1200 ? note.waitTime : undefined,
+        waitTimePrice: undefined,
       };
     });
     setLineItems(items);
@@ -279,12 +278,20 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       issueDate: new Date().toISOString(),
       dueDate,
       deliveryNoteIds,
-      lineItems: [...lineItems, ...optionalLineItems].map((item) => ({
-        deliveryNoteId: item.deliveryNoteId,
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      })),
+      lineItems: [...lineItems, ...optionalLineItems].map((item) => {
+        let finalDescription = item.description;
+        // Add wait time and price to description if applicable
+        if (item.waitTime && item.waitTime > 0 && item.waitTimePrice && item.waitTimePrice > 0) {
+          const minutes = Math.round(item.waitTime / 60);
+          finalDescription += ` | Tiempo de espera: ${minutes} min - €${item.waitTimePrice.toFixed(2)}`;
+        }
+        return {
+          deliveryNoteId: item.deliveryNoteId,
+          description: finalDescription,
+          quantity: item.quantity,
+          unitPrice: item.waitTimePrice ? item.unitPrice + item.waitTimePrice : item.unitPrice,
+        };
+      }),
     });
   };
 
@@ -297,6 +304,12 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
   const updateLineItemDescription = (index: number, description: string) => {
     setLineItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, description } : item))
+    );
+  };
+
+  const updateLineItemWaitTimePrice = (index: number, price: number) => {
+    setLineItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, waitTimePrice: price } : item))
     );
   };
 
@@ -475,6 +488,28 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                         </div>
                       </div>
                     </div>
+                    {item.waitTime && item.waitTime > 0 && (
+                      <div className="pt-2 border-t">
+                        <div className="flex gap-3 items-end">
+                          <div className="flex-1 space-y-1">
+                            <Label className="text-amber-700 dark:text-amber-300">Tiempo de espera: {Math.round(item.waitTime / 60)} min</Label>
+                            <div className="relative">
+                              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={item.waitTimePrice || ""}
+                                onChange={(e) => updateLineItemWaitTimePrice(index, parseFloat(e.target.value) || 0)}
+                                className="pl-9"
+                                placeholder="Precio por espera..."
+                                data-testid={`input-wait-time-price-${index}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </CardContent>
