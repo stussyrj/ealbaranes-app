@@ -1452,50 +1452,52 @@ export default function WorkerDashboard() {
                     observations: formData.observations.trim() || null,
                     status: "pending",
                   };
-                  (async () => {
-                    if (isSubmittingRef.current) return;
-                    isSubmittingRef.current = true;
-                    setIsCreatingDelivery(true);
-                    const now = new Date();
-                    setFormData({
-                      clientName: "",
-                      pickupOrigins: [{ name: "", address: "" }],
-                      destination: "",
-                      vehicleType: "Furgoneta",
-                      date: now.toISOString().split("T")[0],
-                      time: now.toTimeString().slice(0, 5),
-                      observations: "",
-                      waitTime: 0,
-                    });
-                    try {
-                      if (!effectiveWorkerId) {
-                        console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
-                        return;
+                  setTimeout(() => {
+                    (async () => {
+                      if (isSubmittingRef.current) return;
+                      isSubmittingRef.current = true;
+                      setIsCreatingDelivery(true);
+                      const now = new Date();
+                      setFormData({
+                        clientName: "",
+                        pickupOrigins: [{ name: "", address: "" }],
+                        destination: "",
+                        vehicleType: "Furgoneta",
+                        date: now.toISOString().split("T")[0],
+                        time: now.toTimeString().slice(0, 5),
+                        observations: "",
+                        waitTime: 0,
+                      });
+                      try {
+                        if (!effectiveWorkerId) {
+                          console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
+                          return;
+                        }
+                        const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
+                        if (response && (response as unknown as DeliveryNote).id) {
+                          const newDeliveryNote = response as unknown as DeliveryNote;
+                          toast({ title: "Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
+                          const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
+                          const adminKey = ["/api/delivery-notes"];
+                          const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
+                          queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
+                          const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
+                          queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
+                          queryClient.invalidateQueries({ queryKey: workerKey });
+                          queryClient.invalidateQueries({ queryKey: adminKey });
+                        } else {
+                          console.error("[WorkerDashboard] Failed to create delivery note. Response:", response);
+                          toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
+                        }
+                      } catch (error) {
+                        console.error("[WorkerDashboard] Error creating delivery note:", error);
+                        toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
+                      } finally {
+                        isSubmittingRef.current = false;
+                        setIsCreatingDelivery(false);
                       }
-                      const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
-                      if (response && (response as unknown as DeliveryNote).id) {
-                        const newDeliveryNote = response as unknown as DeliveryNote;
-                        toast({ title: "Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
-                        const workerKey = ["/api/workers", effectiveWorkerId || "", "delivery-notes"];
-                        const adminKey = ["/api/delivery-notes"];
-                        const workerNotes = queryClient.getQueryData<DeliveryNote[]>(workerKey) || [];
-                        queryClient.setQueryData(workerKey, [newDeliveryNote, ...workerNotes]);
-                        const allNotes = queryClient.getQueryData<DeliveryNote[]>(adminKey) || [];
-                        queryClient.setQueryData(adminKey, [newDeliveryNote, ...allNotes]);
-                        queryClient.invalidateQueries({ queryKey: workerKey });
-                        queryClient.invalidateQueries({ queryKey: adminKey });
-                      } else {
-                        console.error("[WorkerDashboard] Failed to create delivery note. Response:", response);
-                        toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
-                      }
-                    } catch (error) {
-                      console.error("[WorkerDashboard] Error creating delivery note:", error);
-                      toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
-                    } finally {
-                      isSubmittingRef.current = false;
-                      setIsCreatingDelivery(false);
-                    }
-                  })();
+                    })();
+                  }, 0);
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
