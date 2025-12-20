@@ -165,7 +165,7 @@ export default function WorkerDashboard() {
   };
 
   // Helper function to determine if a note is fully signed (has dual signatures from origin and destination)
-  const isFullySigned = (note: DeliveryNote) => {
+  const isFullySigned = (note: DeliveryNote): boolean => {
     // New dual signature system: requires both origin and destination signatures with documents
     const hasNewDualSignatures = note.originSignature && note.originSignatureDocument && 
                                   note.destinationSignature && note.destinationSignatureDocument;
