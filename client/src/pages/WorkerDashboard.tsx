@@ -59,6 +59,7 @@ export default function WorkerDashboard() {
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const frameIdRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isSubmittingRef = useRef(false);
   const [formData, setFormData] = useState({
     clientName: "",
     pickupOrigins: [{ name: "", address: "" }] as PickupOrigin[],
@@ -1436,6 +1437,13 @@ export default function WorkerDashboard() {
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={async () => {
+                  // Prevent double submissions using ref
+                  if (isSubmittingRef.current) {
+                    console.warn("[WorkerDashboard] Already submitting, ignoring click");
+                    return;
+                  }
+                  
+                  isSubmittingRef.current = true;
                   setIsCreatingDelivery(true);
                   try {
                     if (!effectiveWorkerId) {
@@ -1498,6 +1506,7 @@ export default function WorkerDashboard() {
                     console.error("[WorkerDashboard] Error creating delivery note:", error);
                     toast({ title: "Error", description: `No se pudo crear el albarán: ${error instanceof Error ? error.message : 'Error desconocido'}`, variant: "destructive" });
                   } finally {
+                    isSubmittingRef.current = false;
                     setIsCreatingDelivery(false);
                   }
                 }}
