@@ -1437,6 +1437,9 @@ export default function WorkerDashboard() {
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={() => {
+                  // Close modal FIRST - EXACTLY like the X button (single synchronous operation)
+                  setCreateDeliveryOpen(false);
+                  
                   // Capture data synchronously (no state updates)
                   const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                   const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
@@ -1453,9 +1456,6 @@ export default function WorkerDashboard() {
                     observations: formData.observations.trim() || null,
                     status: "pending",
                   };
-                  
-                  // Close modal EXACTLY like the X button does - single synchronous operation
-                  setCreateDeliveryOpen(false);
                   
                   // Everything else happens in background
                   (async () => {
