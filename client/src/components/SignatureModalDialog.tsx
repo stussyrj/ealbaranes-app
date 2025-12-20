@@ -171,7 +171,7 @@ export function SignatureModalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl h-[60vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
