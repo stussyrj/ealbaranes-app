@@ -523,8 +523,8 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                       </div>
                     </div>
                     {waitTimeMinutes && waitTimeMinutes > 0 && (
-                      <div className="pt-2 border-t space-y-2 bg-amber-50 dark:bg-amber-900/30 -mx-3 -mb-2 px-3 py-2 rounded-b-lg">
-                        <Label className="text-amber-900 dark:text-amber-200 font-semibold">Tiempo de espera: {waitTimeMinutes} minutos</Label>
+                      <div className="pt-2 border-t space-y-2">
+                        <p className="text-sm font-medium">Tiempo de espera: {waitTimeMinutes} minutos</p>
                         <div className="space-y-1">
                           <Label className="text-sm">Precio de espera (sin IVA)</Label>
                           <div className="relative">
