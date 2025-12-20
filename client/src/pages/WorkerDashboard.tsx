@@ -1443,10 +1443,27 @@ export default function WorkerDashboard() {
                     return;
                   }
                   
+                  // Capture data FIRST before anything else
+                  const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
+                  const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
+                  
+                  const deliveryNoteData = {
+                    quoteId: `custom-${Date.now()}`,
+                    workerId: effectiveWorkerId,
+                    clientName: formData.clientName.trim(),
+                    pickupOrigins: validRoutes,
+                    destination: lastDestination.trim(),
+                    vehicleType: formData.vehicleType,
+                    date: formData.date,
+                    time: formData.time,
+                    observations: formData.observations.trim() || null,
+                    status: "pending",
+                  };
+                  
                   isSubmittingRef.current = true;
                   setIsCreatingDelivery(true);
                   
-                  // Close modal immediately
+                  // Close modal immediately (no animation delay)
                   setCreateDeliveryOpen(false);
                   
                   // Reset form immediately
@@ -1462,29 +1479,13 @@ export default function WorkerDashboard() {
                     waitTime: 0,
                   });
                   
-                  // Execute the API request in the background (no await)
+                  // Execute the API request in the background with captured data
                   (async () => {
                     try {
                       if (!effectiveWorkerId) {
                         console.error("No workerId available:", { userId: user?.id, effectiveWorkerId });
                         return;
                       }
-
-                      const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
-                      const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
-
-                      const deliveryNoteData = {
-                        quoteId: `custom-${Date.now()}`,
-                        workerId: effectiveWorkerId,
-                        clientName: formData.clientName.trim(),
-                        pickupOrigins: validRoutes,
-                        destination: lastDestination.trim(),
-                        vehicleType: formData.vehicleType,
-                        date: formData.date,
-                        time: formData.time,
-                        observations: formData.observations.trim() || null,
-                        status: "pending",
-                      };
 
                       const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
 
