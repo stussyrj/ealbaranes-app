@@ -464,7 +464,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 </Button>
               ) : (
                 <div className="space-y-2">
-                  <div className="relative border-4 border-blue-500 dark:border-blue-400 rounded-lg overflow-hidden bg-white h-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
+                  <div className="relative border-4 border-blue-500 dark:border-blue-400 rounded-lg overflow-hidden bg-white h-20 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
                     onClick={() => {
                       setSignatureModalType("origin");
                       setSignatureModalOpen(true);
@@ -552,7 +552,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 </Button>
               ) : (
                 <div className="space-y-2">
-                  <div className="relative border-4 border-green-500 dark:border-green-400 rounded-lg overflow-hidden bg-white h-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
+                  <div className="relative border-4 border-green-500 dark:border-green-400 rounded-lg overflow-hidden bg-white h-20 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
                     onClick={() => {
                       setSignatureModalType("destination");
                       setSignatureModalOpen(true);
