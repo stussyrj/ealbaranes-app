@@ -180,7 +180,7 @@ export type PickupOrigin = z.infer<typeof pickupOriginSchema>;
 export const deliveryNotes = pgTable("delivery_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   noteNumber: integer("note_number").notNull(),
-  quoteId: varchar("quote_id"),
+  quoteId: varchar("quote_id"), // Nullable - optional field
   workerId: varchar("worker_id").notNull(),
   creatorType: text("creator_type").default("worker"),
   clientName: text("client_name"),

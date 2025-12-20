@@ -17,6 +17,14 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 
 ## Últimos Cambios
 
+### PRUEBA EXITOSA EN TIEMPO REAL (Diciembre 20, 2025 - 22:50 UTC)
+- **Creación de albarán con JWT**: Prueba exitosa usando usuario Daniel/daniel123
+- **Sistema de autenticación JWT funcionando correctamente**: Token generado y validado correctamente
+- **Base de datos sincronizada**: Campo `quote_id` hecho nullable en delivery_notes
+- **Albarán #11 creado**: ID 5244c737-937c-4f10-baae-f39da8ffd804
+- **Verificación en PostgreSQL**: Datos persistidos correctamente en la base de datos
+- **Conclusión**: eAlbarán está completamente operacional y listo para usar
+
 ### Precificación de Tiempo de Espera en Facturas (Diciembre 20, 2025)
 - **Función `downloadFile()`**: Nueva función en queryClient.ts que descarga archivos incluyendo JWT token en headers
 - **Descarga de facturas mejorada**: Botón PDF usa downloadFile() en lugar de window.open(), resuelve errores de autenticación
