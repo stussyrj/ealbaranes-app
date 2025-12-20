@@ -230,6 +230,11 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       if (note.vehicleType) {
         description += ` | Vehículo: ${note.vehicleType}`;
       }
+      // Include wait time if > 20 minutes
+      if (note.waitTime && note.waitTime > 1200) {
+        const minutes = Math.round(note.waitTime / 60);
+        description += ` | Tiempo de espera: ${minutes} min`;
+      }
       if (includeObservations && note.observations) {
         description += ` | Obs: ${note.observations}`;
       }
