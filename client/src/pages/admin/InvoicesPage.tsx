@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, downloadFile } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1013,6 +1013,7 @@ function getStatusBadge(status: string) {
 }
 
 function InvoiceList() {
+  const { toast } = useToast();
   const { data: invoices, isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
   });
@@ -1078,7 +1079,15 @@ function InvoiceList() {
                   variant="outline"
                   onClick={(e) => {
                     e.stopPropagation();
-                    window.open(`/api/invoices/${invoice.id}/pdf`, '_blank');
+                    const filename = `Factura_${invoice.invoicePrefix || ""}${invoice.invoiceNumber}.pdf`;
+                    downloadFile(`/api/invoices/${invoice.id}/pdf`, filename).catch((error) => {
+                      console.error("Error downloading invoice:", error);
+                      toast({
+                        title: "Error al descargar",
+                        description: "No se pudo descargar la factura. Asegúrate de estar autenticado.",
+                        variant: "destructive",
+                      });
+                    });
                   }}
                   data-testid={`button-download-pdf-${invoice.id}`}
                 >

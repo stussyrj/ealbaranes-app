@@ -69,6 +69,28 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+export async function downloadFile(url: string, filename: string): Promise<void> {
+  const headers = getAuthHeaders();
+  
+  const res = await fetch(url, {
+    headers,
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Error descargando archivo: ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
