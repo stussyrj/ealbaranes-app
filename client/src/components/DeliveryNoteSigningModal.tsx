@@ -464,7 +464,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 </Button>
               ) : (
                 <div className="space-y-2">
-                  <div className="relative border-2 border-blue-400 dark:border-blue-500 rounded-lg overflow-hidden bg-white dark:bg-slate-800 h-24 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity" 
+                  <div className="relative border-4 border-blue-500 dark:border-blue-400 rounded-lg overflow-hidden bg-white h-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
                     onClick={() => {
                       setSignatureModalType("origin");
                       setSignatureModalOpen(true);
@@ -474,8 +474,8 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                       alt="Firma de origen" 
                       className="w-full h-full object-contain p-2"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
-                      <Camera className="w-5 h-5 text-white opacity-0 hover:opacity-100" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
+                      <Camera className="w-5 h-5 text-blue-500 opacity-0 hover:opacity-100" />
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">Toca para cambiar firma</p>
@@ -552,7 +552,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 </Button>
               ) : (
                 <div className="space-y-2">
-                  <div className="relative border-2 border-green-400 dark:border-green-500 rounded-lg overflow-hidden bg-white dark:bg-slate-800 h-24 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity" 
+                  <div className="relative border-4 border-green-500 dark:border-green-400 rounded-lg overflow-hidden bg-white h-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
                     onClick={() => {
                       setSignatureModalType("destination");
                       setSignatureModalOpen(true);
@@ -562,8 +562,8 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                       alt="Firma de destino" 
                       className="w-full h-full object-contain p-2"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
-                      <Camera className="w-5 h-5 text-white opacity-0 hover:opacity-100" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
+                      <Camera className="w-5 h-5 text-green-500 opacity-0 hover:opacity-100" />
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">Toca para cambiar firma</p>
