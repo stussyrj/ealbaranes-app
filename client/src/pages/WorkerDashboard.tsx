@@ -1437,7 +1437,10 @@ export default function WorkerDashboard() {
               </Button>
               <Button
                 disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery || isCreateDeliverySubmitted}
-                onClick={() => {
+                style={{ pointerEvents: isCreatingDelivery || isCreateDeliverySubmitted ? 'none' : 'auto' }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   if (isSubmittingRef.current) return;
                   isSubmittingRef.current = true;
                   setIsCreateDeliverySubmitted(true);
