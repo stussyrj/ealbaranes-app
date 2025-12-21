@@ -1466,10 +1466,13 @@ export default function WorkerDashboard() {
                     };
 
                     const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
+                    console.log("[WorkerDashboard] Create response status:", response.status);
                     const data = await response.json();
+                    console.log("[WorkerDashboard] Create response data:", data);
                     
                     if (data && data.id) {
                       const newDeliveryNote = data as DeliveryNote;
+                      console.log("[WorkerDashboard] Created delivery note:", newDeliveryNote.noteNumber);
                       toast({ title: "✓ Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
                       
                       const workerKey = ["/api/workers", effectiveWorkerId, "delivery-notes"];
@@ -1492,6 +1495,7 @@ export default function WorkerDashboard() {
                         waitTime: 0,
                       });
                     } else {
+                      console.error("[WorkerDashboard] Failed to create - missing data or id:", { data, hasId: data?.id });
                       toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
                     }
                   } catch (error) {
