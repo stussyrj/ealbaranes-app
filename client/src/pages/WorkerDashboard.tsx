@@ -1466,9 +1466,10 @@ export default function WorkerDashboard() {
                     };
 
                     const response = await apiRequest("POST", "/api/delivery-notes", deliveryNoteData);
+                    const data = await response.json();
                     
-                    if (response && (response as unknown as DeliveryNote).id) {
-                      const newDeliveryNote = response as unknown as DeliveryNote;
+                    if (data && data.id) {
+                      const newDeliveryNote = data as DeliveryNote;
                       toast({ title: "✓ Albarán creado", description: `Albarán #${newDeliveryNote.noteNumber} guardado` });
                       
                       const workerKey = ["/api/workers", effectiveWorkerId, "delivery-notes"];
