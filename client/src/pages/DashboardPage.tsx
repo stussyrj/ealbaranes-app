@@ -106,7 +106,8 @@ export default function DashboardPage() {
       try {
         setIsLoadingVehicles(true);
         // Use tenant-specific endpoint that returns the array of vehicle types
-        const types: any = await apiRequest("GET", "/api/tenant/vehicle-types");
+        const response = await apiRequest("GET", "/api/tenant/vehicle-types");
+        const types = await response.json();
         const vehicleList = Array.isArray(types) ? types : [];
         setVehicleTypes(vehicleList);
         // Set first vehicle as default if available and current value is default
