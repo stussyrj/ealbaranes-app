@@ -102,21 +102,26 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!createDeliveryOpen) return;
     
+    console.log("[DashboardPage] Modal opened, loading vehicle types...");
+    
     const loadVehicleTypes = async () => {
       try {
         setIsLoadingVehicles(true);
+        console.log("[DashboardPage] Fetching vehicle types from API...");
         // Use tenant-specific endpoint that returns the array of vehicle types
         const response = await apiRequest("GET", "/api/tenant/vehicle-types");
         const types = await response.json();
+        console.log("[DashboardPage] Vehicle types received:", types);
         // Filter by isActive to only show active vehicle types
         const vehicleList = Array.isArray(types) ? types.filter((v: any) => v.isActive) : [];
+        console.log("[DashboardPage] Active vehicle types:", vehicleList);
         setVehicleTypes(vehicleList);
         // Set first vehicle as default if available and current value is default
         if (vehicleList.length > 0 && (formData.vehicleType === "Furgoneta" || !vehicleList.find((t: any) => t.name === formData.vehicleType))) {
           setFormData(prev => ({ ...prev, vehicleType: vehicleList[0].name }));
         }
       } catch (error) {
-        console.error("Error loading vehicle types:", error);
+        console.error("[DashboardPage] Error loading vehicle types:", error);
         // Fallback to defaults
         setVehicleTypes([
           { id: "1", name: "Moto" },
