@@ -2405,7 +2405,10 @@ export default function DashboardPage() {
 
                     const response = await fetch("/api/delivery-notes", {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: { 
+                        "Content-Type": "application/json",
+                        ...getAuthHeaders(),
+                      },
                       body: JSON.stringify(deliveryNoteData),
                       credentials: "include",
                     });

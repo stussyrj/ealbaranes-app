@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -223,12 +224,7 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
     };
 
     try {
-      const response = await fetch("/api/delivery-notes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
+      const response = await apiRequest("POST", "/api/delivery-notes", payload);
 
       if (response.ok) {
         const newDeliveryNote = await response.json();
