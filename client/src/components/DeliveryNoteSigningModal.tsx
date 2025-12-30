@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Eraser, MapPin, Navigation, FileText, User, Camera, Save, Ban } from "lucide-react";
+import { Check, Eraser, MapPin, Navigation, FileText, User, Camera, Save } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { SignatureModalDialog } from "@/components/SignatureModalDialog";
@@ -118,7 +118,10 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
   // Origin: Firma es independiente del documento
   const hasOriginDocument = originDocument.trim().length >= 8;
-  const isOriginComplete = hasOriginSignature && hasOriginDocument;
+  // When signature drawing is disabled, only document is required
+  const isOriginComplete = SIGNATURE_DRAWING_DISABLED 
+    ? hasOriginDocument 
+    : (hasOriginSignature && hasOriginDocument);
   
   // Destination: Firma es independiente del documento
   const hasDestinationDocument = destinationDocument.trim().length >= 8;
@@ -127,8 +130,10 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
   const hasValidPhoto = destinationPhoto.length > 100 || (note?.photo && note.photo.length > 100);
   // Legacy notes (signature + photo but no dual signatures) are ALREADY complete - treat as read-only
   const isLegacyComplete = !!(note?.signature && note?.photo && !note?.originSignature);
-  // Destination is complete when we have signature + document + photo
-  const isDestinationComplete = hasDestinationSignature && hasDestinationDocument && hasValidPhoto;
+  // Destination is complete when we have signature + document + photo (or just document + photo when signature disabled)
+  const isDestinationComplete = SIGNATURE_DRAWING_DISABLED
+    ? (hasDestinationDocument && hasValidPhoto)
+    : (hasDestinationSignature && hasDestinationDocument && hasValidPhoto);
   // Form is complete for submission: full dual signature OR legacy (read-only view)
   const isFormComplete = (isOriginComplete && isDestinationComplete) || isLegacyComplete;
 
@@ -154,11 +159,20 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       return;
     }
 
-    // Validate that BOTH signature and document exist
-    if (!hasOriginSignature || !hasOriginDocument) {
+    // Validate document exists (signature only required when not disabled)
+    if (!hasOriginDocument) {
       toast({
         title: "Información incompleta",
-        description: "Falta información de origen:\n- Firma: " + (hasOriginSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasOriginDocument ? "✓" : "Falta"),
+        description: "Falta el DNI/NIE/NIF del firmante",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!SIGNATURE_DRAWING_DISABLED && !hasOriginSignature) {
+      toast({
+        title: "Información incompleta",
+        description: "Falta la firma de origen",
         variant: "destructive",
       });
       return;
@@ -432,31 +446,8 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
             </div>
           )}
 
-          {/* Signature disabled message */}
-          {!isLegacyComplete && SIGNATURE_DRAWING_DISABLED && (
-            <div className="space-y-4">
-              <div className="w-full p-6 border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                <div className="flex flex-col items-center gap-3 text-amber-700 dark:text-amber-400 text-center">
-                  <Ban className="w-10 h-10" />
-                  <div>
-                    <p className="font-semibold text-base">Firma digital deshabilitada temporalmente</p>
-                    <p className="text-sm opacity-80 mt-1">Esta funcionalidad estará disponible próximamente</p>
-                  </div>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="w-full"
-                data-testid="button-close-disabled"
-              >
-                Cerrar
-              </Button>
-            </div>
-          )}
-
-          {/* New dual signature form - only show for non-legacy notes when signatures are enabled */}
-          {!isLegacyComplete && !SIGNATURE_DRAWING_DISABLED && (
+          {/* New dual signature form - only show for non-legacy notes */}
+          {!isLegacyComplete && (
             <div className="space-y-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -505,38 +496,40 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 )}
               </div>
 
-              {!hasOriginSignature ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-24"
-                  onClick={() => {
-                    setSignatureModalType("origin");
-                    setSignatureModalOpen(true);
-                  }}
-                  data-testid="button-capture-origin-signature"
-                >
-                  <Camera className="w-6 h-6 mr-2" />
-                  Capturar firma de origen
-                </Button>
-              ) : (
-                <div className="space-y-1">
-                  <div className="relative border-3 border-blue-500 dark:border-blue-400 rounded-lg overflow-hidden bg-white h-12 w-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
+              {!SIGNATURE_DRAWING_DISABLED && (
+                !hasOriginSignature ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-24"
                     onClick={() => {
                       setSignatureModalType("origin");
                       setSignatureModalOpen(true);
-                    }}>
-                    <img 
-                      src={originSignature} 
-                      alt="Firma de origen" 
-                      className="w-full h-full object-contain p-0.5"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
-                      <Camera className="w-4 h-4 text-blue-500 opacity-0 hover:opacity-100" />
+                    }}
+                    data-testid="button-capture-origin-signature"
+                  >
+                    <Camera className="w-6 h-6 mr-2" />
+                    Capturar firma de origen
+                  </Button>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="relative border-3 border-blue-500 dark:border-blue-400 rounded-lg overflow-hidden bg-white h-12 w-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
+                      onClick={() => {
+                        setSignatureModalType("origin");
+                        setSignatureModalOpen(true);
+                      }}>
+                      <img 
+                        src={originSignature} 
+                        alt="Firma de origen" 
+                        className="w-full h-full object-contain p-0.5"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
+                        <Camera className="w-4 h-4 text-blue-500 opacity-0 hover:opacity-100" />
+                      </div>
                     </div>
+                    <p className="text-xs text-muted-foreground text-center leading-tight">Cambiar</p>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center leading-tight">Cambiar</p>
-                </div>
+                )
               )}
 
               <div className="flex gap-2">
@@ -593,38 +586,40 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                 )}
               </div>
 
-              {!hasDestinationSignature ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-24"
-                  onClick={() => {
-                    setSignatureModalType("destination");
-                    setSignatureModalOpen(true);
-                  }}
-                  data-testid="button-capture-destination-signature"
-                >
-                  <Camera className="w-6 h-6 mr-2" />
-                  Capturar firma de destino
-                </Button>
-              ) : (
-                <div className="space-y-1">
-                  <div className="relative border-3 border-green-500 dark:border-green-400 rounded-lg overflow-hidden bg-white h-12 w-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
+              {!SIGNATURE_DRAWING_DISABLED && (
+                !hasDestinationSignature ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-24"
                     onClick={() => {
                       setSignatureModalType("destination");
                       setSignatureModalOpen(true);
-                    }}>
-                    <img 
-                      src={destinationSignature} 
-                      alt="Firma de destino" 
-                      className="w-full h-full object-contain p-0.5"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
-                      <Camera className="w-4 h-4 text-green-500 opacity-0 hover:opacity-100" />
+                    }}
+                    data-testid="button-capture-destination-signature"
+                  >
+                    <Camera className="w-6 h-6 mr-2" />
+                    Capturar firma de destino
+                  </Button>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="relative border-3 border-green-500 dark:border-green-400 rounded-lg overflow-hidden bg-white h-12 w-24 flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow" 
+                      onClick={() => {
+                        setSignatureModalType("destination");
+                        setSignatureModalOpen(true);
+                      }}>
+                      <img 
+                        src={destinationSignature} 
+                        alt="Firma de destino" 
+                        className="w-full h-full object-contain p-0.5"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
+                        <Camera className="w-4 h-4 text-green-500 opacity-0 hover:opacity-100" />
+                      </div>
                     </div>
+                    <p className="text-xs text-muted-foreground text-center leading-tight">Cambiar</p>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center leading-tight">Cambiar</p>
-                </div>
+                )
               )}
 
               {/* Photo capture for destination only */}
