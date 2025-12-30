@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest, queryClient as qc, getAuthToken } from "@/lib/queryClient";
+import { apiRequest, queryClient as qc, getAuthToken, downloadFile } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -2068,43 +2068,6 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {/* Button to open dual signature modal or download */}
-                    {!isFullySigned(note) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs"
-                        onClick={() => {
-                          setSelectedNoteForSigning(note);
-                          setSigningModalOpen(true);
-                        }}
-                        data-testid={`button-sign-${note.id}`}
-                      >
-                        <Pen className="w-3 h-3 mr-1" />
-                        Firmar Albarán
-                      </Button>
-                    )}
-                    {isFullySigned(note) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs"
-                        onClick={async () => {
-                          try {
-                            const filename = `Albaran_${note.noteNumber}_${note.clientName?.replace(/\s+/g, '_') || 'cliente'}.pdf`;
-                            await downloadFile(`/api/delivery-notes/${note.id}/pdf`, filename);
-                          } catch (error) {
-                            console.error('Error descargando PDF:', error);
-                            toast({ title: "Error", description: "No se pudo descargar el PDF", variant: "destructive" });
-                          }
-                        }}
-                        data-testid={`button-download-pdf-modal-${note.id}`}
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        Descargar PDF
-                      </Button>
-                    )}
-
                     {isFullySigned(note) && note.invoicedAt && (
                       <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md p-2">
                         <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
@@ -2117,27 +2080,174 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {!isFullySigned(note) && (
-                      <div className="flex gap-2 pt-1">
-                        {!note.departedAt && (
+                    {/* Details Dropdown Menu */}
+                    <div className="flex gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
+                            variant="outline"
                             size="sm"
-                            className={`flex-1 text-xs h-8 ${!note.arrivedAt ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white'}`}
-                            onClick={() => handleArrivalDeparture(note, note.arrivedAt ? 'departure' : 'arrival')}
-                            disabled={updateTimeMutation.isPending}
-                            data-testid={`button-${note.arrivedAt ? 'departure' : 'arrival'}-${note.id}`}
+                            className="flex-1 text-xs"
+                            data-testid={`button-details-menu-${note.id}`}
                           >
-                            <Clock className="w-3 h-3 mr-1" />
-                            {note.arrivedAt ? 'He salido' : 'He llegado'}
+                            <FileText className="w-3 h-3 mr-1" />
+                            Detalles
                           </Button>
-                        )}
-                        {note.arrivedAt && note.departedAt && (
-                          <div className="flex-1 flex items-center justify-center bg-green-100 dark:bg-green-900/20 rounded-md text-xs text-green-700 dark:text-green-300">
-                            ✓ Registrado
-                          </div>
-                        )}
-                      </div>
-                    )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          {!isFullySigned(note) && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedNoteForSigning(note);
+                                setSigningModalOpen(true);
+                              }}
+                              data-testid={`menu-sign-${note.id}`}
+                            >
+                              <Pen className="w-3 h-3 mr-2" />
+                              Firmar Albarán
+                            </DropdownMenuItem>
+                          )}
+
+                          {!isFullySigned(note) && !note.departedAt && (
+                            <DropdownMenuItem
+                              onClick={() => handleArrivalDeparture(note, note.arrivedAt ? 'departure' : 'arrival')}
+                              disabled={updateTimeMutation.isPending}
+                              data-testid={`menu-${note.arrivedAt ? 'departure' : 'arrival'}-${note.id}`}
+                            >
+                              <Clock className="w-3 h-3 mr-2" />
+                              {note.arrivedAt ? 'He salido' : 'He llegado'}
+                            </DropdownMenuItem>
+                          )}
+
+                          {isFullySigned(note) && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  const filename = `Albaran_${note.noteNumber}_${note.clientName?.replace(/\s+/g, '_') || 'cliente'}.pdf`;
+                                  await downloadFile(`/api/delivery-notes/${note.id}/pdf`, filename);
+                                } catch (error) {
+                                  console.error('Error descargando PDF:', error);
+                                  toast({ title: "Error", description: "No se pudo descargar el PDF", variant: "destructive" });
+                                }
+                              }}
+                              data-testid={`menu-download-pdf-${note.id}`}
+                            >
+                              <Download className="w-3 h-3 mr-2" />
+                              Descargar PDF
+                            </DropdownMenuItem>
+                          )}
+
+                          {note.signedAt && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  const response = await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, { isInvoiced: !note.isInvoiced });
+                                  if (response.ok) {
+                                    toast({ 
+                                      title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como facturado",
+                                      description: `Albarán #${note.noteNumber} actualizado`
+                                    });
+                                    await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+                                  } else {
+                                    const errorData = await response.json().catch(() => ({}));
+                                    toast({ 
+                                      title: "Error", 
+                                      description: errorData.error || "No se pudo actualizar el albarán", 
+                                      variant: "destructive" 
+                                    });
+                                  }
+                                } catch (error) {
+                                  console.error("Error actualizando albarán:", error);
+                                  toast({ title: "Error", description: "No se pudo actualizar el albarán", variant: "destructive" });
+                                }
+                              }}
+                              data-testid={`menu-toggle-invoice-${note.id}`}
+                            >
+                              <Banknote className="w-3 h-3 mr-2" />
+                              {note.isInvoiced ? 'Marcar como pendiente' : 'Marcar como facturado'}
+                            </DropdownMenuItem>
+                          )}
+
+                          {isFullySigned(note) && note.isInvoiced && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const element = deliveryNoteRefs.current[note.id];
+                                if (element) {
+                                  const clonedElement = element.cloneNode(true) as HTMLElement;
+                                  const buttonsDiv = clonedElement.querySelector(`[data-testid="buttons-${note.id}"]`);
+                                  if (buttonsDiv) {
+                                    buttonsDiv.remove();
+                                  }
+                                  
+                                  clonedElement.querySelectorAll('.line-clamp-1, .line-clamp-2').forEach((el) => {
+                                    el.classList.remove('line-clamp-1', 'line-clamp-2');
+                                    (el as HTMLElement).style.overflow = 'visible';
+                                    (el as HTMLElement).style.textOverflow = 'clip';
+                                    (el as HTMLElement).style.whiteSpace = 'normal';
+                                    (el as HTMLElement).style.display = 'block';
+                                  });
+                                  
+                                  const img = clonedElement.querySelector('img');
+                                  if (img) {
+                                    img.style.maxHeight = 'none';
+                                    img.style.height = 'auto';
+                                    img.style.objectFit = 'contain';
+                                  }
+                                  
+                                  const originalRect = element.getBoundingClientRect();
+                                  clonedElement.style.position = "fixed";
+                                  clonedElement.style.left = "-9999px";
+                                  clonedElement.style.top = "-9999px";
+                                  clonedElement.style.width = originalRect.width + "px";
+                                  clonedElement.style.backgroundColor = "#0f172a";
+                                  document.body.appendChild(clonedElement);
+                                  
+                                  const noteDestination = note.destination;
+                                  
+                                  setAlbaranesModalOpen(false);
+                                  toast({ title: "Procesando...", description: "Preparando imagen para compartir" });
+                                  
+                                  setTimeout(async () => {
+                                    try {
+                                      const { default: html2canvas } = await import('html2canvas');
+                                      const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#0f172a", useCORS: true, allowTaint: true, logging: false });
+                                      document.body.removeChild(clonedElement);
+                                      
+                                      const blob = await new Promise<Blob>((resolve) => {
+                                        canvas.toBlob((b) => resolve(b as Blob), "image/png");
+                                      });
+                                      const file = new File([blob], `albaran-${noteDestination || 'albaran'}-${new Date().toISOString().split('T')[0]}.png`, { type: "image/png" });
+                                      if (navigator.share) {
+                                        await navigator.share({ files: [file], title: "Albarán" });
+                                      }
+                                    } catch (error: any) {
+                                      console.error("Share error:", error);
+                                      if (error.name !== "AbortError") {
+                                        toast({ title: "Error", description: "No se pudo compartir el albarán", variant: "destructive" });
+                                      }
+                                    }
+                                  }, 100);
+                                }
+                              }}
+                              data-testid={`menu-share-${note.id}`}
+                            >
+                              <Share2 className="w-3 h-3 mr-2" />
+                              Compartir
+                            </DropdownMenuItem>
+                          )}
+
+                          <DropdownMenuItem
+                            onClick={() => deleteNoteMutation.mutate(note.id)}
+                            disabled={deletingNoteId === note.id}
+                            className="text-red-600 dark:text-red-400"
+                            data-testid={`menu-delete-${note.id}`}
+                          >
+                            <Trash2 className="w-3 h-3 mr-2" />
+                            {deletingNoteId === note.id ? "Borrando..." : "Borrar albarán"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
 
                     <div className="flex items-start gap-2 bg-muted/30 rounded-md p-2">
                       <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
@@ -2160,135 +2270,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {isFullySigned(note) && note.isInvoiced && (
-                    <div className="flex gap-2 pt-1" data-testid={`buttons-${note.id}`}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 text-xs h-7"
-                        onClick={() => {
-                          const element = deliveryNoteRefs.current[note.id];
-                          if (element) {
-                            const clonedElement = element.cloneNode(true) as HTMLElement;
-                            const buttonsDiv = clonedElement.querySelector(`[data-testid="buttons-${note.id}"]`);
-                            if (buttonsDiv) {
-                              buttonsDiv.remove();
-                            }
-                            
-                            clonedElement.querySelectorAll('.line-clamp-1, .line-clamp-2').forEach((el) => {
-                              el.classList.remove('line-clamp-1', 'line-clamp-2');
-                              (el as HTMLElement).style.overflow = 'visible';
-                              (el as HTMLElement).style.textOverflow = 'clip';
-                              (el as HTMLElement).style.whiteSpace = 'normal';
-                              (el as HTMLElement).style.display = 'block';
-                            });
-                            
-                            const img = clonedElement.querySelector('img');
-                            if (img) {
-                              img.style.maxHeight = 'none';
-                              img.style.height = 'auto';
-                              img.style.objectFit = 'contain';
-                            }
-                            
-                            const originalRect = element.getBoundingClientRect();
-                            clonedElement.style.position = "fixed";
-                            clonedElement.style.left = "-9999px";
-                            clonedElement.style.top = "-9999px";
-                            clonedElement.style.width = originalRect.width + "px";
-                            clonedElement.style.backgroundColor = "#0f172a";
-                            document.body.appendChild(clonedElement);
-                            
-                            const noteDestination = note.destination;
-                            
-                            setAlbaranesModalOpen(false);
-                            toast({ title: "Procesando...", description: "Preparando imagen para compartir" });
-                            
-                            setTimeout(async () => {
-                              try {
-                                const { default: html2canvas } = await import('html2canvas');
-                                const canvas = await html2canvas(clonedElement, { scale: 2, backgroundColor: "#0f172a", useCORS: true, allowTaint: true, logging: false });
-                                document.body.removeChild(clonedElement);
-                                
-                                const blob = await new Promise<Blob>((resolve) => {
-                                  canvas.toBlob((b) => resolve(b as Blob), "image/png");
-                                });
-                                const file = new File([blob], `albaran-${noteDestination || 'albaran'}-${new Date().toISOString().split('T')[0]}.png`, { type: "image/png" });
-                                if (navigator.share) {
-                                  await navigator.share({ files: [file], title: "Albarán" });
-                                }
-                              } catch (error: any) {
-                                console.error("Share error:", error);
-                                if (error.name !== "AbortError") {
-                                  toast({ title: "Error", description: "No se pudo compartir el albarán", variant: "destructive" });
-                                }
-                              }
-                            }, 100);
-                          }
-                        }}
-                        data-testid={`button-share-albarane-${note.id}`}
-                      >
-                        <Share2 className="w-3 h-3 mr-1" />
-                        Compartir
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {note.signedAt && (
-                    <Button
-                      size="sm"
-                      variant={note.isInvoiced ? "outline" : "default"}
-                      className={`w-full text-xs h-8 ${!note.isInvoiced ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
-                      onClick={async () => {
-                        try {
-                          const response = await apiRequest("PATCH", `/api/delivery-notes/${note.id}`, { isInvoiced: !note.isInvoiced });
-
-                          if (response.ok) {
-                            toast({ 
-                              title: note.isInvoiced ? "Marcado como pendiente" : "Marcado como facturado",
-                              description: `Albarán #${note.noteNumber} actualizado`
-                            });
-                            await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-                          } else {
-                            const errorData = await response.json().catch(() => ({}));
-                            toast({ 
-                              title: "Error", 
-                              description: errorData.error || "No se pudo actualizar el albarán", 
-                              variant: "destructive" 
-                            });
-                          }
-                        } catch (error) {
-                          console.error("Error actualizando albarán:", error);
-                          toast({ title: "Error", description: "No se pudo actualizar el albarán", variant: "destructive" });
-                        }
-                      }}
-                      data-testid={`button-toggle-invoice-card-${note.id}`}
-                    >
-                      {note.isInvoiced ? (
-                        <>
-                          <X className="w-3 h-3 mr-1 text-red-600" />
-                          Marcar como pendiente
-                        </>
-                      ) : (
-                        <>
-                          <Banknote className="w-3 h-3 mr-1" />
-                          Marcar como facturado
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  
-                  {/* Delete button */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs h-8 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => deleteNoteMutation.mutate(note.id)}
-                    disabled={deletingNoteId === note.id}
-                    data-testid={`button-delete-${note.id}`}
-                  >
-                    <Trash2 className="w-3 h-3 mr-1" />
-                    {deletingNoteId === note.id ? "Borrando..." : "Borrar albarán"}
-                  </Button>
                 </div>
               </div>
             ));
