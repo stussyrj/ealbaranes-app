@@ -160,6 +160,28 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     yPos += obsLines.length * 4 + 3;
   }
 
+  // Delivery photo if present
+  if (note.photo) {
+    yPos += 3;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("FOTO DE ENTREGA", margin, yPos);
+    yPos += 5;
+
+    try {
+      const photoWidth = pageWidth - 2 * margin;
+      const photoHeight = 80;
+      doc.addImage(note.photo, "JPEG", margin, yPos, photoWidth, photoHeight);
+      yPos += photoHeight + 5;
+    } catch (e) {
+      console.error("Error adding delivery photo:", e);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text("No se pudo cargar la foto", margin + 5, yPos);
+      yPos += 5;
+    }
+  }
+
   // Time tracking info
   if (note.arrivedAt || note.departedAt) {
     yPos += 2;
