@@ -12,7 +12,7 @@ const DeliveryNoteGenerator = lazy(() => import("@/components/DeliveryNoteGenera
 const SignaturePad = lazy(() => import("@/components/SignaturePad").then(m => ({ default: m.SignaturePad })));
 const OnboardingTutorial = lazy(() => import("@/components/OnboardingTutorial").then(m => ({ default: m.OnboardingTutorial })));
 import { DeliveryNoteSigningModal } from "@/components/DeliveryNoteSigningModal";
-import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
+import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw, Filter, Archive } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -54,6 +54,9 @@ export default function WorkerDashboard() {
   // Dual signature signing modal state
   const [signingModalOpen, setSigningModalOpen] = useState(false);
   const [selectedNoteForSigning, setSelectedNoteForSigning] = useState<DeliveryNote | null>(null);
+  
+  // Period filter for clickable counters
+  const [periodFilter, setPeriodFilter] = useState<"today" | "month" | "total" | null>(null);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -421,6 +424,22 @@ export default function WorkerDashboard() {
       return false;
     });
   };
+  
+  // Get notes for a specific period (for clickable counters)
+  const getNotesForPeriod = (period: "today" | "month" | "total"): DeliveryNote[] => {
+    switch (period) {
+      case "today":
+        return getTodayDeliveryNotes();
+      case "month":
+        return getMonthDeliveryNotes();
+      case "total":
+        return deliveryNotes;
+      default:
+        return [];
+    }
+  };
+  
+  const filteredNotesByPeriod = periodFilter ? getNotesForPeriod(periodFilter) : null;
 
   const renderOrderCard = (order: Quote, showGenerateBtn = false) => {
     const noteStatus = getDeliveryNoteStatus(order.id);
@@ -710,46 +729,148 @@ export default function WorkerDashboard() {
           </div>
         </div>
 
-        {/* Estadísticas */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-6">
-          <Card className="hover-elevate bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-muted-foreground">Albaranes Totales</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Hoy</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {getTodayDeliveryNotes().length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Este Mes</p>
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {getMonthDeliveryNotes().length}
-                  </p>
-                </div>
+        {/* Resumen de Actividad - Contadores clickeables */}
+        <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 shadow-sm">
+          <div className="flex items-center justify-around gap-3 flex-wrap">
+            <button
+              onClick={() => setPeriodFilter(periodFilter === "today" ? null : "today")}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer hover-elevate ${
+                periodFilter === "today" 
+                  ? "bg-green-100 dark:bg-green-900/50 ring-2 ring-green-500" 
+                  : ""
+              }`}
+              data-testid="button-filter-today"
+            >
+              <div className="h-7 w-7 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                <Calendar className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-600/85 hover:bg-purple-700/85 dark:bg-purple-600/85 dark:hover:bg-purple-700/85 text-white border-muted-foreground/10 shadow-sm" onClick={() => setCreateDeliveryOpen(true)} data-testid="button-create-albaran">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-white/80 flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Hacer Albarán
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center min-h-24">
-                <span className="w-full text-center font-medium">
-                  Crear Nuevo Albarán
-                </span>
+              <div className="text-left">
+                <div className="text-base font-bold leading-none text-green-600 dark:text-green-400" data-testid="count-today">
+                  {getTodayDeliveryNotes().length}
+                </div>
+                <p className="text-[9px] text-muted-foreground">Hoy</p>
               </div>
-            </CardContent>
-          </Card>
+            </button>
+            <button
+              onClick={() => setPeriodFilter(periodFilter === "month" ? null : "month")}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer hover-elevate ${
+                periodFilter === "month" 
+                  ? "bg-orange-100 dark:bg-orange-900/50 ring-2 ring-orange-500" 
+                  : ""
+              }`}
+              data-testid="button-filter-month"
+            >
+              <div className="h-7 w-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                <Calendar className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div className="text-left">
+                <div className="text-base font-bold leading-none text-orange-600 dark:text-orange-400" data-testid="count-month">
+                  {getMonthDeliveryNotes().length}
+                </div>
+                <p className="text-[9px] text-muted-foreground">Mes</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setPeriodFilter(periodFilter === "total" ? null : "total")}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer hover-elevate ${
+                periodFilter === "total" 
+                  ? "bg-purple-100 dark:bg-purple-900/50 ring-2 ring-purple-500" 
+                  : ""
+              }`}
+              data-testid="button-filter-total"
+            >
+              <div className="h-7 w-7 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                <Archive className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="text-left">
+                <div className="text-base font-bold leading-none text-purple-600 dark:text-purple-400" data-testid="count-total">
+                  {deliveryNotes.length}
+                </div>
+                <p className="text-[9px] text-muted-foreground">Total</p>
+              </div>
+            </button>
+          </div>
         </div>
+        
+        {/* Filtered notes display when a period is selected */}
+        {periodFilter && filteredNotesByPeriod && (
+          <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Albaranes de {periodFilter === "today" ? "Hoy" : periodFilter === "month" ? "Este Mes" : "Total"}
+                <Badge className="ml-1">{filteredNotesByPeriod.length}</Badge>
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPeriodFilter(null)}
+                className="h-7 px-2"
+                data-testid="button-clear-period-filter"
+              >
+                <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </Button>
+            </div>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {filteredNotesByPeriod.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No hay albaranes en este período
+                </p>
+              ) : (
+                filteredNotesByPeriod.map((note: DeliveryNote) => (
+                  <div
+                    key={note.id}
+                    onClick={() => setSelectedNoteDetail(note)}
+                    className="p-3 bg-background rounded-lg border cursor-pointer hover-elevate"
+                    data-testid={`note-card-${note.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">Albarán #{note.noteNumber}</span>
+                          {note.signedAt ? (
+                            <Badge variant="outline" className="text-green-600 border-green-600 text-[10px]">
+                              <CheckCircle className="w-2.5 h-2.5 mr-1" />
+                              Firmado
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-orange-600 border-orange-600 text-[10px]">
+                              <Clock className="w-2.5 h-2.5 mr-1" />
+                              Pendiente
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {note.clientName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {note.date} - {note.time}
+                        </p>
+                      </div>
+                      {note.photo && (
+                        <img
+                          src={note.photo}
+                          alt="Foto albarán"
+                          className="w-12 h-12 object-cover rounded-md flex-shrink-0"
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Botón Crear Albarán */}
+        <button
+          onClick={() => setCreateDeliveryOpen(true)}
+          className="w-full rounded-lg bg-purple-600 hover:bg-purple-700 p-4 shadow-sm text-white flex items-center justify-center gap-3"
+          data-testid="button-create-albaran"
+        >
+          <FileText className="h-5 w-5" />
+          <span className="font-medium">Crear Nuevo Albarán</span>
+        </button>
 
         {orders.length === 0 && deliveryNotes.length === 0 ? (
           <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
