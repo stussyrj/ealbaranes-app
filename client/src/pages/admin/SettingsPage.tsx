@@ -28,10 +28,12 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [settingsData, vehiclesData] = await Promise.all([
+        const [settingsRes, vehiclesRes] = await Promise.all([
           apiRequest("GET", "/api/tenant/wait-time-threshold"),
           apiRequest("GET", "/api/tenant/vehicle-types")
         ]);
+        const settingsData = await settingsRes.json();
+        const vehiclesData = await vehiclesRes.json();
         setWaitTimeThreshold(settingsData.waitTimeThreshold || 20);
         // Ensure vehiclesData is an array
         const types = Array.isArray(vehiclesData) ? vehiclesData : [];
@@ -75,12 +77,13 @@ export default function SettingsPage() {
 
     setIsAddingVehicle(true);
     try {
-      const newVehicle = await apiRequest("POST", "/api/tenant/vehicle-types", {
-        name: newVehicleName,
+      const res = await apiRequest("POST", "/api/tenant/vehicle-types", {
+        name: newVehicleName.trim(),
         pricePerKm: 0,
         minimumPrice: 0,
         isActive: true
       });
+      const newVehicle = await res.json();
       setVehicleTypes([...vehicleTypes, newVehicle]);
       setNewVehicleName("");
       toast({ title: "Éxito", description: "Tipo de vehículo agregado" });
@@ -99,9 +102,10 @@ export default function SettingsPage() {
     }
 
     try {
-      const updated = await apiRequest("PATCH", `/api/tenant/vehicle-types/${id}`, {
-        name: editingName
+      const res = await apiRequest("PATCH", `/api/tenant/vehicle-types/${id}`, {
+        name: editingName.trim()
       });
+      const updated = await res.json();
       setVehicleTypes(vehicleTypes.map(v => v.id === id ? updated : v));
       setEditingId(null);
       setEditingName("");
