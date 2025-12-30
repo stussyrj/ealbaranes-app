@@ -1109,8 +1109,18 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Albarán no encontrado" });
       }
       
-      // Generate PDF
-      const pdfBuffer = generateDeliveryNotePdf(note as any);
+      // Get worker name if exists
+      let workerName = null;
+      if (note.workerId) {
+        const worker = await storage.getUser(note.workerId);
+        if (worker) {
+          workerName = worker.displayName || worker.username;
+        }
+      }
+      
+      // Generate PDF with worker name
+      const noteWithWorker = { ...note, workerName };
+      const pdfBuffer = generateDeliveryNotePdf(noteWithWorker as any);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="Albaran_${note.noteNumber || 'documento'}.pdf"`);
