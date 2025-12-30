@@ -1585,7 +1585,8 @@ export default function WorkerDashboard() {
                     >
                       {tipo.name}
                     </Button>
-                ))}
+                  ))
+                )}
               </div>
             </div>
             
