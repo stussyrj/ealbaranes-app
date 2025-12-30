@@ -35,8 +35,8 @@ export default function SettingsPage() {
         const settingsData = await settingsRes.json();
         const vehiclesData = await vehiclesRes.json();
         setWaitTimeThreshold(settingsData.waitTimeThreshold || 20);
-        // Ensure vehiclesData is an array
-        const types = Array.isArray(vehiclesData) ? vehiclesData : [];
+        // Ensure vehiclesData is an array and filter by isActive
+        const types = Array.isArray(vehiclesData) ? vehiclesData.filter((v: any) => v.isActive) : [];
         setVehicleTypes(types);
       } catch (error) {
         console.error("Error loading settings:", error);

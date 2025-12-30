@@ -108,7 +108,8 @@ export default function DashboardPage() {
         // Use tenant-specific endpoint that returns the array of vehicle types
         const response = await apiRequest("GET", "/api/tenant/vehicle-types");
         const types = await response.json();
-        const vehicleList = Array.isArray(types) ? types : [];
+        // Filter by isActive to only show active vehicle types
+        const vehicleList = Array.isArray(types) ? types.filter((v: any) => v.isActive) : [];
         setVehicleTypes(vehicleList);
         // Set first vehicle as default if available and current value is default
         if (vehicleList.length > 0 && (formData.vehicleType === "Furgoneta" || !vehicleList.find((t: any) => t.name === formData.vehicleType))) {
