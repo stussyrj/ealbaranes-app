@@ -1744,6 +1744,46 @@ export async function registerRoutes(
     }
   });
 
+  // Get tenant wait time threshold
+  app.get("/api/tenant/wait-time-threshold", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId) {
+      return res.status(400).json({ error: "Usuario sin empresa" });
+    }
+    try {
+      const threshold = await storage.getTenantWaitTimeThreshold(user.tenantId);
+      res.json({ waitTimeThreshold: threshold });
+    } catch (error) {
+      console.error("Error getting wait time threshold:", error);
+      res.status(500).json({ error: "Error obteniendo configuración" });
+    }
+  });
+
+  // Update tenant wait time threshold
+  app.patch("/api/tenant/wait-time-threshold", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede cambiar configuración" });
+    }
+    try {
+      const { waitTimeThreshold } = req.body;
+      if (typeof waitTimeThreshold !== "number" || waitTimeThreshold < 1 || waitTimeThreshold > 240) {
+        return res.status(400).json({ error: "Umbral debe estar entre 1 y 240 minutos" });
+      }
+      await storage.updateTenantWaitTimeThreshold(user.tenantId, waitTimeThreshold);
+      res.json({ success: true, waitTimeThreshold });
+    } catch (error) {
+      console.error("Error updating wait time threshold:", error);
+      res.status(500).json({ error: "Error actualizando configuración" });
+    }
+  });
+
   // Profile setup for OAuth users
   app.post("/api/profile-setup", async (req, res) => {
     if (!req.isAuthenticated() || !req.user) {

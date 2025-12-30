@@ -55,6 +55,8 @@ export interface IStorage {
   deleteUser(id: string): Promise<boolean>;
   invalidateUserCache(id: string): void;
   deleteTenantCascade(tenantId: string): Promise<void>;
+  getTenantWaitTimeThreshold(tenantId: string): Promise<number>;
+  updateTenantWaitTimeThreshold(tenantId: string, threshold: number): Promise<void>;
   
   getWorkers(tenantId: string, includeInactive?: boolean): Promise<Worker[]>;
   getWorker(id: string): Promise<Worker | undefined>;
@@ -418,6 +420,25 @@ export class MemStorage implements IStorage {
 
   invalidateUserCache(id: string): void {
     this.users.delete(id);
+  }
+
+  async getTenantWaitTimeThreshold(tenantId: string): Promise<number> {
+    try {
+      const tenant = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId)).limit(1);
+      return tenant.length > 0 ? (tenant[0].waitTimeThreshold || 20) : 20;
+    } catch (error) {
+      console.error("[storage] Error getting tenant wait time threshold:", error);
+      return 20;
+    }
+  }
+
+  async updateTenantWaitTimeThreshold(tenantId: string, threshold: number): Promise<void> {
+    try {
+      await db.update(tenantsTable).set({ waitTimeThreshold: threshold }).where(eq(tenantsTable.id, tenantId));
+    } catch (error) {
+      console.error("[storage] Error updating tenant wait time threshold:", error);
+      throw error;
+    }
   }
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {

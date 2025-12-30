@@ -22,6 +22,7 @@ export const tenants = pgTable("tenants", {
   canceledAt: timestamp("canceled_at"),
   graceUntil: timestamp("grace_until"),
   retentionUntil: timestamp("retention_until"),
+  waitTimeThreshold: integer("wait_time_threshold").default(20),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
