@@ -899,7 +899,7 @@ export default function DashboardPage() {
                 className="h-7 px-2"
                 data-testid="button-clear-period-filter"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4 text-red-600 dark:text-red-400" />
               </Button>
             </div>
             <div className="space-y-2 max-h-[50vh] overflow-y-auto">
@@ -1853,7 +1853,7 @@ export default function DashboardPage() {
                     onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
                     data-testid="button-clear-date-filter"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3 h-3 text-red-600 dark:text-red-400" />
                   </Button>
                 )}
               </div>
@@ -1886,7 +1886,7 @@ export default function DashboardPage() {
                         onClick={() => setWorkerSearchFilter("")}
                         data-testid="button-clear-worker-filter"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3 h-3 text-red-600 dark:text-red-400" />
                       </Button>
                     )}
                   </div>
@@ -2262,7 +2262,7 @@ export default function DashboardPage() {
                     >
                       {note.isInvoiced ? (
                         <>
-                          <X className="w-3 h-3 mr-1" />
+                          <X className="w-3 h-3 mr-1 text-red-600" />
                           Marcar como pendiente
                         </>
                       ) : (
@@ -2332,7 +2332,7 @@ export default function DashboardPage() {
                   }}
                   data-testid="button-close-preview"
                 >
-                  <X className="w-3 h-3 mr-1" />
+                  <X className="w-3 h-3 mr-1 text-red-600" />
                   Cerrar
                 </Button>
               </div>
@@ -2401,7 +2401,7 @@ export default function DashboardPage() {
                       className="h-8 w-8 shrink-0"
                       data-testid={`button-remove-route-${index}`}
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 text-red-600 dark:text-red-400" />
                     </Button>
                   )}
                 </div>
@@ -2620,7 +2620,7 @@ export default function DashboardPage() {
                 onClick={() => { setDateFilterStart(""); setDateFilterEnd(""); }}
                 data-testid="button-clear-invoice-date-filter"
               >
-                <X className="w-3 h-3 mr-1" />
+                <X className="w-3 h-3 mr-1 text-red-600" />
                 Limpiar filtro
               </Button>
             )}
@@ -2793,7 +2793,7 @@ export default function DashboardPage() {
                     >
                       {note.isInvoiced ? (
                         <>
-                          <X className="w-3 h-3 mr-1" />
+                          <X className="w-3 h-3 mr-1 text-red-600" />
                           Marcar como pendiente
                         </>
                       ) : (
@@ -2867,7 +2867,7 @@ export default function DashboardPage() {
                   className="absolute top-2 right-2"
                   data-testid="button-delete-photo"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4 text-white" />
                 </Button>
               </div>
             )}

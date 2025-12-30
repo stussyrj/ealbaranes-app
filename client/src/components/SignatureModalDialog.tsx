@@ -207,7 +207,7 @@ export function SignatureModalDialog({
                 className="gap-2"
                 data-testid="button-cancel-signature-modal"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 text-red-600 dark:text-red-400" />
                 Cancelar
               </Button>
               <Button

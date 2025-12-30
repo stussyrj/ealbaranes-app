@@ -124,7 +124,7 @@ export function AppSidebar() {
             className="h-8 w-8 lg:hidden"
             data-testid="button-close-sidebar"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-red-600 dark:text-red-400" />
           </Button>
         </div>
       </SidebarHeader>

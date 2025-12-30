@@ -1356,7 +1356,7 @@ export default function WorkerDashboard() {
                       }}
                       className="h-8 w-8 shrink-0"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 text-red-600 dark:text-red-400" />
                     </Button>
                   )}
                 </div>

@@ -224,7 +224,7 @@ export function SignaturePad({
           className="flex-1"
           data-testid="button-cancel-signature"
         >
-          <X className="w-4 h-4 mr-2" />
+          <X className="w-4 h-4 mr-2 text-red-600 dark:text-red-400" />
           Cancelar
         </Button>
         <Button

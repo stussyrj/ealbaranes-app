@@ -688,7 +688,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                             onClick={() => removeWaitTimeItem(index)}
                             data-testid={`button-remove-wait-time-${index}`}
                           >
-                            <X className="h-4 w-4" />
+                            <X className="h-4 w-4 text-red-600 dark:text-red-400" />
                           </Button>
                         </div>
                       </div>
@@ -1048,7 +1048,7 @@ function TemplateEditor() {
                     onClick={() => updateField("logoImageBase64", "")}
                     data-testid="button-remove-logo"
                   >
-                    <X className="h-4 w-4 mr-1" />
+                    <X className="h-4 w-4 mr-1 text-red-600 dark:text-red-400" />
                     Eliminar
                   </Button>
                 </div>

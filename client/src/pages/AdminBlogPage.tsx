@@ -266,7 +266,7 @@ export default function AdminBlogPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{editingPost ? "Editar artículo" : "Nuevo artículo"}</CardTitle>
               <Button variant="ghost" size="icon" onClick={resetForm}>
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4 text-red-600 dark:text-red-400" />
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
