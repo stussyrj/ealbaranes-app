@@ -81,13 +81,9 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
   const [showSignatures, setShowSignatures] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   
-  // New dual signature system: requires both origin and destination signatures with documents
-  const hasNewDualSignatures = note.originSignature && note.originSignatureDocument && 
-                                note.destinationSignature && note.destinationSignatureDocument;
-  // Legacy: old notes may use photo + signature
-  const hasLegacySigning = !!note.photo && !!note.signature;
-  // Fully signed = new dual signatures OR legacy signing
-  const isFullySigned = hasNewDualSignatures || hasLegacySigning;
+  // Fully signed requires: origin document + destination document + photo (new dual signature system)
+  const isFullySigned = (note.originSignatureDocument && note.destinationSignatureDocument && note.photo) ||
+                        (!!note.photo && !!note.signature); // Legacy: photo + signature
   // Partially signed = only origin is signed (new system)
   const isPartialSigned = (note.originSignature && note.originSignatureDocument) && !isFullySigned;
   const isSigned = isFullySigned;

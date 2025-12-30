@@ -130,12 +130,11 @@ export default function DashboardPage() {
     });
   };
   
-  // Helper function to determine if a note is fully signed (has dual signatures from origin and destination)
+  // Helper function to determine if a note is fully signed
+  // Requires: origin document + destination document + photo (new dual signature system)
+  // OR photo + signature (legacy)
   const isFullySigned = (note: any) => {
-    // New dual signature system: requires both origin and destination signatures with documents
-    const hasNewDualSignatures = note.originSignature && note.originSignatureDocument && 
-                                  note.destinationSignature && note.destinationSignatureDocument;
-    // Legacy: old notes may still use photo + signature
+    const hasNewDualSignatures = note.originSignatureDocument && note.destinationSignatureDocument && note.photo;
     const hasLegacySignatures = note.photo && note.signature;
     return hasNewDualSignatures || hasLegacySignatures;
   };
