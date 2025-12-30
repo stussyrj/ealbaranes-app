@@ -115,49 +115,73 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
   doc.setTextColor(0, 0, 0);
   yPos = 26;
 
-  // Row 1: Client + Vehicle/Time (compact)
-  const col2Width = (contentWidth - 3) / 2;
+  // Row 1: Client + Vehicle/Time
+  const col3Width = (contentWidth - 6) / 3;
   
   // Client box
-  drawSectionBox(doc, margin, yPos, col2Width, 18);
+  drawSectionBox(doc, margin, yPos, col3Width, 16);
   drawLabel(doc, "CLIENTE", margin + 3, yPos + 4);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 23, 42);
-  const clientText = (note.clientName || "N/A").substring(0, 40);
+  const clientText = (note.clientName || "N/A").substring(0, 28);
   doc.text(clientText, margin + 3, yPos + 10);
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${note.vehicleType || "N/A"} | ${note.time || "N/A"}`, margin + 3, yPos + 15);
 
-  // Route box (Origin -> Destination)
-  const routeX = margin + col2Width + 3;
-  drawSectionBox(doc, routeX, yPos, col2Width, 18);
-  drawLabel(doc, "RUTA", routeX + 3, yPos + 4);
-  
+  // Vehicle box
+  const vehX = margin + col3Width + 3;
+  drawSectionBox(doc, vehX, yPos, col3Width, 16);
+  drawLabel(doc, "VEHÍCULO", vehX + 3, yPos + 4);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(15, 23, 42);
-  
-  let originText = "N/A";
-  if (note.pickupOrigins && note.pickupOrigins.length > 0) {
-    const first = note.pickupOrigins[0];
-    originText = first.name || first.address || "Origen";
-    if (note.pickupOrigins.length > 1) {
-      originText += ` (+${note.pickupOrigins.length - 1})`;
-    }
-  }
-  originText = originText.substring(0, 25);
-  
-  const destText = (note.destination || "N/A").substring(0, 25);
-  doc.text(originText, routeX + 3, yPos + 10);
-  doc.setTextColor(59, 130, 246);
-  doc.text("→", routeX + 3 + doc.getTextWidth(originText) + 2, yPos + 10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(destText, routeX + 3, yPos + 15);
+  doc.text(note.vehicleType || "N/A", vehX + 3, yPos + 10);
 
-  yPos += 21;
+  // Time box
+  const timeX = margin + col3Width * 2 + 6;
+  drawSectionBox(doc, timeX, yPos, col3Width, 16);
+  drawLabel(doc, "FECHA / HORA", timeX + 3, yPos + 4);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  const dateStr2 = note.date ? format(new Date(note.date), "dd/MM/yy", { locale: es }) : "";
+  doc.text(`${dateStr2} ${note.time || ""}`, timeX + 3, yPos + 10);
+
+  yPos += 19;
+
+  // Row 2: Pickup Origins (detailed)
+  if (note.pickupOrigins && note.pickupOrigins.length > 0) {
+    const originsHeight = Math.min(note.pickupOrigins.length * 8 + 6, 30);
+    drawSectionBox(doc, margin, yPos, contentWidth, originsHeight);
+    drawLabel(doc, "RECOGIDA", margin + 3, yPos + 4);
+    
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    
+    let originY = yPos + 9;
+    note.pickupOrigins.slice(0, 3).forEach((origin, idx) => {
+      const name = origin.name || "";
+      const address = origin.address || "";
+      let text = "";
+      if (name && address) {
+        text = `${name} - ${address}`;
+      } else {
+        text = name || address || "N/A";
+      }
+      doc.text(`${idx + 1}. ${text.substring(0, 80)}`, margin + 5, originY);
+      originY += 7;
+    });
+    
+    yPos += originsHeight + 2;
+  }
+
+  // Destination (detailed)
+  drawSectionBox(doc, margin, yPos, contentWidth, 14);
+  drawLabel(doc, "DESTINO / ENTREGA", margin + 3, yPos + 4);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text((note.destination || "N/A").substring(0, 90), margin + 5, yPos + 10);
+
+  yPos += 17;
 
   // Observations + Carload (if any) - compact single row
   const hasObs = note.observations && note.observations.trim().length > 0;
@@ -253,62 +277,38 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     }
   }
 
-  // Signatures section - compact horizontal layout
+  // Signatures section - inline compact
   const hasOriginDoc = note.originSignatureDocument;
   const hasDestDoc = note.destinationSignatureDocument;
   
   if (hasOriginDoc || hasDestDoc) {
-    const sigColWidth = (contentWidth - 3) / 2;
-    const sigHeight = 28;
+    drawSectionBox(doc, margin, yPos, contentWidth, 12);
     
-    // Origin signature
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    
+    let sigText = "";
+    
     if (hasOriginDoc) {
-      drawSectionBox(doc, margin, yPos, sigColWidth, sigHeight);
-      drawLabel(doc, "FIRMA ORIGEN", margin + 3, yPos + 4);
-      
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(71, 85, 105);
-      doc.text(`DNI: ${note.originSignatureDocument}`, margin + 3, yPos + 9);
-      
+      sigText += `Origen: DNI ${note.originSignatureDocument}`;
       if (note.originSignedAt) {
-        doc.setFontSize(7);
-        doc.text(format(new Date(note.originSignedAt), "dd/MM/yy HH:mm"), margin + 3, yPos + 13);
-      }
-
-      if (note.originSignature) {
-        try {
-          doc.addImage(note.originSignature, "PNG", margin + 3, yPos + 15, sigColWidth - 8, 11);
-        } catch (e) {}
+        sigText += ` (${format(new Date(note.originSignedAt), "dd/MM/yy HH:mm")})`;
       }
     }
-
-    // Destination signature
+    
     if (hasDestDoc) {
-      const destX = hasOriginDoc ? margin + sigColWidth + 3 : margin;
-      const destWidth = hasOriginDoc ? sigColWidth : contentWidth;
-      
-      drawSectionBox(doc, destX, yPos, destWidth, sigHeight);
-      drawLabel(doc, "FIRMA DESTINO", destX + 3, yPos + 4);
-      
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(71, 85, 105);
-      doc.text(`DNI: ${note.destinationSignatureDocument}`, destX + 3, yPos + 9);
-      
+      if (sigText) sigText += "   |   ";
+      sigText += `Destino: DNI ${note.destinationSignatureDocument}`;
       if (note.destinationSignedAt) {
-        doc.setFontSize(7);
-        doc.text(format(new Date(note.destinationSignedAt), "dd/MM/yy HH:mm"), destX + 3, yPos + 13);
-      }
-
-      if (note.destinationSignature) {
-        try {
-          doc.addImage(note.destinationSignature, "PNG", destX + 3, yPos + 15, (hasOriginDoc ? sigColWidth : contentWidth) - 8, 11);
-        } catch (e) {}
+        sigText += ` (${format(new Date(note.destinationSignedAt), "dd/MM/yy HH:mm")})`;
       }
     }
+    
+    drawLabel(doc, "DOCUMENTOS FIRMANTES", margin + 3, yPos + 4);
+    doc.setTextColor(15, 23, 42);
+    doc.text(sigText, margin + 3, yPos + 9);
 
-    yPos += sigHeight + 3;
+    yPos += 15;
   }
 
   // Footer
