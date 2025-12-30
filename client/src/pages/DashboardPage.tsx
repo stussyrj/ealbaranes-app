@@ -33,6 +33,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -2474,8 +2479,37 @@ export default function DashboardPage() {
                     <span className="text-xs">Cargando...</span>
                   </div>
                 ) : vehicleTypes.length === 0 ? (
-                  <div className="col-span-full text-center py-2">
-                    <p className="text-xs text-muted-foreground">No hay tipos de vehículos disponibles</p>
+                  <div className="col-span-full flex items-center justify-center gap-2 py-2">
+                    <p className="text-xs text-muted-foreground">No hay tipos de vehículos</p>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 rounded-full text-xs"
+                          data-testid="button-vehicle-help"
+                        >
+                          ?
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" side="top">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCreateDeliveryOpen(false);
+                            window.location.href = "/settings";
+                          }}
+                          className="text-xs"
+                          data-testid="button-add-vehicle-type"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Agregar vehículo
+                        </Button>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 ) : (
                   vehicleTypes.map((tipo) => (
