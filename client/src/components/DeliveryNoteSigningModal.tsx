@@ -432,8 +432,31 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
             </div>
           )}
 
-          {/* New dual signature form - only show for non-legacy notes */}
-          {!isLegacyComplete && (
+          {/* Signature disabled message */}
+          {!isLegacyComplete && SIGNATURE_DRAWING_DISABLED && (
+            <div className="space-y-4">
+              <div className="w-full p-6 border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                <div className="flex flex-col items-center gap-3 text-amber-700 dark:text-amber-400 text-center">
+                  <Ban className="w-10 h-10" />
+                  <div>
+                    <p className="font-semibold text-base">Firma digital deshabilitada temporalmente</p>
+                    <p className="text-sm opacity-80 mt-1">Esta funcionalidad estará disponible próximamente</p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="w-full"
+                data-testid="button-close-disabled"
+              >
+                Cerrar
+              </Button>
+            </div>
+          )}
+
+          {/* New dual signature form - only show for non-legacy notes when signatures are enabled */}
+          {!isLegacyComplete && !SIGNATURE_DRAWING_DISABLED && (
             <div className="space-y-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
