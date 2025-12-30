@@ -505,44 +505,51 @@ export class MemStorage implements IStorage {
   }
 
   async getVehicleTypes(): Promise<VehicleType[]> {
-    return Array.from(this.vehicleTypes.values()).filter((v) => v.isActive);
+    const results = await db.select().from(vehicleTypesTable)
+      .where(eq(vehicleTypesTable.isActive, true));
+    return results;
   }
 
   async getAllVehicleTypes(): Promise<VehicleType[]> {
-    return Array.from(this.vehicleTypes.values());
+    const results = await db.select().from(vehicleTypesTable);
+    return results;
   }
 
   async getVehicleType(id: string): Promise<VehicleType | undefined> {
-    return this.vehicleTypes.get(id);
+    const results = await db.select().from(vehicleTypesTable)
+      .where(eq(vehicleTypesTable.id, id));
+    return results[0];
   }
 
   async createVehicleType(vehicle: InsertVehicleType): Promise<VehicleType> {
     const id = randomUUID();
-    const newVehicle: VehicleType = {
+    const results = await db.insert(vehicleTypesTable).values({
       id,
       name: vehicle.name,
       description: vehicle.description ?? null,
       capacity: vehicle.capacity ?? null,
-      pricePerKm: vehicle.pricePerKm,
+      pricePerKm: vehicle.pricePerKm ?? 0,
       directionPrice: vehicle.directionPrice ?? 0,
-      minimumPrice: vehicle.minimumPrice,
+      minimumPrice: vehicle.minimumPrice ?? 0,
       isActive: vehicle.isActive ?? true,
       tenantId: vehicle.tenantId ?? null,
-    };
-    this.vehicleTypes.set(id, newVehicle);
-    return newVehicle;
+    }).returning();
+    return results[0];
   }
 
   async updateVehicleType(id: string, updates: Partial<InsertVehicleType>): Promise<VehicleType | undefined> {
-    const existing = this.vehicleTypes.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...updates };
-    this.vehicleTypes.set(id, updated);
-    return updated;
+    const results = await db.update(vehicleTypesTable)
+      .set(updates)
+      .where(eq(vehicleTypesTable.id, id))
+      .returning();
+    return results[0];
   }
 
   async deleteVehicleType(id: string): Promise<boolean> {
-    return this.vehicleTypes.delete(id);
+    const results = await db.delete(vehicleTypesTable)
+      .where(eq(vehicleTypesTable.id, id))
+      .returning();
+    return results.length > 0;
   }
 
   async getQuotes(tenantId: string, userId?: string, workerId?: string): Promise<Quote[]> {
