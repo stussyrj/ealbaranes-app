@@ -169,8 +169,8 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     yPos += 5;
 
     try {
-      const photoWidth = pageWidth - 2 * margin;
-      const photoHeight = 80;
+      const photoWidth = 100;
+      const photoHeight = 75;
       doc.addImage(note.photo, "JPEG", margin, yPos, photoWidth, photoHeight);
       yPos += photoHeight + 5;
     } catch (e) {
