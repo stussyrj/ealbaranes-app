@@ -78,7 +78,6 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
   onRestoreClick,
 }: DeliveryNoteCardProps) {
   const [showAllOrigins, setShowAllOrigins] = useState(false);
-  const [showSignatures, setShowSignatures] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   
   // Fully signed requires: origin document + destination document + photo (new dual signature system)
@@ -263,67 +262,6 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
             </div>
           )}
 
-          {(hasOriginSigned || hasDestinationSigned) && (
-            <div className="space-y-2">
-              <button
-                onClick={() => setShowSignatures(!showSignatures)}
-                className="flex items-center gap-1 text-xs text-primary hover:underline w-full justify-center"
-                data-testid={`button-toggle-signatures-${note.id}`}
-              >
-                {showSignatures ? (
-                  <><ChevronUp className="w-3 h-3" /> Ocultar firmas</>
-                ) : (
-                  <><ChevronDown className="w-3 h-3" /> Ver firmas ({note.originSignature ? '1' : '0'} origen, {note.destinationSignature ? '1' : '0'} destino)</>
-                )}
-              </button>
-
-              {showSignatures && (
-                <div className="grid grid-cols-2 gap-2">
-                  {note.originSignature && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-md p-2">
-                      <div className="flex items-center gap-1 mb-1">
-                        <MapPin className="w-3 h-3 text-blue-500" />
-                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Origen</span>
-                      </div>
-                      <img 
-                        src={note.originSignature} 
-                        alt="Firma origen" 
-                        className="w-full h-12 object-contain bg-white rounded border"
-                        data-testid={`img-origin-signature-${note.id}`}
-                      />
-                      {note.originSignatureDocument && (
-                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {note.originSignatureDocument}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {note.destinationSignature && (
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-md p-2">
-                      <div className="flex items-center gap-1 mb-1">
-                        <Navigation className="w-3 h-3 text-green-500" />
-                        <span className="text-xs font-medium text-green-700 dark:text-green-300">Destino</span>
-                      </div>
-                      <img 
-                        src={note.destinationSignature} 
-                        alt="Firma destino" 
-                        className="w-full h-12 object-contain bg-white rounded border"
-                        data-testid={`img-destination-signature-${note.id}`}
-                      />
-                      {note.destinationSignatureDocument && (
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {note.destinationSignatureDocument}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
           {(note.signedAt || note.originSignedAt || note.destinationSignedAt) && isSigned && (
             <div className="flex items-start gap-2 bg-green-50 dark:bg-green-900/20 rounded-md p-2">
