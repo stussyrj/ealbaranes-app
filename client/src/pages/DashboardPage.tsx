@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { Link } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
@@ -2494,20 +2495,18 @@ export default function DashboardPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-2" side="top">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setCreateDeliveryOpen(false);
-                            window.location.href = "/settings";
-                          }}
-                          className="text-xs"
-                          data-testid="button-add-vehicle-type"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Agregar vehículo
-                        </Button>
+                        <Link href="/settings" onClick={() => setCreateDeliveryOpen(false)}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            data-testid="button-add-vehicle-type"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Agregar vehículo
+                          </Button>
+                        </Link>
                       </PopoverContent>
                     </Popover>
                   </div>
