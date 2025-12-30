@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const [downloadDateFrom, setDownloadDateFrom] = useState<string>("");
   const [downloadDateTo, setDownloadDateTo] = useState<string>("");
   const [createDeliveryOpen, setCreateDeliveryOpen] = useState(false);
+  const [isCreatingDelivery, setIsCreatingDelivery] = useState(false);
   const [formData, setFormData] = useState({
     clientName: "",
     pickupOrigins: [{ name: "", address: "" }] as PickupOrigin[],
@@ -2384,8 +2385,11 @@ export default function DashboardPage() {
                 Cancelar
               </Button>
               <Button
-                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim()}
+                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
                 onClick={async () => {
+                  if (isCreatingDelivery) return;
+                  setIsCreatingDelivery(true);
+                  
                   try {
                     const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                     const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
@@ -2436,12 +2440,14 @@ export default function DashboardPage() {
                   } catch (error) {
                     console.error("Error guardando albarán:", error);
                     toast({ title: "Error", description: "No se pudo crear el albarán", variant: "destructive" });
+                  } finally {
+                    setIsCreatingDelivery(false);
                   }
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700"
                 data-testid="button-save-albaran"
               >
-                Crear Albarán
+                {isCreatingDelivery ? "Creando..." : "Crear Albarán"}
               </Button>
             </div>
           </div>

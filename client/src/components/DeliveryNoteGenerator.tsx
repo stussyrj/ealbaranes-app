@@ -174,6 +174,7 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
   const [destinationSignature, setDestinationSignature] = useState("");
   const [destinationDocument, setDestinationDocument] = useState("");
   const [hasDestinationSignature, setHasDestinationSignature] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOriginSignatureChange = useCallback((hasSig: boolean, dataUrl: string) => {
     setHasOriginSignature(hasSig);
@@ -200,10 +201,12 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
   };
 
   const handleSubmit = async () => {
-    if (!quote || !workerId || !isFormComplete) {
-      console.error("Missing required fields");
+    if (!quote || !workerId || !isFormComplete || isSubmitting) {
+      console.error("Missing required fields or already submitting");
       return;
     }
+
+    setIsSubmitting(true);
 
     const payload = {
       quoteId: quote.id,
@@ -246,6 +249,8 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
       }
     } catch (error) {
       console.error("Error creating delivery note:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -387,12 +392,12 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!isFormComplete}
+              disabled={!isFormComplete || isSubmitting}
               className="flex-1 bg-green-600/85 hover:bg-green-700/85 dark:bg-green-600/85 dark:hover:bg-green-700/85 text-white backdrop-blur-sm border border-green-500/40"
               data-testid="button-send-delivery-note"
             >
               <Check className="w-4 h-4 mr-1.5" />
-              Enviar Albarán
+              {isSubmitting ? "Enviando..." : "Enviar Albarán"}
             </Button>
           </div>
 
