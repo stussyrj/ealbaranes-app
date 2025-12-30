@@ -28,6 +28,7 @@ import { eq } from "drizzle-orm";
 // import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
 import { generateInvoicePdf } from "./invoicePdfService";
+import { generateDeliveryNotePdf } from "./deliveryNotePdfService";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -1084,6 +1085,39 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error permanently deleting delivery note:", error);
       res.status(500).json({ error: "Error al eliminar el albarán" });
+    }
+  });
+
+  // Download delivery note as PDF
+  app.get("/api/delivery-notes/:id/pdf", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const { id } = req.params;
+      const user = req.user as any;
+      const tenantId = user.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      
+      // Verify note belongs to tenant
+      const note = await storage.getDeliveryNote(id);
+      if (!note || note.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      
+      // Generate PDF
+      const pdfBuffer = generateDeliveryNotePdf(note as any);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Albaran_${note.noteNumber || 'documento'}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating delivery note PDF:", error);
+      res.status(500).json({ error: "Error al generar el PDF" });
     }
   });
 

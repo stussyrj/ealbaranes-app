@@ -1,7 +1,8 @@
 import { memo, useState } from "react";
-import { Clock, FileText, CheckCircle, Timer, Camera, Edit2, ChevronDown, ChevronUp, MapPin, Navigation, User, Trash2, RotateCcw } from "lucide-react";
+import { Clock, FileText, CheckCircle, Timer, Camera, Edit2, ChevronDown, ChevronUp, MapPin, Navigation, User, Trash2, RotateCcw, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { downloadFile } from "@/lib/queryClient";
 import type { PickupOrigin } from "@shared/schema";
 
 const RouteDisplay = ({ origin }: { origin: PickupOrigin }) => {
@@ -78,6 +79,7 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
 }: DeliveryNoteCardProps) {
   const [showAllOrigins, setShowAllOrigins] = useState(false);
   const [showSignatures, setShowSignatures] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   // New dual signing system: fully signed = origin + destination + photo
   const hasOriginSigned = !!note.originSignature && !!note.originSignatureDocument;
@@ -121,6 +123,19 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
     });
   };
 
+  const handleDownloadPdf = async () => {
+    if (!isSigned) return;
+    setIsDownloading(true);
+    try {
+      const filename = `Albaran_${note.noteNumber}_${note.clientName?.replace(/\s+/g, '_') || 'cliente'}.pdf`;
+      await downloadFile(`/api/delivery-notes/${note.id}/pdf`, filename);
+    } catch (error) {
+      console.error('Error descargando PDF:', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 overflow-hidden shadow-sm">
       {showPhoto && note.photo && (
@@ -145,23 +160,38 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
           >
             Albarán #{note.noteNumber || '—'}
           </span>
-          <Badge 
-            className={isSigned 
-              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
-              : isPartialSigned
-                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 no-default-hover-elevate no-default-active-elevate"
-                : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
-            }
-            data-testid={`badge-status-${note.id}`}
-          >
-            {isSigned ? (
-              <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
-            ) : isPartialSigned ? (
-              <><MapPin className="w-3 h-3 mr-1" /> Origen firmado</>
-            ) : (
-              <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
+          <div className="flex items-center gap-2">
+            {isSigned && (
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8"
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
+                title="Descargar PDF"
+                data-testid={`button-download-pdf-${note.id}`}
+              >
+                <Download className="w-3.5 h-3.5" />
+              </Button>
             )}
-          </Badge>
+            <Badge 
+              className={isSigned 
+                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 no-default-hover-elevate no-default-active-elevate"
+                : isPartialSigned
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 no-default-hover-elevate no-default-active-elevate"
+                  : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 no-default-hover-elevate no-default-active-elevate"
+              }
+              data-testid={`badge-status-${note.id}`}
+            >
+              {isSigned ? (
+                <><CheckCircle className="w-3 h-3 mr-1" /> Firmado</>
+              ) : isPartialSigned ? (
+                <><MapPin className="w-3 h-3 mr-1" /> Origen firmado</>
+              ) : (
+                <><Clock className="w-3 h-3 mr-1" /> Pendiente</>
+              )}
+            </Badge>
+          </div>
         </div>
 
         <div className="space-y-3">
