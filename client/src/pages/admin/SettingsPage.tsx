@@ -33,7 +33,9 @@ export default function SettingsPage() {
           apiRequest("GET", "/api/tenant/vehicle-types")
         ]);
         setWaitTimeThreshold(settingsData.waitTimeThreshold || 20);
-        setVehicleTypes(vehiclesData || []);
+        // Ensure vehiclesData is an array
+        const types = Array.isArray(vehiclesData) ? vehiclesData : [];
+        setVehicleTypes(types);
       } catch (error) {
         console.error("Error loading settings:", error);
         toast({ title: "Error", description: "No se pudieron cargar las configuraciones", variant: "destructive" });
