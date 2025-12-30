@@ -8,6 +8,7 @@ import {
   X,
   Mail,
   FileText,
+  Settings,
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import {
@@ -32,6 +33,10 @@ const adminNavItems = [
   { title: "Mensajes", url: "/admin/messages", icon: Mail },
   { title: "Facturas", url: "/admin/invoices", icon: FileText },
   { title: "Gestión de Usuarios", url: "/admin/users", icon: Users },
+];
+
+const adminConfigItems = [
+  { title: "Configuración", url: "/admin/settings", icon: Settings },
 ];
 
 const workerNavItems = [
@@ -147,6 +152,25 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Configuración</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminConfigItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <NavLink 
+                      href={item.url}
+                      icon={item.icon}
+                      title={item.title}
+                    />
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4 space-y-2">
