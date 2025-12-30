@@ -2495,7 +2495,7 @@ export default function DashboardPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-2" side="top">
-                        <Link href="/settings" onClick={() => setCreateDeliveryOpen(false)}>
+                        <Link href="/admin/settings" onClick={() => setCreateDeliveryOpen(false)}>
                           <Button
                             type="button"
                             variant="outline"
