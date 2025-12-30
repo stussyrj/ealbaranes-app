@@ -2158,22 +2158,6 @@ export default function DashboardPage() {
                         <Pen className="w-3 h-3" />
                       </Button>
                     </div>
-
-                    {note.signature && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSignatureToView(note.signature);
-                          setViewSignatureOpen(true);
-                        }}
-                        className="w-full text-xs h-7"
-                        data-testid={`button-view-signature-${note.id}`}
-                      >
-                        <Pen className="w-3 h-3 mr-1" />
-                        Ver Firma Digital
-                      </Button>
-                    )}
                   </div>
 
                   {isFullySigned(note) && note.isInvoiced && (
