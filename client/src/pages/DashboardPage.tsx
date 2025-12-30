@@ -65,6 +65,9 @@ export default function DashboardPage() {
   const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
   const [workerSearchFilter, setWorkerSearchFilter] = useState<string>("");
   
+  // Period filter for summary counters (today/month/total)
+  const [periodFilter, setPeriodFilter] = useState<"today" | "month" | "total" | null>(null);
+  
   // Photo capture states for signing
   const [capturePhotoOpen, setCapturePhotoOpen] = useState(false);
   const [selectedNoteForPhoto, setSelectedNoteForPhoto] = useState<any>(null);
@@ -672,6 +675,30 @@ export default function DashboardPage() {
   
   const totalNotesAllTime = allDeliveryNotes.length;
   
+  // Get filtered notes by period for display
+  const getNotesForPeriod = (period: "today" | "month" | "total") => {
+    if (period === "total") return allDeliveryNotes;
+    if (period === "today") {
+      return allDeliveryNotes.filter((n: any) => {
+        if (!n.date) return false;
+        const noteDateStr = normalizeToLocalDateStr(n.date);
+        return noteDateStr === todayStr;
+      });
+    }
+    if (period === "month") {
+      return allDeliveryNotes.filter((n: any) => {
+        if (!n.date) return false;
+        const noteDateStr = normalizeToLocalDateStr(n.date);
+        const [noteYear, noteMonth] = noteDateStr.split('-').map(Number);
+        return noteMonth === (currentMonth + 1) && noteYear === currentYear;
+      });
+    }
+    return allDeliveryNotes;
+  };
+  
+  // Filtered notes based on period selection
+  const filteredNotesByPeriod = periodFilter ? getNotesForPeriod(periodFilter) : null;
+  
   // Helper to filter notes by date range for downloads
   const filterNotesByDateRange = (notes: any[]) => {
     return notes.filter((n: any) => {
@@ -796,41 +823,119 @@ export default function DashboardPage() {
         {/* Resumen de Actividad - Compact horizontal strip with flex-wrap */}
         <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 shadow-sm">
           <div className="flex items-center justify-around gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPeriodFilter(periodFilter === "today" ? null : "today")}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer hover-elevate ${
+                periodFilter === "today" 
+                  ? "bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500" 
+                  : ""
+              }`}
+              data-testid="button-filter-today"
+            >
               <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                 <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div>
+              <div className="text-left">
                 <div className="text-base font-bold leading-none" data-testid="count-today">
                   {isLoadingNotes ? "..." : notesCreatedToday}
                 </div>
                 <p className="text-[9px] text-muted-foreground">Hoy</p>
               </div>
-            </div>
-            <div className="flex items-center gap-1.5">
+            </button>
+            <button
+              onClick={() => setPeriodFilter(periodFilter === "month" ? null : "month")}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer hover-elevate ${
+                periodFilter === "month" 
+                  ? "bg-purple-100 dark:bg-purple-900/50 ring-2 ring-purple-500" 
+                  : ""
+              }`}
+              data-testid="button-filter-month"
+            >
               <div className="h-7 w-7 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
                 <Calendar className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
               </div>
-              <div>
+              <div className="text-left">
                 <div className="text-base font-bold leading-none" data-testid="count-month">
                   {isLoadingNotes ? "..." : notesCreatedThisMonth}
                 </div>
                 <p className="text-[9px] text-muted-foreground">Mes</p>
               </div>
-            </div>
-            <div className="flex items-center gap-1.5">
+            </button>
+            <button
+              onClick={() => setPeriodFilter(periodFilter === "total" ? null : "total")}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer hover-elevate ${
+                periodFilter === "total" 
+                  ? "bg-indigo-100 dark:bg-indigo-900/50 ring-2 ring-indigo-500" 
+                  : ""
+              }`}
+              data-testid="button-filter-total"
+            >
               <div className="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
                 <Archive className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <div>
+              <div className="text-left">
                 <div className="text-base font-bold leading-none" data-testid="count-total">
                   {isLoadingNotes ? "..." : totalNotesAllTime}
                 </div>
                 <p className="text-[9px] text-muted-foreground">Total</p>
               </div>
-            </div>
+            </button>
           </div>
         </div>
+        
+        {/* Filtered notes display when a period is selected */}
+        {periodFilter && filteredNotesByPeriod && (
+          <div className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-3 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Albaranes de {periodFilter === "today" ? "Hoy" : periodFilter === "month" ? "Este Mes" : "Total"}
+                <Badge className="ml-1">{filteredNotesByPeriod.length}</Badge>
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPeriodFilter(null)}
+                className="h-7 px-2"
+                data-testid="button-clear-period-filter"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {filteredNotesByPeriod.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No hay albaranes en este período
+                </p>
+              ) : (
+                filteredNotesByPeriod.map((note: any) => (
+                  <DeliveryNoteCard
+                    key={note.id}
+                    note={note}
+                    showWorkerName={true}
+                    showPhoto={true}
+                    showActions={true}
+                    isPending={!isFullySigned(note)}
+                    onPhotoClick={() => {
+                      if (note.photo) {
+                        setPreviewImage(note.photo);
+                        setPreviewModalOpen(true);
+                      }
+                    }}
+                    onEditClick={() => {
+                      setSelectedNoteForSigning(note);
+                      setSigningModalOpen(true);
+                    }}
+                    onAddPhotoClick={() => {
+                      setSelectedNoteForPhoto(note);
+                      setCapturePhotoOpen(true);
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Botón Crear Albarán - Prominente */}
         <button
