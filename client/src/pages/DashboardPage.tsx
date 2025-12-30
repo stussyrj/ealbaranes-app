@@ -2068,7 +2068,7 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    {/* Button to open dual signature modal */}
+                    {/* Button to open dual signature modal or download */}
                     {!isFullySigned(note) && (
                       <Button
                         variant="outline"
@@ -2082,6 +2082,26 @@ export default function DashboardPage() {
                       >
                         <Pen className="w-3 h-3 mr-1" />
                         Firmar Albarán
+                      </Button>
+                    )}
+                    {isFullySigned(note) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={async () => {
+                          try {
+                            const filename = `Albaran_${note.noteNumber}_${note.clientName?.replace(/\s+/g, '_') || 'cliente'}.pdf`;
+                            await downloadFile(`/api/delivery-notes/${note.id}/pdf`, filename);
+                          } catch (error) {
+                            console.error('Error descargando PDF:', error);
+                            toast({ title: "Error", description: "No se pudo descargar el PDF", variant: "destructive" });
+                          }
+                        }}
+                        data-testid={`button-download-pdf-modal-${note.id}`}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Descargar PDF
                       </Button>
                     )}
 
