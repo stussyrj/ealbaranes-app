@@ -1,6 +1,44 @@
 import { jsPDF } from "jspdf";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import imageSize from "image-size";
+
+function getScaledImageDimensions(
+  base64Data: string,
+  maxWidth: number,
+  maxHeight: number
+): { width: number; height: number } | null {
+  try {
+    let data = base64Data;
+    if (data.includes(",")) {
+      data = data.split(",")[1];
+    }
+    
+    const buffer = Buffer.from(data, "base64");
+    const dimensions = imageSize(buffer);
+    
+    if (!dimensions.width || !dimensions.height) {
+      return null;
+    }
+    
+    const originalWidth = dimensions.width;
+    const originalHeight = dimensions.height;
+    const aspectRatio = originalWidth / originalHeight;
+    
+    let scaledWidth = maxWidth;
+    let scaledHeight = scaledWidth / aspectRatio;
+    
+    if (scaledHeight > maxHeight) {
+      scaledHeight = maxHeight;
+      scaledWidth = scaledHeight * aspectRatio;
+    }
+    
+    return { width: scaledWidth, height: scaledHeight };
+  } catch (e) {
+    console.error("Error getting image dimensions:", e);
+    return null;
+  }
+}
 
 interface DeliveryNoteWithDetails {
   id: string;
@@ -169,10 +207,20 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     yPos += 5;
 
     try {
-      const photoWidth = 100;
-      const photoHeight = 75;
-      doc.addImage(note.photo, "JPEG", margin, yPos, photoWidth, photoHeight);
-      yPos += photoHeight + 5;
+      const maxPhotoWidth = pageWidth - 2 * margin;
+      const maxPhotoHeight = 100;
+      
+      const scaledDims = getScaledImageDimensions(note.photo, maxPhotoWidth, maxPhotoHeight);
+      
+      if (scaledDims) {
+        doc.addImage(note.photo, "JPEG", margin, yPos, scaledDims.width, scaledDims.height);
+        yPos += scaledDims.height + 5;
+      } else {
+        const fallbackWidth = 80;
+        const fallbackHeight = 60;
+        doc.addImage(note.photo, "JPEG", margin, yPos, fallbackWidth, fallbackHeight);
+        yPos += fallbackHeight + 5;
+      }
     } catch (e) {
       console.error("Error adding delivery photo:", e);
       doc.setFontSize(9);
