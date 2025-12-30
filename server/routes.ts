@@ -97,7 +97,15 @@ export async function registerRoutes(
 
   app.get("/api/vehicle-types", async (req, res) => {
     try {
-      const types = await storage.getVehicleTypes();
+      if (!req.isAuthenticated() || !req.user) {
+        const types = await storage.getVehicleTypes();
+        const availability = storage.getCarrozadoAvailability();
+        return res.json({ types, carrozadoUnavailableUntil: availability.unavailableUntil });
+      }
+      const user = req.user as any;
+      const tenantId = user.tenantId;
+      const allTypes = await storage.getVehicleTypes();
+      const types = allTypes.filter(t => !t.tenantId || t.tenantId === tenantId);
       const availability = storage.getCarrozadoAvailability();
       res.json({ types, carrozadoUnavailableUntil: availability.unavailableUntil });
     } catch (error) {
@@ -106,19 +114,39 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/vehicle-types/all", async (req, res) => {
+  app.get("/api/tenant/vehicle-types", async (req, res) => {
     try {
-      const types = await storage.getAllVehicleTypes();
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      const user = req.user as any;
+      const tenantId = user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      const allTypes = await storage.getAllVehicleTypes();
+      const types = allTypes.filter(t => t.tenantId === tenantId);
       res.json(types);
     } catch (error) {
-      console.error("Error fetching all vehicle types:", error);
+      console.error("Error fetching tenant vehicle types:", error);
       res.status(500).json({ error: "Error al obtener los tipos de vehículo" });
     }
   });
 
-  app.post("/api/vehicle-types", async (req, res) => {
+  app.post("/api/tenant/vehicle-types", async (req, res) => {
     try {
-      const data = insertVehicleTypeSchema.parse(req.body);
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo administradores pueden crear tipos de vehículos" });
+      }
+      const tenantId = user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: "Empresa no encontrada" });
+      }
+      const data = insertVehicleTypeSchema.parse({ ...req.body, tenantId });
       const vehicle = await storage.createVehicleType(data);
       res.status(201).json(vehicle);
     } catch (error) {
@@ -127,32 +155,47 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/vehicle-types/:id", async (req, res) => {
+  app.patch("/api/tenant/vehicle-types/:id", async (req, res) => {
     try {
-      const { id } = req.params;
-      const updates = req.body;
-      const vehicle = await storage.updateVehicleType(id, updates);
-      if (!vehicle) {
-        return res.status(404).json({ error: "Vehículo no encontrado" });
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
       }
-      res.json(vehicle);
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo administradores pueden actualizar tipos de vehículos" });
+      }
+      const { id } = req.params;
+      const vehicle = await storage.getVehicleType(id);
+      if (!vehicle || vehicle.tenantId !== user.tenantId) {
+        return res.status(404).json({ error: "Tipo de vehículo no encontrado" });
+      }
+      const updated = await storage.updateVehicleType(id, req.body);
+      res.json(updated);
     } catch (error) {
       console.error("Error updating vehicle type:", error);
       res.status(400).json({ error: "Error al actualizar el tipo de vehículo" });
     }
   });
 
-  app.delete("/api/vehicle-types/:id", async (req, res) => {
+  app.delete("/api/tenant/vehicle-types/:id", async (req, res) => {
     try {
-      const { id } = req.params;
-      const vehicle = await storage.updateVehicleType(id, { isActive: false });
-      if (!vehicle) {
-        return res.status(404).json({ error: "Vehículo no encontrado" });
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
       }
+      const user = req.user as any;
+      if (!user.isAdmin) {
+        return res.status(403).json({ error: "Solo administradores pueden eliminar tipos de vehículos" });
+      }
+      const { id } = req.params;
+      const vehicle = await storage.getVehicleType(id);
+      if (!vehicle || vehicle.tenantId !== user.tenantId) {
+        return res.status(404).json({ error: "Tipo de vehículo no encontrado" });
+      }
+      await storage.updateVehicleType(id, { isActive: false });
       res.status(204).send();
     } catch (error) {
-      console.error("Error deactivating vehicle type:", error);
-      res.status(500).json({ error: "Error al desactivar el tipo de vehículo" });
+      console.error("Error deleting vehicle type:", error);
+      res.status(500).json({ error: "Error al eliminar el tipo de vehículo" });
     }
   });
 

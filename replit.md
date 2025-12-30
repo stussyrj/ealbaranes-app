@@ -1,8 +1,8 @@
 # eAlbarán - Gestión Digital de Albaranes de Transporte
 
-## Status: OPERATIONAL - Tracking de Tiempos Funcionando
+## Status: OPERATIONAL - Gestión de Tipos de Vehículos Implementada
 
-**La aplicación está funcionando con tracking de hora de llegada/salida para albaranes.**
+**La aplicación está funcionando con tipos de vehículos configurables por empresa. Admins pueden crear, editar y eliminar tipos de vehículos en la sección de configuración.**
 
 ## Overview
 
@@ -16,6 +16,27 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 - UI Framework: shadcn/ui con Tailwind CSS
 
 ## Últimos Cambios
+
+### Gestión de Tipos de Vehículos por Tenant (Diciembre 30, 2025 - NUEVO)
+- **Configuración de Vehículos**: Nueva sección en SettingsPage.tsx para agregar/editar/eliminar tipos de vehículos
+- **Endpoints Backend**:
+  - `GET /api/tenant/vehicle-types` - Obtiene tipos de vehículos del tenant autenticado
+  - `POST /api/tenant/vehicle-types` - Crea nuevo tipo de vehículo (solo admin)
+  - `PATCH /api/tenant/vehicle-types/:id` - Actualiza tipo de vehículo (solo admin)
+  - `DELETE /api/tenant/vehicle-types/:id` - Desactiva tipo de vehículo (soft delete, solo admin)
+- **Filtrado por Tenant**: Todos los endpoints validan que el usuario sea admin y del mismo tenant
+- **UI de Formulario**:
+  - Input para ingresar nombre del vehículo
+  - Botón agregar con Enter key support
+  - Cada vehículo tiene botones editar/eliminar
+  - Edición inline con confirmación/cancelación
+- **DashboardPage.tsx Actualizado**:
+  - Obtiene tipos de vehículos desde API al montar
+  - Fallback a tipos por defecto si hay error
+  - Grid de botones dinámico (se ajusta a 3, 4 o 5 columnas según cantidad)
+  - Loading state mientras carga tipos
+  - Usa ID y nombre del tipo de vehículo correctamente
+- **Aislamiento de Datos**: Cada empresa ve solo sus tipos de vehículos personalizados
 
 ### ARREGLADO: Endpoints Críticos de Gestión de Usuarios (Diciembre 30, 2025)
 - **PROBLEMA GRAVE RESUELTO**: Endpoint `/api/admin/users` no existía en servidor, causando que trabajadores nunca se carguen en Gestión de Usuarios

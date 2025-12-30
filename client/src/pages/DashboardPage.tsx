@@ -89,6 +89,38 @@ export default function DashboardPage() {
   // Onboarding tutorial state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingManuallyCompleted, setOnboardingManuallyCompleted] = useState(false);
+  const [vehicleTypes, setVehicleTypes] = useState<Array<{ id: string; name: string }>>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  
+  // Load vehicle types on mount
+  useEffect(() => {
+    const loadVehicleTypes = async () => {
+      try {
+        setIsLoadingVehicles(true);
+        const response: any = await apiRequest("GET", "/api/vehicle-types");
+        const types = response.types || [];
+        setVehicleTypes(types);
+        // Set first vehicle as default if available
+        if (types.length > 0 && formData.vehicleType === "Furgoneta") {
+          setFormData(prev => ({ ...prev, vehicleType: types[0].name }));
+        }
+      } catch (error) {
+        console.error("Error loading vehicle types:", error);
+        // Fallback to defaults
+        setVehicleTypes([
+          { id: "1", name: "Moto" },
+          { id: "2", name: "Furgoneta" },
+          { id: "3", name: "Furgón" },
+          { id: "4", name: "Carrozado" },
+          { id: "5", name: "Camión" }
+        ]);
+      } finally {
+        setIsLoadingVehicles(false);
+      }
+    };
+    
+    loadVehicleTypes();
+  }, []);
   
   // Show onboarding if user hasn't completed it (and wasn't manually closed this session)
   useEffect(() => {
@@ -2435,20 +2467,31 @@ export default function DashboardPage() {
             
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Vehículo</label>
-              <div className="grid grid-cols-5 gap-1">
-                {["Moto", "Furgoneta", "Furgón", "Carrozado", "Camión"].map((tipo) => (
-                  <Button
-                    key={tipo}
-                    type="button"
-                    variant={formData.vehicleType === tipo ? "default" : "outline"}
-                    onClick={() => setFormData({ ...formData, vehicleType: tipo })}
-                    size="sm"
-                    className="text-xs px-1"
-                    data-testid={`button-vehicle-${tipo.toLowerCase()}`}
-                  >
-                    {tipo}
-                  </Button>
-                ))}
+              <div className={`grid gap-1 ${vehicleTypes.length <= 3 ? 'grid-cols-3' : vehicleTypes.length <= 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                {isLoadingVehicles ? (
+                  <div className="col-span-full text-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
+                    <span className="text-xs">Cargando...</span>
+                  </div>
+                ) : vehicleTypes.length === 0 ? (
+                  <div className="col-span-full text-center py-2">
+                    <p className="text-xs text-muted-foreground">No hay tipos de vehículos disponibles</p>
+                  </div>
+                ) : (
+                  vehicleTypes.map((tipo) => (
+                    <Button
+                      key={tipo.id}
+                      type="button"
+                      variant={formData.vehicleType === tipo.name ? "default" : "outline"}
+                      onClick={() => setFormData({ ...formData, vehicleType: tipo.name })}
+                      size="sm"
+                      className="text-xs px-1"
+                      data-testid={`button-vehicle-${tipo.name.toLowerCase()}`}
+                    >
+                      {tipo.name}
+                    </Button>
+                  ))
+                )}
               </div>
             </div>
             

@@ -5,7 +5,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Settings, Clock } from "lucide-react";
+import { Loader2, Settings, Clock, Truck, Plus, Trash2, Edit2 } from "lucide-react";
+
+interface VehicleType {
+  id: string;
+  name: string;
+  tenantId: string | null;
+}
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -13,13 +19,21 @@ export default function SettingsPage() {
   const [waitTimeThreshold, setWaitTimeThreshold] = useState(20);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  const [newVehicleName, setNewVehicleName] = useState("");
+  const [isAddingVehicle, setIsAddingVehicle] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
-  // Load current settings
   useEffect(() => {
-    const loadSettings = async () => {
+    const loadData = async () => {
       try {
-        const data: any = await apiRequest("GET", "/api/tenant/wait-time-threshold");
-        setWaitTimeThreshold(data.waitTimeThreshold || 20);
+        const [settingsData, vehiclesData] = await Promise.all([
+          apiRequest("GET", "/api/tenant/wait-time-threshold"),
+          apiRequest("GET", "/api/tenant/vehicle-types")
+        ]);
+        setWaitTimeThreshold(settingsData.waitTimeThreshold || 20);
+        setVehicleTypes(vehiclesData || []);
       } catch (error) {
         console.error("Error loading settings:", error);
         toast({ title: "Error", description: "No se pudieron cargar las configuraciones", variant: "destructive" });
@@ -28,10 +42,10 @@ export default function SettingsPage() {
       }
     };
 
-    loadSettings();
+    loadData();
   }, [toast]);
 
-  const handleSave = async () => {
+  const handleSaveThreshold = async () => {
     if (waitTimeThreshold < 1 || waitTimeThreshold > 240) {
       toast({ title: "Error", description: "El umbral debe estar entre 1 y 240 minutos", variant: "destructive" });
       return;
@@ -48,6 +62,62 @@ export default function SettingsPage() {
       toast({ title: "Error", description: "Error al guardar la configuración", variant: "destructive" });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAddVehicle = async () => {
+    if (!newVehicleName.trim()) {
+      toast({ title: "Error", description: "Ingresa un nombre para el tipo de vehículo", variant: "destructive" });
+      return;
+    }
+
+    setIsAddingVehicle(true);
+    try {
+      const newVehicle = await apiRequest("POST", "/api/tenant/vehicle-types", {
+        name: newVehicleName,
+        pricePerKm: 0,
+        minimumPrice: 0,
+        isActive: true
+      });
+      setVehicleTypes([...vehicleTypes, newVehicle]);
+      setNewVehicleName("");
+      toast({ title: "Éxito", description: "Tipo de vehículo agregado" });
+    } catch (error) {
+      console.error("Error adding vehicle:", error);
+      toast({ title: "Error", description: "Error al agregar el tipo de vehículo", variant: "destructive" });
+    } finally {
+      setIsAddingVehicle(false);
+    }
+  };
+
+  const handleUpdateVehicle = async (id: string) => {
+    if (!editingName.trim()) {
+      toast({ title: "Error", description: "Ingresa un nombre", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const updated = await apiRequest("PATCH", `/api/tenant/vehicle-types/${id}`, {
+        name: editingName
+      });
+      setVehicleTypes(vehicleTypes.map(v => v.id === id ? updated : v));
+      setEditingId(null);
+      setEditingName("");
+      toast({ title: "Éxito", description: "Tipo de vehículo actualizado" });
+    } catch (error) {
+      console.error("Error updating vehicle:", error);
+      toast({ title: "Error", description: "Error al actualizar el tipo de vehículo", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteVehicle = async (id: string) => {
+    try {
+      await apiRequest("DELETE", `/api/tenant/vehicle-types/${id}`);
+      setVehicleTypes(vehicleTypes.filter(v => v.id !== id));
+      toast({ title: "Éxito", description: "Tipo de vehículo eliminado" });
+    } catch (error) {
+      console.error("Error deleting vehicle:", error);
+      toast({ title: "Error", description: "Error al eliminar el tipo de vehículo", variant: "destructive" });
     }
   };
 
@@ -69,6 +139,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Tiempo de Espera */}
       <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
@@ -115,7 +186,7 @@ export default function SettingsPage() {
           </div>
 
           <Button
-            onClick={handleSave}
+            onClick={handleSaveThreshold}
             disabled={isSaving}
             className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
             data-testid="button-save-settings"
@@ -129,6 +200,122 @@ export default function SettingsPage() {
               "Guardar Configuración"
             )}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Tipos de Vehículos */}
+      <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <Truck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div>
+              <CardTitle className="text-lg">Tipos de Vehículos</CardTitle>
+              <CardDescription>Edita los tipos de vehículos disponibles para crear albaranes</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Nuevo tipo de vehículo (ej: Motocicleta, Furgón, etc.)"
+                value={newVehicleName}
+                onChange={(e) => setNewVehicleName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") handleAddVehicle();
+                }}
+                className="h-10 flex-1"
+                data-testid="input-vehicle-name"
+                disabled={isAddingVehicle}
+              />
+              <Button
+                onClick={handleAddVehicle}
+                disabled={isAddingVehicle || !newVehicleName.trim()}
+                size="sm"
+                data-testid="button-add-vehicle"
+              >
+                {isAddingVehicle ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Agregar
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {vehicleTypes.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No hay tipos de vehículos. Agrega uno para empezar.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {vehicleTypes.map((vehicle) => (
+                  <div
+                    key={vehicle.id}
+                    className="flex items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-lg border border-muted-foreground/10"
+                  >
+                    {editingId === vehicle.id ? (
+                      <>
+                        <Input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="h-8 flex-1"
+                          data-testid={`input-edit-vehicle-${vehicle.id}`}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleUpdateVehicle(vehicle.id)}
+                          className="h-8"
+                          data-testid={`button-confirm-edit-${vehicle.id}`}
+                        >
+                          Guardar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingId(null)}
+                          className="h-8"
+                          data-testid={`button-cancel-edit-${vehicle.id}`}
+                        >
+                          Cancelar
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-sm font-medium">{vehicle.name}</span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingId(vehicle.id);
+                            setEditingName(vehicle.name);
+                          }}
+                          className="h-8 w-8"
+                          data-testid={`button-edit-vehicle-${vehicle.id}`}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleDeleteVehicle(vehicle.id)}
+                          className="h-8 w-8 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          data-testid={`button-delete-vehicle-${vehicle.id}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
