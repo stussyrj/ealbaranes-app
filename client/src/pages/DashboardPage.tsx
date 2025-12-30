@@ -105,12 +105,13 @@ export default function DashboardPage() {
     const loadVehicleTypes = async () => {
       try {
         setIsLoadingVehicles(true);
-        const response: any = await apiRequest("GET", "/api/vehicle-types");
-        const types = response.types || [];
-        setVehicleTypes(types);
+        // Use tenant-specific endpoint that returns the array of vehicle types
+        const types: any = await apiRequest("GET", "/api/tenant/vehicle-types");
+        const vehicleList = Array.isArray(types) ? types : [];
+        setVehicleTypes(vehicleList);
         // Set first vehicle as default if available and current value is default
-        if (types.length > 0 && (formData.vehicleType === "Furgoneta" || !types.find((t: any) => t.name === formData.vehicleType))) {
-          setFormData(prev => ({ ...prev, vehicleType: types[0].name }));
+        if (vehicleList.length > 0 && (formData.vehicleType === "Furgoneta" || !vehicleList.find((t: any) => t.name === formData.vehicleType))) {
+          setFormData(prev => ({ ...prev, vehicleType: vehicleList[0].name }));
         }
       } catch (error) {
         console.error("Error loading vehicle types:", error);
