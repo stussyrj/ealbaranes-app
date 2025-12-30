@@ -20,6 +20,7 @@ import {
   insertInvoiceTemplateSchema,
   insertInvoiceLineItemSchema,
   tenants,
+  users,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -1781,6 +1782,153 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating wait time threshold:", error);
       res.status(500).json({ error: "Error actualizando configuración" });
+    }
+  });
+
+  // Get all users for tenant (admin only) - CRITICAL ENDPOINT for user management
+  app.get("/api/admin/users", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede ver usuarios" });
+    }
+    try {
+      const allUsers = await db.select().from(users).where(eq(users.tenantId, user.tenantId));
+      const mappedUsers = allUsers.map(u => ({
+        id: u.id,
+        username: u.username,
+        displayName: u.displayName,
+        isAdmin: u.isAdmin,
+        workerId: u.workerId,
+        createdAt: u.createdAt,
+      }));
+      res.json(mappedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Error obteniendo usuarios" });
+    }
+  });
+
+  // Create new user (worker) - admin only
+  app.post("/api/admin/create-user", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede crear usuarios" });
+    }
+    try {
+      const { username, displayName, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Usuario y contraseña requeridos" });
+      }
+      const { hashPassword } = await import("./auth");
+      const hashedPassword = await hashPassword(password);
+      const newUser = await storage.createUser({
+        username,
+        displayName,
+        password: hashedPassword,
+        isAdmin: false,
+        tenantId: user.tenantId,
+      });
+      res.status(201).json({
+        id: newUser.id,
+        username: newUser.username,
+        displayName: newUser.displayName,
+        isAdmin: newUser.isAdmin,
+        createdAt: newUser.createdAt,
+      });
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: error.message || "Error creando usuario" });
+    }
+  });
+
+  // Change user password - admin only
+  app.patch("/api/admin/users/:id/password", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede cambiar contraseñas" });
+    }
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+      if (!password) {
+        return res.status(400).json({ error: "Contraseña requerida" });
+      }
+      const targetUser = await storage.getUser(id);
+      if (!targetUser || targetUser.tenantId !== user.tenantId) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      const { hashPassword } = await import("./auth");
+      const hashedPassword = await hashPassword(password);
+      const updated = await storage.updateUserPassword(id, hashedPassword);
+      if (!updated) {
+        return res.status(500).json({ error: "Error al cambiar contraseña" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ error: "Error al cambiar contraseña" });
+    }
+  });
+
+  // Delete user - admin only
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede eliminar usuarios" });
+    }
+    try {
+      const { id } = req.params;
+      const targetUser = await storage.getUser(id);
+      if (!targetUser || targetUser.tenantId !== user.tenantId) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) {
+        return res.status(500).json({ error: "Error al eliminar usuario" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Error al eliminar usuario" });
+    }
+  });
+
+  // Delete company (tenant cascade) - admin only
+  app.post("/api/admin/delete-company", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede eliminar empresa" });
+    }
+    try {
+      const { password } = req.body;
+      if (!password) {
+        return res.status(400).json({ error: "Contraseña requerida" });
+      }
+      const { comparePasswords } = await import("./auth");
+      const isValid = await comparePasswords(password, user.password);
+      if (!isValid) {
+        return res.status(401).json({ error: "Contraseña incorrecta" });
+      }
+      await storage.deleteTenantCascade(user.tenantId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      res.status(500).json({ error: "Error al eliminar empresa" });
     }
   });
 

@@ -17,6 +17,18 @@ eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes 
 
 ## Últimos Cambios
 
+### ARREGLADO: Endpoints Críticos de Gestión de Usuarios (Diciembre 30, 2025)
+- **PROBLEMA GRAVE RESUELTO**: Endpoint `/api/admin/users` no existía en servidor, causando que trabajadores nunca se carguen en Gestión de Usuarios
+- **Solución implementada**: Creados 4 endpoints backend faltantes:
+  - `GET /api/admin/users` - Retorna TODOS usuarios del tenant (empresa + trabajadores)
+  - `POST /api/admin/create-user` - Crear nuevo trabajador
+  - `PATCH /api/admin/users/:id/password` - Cambiar contraseña de usuario
+  - `DELETE /api/admin/users/:id` - Eliminar usuario
+- **Validaciones**: Todos los endpoints verifican que usuario sea admin + del mismo tenant
+- **Importes corregidos**: Se agregó `users` table import desde schema.ts
+- **Funciones de auth**: Usando `comparePasswords` correctamente en servidor
+- **Resultado**: Juan y otros trabajadores ahora aparecerán correctamente en sección "Trabajadores"
+
 ### PRUEBA EXITOSA EN TIEMPO REAL (Diciembre 20, 2025 - 22:50 UTC)
 - **Creación de albarán con JWT**: Prueba exitosa usando usuario Daniel/daniel123
 - **Sistema de autenticación JWT funcionando correctamente**: Token generado y validado correctamente
