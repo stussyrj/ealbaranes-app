@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Eraser, MapPin, Navigation, FileText, User, Camera, Save } from "lucide-react";
+import { Check, Eraser, MapPin, Navigation, FileText, User, Camera, Save, Ban } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { SignatureModalDialog } from "@/components/SignatureModalDialog";
 import type { DeliveryNote } from "@shared/schema";
+
+// TEMPORARY: Disable signature drawing functionality
+// Set to false to re-enable digital signatures
+const SIGNATURE_DRAWING_DISABLED = true;
 
 
 interface DeliveryNoteSigningModalProps {
