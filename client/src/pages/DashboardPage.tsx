@@ -98,16 +98,18 @@ export default function DashboardPage() {
   const [vehicleTypes, setVehicleTypes] = useState<Array<{ id: string; name: string }>>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   
-  // Load vehicle types on mount
+  // Load vehicle types when modal opens (to get fresh data after settings changes)
   useEffect(() => {
+    if (!createDeliveryOpen) return;
+    
     const loadVehicleTypes = async () => {
       try {
         setIsLoadingVehicles(true);
         const response: any = await apiRequest("GET", "/api/vehicle-types");
         const types = response.types || [];
         setVehicleTypes(types);
-        // Set first vehicle as default if available
-        if (types.length > 0 && formData.vehicleType === "Furgoneta") {
+        // Set first vehicle as default if available and current value is default
+        if (types.length > 0 && (formData.vehicleType === "Furgoneta" || !types.find((t: any) => t.name === formData.vehicleType))) {
           setFormData(prev => ({ ...prev, vehicleType: types[0].name }));
         }
       } catch (error) {
@@ -126,7 +128,7 @@ export default function DashboardPage() {
     };
     
     loadVehicleTypes();
-  }, []);
+  }, [createDeliveryOpen]);
   
   // Show onboarding if user hasn't completed it (and wasn't manually closed this session)
   useEffect(() => {
