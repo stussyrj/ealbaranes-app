@@ -424,3 +424,31 @@ export const insertInvoiceLineItemSchema = createInsertSchema(invoiceLineItems).
 
 export type InsertInvoiceLineItem = z.infer<typeof insertInvoiceLineItemSchema>;
 export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+
+// Backup logs - registro de respaldos realizados
+export const backupLogs = pgTable("backup_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull().default("manual"), // manual, scheduled
+  status: text("status").notNull().default("completed"), // completed, failed
+  fileName: text("file_name"),
+  fileSize: integer("file_size"), // size in bytes
+  recordCounts: jsonb("record_counts").$type<{
+    deliveryNotes: number;
+    invoices: number;
+    workers: number;
+    vehicleTypes: number;
+    users: number;
+  }>(),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
+export type BackupLog = typeof backupLogs.$inferSelect;

@@ -21,9 +21,15 @@ import {
   insertInvoiceLineItemSchema,
   tenants,
   users,
+  backupLogs,
+  deliveryNotes,
+  invoices,
+  invoiceLineItems,
+  workers,
+  vehicleTypes,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 // Email imports removed - now using internal messaging system
 // import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
@@ -2069,6 +2075,147 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error in profile setup:", error);
       res.status(500).json({ error: "Error al completar setup" });
+    }
+  });
+
+  // ============ BACKUP SYSTEM ============
+
+  // Create backup - admin only
+  app.post("/api/admin/backup", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede crear respaldos" });
+    }
+
+    try {
+      const tenantId = user.tenantId;
+
+      // Fetch all tenant data
+      const [
+        tenantData,
+        tenantDeliveryNotes,
+        tenantInvoices,
+        tenantWorkers,
+        tenantVehicleTypes,
+        tenantUsers,
+      ] = await Promise.all([
+        db.select().from(tenants).where(eq(tenants.id, tenantId)),
+        db.select().from(deliveryNotes).where(and(eq(deliveryNotes.tenantId, tenantId), isNull(deliveryNotes.deletedAt))),
+        db.select().from(invoices).where(eq(invoices.tenantId, tenantId)),
+        db.select().from(workers).where(eq(workers.tenantId, tenantId)),
+        db.select().from(vehicleTypes).where(eq(vehicleTypes.tenantId, tenantId)),
+        db.select().from(users).where(eq(users.tenantId, tenantId)),
+      ]);
+
+      // Fetch invoice line items for all invoices
+      const invoiceIds = tenantInvoices.map(inv => inv.id);
+      let tenantLineItems: any[] = [];
+      if (invoiceIds.length > 0) {
+        for (const invId of invoiceIds) {
+          const items = await db.select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invId));
+          tenantLineItems = [...tenantLineItems, ...items];
+        }
+      }
+
+      // Create backup object
+      const backupData = {
+        version: "1.0",
+        exportedAt: new Date().toISOString(),
+        tenantId: tenantId,
+        companyName: tenantData[0]?.companyName || "Unknown",
+        data: {
+          tenant: tenantData[0] || null,
+          deliveryNotes: tenantDeliveryNotes,
+          invoices: tenantInvoices,
+          invoiceLineItems: tenantLineItems,
+          workers: tenantWorkers,
+          vehicleTypes: tenantVehicleTypes,
+          users: tenantUsers.map(u => ({
+            ...u,
+            password: "[REDACTED]" // Don't include passwords in backup
+          })),
+        },
+        counts: {
+          deliveryNotes: tenantDeliveryNotes.length,
+          invoices: tenantInvoices.length,
+          workers: tenantWorkers.length,
+          vehicleTypes: tenantVehicleTypes.length,
+          users: tenantUsers.length,
+        }
+      };
+
+      // Calculate file size
+      const backupJson = JSON.stringify(backupData, null, 2);
+      const fileSize = Buffer.byteLength(backupJson, 'utf8');
+      const fileName = `backup_${tenantId}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+
+      // Log the backup
+      await db.insert(backupLogs).values({
+        tenantId: tenantId,
+        userId: user.id,
+        type: "manual",
+        status: "completed",
+        fileName: fileName,
+        fileSize: fileSize,
+        recordCounts: {
+          deliveryNotes: tenantDeliveryNotes.length,
+          invoices: tenantInvoices.length,
+          workers: tenantWorkers.length,
+          vehicleTypes: tenantVehicleTypes.length,
+          users: tenantUsers.length,
+        },
+      });
+
+      // Set headers for file download
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(backupJson);
+
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      
+      // Log failed backup attempt
+      try {
+        await db.insert(backupLogs).values({
+          tenantId: user.tenantId,
+          userId: user.id,
+          type: "manual",
+          status: "failed",
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
+        });
+      } catch (logError) {
+        console.error("Error logging failed backup:", logError);
+      }
+
+      res.status(500).json({ error: "Error al crear respaldo" });
+    }
+  });
+
+  // Get backup history - admin only
+  app.get("/api/admin/backups", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede ver respaldos" });
+    }
+
+    try {
+      const backups = await db
+        .select()
+        .from(backupLogs)
+        .where(eq(backupLogs.tenantId, user.tenantId))
+        .orderBy(desc(backupLogs.createdAt))
+        .limit(50);
+
+      res.json(backups);
+    } catch (error) {
+      console.error("Error fetching backups:", error);
+      res.status(500).json({ error: "Error al obtener historial de respaldos" });
     }
   });
 
