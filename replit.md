@@ -1,252 +1,56 @@
 # eAlbarán - Gestión Digital de Albaranes de Transporte
 
-## Status: OPERATIONAL - Gestión de Tipos de Vehículos Implementada
-
-**La aplicación está funcionando con tipos de vehículos configurables por empresa. Admins pueden crear, editar y eliminar tipos de vehículos en la sección de configuración.**
-
 ## Overview
 
-eAlbarán es una aplicación B2B SaaS multi-tenant para **gestión de albaranes digitales de transporte**. Los trabajadores crean albaranes digitales con fotos/firmas, y las empresas tienen acceso completo para gestionar y controlar esos albaranes.
+eAlbarán is a B2B SaaS multi-tenant application designed for the **digital management of transport delivery notes**. It enables workers to create digital delivery notes complete with photos and signatures, while providing businesses with comprehensive access to manage and monitor these notes. The project's ambition is to streamline logistics operations through digital transformation, offering an efficient, paperless solution for transport documentation.
 
-**Tech Stack**:
-- Frontend: React + TypeScript con Vite
-- Backend: Express + TypeScript
-- Base de datos: PostgreSQL via Neon con Drizzle ORM
-- Pagos: Sin pagos (código de [REDACTED-STRIPE] eliminado)
-- UI Framework: shadcn/ui con Tailwind CSS
-
-## Últimos Cambios
-
-### Gestión de Tipos de Vehículos por Tenant (Diciembre 30, 2025 - NUEVO)
-- **Configuración de Vehículos**: Nueva sección en SettingsPage.tsx para agregar/editar/eliminar tipos de vehículos
-- **Endpoints Backend**:
-  - `GET /api/tenant/vehicle-types` - Obtiene tipos de vehículos del tenant autenticado
-  - `POST /api/tenant/vehicle-types` - Crea nuevo tipo de vehículo (solo admin)
-  - `PATCH /api/tenant/vehicle-types/:id` - Actualiza tipo de vehículo (solo admin)
-  - `DELETE /api/tenant/vehicle-types/:id` - Desactiva tipo de vehículo (soft delete, solo admin)
-- **Filtrado por Tenant**: Todos los endpoints validan que el usuario sea admin y del mismo tenant
-- **UI de Formulario**:
-  - Input para ingresar nombre del vehículo
-  - Botón agregar con Enter key support
-  - Cada vehículo tiene botones editar/eliminar
-  - Edición inline con confirmación/cancelación
-- **DashboardPage.tsx Actualizado**:
-  - Obtiene tipos de vehículos desde API al montar
-  - Fallback a tipos por defecto si hay error
-  - Grid de botones dinámico (se ajusta a 3, 4 o 5 columnas según cantidad)
-  - Loading state mientras carga tipos
-  - Usa ID y nombre del tipo de vehículo correctamente
-- **Aislamiento de Datos**: Cada empresa ve solo sus tipos de vehículos personalizados
-
-### ARREGLADO: Endpoints Críticos de Gestión de Usuarios (Diciembre 30, 2025)
-- **PROBLEMA GRAVE RESUELTO**: Endpoint `/api/admin/users` no existía en servidor, causando que trabajadores nunca se carguen en Gestión de Usuarios
-- **Solución implementada**: Creados 4 endpoints backend faltantes:
-  - `GET /api/admin/users` - Retorna TODOS usuarios del tenant (empresa + trabajadores)
-  - `POST /api/admin/create-user` - Crear nuevo trabajador
-  - `PATCH /api/admin/users/:id/password` - Cambiar contraseña de usuario
-  - `DELETE /api/admin/users/:id` - Eliminar usuario
-- **Validaciones**: Todos los endpoints verifican que usuario sea admin + del mismo tenant
-- **Importes corregidos**: Se agregó `users` table import desde schema.ts
-- **Funciones de auth**: Usando `comparePasswords` correctamente en servidor
-- **Resultado**: Juan y otros trabajadores ahora aparecerán correctamente en sección "Trabajadores"
-
-### PRUEBA EXITOSA EN TIEMPO REAL (Diciembre 20, 2025 - 22:50 UTC)
-- **Creación de albarán con JWT**: Prueba exitosa usando usuario Daniel/daniel123
-- **Sistema de autenticación JWT funcionando correctamente**: Token generado y validado correctamente
-- **Base de datos sincronizada**: Campo `quote_id` hecho nullable en delivery_notes
-- **Albarán #11 creado**: ID 5244c737-937c-4f10-baae-f39da8ffd804
-- **Verificación en PostgreSQL**: Datos persistidos correctamente en la base de datos
-- **Conclusión**: eAlbarán está completamente operacional y listo para usar
-
-### Precificación de Tiempo de Espera en Facturas (Diciembre 20, 2025)
-- **Función `downloadFile()`**: Nueva función en queryClient.ts que descarga archivos incluyendo JWT token en headers
-- **Descarga de facturas mejorada**: Botón PDF usa downloadFile() en lugar de window.open(), resuelve errores de autenticación
-- **Tiempo de Espera como Concepto a Facturar**:
-  - En el modal de creación de facturas, paso "Precios", nueva sección "Tiempo de Espera"
-  - Botón "Tiempo de Espera" (con icono de reloj) permite agregar líneas de tiempo de espera MANUAL
-  - Campo debe completarse con los minutos EXACTOS (sin valor por defecto)
-  - Se incluye en la descripción: "Tiempo de espera: XX min"
-  - El precio se suma al total de la factura
-  - Funciona independientemente del tracking de "He llegado"/"He salido"
-- **Precificación automática**: Si un albarán tiene tiempo de espera registrado (tracked con "He llegado"/"He salido"):
-  - Se muestra automáticamente con el tiempo EXACTO en minutos (ej: "Tiempo de espera: 62 minutos")
-  - El tiempo viene automáticamente del albarán, usuario NO lo edita
-  - Usuario solo especifica el PRECIO de ese tiempo de espera
-  - Formato en descripción: "... | Tiempo de espera: XX min - €YY.YY"
-  - Se calcula correctamente cualquier duración (sin límite de minutos)
-
-### Sistema de Tracking de Tiempos (Diciembre 19, 2025)
-- **Columnas `arrivedAt` y `departedAt`**: Añadidas a tabla delivery_notes
-- **Botón "He llegado"**: Registra hora de llegada del trabajador
-- **Botón "He salido"**: Registra hora de salida del trabajador
-- **Cálculo automático de duración**: Si estancia > 20 minutos, se añade a observaciones
-- **Uso**: Trabajador pulsa "He llegado" al llegar → realiza trabajo → pulsa "He salido"
-
-### Sistema de Eliminación Definitiva de Albaranes (Diciembre 13, 2025)
-- **Endpoint DELETE /api/delivery-notes/:id/permanent**: Elimina albaranes permanentemente del cesto
-- **Modal "Papelera" mejorado**: Ahora tiene dos botones:
-  - "Restaurar": Devuelve albarán a lista normal
-  - "Eliminar": Elimina definitivamente (hard delete)
-- **Método permanentDeleteDeliveryNote** en storage.ts para hacer hard delete
-- **Flujo**: Admin puede ver papelera → restaurar albaranes → O eliminar permanentemente
-- Solo disponible para admins (empresas)
-
-### Modal de Firma Digital Separado (Diciembre 12, 2025)
-- **SignatureModalDialog.tsx**: Nuevo componente modal independiente para capturar firmas
-  - Canvas de tamaño completo (max-w-4xl, h-[90vh]) para mejor experiencia
-  - Soporte completo de mouse y touch
-  - Botones para limpiar y confirmar
-  - Auto-cierra después de confirmar
-
-- **DeliveryNoteSigningModal.tsx**: Actualizado para usar el nuevo modal
-  - Botones "Capturar firma de origen/destino" reemplazan canvas inline
-  - Al hacer click, abre modal separado para firma
-  - Dirty-tracking mejorado para documento DNI
-  - Auto-save de firma de origen al cambiar tabs
-
-### Bug Fixes
-- Resolver pérdida de datos en firmas de origen al cerrar app
-- Agregar tracking de cambios para documento DNI
-- Confirmación al cerrar modal con datos sin guardar
-
-## Modelo de Usuarios
-
-La aplicación tiene dos tipos de usuarios claramente diferenciados:
-
-### Empresa (antes "admin")
-- Acceso gratuito ([REDACTED-STRIPE] eliminado)
-- Panel de Empresa con acceso completo
-- Gestionan trabajadores y supervisan albaranes
-- Acceden a: Dashboard, Gestión de Usuarios
-
-### Trabajador
-- Acceso gratuito (creados por su empresa)
-- Panel de Trabajador con funciones limitadas
-- Crean albaranes digitales con fotos y firmas
-- Solo ven sus propios albaranes
-
-## Sistema Multi-Tenant
-
-### Modelo de Negocio
-- **Empresa**: Acceso gratuito
-- **Trabajadores**: Acceso gratuito (invitados por su empresa)
-
-### Flujo de Uso
-1. **Empresa** se registra (sin pago requerido)
-2. **Empresa** crea trabajadores desde el panel
-3. **Trabajadores** crean albaranes digitales con fotos/firmas
-4. **Empresa** gestiona y supervisa todos los albaranes
-
-### Rutas Públicas
-- `/register` - Registro de empresa (crea tenant, envía email de verificación)
-- `/verify-email` - Verificación de email (procesa token de verificación)
-- `/login` - Inicio de sesión
-- `/forgot-password` - Solicitar recuperación de contraseña
-- `/reset-password?token=xxx` - Restablecer contraseña con token
-
-### Rutas Protegidas (Empresa)
-- `/` - Dashboard con resumen de albaranes
-- `/admin/users` - Gestión de trabajadores
-- `/admin/invoices` - Sistema de facturación (crear, ver, descargar PDF)
-
-### Rutas Protegidas (Trabajador)
-- `/` - Panel de trabajador para crear/gestionar albaranes
-
-## Endpoints Backend
-
-### Autenticación
-- `POST /api/register` - Registro de empresa (crea tenant, envía email verificación)
-- `GET /api/verify-email?token=xxx` - Verificar email con token
-- `POST /api/resend-verification` - Reenviar email de verificación (rate limited: 3/hora)
-- `POST /api/forgot-password` - Solicitar email de recuperación de contraseña (rate limited: 3/hora)
-- `POST /api/reset-password` - Restablecer contraseña con token (token expira en 1 hora)
-- `POST /api/login` - Login (bloquea usuarios empresa no verificados)
-- `POST /api/logout` - Logout
-- `GET /api/user` - Usuario actual
-
-### Albaranes (todos requieren autenticación y filtran por tenant)
-- `GET /api/delivery-notes` - Lista albaranes (filtrado por tenant del usuario)
-- `GET /api/delivery-notes/suggestions` - Sugerencias de autocompletado (filtrado por tenant)
-- `GET /api/delivery-notes/:id` - Obtener albarán (verifica propiedad del tenant)
-- `POST /api/delivery-notes` - Crea albarán (requiere tenantId, genera noteNumber único)
-- `PATCH /api/delivery-notes/:id` - Actualiza albarán (verifica propiedad del tenant)
-- `GET /api/workers/:workerId/delivery-notes` - Albaranes de un trabajador (filtrado por tenant)
-- `DELETE /api/delivery-notes/:id` - Soft delete (mueve a papelera)
-- `GET /api/delivery-notes/deleted` - Lista albaranes borrados en papelera (solo admin)
-- `POST /api/delivery-notes/:id/restore` - Restaurar albarán desde papelera (solo admin)
-- `DELETE /api/delivery-notes/:id/permanent` - Elimina permanentemente del cesto (solo admin, hard delete)
-
-### Facturas (todos requieren autenticación y filtran por tenant)
-- `GET /api/invoices` - Lista facturas (filtrado por tenant)
-- `POST /api/invoices` - Crea factura con líneas de artículos (valida albaranes pertenezcan al tenant)
-- `PATCH /api/invoices/:id` - Actualiza estado de factura (pending/paid/cancelled)
-- `GET /api/invoices/:id/pdf` - Descarga factura en formato PDF
-- `GET /api/invoice-template` - Obtener plantilla de factura del tenant
-- `PUT /api/invoice-template` - Guardar/actualizar plantilla de factura
-
-## Modelo de Datos - Pickup Origins
-
-Los orígenes de recogida (`pickupOrigins`) usan formato JSONB con objetos:
-```typescript
-type PickupOrigin = { name: string; address: string };
-pickupOrigins: PickupOrigin[] // Array de objetos
-```
-
-**Formato de visualización**: "Nombre (Dirección)" o solo Nombre/Dirección si falta uno.
-**Múltiples orígenes**: Se muestran como "Origen1 (+N)" donde N es el número de orígenes adicionales.
-
-## Estado Actual
-
-### ✅ Completado
-- Sistema multi-tenant con aislamiento de datos completo
-- Rate limiting en login (protección anti brute-force)
-- Sistema de auditoría (tabla audit_logs en PostgreSQL)
-- Validación estricta de registro
-- Registro de empresas con creación automática de tenant
-- Verificación de email ACTIVA
-- Middleware de acceso por tenant
-- Frontend React con rutas públicas y protegidas
-- Tema claro/spooky (Halloween: naranja, púrpura, negro)
-- Números de albarán únicos (Albarán #X) con generación automática
-- Descarga de albaranes para seguridad (fotos firmados / CSV pendientes)
-- Sesiones persistentes en PostgreSQL
-- Usuarios persistidos en base de datos
-- Login con email O nombre de usuario para empresas
-- Emails vía Resend con diseño spooky
-- Sistema de facturación de albaranes (Facturados/Pendientes de facturación)
-- Dashboard con contadores resumen (Hoy, Este mes, Total)
-- Modal de descarga mejorado con selector de rango de fechas
-- Sistema de firma dual: albarán solo "firmado" cuando tiene AMBOS foto Y firma digital
-- Componente SignaturePad para captura de firmas táctiles
-- Autocomplete para campos de cliente, origen y destino
-- Badges separados mostrando estado de foto y firma
-- Orígenes de recogida con campos separados de nombre y dirección (JSONB)
-- Sidebar móvil optimizado
-- **Tutorial de bienvenida (Onboarding)** con pasos diferentes para empresa vs trabajador
-- **Sistema de recuperación de contraseña** con tokens y rate limiting
-- **Sistema completo de facturación** (plantilla, wizard, PDF, numeración secuencial)
-- **Autenticación con Google OAuth 2.0** con auto-creación de cuentas
-- **Flujo de Setup Obligatorio para OAuth** (empresa, usuario, contraseña)
-- **Artículos de Blog SEO-optimizados**
-- **Corrección de Cálculos Financieros** (IVA correcto)
-- **Modal de firma separado** con canvas de tamaño completo
-- **Dirty-tracking para firma y documento DNI**
-- **Auto-save de firma de origen** al cambiar tabs
-- **Sistema de borrado de albaranes (Papelera)** - Soft delete con restauración para admin
-
-## Endpoints de Borrado de Albaranes
-- `DELETE /api/delivery-notes/:id` - Borrar albarán (soft delete, marca deletedAt/deletedBy)
-- `GET /api/delivery-notes/deleted` - Lista albaranes borrados (solo admin)
-- `POST /api/delivery-notes/:id/restore` - Restaurar albarán borrado (solo admin)
-
-## Preferencias Usuario
+## User Preferences
 
 - Idioma: Español
 - Comunicación: Lenguaje simple y cotidiano
 - Tema: Toggle oscuro/claro activo
 
-## Credenciales de Desarrollo
+## System Architecture
 
-- Usuario empresa por defecto: `admin` / `admin123`
-- **Solo disponible en desarrollo local** (NODE_ENV=development)
-- Deshabilitado automáticamente en producción por seguridad
+The application is built with a multi-tenant architecture, ensuring complete data isolation between companies.
+
+### UI/UX Decisions
+- **Frontend**: React + TypeScript with Vite.
+- **UI Framework**: shadcn/ui with Tailwind CSS for a modern and responsive design.
+- **Theming**: Supports both light and dark modes, including a "spooky" Halloween theme.
+- **Signature Capture**: Utilizes a dedicated, full-screen SignatureModalDialog component for an enhanced touch and mouse signature experience.
+- **Onboarding**: Features a welcome tutorial tailored for both company administrators and workers.
+- **Dynamic UI**: Dashboard buttons for vehicle types dynamically adjust layout based on quantity (3, 4, or 5 columns).
+
+### Technical Implementations
+- **Backend**: Express + TypeScript.
+- **Database**: PostgreSQL via Neon with Drizzle ORM.
+- **Authentication**: JWT-based authentication system with email verification, password recovery, rate limiting, and Google OAuth 2.0 integration.
+- **Data Handling**: JSONB format for complex data structures like `pickupOrigins`.
+- **File Downloads**: Secure file downloads for invoices using JWT tokens in headers.
+- **Error Handling**: Robust validation for registration and user management.
+- **Data Backup**: Admins can generate and download comprehensive JSON backups of all tenant data, including delivery notes, invoices, templates, workers, vehicle types, and users (with redacted passwords). An audit log `backup_logs` tracks backup history.
+
+### Feature Specifications
+- **Digital Delivery Notes**: Workers create digital delivery notes with photo and signature capabilities. A delivery note is considered "signed" only when both a photo and a digital signature are present.
+- **Multi-Tenant Management**: Companies register and manage their workers, viewing only their own delivery notes and configurations.
+- **Vehicle Type Management**: Admins can create, edit, and delete vehicle types specific to their tenant. These types are then used by workers when creating delivery notes.
+- **Invoice Management**: Comprehensive invoicing system including template management, a wizard for creation, PDF generation, and sequential numbering. Invoices can include "wait time" pricing, both manually entered and automatically calculated from tracked arrival/departure times.
+- **Time Tracking**: Functionality to record `arrivedAt` and `departedAt` times for delivery notes, automatically calculating and noting durations over 20 minutes in observations.
+- **User Management**: Admins can manage workers, including creation, password changes, and deletion.
+- **Delivery Note Lifecycle**: Supports soft deletion (moving to trash), restoration, and permanent deletion of delivery notes by administrators.
+- **Audit Logging**: `audit_logs` table in PostgreSQL tracks critical actions.
+- **Data Suggestions**: Autocomplete suggestions for client, origin, and destination fields.
+
+### System Design Choices
+- **Multi-tenant Architecture**: Each company operates within an isolated environment.
+- **Role-Based Access Control**: Differentiated access for "Empresa" (admin) and "Trabajador" roles.
+- **Soft Deletion**: Delivery notes are soft-deleted into a "trash" bin before permanent removal, allowing for recovery.
+- **Automated Processes**: Automatic generation of unique delivery note numbers and automatic calculation of wait times for invoicing.
+
+## External Dependencies
+
+- **Database**: PostgreSQL (via Neon)
+- **ORM**: Drizzle ORM
+- **Email Service**: Resend (for email verification, password recovery, etc.)
+- **Authentication**: Google OAuth 2.0
