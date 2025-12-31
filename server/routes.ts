@@ -32,6 +32,8 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, isNull, inArray } from "drizzle-orm";
+import * as fs from "fs";
+import * as path from "path";
 // Email imports removed - now using internal messaging system
 // import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
