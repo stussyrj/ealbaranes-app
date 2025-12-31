@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { initializeBackupScheduler } from "./services/backupService";
 
 const app = express();
 const httpServer = createServer(app);
@@ -64,6 +65,8 @@ export function log(message: string, source = "express") {
   });
 
   await registerRoutes(httpServer, app);
+
+  initializeBackupScheduler();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
