@@ -155,7 +155,7 @@ function cleanOldBackups(): void {
   try {
     const files = fs.readdirSync(BACKUP_DIR);
     const now = Date.now();
-    const MAX_AGE_DAYS = 30;
+    const MAX_AGE_DAYS = 365; // Retención de 12 meses (aprox 365 días)
     const maxAgeMs = MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
 
     for (const file of files) {

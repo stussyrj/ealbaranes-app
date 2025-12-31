@@ -33,7 +33,7 @@ The application is built with a multi-tenant architecture, ensuring complete dat
   - **Manual Backups**: Admins can generate and download comprehensive JSON backups via Settings page
   - **Automated Backups**: Daily backups at 3:00 AM for all tenants, stored in `backups/` directory
   - **Backup Contents**: Delivery notes, invoices, line items, templates, quotes, workers, vehicle types, users (passwords redacted)
-  - **Auto-cleanup**: Old backups (>30 days) automatically deleted
+  - **Auto-cleanup**: Old backups (>12 months) automatically deleted
   - **History**: `backup_logs` table tracks all backups with type (manual/automated), status, size, record counts
 
 ### Feature Specifications
