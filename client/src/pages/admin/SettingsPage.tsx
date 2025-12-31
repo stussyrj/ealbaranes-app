@@ -204,6 +204,52 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDownloadBackup = async (backup: BackupLog) => {
+    if (backup.status !== "completed" || !backup.fileName) {
+      toast({ title: "Error", description: "El respaldo no está disponible para descargar", variant: "destructive" });
+      return;
+    }
+
+    try {
+      // Para respaldos manuales, podemos intentar descargarlos si el servidor los sirve
+      // Los respaldos manuales en este sistema se descargan inmediatamente al crearse,
+      // pero el historial registra que se crearon.
+      // Implementamos una ruta de descarga para el historial
+      const res = await fetch(`/api/admin/backups/download/${backup.id}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("ealbaran_auth_token") || ""}`,
+        },
+      });
+
+      if (!res.ok) {
+        if (backup.type === "automated") {
+          toast({ 
+            title: "Información", 
+            description: "Los respaldos automáticos se guardan en el servidor. Contacta con soporte para recuperarlos.",
+            variant: "default" 
+          });
+        } else {
+          throw new Error("Error al descargar respaldo");
+        }
+        return;
+      }
+
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = backup.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      toast({ title: "Éxito", description: "Descargando respaldo..." });
+    } catch (error) {
+      console.error("Error downloading backup:", error);
+      toast({ title: "Error", description: "No se pudo descargar el archivo", variant: "destructive" });
+    }
+  };
+
   const formatFileSize = (bytes: number | null): string => {
     if (!bytes) return "N/A";
     if (bytes < 1024) return `${bytes} B`;
@@ -492,7 +538,8 @@ export default function SettingsPage() {
                 {backups.map((backup) => (
                   <div
                     key={backup.id}
-                    className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-muted-foreground/10"
+                    className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-muted-foreground/10 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
+                    onClick={() => handleDownloadBackup(backup)}
                   >
                     {backup.status === "completed" ? (
                       <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
@@ -511,6 +558,7 @@ export default function SettingsPage() {
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs px-1.5 py-0">
+                            <Download className="h-3 w-3 mr-1" />
                             Manual
                           </Badge>
                         )}

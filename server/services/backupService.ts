@@ -92,7 +92,7 @@ async function createTenantBackup(tenantId: string): Promise<{
     const backupJson = JSON.stringify(backupData, null, 2);
     const fileSize = Buffer.byteLength(backupJson, 'utf8');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `automated_backup_${tenantId}_${timestamp}.json`;
+    const fileName = `${backupData.type}_backup_${tenantId}_${timestamp}.json`;
     const filePath = path.join(BACKUP_DIR, fileName);
 
     fs.writeFileSync(filePath, backupJson);

@@ -2160,7 +2160,15 @@ export async function registerRoutes(
       // Calculate file size
       const backupJson = JSON.stringify(backupData, null, 2);
       const fileSize = Buffer.byteLength(backupJson, 'utf8');
-      const fileName = `backup_${tenantId}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `manual_backup_${tenantId}_${timestamp}.json`;
+
+      // Save to disk so it's available for later download
+      const BACKUP_DIR = path.join(process.cwd(), "backups");
+      if (!fs.existsSync(BACKUP_DIR)) {
+        fs.mkdirSync(BACKUP_DIR, { recursive: true });
+      }
+      fs.writeFileSync(path.join(BACKUP_DIR, fileName), backupJson);
 
       // Log the backup
       await db.insert(backupLogs).values({
@@ -2226,6 +2234,43 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching backups:", error);
       res.status(500).json({ error: "Error al obtener historial de respaldos" });
+    }
+  });
+
+  // Download backup from history
+  app.get("/api/admin/backups/download/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede descargar respaldos" });
+    }
+
+    try {
+      const [log] = await db.select()
+        .from(backupLogs)
+        .where(and(
+          eq(backupLogs.id, req.params.id),
+          eq(backupLogs.tenantId, user.tenantId)
+        ))
+        .limit(1);
+
+      if (!log || !log.fileName || log.status !== "completed") {
+        return res.status(404).json({ error: "Respaldo no encontrado" });
+      }
+
+      const BACKUP_DIR = path.join(process.cwd(), "backups");
+      const filePath = path.join(BACKUP_DIR, log.fileName);
+
+      if (fs.existsSync(filePath)) {
+        res.download(filePath, log.fileName);
+      } else {
+        res.status(410).json({ error: "El archivo ya no está disponible en el servidor" });
+      }
+    } catch (error) {
+      console.error("Error downloading backup:", error);
+      res.status(500).json({ error: "Error al procesar la descarga" });
     }
   });
 
