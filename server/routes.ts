@@ -31,7 +31,7 @@ import {
   invoiceTemplates,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { eq, desc, and, isNull, inArray } from "drizzle-orm";
 // Email imports removed - now using internal messaging system
 // import { sendDeliveryNoteCreatedEmail, sendDeliveryNoteSignedEmail, getAdminEmailForTenant } from "./email";
 import { logAudit, getClientInfo } from "./auditService";
@@ -2120,14 +2120,11 @@ export async function registerRoutes(
         db.select().from(invoiceTemplates).where(eq(invoiceTemplates.tenantId, tenantId)),
       ]);
 
-      // Fetch invoice line items for all invoices
+      // Fetch invoice line items for all invoices (using inArray for efficiency and tenant safety)
       const invoiceIds = tenantInvoices.map(inv => inv.id);
       let tenantLineItems: any[] = [];
       if (invoiceIds.length > 0) {
-        for (const invId of invoiceIds) {
-          const items = await db.select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invId));
-          tenantLineItems = [...tenantLineItems, ...items];
-        }
+        tenantLineItems = await db.select().from(invoiceLineItems).where(inArray(invoiceLineItems.invoiceId, invoiceIds));
       }
 
       // Create backup object

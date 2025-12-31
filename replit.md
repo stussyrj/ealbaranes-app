@@ -29,7 +29,12 @@ The application is built with a multi-tenant architecture, ensuring complete dat
 - **Data Handling**: JSONB format for complex data structures like `pickupOrigins`.
 - **File Downloads**: Secure file downloads for invoices using JWT tokens in headers.
 - **Error Handling**: Robust validation for registration and user management.
-- **Data Backup**: Admins can generate and download comprehensive JSON backups of all tenant data, including delivery notes, invoices, templates, workers, vehicle types, and users (with redacted passwords). An audit log `backup_logs` tracks backup history.
+- **Data Backup**: 
+  - **Manual Backups**: Admins can generate and download comprehensive JSON backups via Settings page
+  - **Automated Backups**: Daily backups at 3:00 AM for all tenants, stored in `backups/` directory
+  - **Backup Contents**: Delivery notes, invoices, line items, templates, quotes, workers, vehicle types, users (passwords redacted)
+  - **Auto-cleanup**: Old backups (>30 days) automatically deleted
+  - **History**: `backup_logs` table tracks all backups with type (manual/automated), status, size, record counts
 
 ### Feature Specifications
 - **Digital Delivery Notes**: Workers create digital delivery notes with photo and signature capabilities. A delivery note is considered "signed" only when both a photo and a digital signature are present.

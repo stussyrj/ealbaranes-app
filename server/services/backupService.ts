@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { db } from "../db";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, inArray } from "drizzle-orm";
 import {
   tenants,
   deliveryNotes,
@@ -56,10 +56,7 @@ async function createTenantBackup(tenantId: string): Promise<{
     const invoiceIds = tenantInvoices.map(inv => inv.id);
     let tenantLineItems: any[] = [];
     if (invoiceIds.length > 0) {
-      for (const invId of invoiceIds) {
-        const items = await db.select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invId));
-        tenantLineItems = [...tenantLineItems, ...items];
-      }
+      tenantLineItems = await db.select().from(invoiceLineItems).where(inArray(invoiceLineItems.invoiceId, invoiceIds));
     }
 
     const backupData = {

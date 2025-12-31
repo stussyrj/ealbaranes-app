@@ -5,7 +5,8 @@ import { apiRequest, downloadFile } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Settings, Clock, Truck, Plus, Trash2, Edit2, Database, Download, History, CheckCircle2, XCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Settings, Clock, Truck, Plus, Trash2, Edit2, Database, Download, History, CheckCircle2, XCircle, Timer } from "lucide-react";
 
 interface VehicleType {
   id: string;
@@ -499,9 +500,21 @@ export default function SettingsPage() {
                       <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {formatDate(backup.createdAt)}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">
+                          {formatDate(backup.createdAt)}
+                        </p>
+                        {backup.type === "automated" ? (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                            <Timer className="h-3 w-3 mr-1" />
+                            Auto
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs px-1.5 py-0">
+                            Manual
+                          </Badge>
+                        )}
+                      </div>
                       {backup.recordCounts && (
                         <p className="text-xs text-muted-foreground">
                           {backup.recordCounts.deliveryNotes} albaranes, {backup.recordCounts.invoices} facturas
