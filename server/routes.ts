@@ -27,6 +27,8 @@ import {
   invoiceLineItems,
   workers,
   vehicleTypes,
+  quotes,
+  invoiceTemplates,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, isNull } from "drizzle-orm";
@@ -2093,21 +2095,29 @@ export async function registerRoutes(
     try {
       const tenantId = user.tenantId;
 
-      // Fetch all tenant data
+      // Verify tenant exists
+      const tenantData = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+      if (!tenantData || tenantData.length === 0) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      // Fetch all tenant data in parallel
       const [
-        tenantData,
         tenantDeliveryNotes,
         tenantInvoices,
         tenantWorkers,
         tenantVehicleTypes,
         tenantUsers,
+        tenantQuotes,
+        tenantInvoiceTemplates,
       ] = await Promise.all([
-        db.select().from(tenants).where(eq(tenants.id, tenantId)),
         db.select().from(deliveryNotes).where(and(eq(deliveryNotes.tenantId, tenantId), isNull(deliveryNotes.deletedAt))),
         db.select().from(invoices).where(eq(invoices.tenantId, tenantId)),
         db.select().from(workers).where(eq(workers.tenantId, tenantId)),
         db.select().from(vehicleTypes).where(eq(vehicleTypes.tenantId, tenantId)),
         db.select().from(users).where(eq(users.tenantId, tenantId)),
+        db.select().from(quotes).where(eq(quotes.tenantId, tenantId)),
+        db.select().from(invoiceTemplates).where(eq(invoiceTemplates.tenantId, tenantId)),
       ]);
 
       // Fetch invoice line items for all invoices
@@ -2122,7 +2132,7 @@ export async function registerRoutes(
 
       // Create backup object
       const backupData = {
-        version: "1.0",
+        version: "1.1",
         exportedAt: new Date().toISOString(),
         tenantId: tenantId,
         companyName: tenantData[0]?.companyName || "Unknown",
@@ -2131,6 +2141,8 @@ export async function registerRoutes(
           deliveryNotes: tenantDeliveryNotes,
           invoices: tenantInvoices,
           invoiceLineItems: tenantLineItems,
+          invoiceTemplates: tenantInvoiceTemplates,
+          quotes: tenantQuotes,
           workers: tenantWorkers,
           vehicleTypes: tenantVehicleTypes,
           users: tenantUsers.map(u => ({
@@ -2141,6 +2153,7 @@ export async function registerRoutes(
         counts: {
           deliveryNotes: tenantDeliveryNotes.length,
           invoices: tenantInvoices.length,
+          quotes: tenantQuotes.length,
           workers: tenantWorkers.length,
           vehicleTypes: tenantVehicleTypes.length,
           users: tenantUsers.length,

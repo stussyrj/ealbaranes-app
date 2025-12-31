@@ -1,16 +1,35 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, downloadFile } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Settings, Clock, Truck, Plus, Trash2, Edit2 } from "lucide-react";
+import { Loader2, Settings, Clock, Truck, Plus, Trash2, Edit2, Database, Download, History, CheckCircle2, XCircle } from "lucide-react";
 
 interface VehicleType {
   id: string;
   name: string;
   tenantId: string | null;
+}
+
+interface BackupLog {
+  id: string;
+  tenantId: string;
+  userId: string;
+  type: string;
+  status: string;
+  fileName: string | null;
+  fileSize: number | null;
+  recordCounts: {
+    deliveryNotes: number;
+    invoices: number;
+    workers: number;
+    vehicleTypes: number;
+    users: number;
+  } | null;
+  errorMessage: string | null;
+  createdAt: string;
 }
 
 export default function SettingsPage() {
@@ -24,6 +43,9 @@ export default function SettingsPage() {
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [backups, setBackups] = useState<BackupLog[]>([]);
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [isLoadingBackups, setIsLoadingBackups] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -125,6 +147,78 @@ export default function SettingsPage() {
       console.error("Error deleting vehicle:", error);
       toast({ title: "Error", description: "Error al eliminar el tipo de vehículo", variant: "destructive" });
     }
+  };
+
+  const loadBackupHistory = async () => {
+    setIsLoadingBackups(true);
+    try {
+      const res = await apiRequest("GET", "/api/admin/backups");
+      const data = await res.json();
+      setBackups(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error loading backup history:", error);
+    } finally {
+      setIsLoadingBackups(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setIsCreatingBackup(true);
+    try {
+      const res = await fetch("/api/admin/backup", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("ealbaran_auth_token") || ""}`,
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Error al crear respaldo");
+      }
+
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let filename = "backup.json";
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      toast({ title: "Respaldo creado", description: "El archivo se ha descargado correctamente" });
+      loadBackupHistory();
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      toast({ title: "Error", description: "Error al crear el respaldo", variant: "destructive" });
+    } finally {
+      setIsCreatingBackup(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number | null): string => {
+    if (!bytes) return "N/A";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   if (isLoading) {
@@ -322,6 +416,106 @@ export default function SettingsPage() {
               "Guardar Configuración"
             )}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Respaldos de Datos */}
+      <Card className="bg-slate-50 dark:bg-slate-900/30 border-muted-foreground/10 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <Database className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div>
+              <CardTitle className="text-lg">Respaldos de Datos</CardTitle>
+              <CardDescription>Descarga una copia de seguridad de todos tus datos</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 space-y-2">
+            <p className="text-sm font-medium text-green-900 dark:text-green-100">Tu respaldo incluye:</p>
+            <ul className="text-xs text-green-800 dark:text-green-200 space-y-1">
+              <li>• Todos los albaranes y sus datos</li>
+              <li>• Todas las facturas y líneas de detalle</li>
+              <li>• Trabajadores y tipos de vehículos</li>
+              <li>• Información de usuarios (sin contraseñas)</li>
+              <li>• Configuración de la empresa</li>
+            </ul>
+          </div>
+
+          <Button
+            onClick={handleCreateBackup}
+            disabled={isCreatingBackup}
+            className="w-full sm:w-auto"
+            data-testid="button-create-backup"
+          >
+            {isCreatingBackup ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creando respaldo...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Descargar Respaldo Ahora
+              </>
+            )}
+          </Button>
+
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Historial de respaldos</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadBackupHistory}
+                disabled={isLoadingBackups}
+                data-testid="button-refresh-backups"
+              >
+                {isLoadingBackups ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Actualizar"
+                )}
+              </Button>
+            </div>
+
+            {backups.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No hay respaldos registrados. Haz clic en "Descargar Respaldo Ahora" para crear el primero.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {backups.map((backup) => (
+                  <div
+                    key={backup.id}
+                    className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-muted-foreground/10"
+                  >
+                    {backup.status === "completed" ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {formatDate(backup.createdAt)}
+                      </p>
+                      {backup.recordCounts && (
+                        <p className="text-xs text-muted-foreground">
+                          {backup.recordCounts.deliveryNotes} albaranes, {backup.recordCounts.invoices} facturas
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatFileSize(backup.fileSize)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
