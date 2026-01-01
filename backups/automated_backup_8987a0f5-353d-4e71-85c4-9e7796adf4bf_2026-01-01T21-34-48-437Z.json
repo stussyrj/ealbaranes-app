@@ -1,0 +1,55 @@
+{
+  "version": "1.1",
+  "type": "automated",
+  "exportedAt": "2026-01-01T21:34:48.437Z",
+  "tenantId": "8987a0f5-353d-4e71-85c4-9e7796adf4bf",
+  "companyName": "Daniel Rodrigues",
+  "data": {
+    "tenant": {
+      "id": "8987a0f5-353d-4e71-85c4-9e7796adf4bf",
+      "adminUserId": "fcaf7b5a-8611-4f68-9694-a9de6ddffafc",
+      "companyName": "Daniel Rodrigues",
+      "stripeCustomerId": null,
+      "stripeSubscriptionId": null,
+      "subscriptionStatus": "active",
+      "currentPeriodEnd": null,
+      "canceledAt": null,
+      "graceUntil": null,
+      "retentionUntil": null,
+      "waitTimeThreshold": 20,
+      "createdAt": "2025-12-11T00:35:25.815Z",
+      "updatedAt": "2025-12-11T00:35:25.815Z"
+    },
+    "deliveryNotes": [],
+    "invoices": [],
+    "invoiceLineItems": [],
+    "invoiceTemplates": [],
+    "quotes": [],
+    "workers": [],
+    "vehicleTypes": [],
+    "users": [
+      {
+        "id": "fcaf7b5a-8611-4f68-9694-a9de6ddffafc",
+        "username": "danielrodriguesjuv_8e7c703e",
+        "email": "danielrodriguesjuv@gmail.com",
+        "displayName": "Daniel Rodrigues",
+        "password": "[REDACTED]",
+        "isAdmin": true,
+        "emailVerified": true,
+        "hasCompletedOnboarding": false,
+        "setupRequired": true,
+        "workerId": null,
+        "tenantId": "8987a0f5-353d-4e71-85c4-9e7796adf4bf",
+        "createdAt": "2025-12-11T00:35:25.926Z"
+      }
+    ]
+  },
+  "counts": {
+    "deliveryNotes": 0,
+    "invoices": 0,
+    "quotes": 0,
+    "workers": 0,
+    "vehicleTypes": 0,
+    "users": 1
+  }
+}
