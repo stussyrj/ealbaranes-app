@@ -15,6 +15,9 @@ import {
 } from "@shared/schema";
 import * as fs from "fs";
 import * as path from "path";
+import { jsPDF } from "jspdf";
+import { generateInvoicePdf } from "../invoicePdfService";
+import { generateDeliveryNotePdf } from "../deliveryNotePdfService";
 
 const BACKUP_DIR = path.join(process.cwd(), "backups");
 
@@ -25,7 +28,9 @@ if (!fs.existsSync(BACKUP_DIR)) {
 async function createTenantBackup(tenantId: string): Promise<{
   success: boolean;
   fileName?: string;
+  pdfFileName?: string;
   fileSize?: number;
+  pdfFileSize?: number;
   recordCounts?: Record<string, number>;
   error?: string;
 }> {
@@ -89,18 +94,104 @@ async function createTenantBackup(tenantId: string): Promise<{
       }
     };
 
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
+    // JSON Backup
     const backupJson = JSON.stringify(backupData, null, 2);
     const fileSize = Buffer.byteLength(backupJson, 'utf8');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `${backupData.type}_backup_${tenantId}_${timestamp}.json`;
     const filePath = path.join(BACKUP_DIR, fileName);
-
     fs.writeFileSync(filePath, backupJson);
+
+    // PDF Backup
+    let pdfFileName: string | undefined;
+    let pdfFileSize: number | undefined;
+
+    try {
+      const doc = new jsPDF();
+      const margin = 10;
+      let y = 20;
+
+      // Header
+      doc.setFontSize(20);
+      doc.text(`Respaldo de Empresa: ${tenantData[0].companyName}`, margin, y);
+      y += 10;
+      doc.setFontSize(12);
+      doc.text(`Fecha de exportación: ${new Date().toLocaleString()}`, margin, y);
+      y += 5;
+      doc.text(`ID de Empresa: ${tenantId}`, margin, y);
+      y += 15;
+
+      // Summary
+      doc.setFontSize(16);
+      doc.text("Resumen de Datos", margin, y);
+      y += 10;
+      doc.setFontSize(12);
+      doc.text(`Albaranes activos: ${tenantDeliveryNotes.length}`, margin, y); y += 7;
+      doc.text(`Facturas totales: ${tenantInvoices.length}`, margin, y); y += 7;
+      doc.text(`Trabajadores: ${tenantWorkers.length}`, margin, y); y += 7;
+      doc.text(`Tipos de vehículos: ${tenantVehicleTypes.length}`, margin, y); y += 7;
+      doc.text(`Usuarios: ${tenantUsers.length}`, margin, y); y += 15;
+
+      // Limit data in PDF for performance
+      const deliveryNotesToPrint = tenantDeliveryNotes.slice(0, 50);
+      const invoicesToPrint = tenantInvoices.slice(0, 30);
+
+      // Delivery Notes Section
+      if (deliveryNotesToPrint.length > 0) {
+        doc.addPage();
+        y = 20;
+        doc.setFontSize(16);
+        doc.text("Últimos 50 Albaranes", margin, y);
+        y += 10;
+        doc.setFontSize(10);
+        
+        deliveryNotesToPrint.forEach((dn, index) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          const dateStr = dn.createdAt ? new Date(dn.createdAt).toLocaleDateString() : 'N/A';
+          doc.text(`${index + 1}. #${dn.noteNumber} - ${dn.clientName} (${dateStr})`, margin, y);
+          y += 6;
+        });
+      }
+
+      // Invoices Section
+      if (invoicesToPrint.length > 0) {
+        doc.addPage();
+        y = 20;
+        doc.setFontSize(16);
+        doc.text("Últimas 30 Facturas", margin, y);
+        y += 10;
+        doc.setFontSize(10);
+        
+        invoicesToPrint.forEach((inv, index) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(`${index + 1}. #${inv.invoiceNumber} - ${inv.customerName} - ${inv.totalPrice}€`, margin, y);
+          y += 6;
+        });
+      }
+
+      const pdfOutput = doc.output('arraybuffer');
+      pdfFileName = `${backupData.type}_backup_${tenantId}_${timestamp}.pdf`;
+      const pdfFilePath = path.join(BACKUP_DIR, pdfFileName);
+      fs.writeFileSync(pdfFilePath, Buffer.from(pdfOutput));
+      pdfFileSize = pdfOutput.byteLength;
+    } catch (pdfError) {
+      console.error(`[backup] Error generating PDF for tenant ${tenantId}:`, pdfError);
+      // We continue since JSON is the primary backup
+    }
 
     return {
       success: true,
       fileName,
+      pdfFileName,
       fileSize,
+      pdfFileSize,
       recordCounts: backupData.counts,
     };
   } catch (error) {
@@ -124,6 +215,7 @@ async function runAutomatedBackups(): Promise<void> {
 
       const result = await createTenantBackup(tenant.id);
 
+      // Log JSON Backup
       const backupLogEntry = {
         tenantId: tenant.id,
         userId: "system",
@@ -136,8 +228,23 @@ async function runAutomatedBackups(): Promise<void> {
       };
       await db.insert(backupLogs).values(backupLogEntry);
 
+      // Log PDF Backup if successful
+      if (result.success && result.pdfFileName) {
+        const pdfBackupLogEntry = {
+          tenantId: tenant.id,
+          userId: "system",
+          type: "automated" as const,
+          status: "completed" as const,
+          fileName: result.pdfFileName,
+          fileSize: result.pdfFileSize,
+          recordCounts: result.recordCounts as any,
+          errorMessage: null,
+        };
+        await db.insert(backupLogs).values(pdfBackupLogEntry);
+      }
+
       if (result.success) {
-        console.log(`[backup] ✓ Backup completed for ${tenant.companyName || tenant.id}: ${result.fileName}`);
+        console.log(`[backup] ✓ Backups completed for ${tenant.companyName || tenant.id}: ${result.fileName}${result.pdfFileName ? ' and ' + result.pdfFileName : ''}`);
       } else {
         console.error(`[backup] ✗ Backup failed for ${tenant.companyName || tenant.id}: ${result.error}`);
       }
