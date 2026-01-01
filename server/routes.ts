@@ -39,6 +39,7 @@ import * as path from "path";
 import { logAudit, getClientInfo } from "./auditService";
 import { generateInvoicePdf } from "./invoicePdfService";
 import { generateDeliveryNotePdf } from "./deliveryNotePdfService";
+import { jsPDF } from "jspdf";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -2211,6 +2212,237 @@ export async function registerRoutes(
       }
 
       res.status(500).json({ error: "Error al crear respaldo" });
+    }
+  });
+
+  // Create PDF backup - admin only
+  app.post("/api/admin/backup/pdf", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede crear respaldos" });
+    }
+
+    try {
+      const tenantId = user.tenantId;
+
+      // Verify tenant exists
+      const tenantData = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+      if (!tenantData || tenantData.length === 0) {
+        return res.status(404).json({ error: "Empresa no encontrada" });
+      }
+
+      const companyName = tenantData[0]?.companyName || "Empresa";
+
+      // Fetch all tenant data in parallel
+      const [
+        tenantDeliveryNotes,
+        tenantInvoices,
+        tenantWorkers,
+        tenantVehicleTypes,
+        tenantUsers,
+      ] = await Promise.all([
+        db.select().from(deliveryNotes).where(and(eq(deliveryNotes.tenantId, tenantId), isNull(deliveryNotes.deletedAt))),
+        db.select().from(invoices).where(eq(invoices.tenantId, tenantId)),
+        db.select().from(workers).where(eq(workers.tenantId, tenantId)),
+        db.select().from(vehicleTypes).where(eq(vehicleTypes.tenantId, tenantId)),
+        db.select().from(users).where(eq(users.tenantId, tenantId)),
+      ]);
+
+      // Create PDF
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      let y = margin;
+
+      const checkPageBreak = (neededSpace: number) => {
+        if (y + neededSpace > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+      };
+
+      // Header
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      doc.text("Respaldo de Datos", pageWidth / 2, y, { align: "center" });
+      y += 12;
+
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "normal");
+      doc.text(companyName, pageWidth / 2, y, { align: "center" });
+      y += 8;
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generado: ${new Date().toLocaleString("es-ES")}`, pageWidth / 2, y, { align: "center" });
+      doc.setTextColor(0);
+      y += 15;
+
+      // Summary section
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Resumen", margin, y);
+      y += 8;
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      const summaryItems = [
+        `Albaranes: ${tenantDeliveryNotes.length}`,
+        `Facturas: ${tenantInvoices.length}`,
+        `Trabajadores: ${tenantWorkers.length}`,
+        `Tipos de vehiculos: ${tenantVehicleTypes.length}`,
+        `Usuarios: ${tenantUsers.length}`,
+      ];
+      summaryItems.forEach(item => {
+        doc.text(item, margin + 5, y);
+        y += 6;
+      });
+      y += 10;
+
+      // Delivery Notes section
+      checkPageBreak(30);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Albaranes", margin, y);
+      y += 8;
+
+      if (tenantDeliveryNotes.length === 0) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.text("No hay albaranes registrados", margin + 5, y);
+        y += 8;
+      } else {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        tenantDeliveryNotes.slice(0, 50).forEach((note: any, index: number) => {
+          checkPageBreak(12);
+          const status = note.status === "signed" ? "[Firmado]" : note.status === "pending" ? "[Pendiente]" : `[${note.status}]`;
+          const line = `#${note.noteNumber} - ${note.clientName || "Sin cliente"} - ${note.date || ""} ${status}`;
+          doc.text(line, margin + 5, y);
+          y += 5;
+        });
+        if (tenantDeliveryNotes.length > 50) {
+          doc.setFont("helvetica", "italic");
+          doc.text(`... y ${tenantDeliveryNotes.length - 50} albaranes mas`, margin + 5, y);
+          y += 5;
+        }
+      }
+      y += 10;
+
+      // Invoices section
+      checkPageBreak(30);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Facturas", margin, y);
+      y += 8;
+
+      if (tenantInvoices.length === 0) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.text("No hay facturas registradas", margin + 5, y);
+        y += 8;
+      } else {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        tenantInvoices.slice(0, 30).forEach((inv: any) => {
+          checkPageBreak(12);
+          const total = inv.total ? `${Number(inv.total).toFixed(2)} EUR` : "";
+          const line = `${inv.invoiceNumber || "Sin numero"} - ${inv.clientName || "Sin cliente"} - ${total}`;
+          doc.text(line, margin + 5, y);
+          y += 5;
+        });
+        if (tenantInvoices.length > 30) {
+          doc.setFont("helvetica", "italic");
+          doc.text(`... y ${tenantInvoices.length - 30} facturas mas`, margin + 5, y);
+          y += 5;
+        }
+      }
+      y += 10;
+
+      // Workers section
+      checkPageBreak(20);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Trabajadores", margin, y);
+      y += 8;
+
+      if (tenantWorkers.length === 0) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.text("No hay trabajadores registrados", margin + 5, y);
+        y += 8;
+      } else {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        tenantWorkers.forEach((worker: any) => {
+          checkPageBreak(8);
+          doc.text(`- ${worker.name || "Sin nombre"}`, margin + 5, y);
+          y += 5;
+        });
+      }
+      y += 10;
+
+      // Vehicle Types section
+      checkPageBreak(20);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Tipos de Vehiculos", margin, y);
+      y += 8;
+
+      if (tenantVehicleTypes.length === 0) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.text("No hay tipos de vehiculos registrados", margin + 5, y);
+        y += 8;
+      } else {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        tenantVehicleTypes.filter((v: any) => v.isActive).forEach((vt: any) => {
+          checkPageBreak(8);
+          doc.text(`- ${vt.name || "Sin nombre"}`, margin + 5, y);
+          y += 5;
+        });
+      }
+      y += 10;
+
+      // Users section
+      checkPageBreak(20);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Usuarios", margin, y);
+      y += 8;
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      tenantUsers.forEach((u: any) => {
+        checkPageBreak(8);
+        const role = u.isAdmin ? "(Admin)" : "(Trabajador)";
+        doc.text(`- ${u.username || u.email || "Sin nombre"} ${role}`, margin + 5, y);
+        y += 5;
+      });
+
+      // Footer on last page
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text("Este documento es un resumen visual de los datos. Para restaurar datos, use el respaldo JSON.", pageWidth / 2, pageHeight - 10, { align: "center" });
+
+      // Generate PDF buffer
+      const pdfBuffer = Buffer.from(doc.output("arraybuffer"));
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `respaldo_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.pdf`;
+
+      // Set headers for file download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error("Error creating PDF backup:", error);
+      res.status(500).json({ error: "Error al crear respaldo PDF" });
     }
   });
 

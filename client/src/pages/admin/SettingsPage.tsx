@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Settings, Clock, Truck, Plus, Trash2, Edit2, Database, Download, History, CheckCircle2, XCircle, Timer } from "lucide-react";
+import { Loader2, Settings, Clock, Truck, Plus, Trash2, Edit2, Database, Download, History, CheckCircle2, XCircle, Timer, FileText, FileJson } from "lucide-react";
 
 interface VehicleType {
   id: string;
@@ -46,6 +46,7 @@ export default function SettingsPage() {
   const [editingName, setEditingName] = useState("");
   const [backups, setBackups] = useState<BackupLog[]>([]);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [isCreatingPdfBackup, setIsCreatingPdfBackup] = useState(false);
   const [isLoadingBackups, setIsLoadingBackups] = useState(false);
 
   useEffect(() => {
@@ -194,13 +195,53 @@ export default function SettingsPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
 
-      toast({ title: "Respaldo creado", description: "El archivo se ha descargado correctamente" });
+      toast({ title: "Respaldo creado", description: "El archivo JSON se ha descargado correctamente" });
       loadBackupHistory();
     } catch (error) {
       console.error("Error creating backup:", error);
       toast({ title: "Error", description: "Error al crear el respaldo", variant: "destructive" });
     } finally {
       setIsCreatingBackup(false);
+    }
+  };
+
+  const handleCreatePdfBackup = async () => {
+    setIsCreatingPdfBackup(true);
+    try {
+      const res = await fetch("/api/admin/backup/pdf", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("ealbaran_auth_token") || ""}`,
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Error al crear respaldo PDF");
+      }
+
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let filename = "respaldo.pdf";
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      toast({ title: "Respaldo PDF creado", description: "El archivo PDF se ha descargado correctamente" });
+    } catch (error) {
+      console.error("Error creating PDF backup:", error);
+      toast({ title: "Error", description: "Error al crear el respaldo PDF", variant: "destructive" });
+    } finally {
+      setIsCreatingPdfBackup(false);
     }
   };
 
@@ -489,24 +530,48 @@ export default function SettingsPage() {
             </ul>
           </div>
 
-          <Button
-            onClick={handleCreateBackup}
-            disabled={isCreatingBackup}
-            className="w-full sm:w-auto"
-            data-testid="button-create-backup"
-          >
-            {isCreatingBackup ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creando respaldo...
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4 mr-2" />
-                Descargar Respaldo Ahora
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleCreateBackup}
+              disabled={isCreatingBackup || isCreatingPdfBackup}
+              variant="outline"
+              className="w-full sm:w-auto"
+              data-testid="button-create-backup-json"
+            >
+              {isCreatingBackup ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creando JSON...
+                </>
+              ) : (
+                <>
+                  <FileJson className="h-4 w-4 mr-2" />
+                  Descargar JSON (Datos)
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleCreatePdfBackup}
+              disabled={isCreatingBackup || isCreatingPdfBackup}
+              className="w-full sm:w-auto"
+              data-testid="button-create-backup-pdf"
+            >
+              {isCreatingPdfBackup ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creando PDF...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Descargar PDF (Visual)
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            <strong>JSON:</strong> Para restaurar datos en el futuro. <strong>PDF:</strong> Para visualizar e imprimir.
+          </p>
 
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between mb-3">
