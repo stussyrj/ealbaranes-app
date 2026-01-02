@@ -834,10 +834,22 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-lg sm:text-xl font-semibold">Panel de Empresa</h1>
           <div className="flex items-center gap-1.5">
+            {user?.isAdmin && (
+              <Link href="/admin/deleted-notes">
+                <button
+                  className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm hover-elevate flex-shrink-0"
+                  title="Albaranes Eliminados"
+                  data-testid="button-deleted-notes"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </button>
+              </Link>
+            )}
             <button
               onClick={() => {
                 refetchDeliveryNotes();
                 refetchQuotes();
+                if (user?.isAdmin) refetchDeletedNotes();
                 toast({ title: "Actualizando datos..." });
               }}
               className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm hover-elevate flex-shrink-0"
