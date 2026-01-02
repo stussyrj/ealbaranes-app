@@ -16,14 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Key, Trash2, Users, Shield, User, AlertTriangle, Link2 } from "lucide-react";
+import { Plus, Key, Trash2, Users, Shield, User, AlertTriangle } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -32,13 +25,6 @@ interface UserData {
   isAdmin: boolean;
   workerId: string | null;
   createdAt: string;
-}
-
-interface WorkerData {
-  id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
 }
 
 export default function UserManagement() {
@@ -60,10 +46,6 @@ export default function UserManagement() {
     queryKey: ["/api/admin/users"],
   });
 
-  const { data: workers = [] } = useQuery<WorkerData[]>({
-    queryKey: ["/api/workers"],
-  });
-
   const createUserMutation = useMutation({
     mutationFn: async (data: { username: string; displayName: string; password: string }) => {
       const res = await apiRequest("POST", "/api/admin/create-user", data);
@@ -80,14 +62,14 @@ export default function UserManagement() {
       setNewUsername("");
       setNewPassword("");
       toast({
-        title: "Usuario creado",
-        description: "El usuario se ha creado correctamente",
+        title: "Trabajador creado",
+        description: "El trabajador se ha creado correctamente",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear el usuario",
+        description: error.message || "No se pudo crear el trabajador",
         variant: "destructive",
       });
     },
@@ -116,31 +98,6 @@ export default function UserManagement() {
     },
   });
 
-  const assignWorkerMutation = useMutation({
-    mutationFn: async ({ userId, workerId }: { userId: string; workerId: string | null }) => {
-      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/assign-worker`, { workerId });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Error al asignar trabajador");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({
-        title: "Trabajador asignado",
-        description: "El trabajador se ha vinculado correctamente",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo asignar el trabajador",
-        variant: "destructive",
-      });
-    },
-  });
-
   const deleteUserMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiRequest("DELETE", `/api/admin/users/${id}`);
@@ -149,14 +106,14 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: "Usuario eliminado",
-        description: "El usuario se ha eliminado correctamente",
+        title: "Trabajador eliminado",
+        description: "El trabajador se ha eliminado correctamente",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo eliminar el usuario",
+        description: error.message || "No se pudo eliminar el trabajador",
         variant: "destructive",
       });
     },
@@ -225,10 +182,6 @@ export default function UserManagement() {
     changePasswordMutation.mutate({ id: selectedUser.id, password: changePassword });
   };
 
-  const handleAssignWorker = (userId: string, workerId: string | null) => {
-    assignWorkerMutation.mutate({ userId, workerId });
-  };
-
   const handleDeleteUser = (user: UserData) => {
     if (user.isAdmin) {
       toast({
@@ -239,7 +192,7 @@ export default function UserManagement() {
       return;
     }
     
-    if (confirm(`¿Estás seguro de eliminar al usuario "${user.username}"?`)) {
+    if (confirm(`¿Estas seguro de eliminar al trabajador "${user.displayName || user.username}"?`)) {
       deleteUserMutation.mutate(user.id);
     }
   };
@@ -273,19 +226,12 @@ export default function UserManagement() {
     setIsDeleteCompanyDialogOpen(false);
   };
 
-  const getWorkerName = (workerId: string | null) => {
-    if (!workerId) return null;
-    const worker = workers.find(w => w.id === workerId);
-    return worker ? worker.name : null;
-  };
-
   const nonAdminUsers = users.filter(u => !u.isAdmin);
   const adminUsers = users.filter(u => u.isAdmin);
-  const activeWorkers = workers.filter(w => w.isActive);
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6" />
@@ -300,19 +246,19 @@ export default function UserManagement() {
           <DialogTrigger asChild>
             <Button data-testid="button-create-user">
               <Plus className="h-4 w-4 mr-2" />
-              Nuevo Usuario
+              Nuevo Trabajador
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+              <DialogTitle>Crear Nuevo Trabajador</DialogTitle>
               <DialogDescription>
                 Crea una cuenta de acceso para un trabajador
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="displayName">Nombre / Apodo</Label>
+                <Label htmlFor="displayName">Nombre del trabajador</Label>
                 <Input
                   id="displayName"
                   value={newDisplayName}
@@ -320,21 +266,18 @@ export default function UserManagement() {
                   placeholder="ej: Juan Garcia"
                   data-testid="input-new-displayname"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Este nombre puede repetirse entre usuarios
-                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Nombre de usuario (unico)</Label>
+                <Label htmlFor="username">Nombre de usuario (para login)</Label>
                 <Input
                   id="username"
                   value={newUsername}
                   onChange={(e) => setNewUsername(e.target.value)}
-                  placeholder="ej: jose.garcia"
+                  placeholder="ej: juan.garcia"
                   data-testid="input-new-username"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Debe ser unico en toda la aplicacion
+                  Debe ser unico, sera usado para iniciar sesion
                 </p>
               </div>
               <div className="space-y-2">
@@ -358,7 +301,7 @@ export default function UserManagement() {
                 disabled={createUserMutation.isPending}
                 data-testid="button-confirm-create-user"
               >
-                {createUserMutation.isPending ? "Creando..." : "Crear Usuario"}
+                {createUserMutation.isPending ? "Creando..." : "Crear Trabajador"}
               </Button>
             </div>
           </DialogContent>
@@ -367,7 +310,7 @@ export default function UserManagement() {
 
       {isLoadingUsers ? (
         <div className="text-center py-8 text-muted-foreground">
-          Cargando usuarios...
+          Cargando...
         </div>
       ) : (
         <div className="space-y-6">
@@ -412,91 +355,58 @@ export default function UserManagement() {
                 Trabajadores
               </CardTitle>
               <CardDescription>
-                Usuarios con acceso limitado para gestionar sus servicios. Vincula cada usuario a un trabajador para que sus albaranes se asocien correctamente.
+                Usuarios con acceso limitado para gestionar sus albaranes
               </CardDescription>
             </CardHeader>
             <CardContent>
               {nonAdminUsers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No hay usuarios trabajadores</p>
-                  <p className="text-sm">Crea uno usando el boton "Nuevo Usuario"</p>
+                  <p>No hay trabajadores</p>
+                  <p className="text-sm">Crea uno usando el boton "Nuevo Trabajador"</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {nonAdminUsers.map((user) => {
-                    const workerName = getWorkerName(user.workerId);
-                    return (
-                      <div
-                        key={user.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-muted/50 gap-3"
-                        data-testid={`user-row-${user.id}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
-                            <User className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{user.displayName || user.username}</p>
-                            <p className="text-xs text-muted-foreground">
-                              @{user.username}
-                            </p>
-                          </div>
+                <div className="space-y-2">
+                  {nonAdminUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      data-testid={`user-row-${user.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
+                          <User className="h-4 w-4" />
                         </div>
-                        
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            <Select
-                              value={user.workerId || "none"}
-                              onValueChange={(value) => handleAssignWorker(user.id, value === "none" ? null : value)}
-                              disabled={assignWorkerMutation.isPending}
-                            >
-                              <SelectTrigger className="w-full sm:w-[180px]" data-testid={`select-worker-${user.id}`}>
-                                <SelectValue placeholder="Asignar trabajador" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">Sin trabajador</SelectItem>
-                                {activeWorkers.map((worker) => (
-                                  <SelectItem key={worker.id} value={worker.id}>
-                                    {worker.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          {workerName && (
-                            <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
-                              {workerName}
-                            </Badge>
-                          )}
-                          
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsPasswordDialogOpen(true);
-                              }}
-                              data-testid={`button-change-password-${user.id}`}
-                            >
-                              <Key className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteUser(user)}
-                              data-testid={`button-delete-user-${user.id}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
+                        <div>
+                          <p className="font-medium">{user.displayName || user.username}</p>
+                          <p className="text-xs text-muted-foreground">
+                            @{user.username}
+                          </p>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsPasswordDialogOpen(true);
+                          }}
+                          data-testid={`button-change-password-${user.id}`}
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteUser(user)}
+                          data-testid={`button-delete-user-${user.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
@@ -546,7 +456,7 @@ export default function UserManagement() {
                     <div className="py-4">
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
                         <li>Todos los albaranes y sus fotos/firmas</li>
-                        <li>Todos los trabajadores y usuarios</li>
+                        <li>Todos los trabajadores</li>
                         <li>Todo el historial y registros</li>
                         <li>La cuenta de empresa</li>
                       </ul>
@@ -605,7 +515,7 @@ export default function UserManagement() {
           <DialogHeader>
             <DialogTitle>Cambiar Contraseña</DialogTitle>
             <DialogDescription>
-              Nueva contraseña para {selectedUser?.username}
+              Nueva contraseña para {selectedUser?.displayName || selectedUser?.username}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

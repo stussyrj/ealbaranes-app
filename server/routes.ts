@@ -1896,6 +1896,7 @@ export async function registerRoutes(
   });
 
   // Create new user (worker) - admin only
+  // This endpoint automatically creates both user and worker records
   app.post("/api/admin/create-user", async (req, res) => {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ error: "No autenticado" });
@@ -1911,18 +1912,33 @@ export async function registerRoutes(
       }
       const { hashPassword } = await import("./auth");
       const hashedPassword = await hashPassword(password);
+      
+      // First create a worker record
+      const workerName = displayName || username;
+      const newWorker = await storage.createWorker({
+        name: workerName,
+        email: `${username}@worker.local`,
+        phone: null,
+        isActive: true,
+        tenantId: user.tenantId,
+      });
+      
+      // Then create user with workerId linked
       const newUser = await storage.createUser({
         username,
         displayName,
         password: hashedPassword,
         isAdmin: false,
         tenantId: user.tenantId,
+        workerId: newWorker.id,
       });
+      
       res.status(201).json({
         id: newUser.id,
         username: newUser.username,
         displayName: newUser.displayName,
         isAdmin: newUser.isAdmin,
+        workerId: newUser.workerId,
         createdAt: newUser.createdAt,
       });
     } catch (error: any) {
