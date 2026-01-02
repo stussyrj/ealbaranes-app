@@ -186,8 +186,8 @@ export function DeliveryNoteGenerator({ open, onOpenChange, quote, workerId }: D
     setDestinationSignature(dataUrl);
   }, []);
 
-  const isFormComplete = hasOriginSignature && originDocument.trim().length >= 8 && 
-                          hasDestinationSignature && destinationDocument.trim().length >= 8;
+  const isFormComplete = originDocument.trim().length >= 8 && 
+                          destinationDocument.trim().length >= 8;
 
   const resetForm = () => {
     setNotes("");

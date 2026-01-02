@@ -80,11 +80,10 @@ export const DeliveryNoteCard = memo(function DeliveryNoteCard({
   const [showAllOrigins, setShowAllOrigins] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   
-  // Fully signed requires: origin document + destination document + photo (new dual signature system)
-  const isFullySigned = (note.originSignatureDocument && note.destinationSignatureDocument && note.photo) ||
-                        (!!note.photo && !!note.signature); // Legacy: photo + signature
-  // Partially signed = only origin is signed (new system)
-  const isPartialSigned = (note.originSignature && note.originSignatureDocument) && !isFullySigned;
+  // Un albarán se considera "firmado" si tiene al menos la foto
+  // (La firma digital ya no es obligatoria según la preferencia del usuario)
+  const isFullySigned = !!note.photo;
+  const isPartialSigned = false; // Ya no hay estados parciales sin firma obligatoria
   const isSigned = isFullySigned;
   
   const hasMultipleOrigins = note.pickupOrigins && note.pickupOrigins.length > 1;

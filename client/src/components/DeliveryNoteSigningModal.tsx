@@ -116,25 +116,20 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
     setSignatureModalOpen(false);
   }, [signatureModalType]);
 
-  // Origin: Firma es independiente del documento
+  // Origin: Solo el documento es obligatorio ahora
   const hasOriginDocument = originDocument.trim().length >= 8;
-  // When signature drawing is disabled, only document is required
-  const isOriginComplete = SIGNATURE_DRAWING_DISABLED 
-    ? hasOriginDocument 
-    : (hasOriginSignature && hasOriginDocument);
+  const isOriginComplete = hasOriginDocument;
   
-  // Destination: Firma es independiente del documento
+  // Destination: Solo el documento y la foto son obligatorios ahora
   const hasDestinationDocument = destinationDocument.trim().length >= 8;
   
   // Photo is required - either we have one in state or on the server
   const hasValidPhoto = destinationPhoto.length > 100 || (note?.photo && note.photo.length > 100);
-  // Legacy notes (signature + photo but no dual signatures) are ALREADY complete - treat as read-only
+  // Legacy notes are still considered complete
   const isLegacyComplete = !!(note?.signature && note?.photo && !note?.originSignature);
-  // Destination is complete when we have signature + document + photo (or just document + photo when signature disabled)
-  const isDestinationComplete = SIGNATURE_DRAWING_DISABLED
-    ? (hasDestinationDocument && hasValidPhoto)
-    : (hasDestinationSignature && hasDestinationDocument && hasValidPhoto);
-  // Form is complete for submission: full dual signature OR legacy (read-only view)
+  // Destination is complete when we have document + photo
+  const isDestinationComplete = hasDestinationDocument && hasValidPhoto;
+  // Form is complete for submission: both parts complete OR legacy
   const isFormComplete = (isOriginComplete && isDestinationComplete) || isLegacyComplete;
 
   const resetForm = () => {
@@ -159,20 +154,11 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       return;
     }
 
-    // Validate document exists (signature only required when not disabled)
+    // Validate document exists
     if (!hasOriginDocument) {
       toast({
         title: "Información incompleta",
         description: "Falta el DNI/NIE/NIF del firmante",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!SIGNATURE_DRAWING_DISABLED && !hasOriginSignature) {
-      toast({
-        title: "Información incompleta",
-        description: "Falta la firma de origen",
         variant: "destructive",
       });
       return;
@@ -253,12 +239,12 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
 
     // Validate what's missing before submit
     if (!isFormComplete) {
-      if (!hasOriginSignature || !hasOriginDocument) {
-        alert("Falta información de origen:\n- Firma: " + (hasOriginSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasOriginDocument ? "✓" : "Falta"));
+      if (!hasOriginDocument) {
+        alert("Falta información de origen:\n- DNI/NIE/NIF: Falta");
         return;
       }
-      if (!hasDestinationSignature || !hasDestinationDocument) {
-        alert("Falta información de destino:\n- Firma: " + (hasDestinationSignature ? "✓" : "Falta") + "\n- DNI/NIE/NIF: " + (hasDestinationDocument ? "✓" : "Falta"));
+      if (!hasDestinationDocument) {
+        alert("Falta información de destino:\n- DNI/NIE/NIF: Falta");
         return;
       }
       if (!hasValidPhoto) {
@@ -466,8 +452,16 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                     )}
                   </TabsTrigger>
                 </TabsList>
+              </Tabs>
 
-            <TabsContent value="origin" className="space-y-3 mt-3">
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground italic text-center">
+                  Nota: Ya no se requiere firma digital, solo el documento DNI/NIE/NIF.
+                </p>
+              </div>
+
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsContent value="origin" className="space-y-3 mt-3">
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
                 <User className="w-4 h-4 inline mr-1.5" />
                 Firma de la persona que <strong>entrega</strong> el material en origen
