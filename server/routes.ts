@@ -2057,6 +2057,68 @@ export async function registerRoutes(
     }
   });
 
+  // Get deleted delivery notes - admin only
+  app.get("/api/admin/delivery-notes/deleted", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede ver albaranes eliminados" });
+    }
+    try {
+      const deletedNotes = await storage.getDeletedDeliveryNotes(user.tenantId);
+      res.json(deletedNotes);
+    } catch (error) {
+      console.error("Error getting deleted delivery notes:", error);
+      res.status(500).json({ error: "Error al obtener albaranes eliminados" });
+    }
+  });
+
+  // Restore deleted delivery note - admin only
+  app.post("/api/admin/delivery-notes/:id/restore", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede restaurar albaranes" });
+    }
+    try {
+      const { id } = req.params;
+      const restoredNote = await storage.restoreDeliveryNote(id, user.tenantId);
+      if (!restoredNote) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      res.json(restoredNote);
+    } catch (error) {
+      console.error("Error restoring delivery note:", error);
+      res.status(500).json({ error: "Error al restaurar albarán" });
+    }
+  });
+
+  // Permanently delete delivery note - admin only
+  app.delete("/api/admin/delivery-notes/:id/permanent", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede eliminar albaranes permanentemente" });
+    }
+    try {
+      const { id } = req.params;
+      const deleted = await storage.permanentDeleteDeliveryNote(id, user.tenantId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error permanently deleting delivery note:", error);
+      res.status(500).json({ error: "Error al eliminar albarán permanentemente" });
+    }
+  });
+
   // Delete company (tenant cascade) - admin only
   app.post("/api/admin/delete-company", async (req, res) => {
     if (!req.isAuthenticated() || !req.user) {
