@@ -649,7 +649,7 @@ export default function DashboardPage() {
       const data = await res.json();
       return data.waitTimeThreshold ?? 20;
     },
-    enabled: !!user?.tenantId,
+    enabled: !!(user as any)?.tenantId,
   });
 
   const handleArrivalDeparture = async (note: any, type: 'arrival' | 'departure') => {
