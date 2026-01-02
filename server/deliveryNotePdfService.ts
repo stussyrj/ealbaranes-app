@@ -224,7 +224,16 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
         const photoX = margin + (contentWidth - scaledDims.width) / 2;
         doc.setDrawColor(200, 200, 200);
         doc.rect(photoX - 1, yPos - 1, scaledDims.width + 2, scaledDims.height + 2);
-        doc.addImage(note.photo, "JPEG", photoX, yPos, scaledDims.width, scaledDims.height);
+        
+        // Ensure photo is a valid base64 image string for jspdf
+        let photoData = note.photo;
+        if (!photoData.startsWith('data:image/')) {
+          // If it's just raw base64, assume JPEG
+          photoData = `data:image/jpeg;base64,${photoData}`;
+        }
+        
+        const format = photoData.includes('png') ? 'PNG' : 'JPEG';
+        doc.addImage(photoData, format, photoX, yPos, scaledDims.width, scaledDims.height);
       }
     } catch (e) {
       console.error("Error adding photo to PDF:", e);
