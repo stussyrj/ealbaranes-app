@@ -1963,6 +1963,58 @@ export async function registerRoutes(
     }
   });
 
+  // Assign worker to user - admin only
+  app.patch("/api/admin/users/:id/assign-worker", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresa puede asignar trabajadores" });
+    }
+    try {
+      const { id } = req.params;
+      const { workerId } = req.body;
+      
+      // Verify target user exists and belongs to same tenant
+      const targetUser = await storage.getUser(id);
+      if (!targetUser || targetUser.tenantId !== user.tenantId) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      // If workerId is provided, validate the worker exists and belongs to same tenant
+      if (workerId) {
+        const worker = await storage.getWorker(workerId);
+        if (!worker) {
+          return res.status(404).json({ error: "Trabajador no encontrado" });
+        }
+        if (worker.tenantId !== user.tenantId) {
+          return res.status(403).json({ error: "El trabajador no pertenece a esta empresa" });
+        }
+      }
+      
+      // Update user with workerId (can be null to unassign)
+      const updated = await storage.updateUser(id, { workerId: workerId || null });
+      if (!updated) {
+        return res.status(500).json({ error: "Error al asignar trabajador" });
+      }
+      
+      res.json({ 
+        success: true, 
+        user: {
+          id: updated.id,
+          username: updated.username,
+          displayName: updated.displayName,
+          isAdmin: updated.isAdmin,
+          workerId: updated.workerId,
+        }
+      });
+    } catch (error) {
+      console.error("Error assigning worker to user:", error);
+      res.status(500).json({ error: "Error al asignar trabajador" });
+    }
+  });
+
   // Delete user - admin only
   app.delete("/api/admin/users/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user) {

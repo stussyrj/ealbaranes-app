@@ -17,17 +17,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Plus, Key, Trash2, Users, Shield, User, AlertTriangle } from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Key, Trash2, Users, Shield, User, AlertTriangle, Link2 } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -36,6 +32,13 @@ interface UserData {
   isAdmin: boolean;
   workerId: string | null;
   createdAt: string;
+}
+
+interface WorkerData {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
 }
 
 export default function UserManagement() {
@@ -55,6 +58,10 @@ export default function UserManagement() {
 
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<UserData[]>({
     queryKey: ["/api/admin/users"],
+  });
+
+  const { data: workers = [] } = useQuery<WorkerData[]>({
+    queryKey: ["/api/workers"],
   });
 
   const createUserMutation = useMutation({
@@ -109,6 +116,31 @@ export default function UserManagement() {
     },
   });
 
+  const assignWorkerMutation = useMutation({
+    mutationFn: async ({ userId, workerId }: { userId: string; workerId: string | null }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/assign-worker`, { workerId });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al asignar trabajador");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Trabajador asignado",
+        description: "El trabajador se ha vinculado correctamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo asignar el trabajador",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteUserMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiRequest("DELETE", `/api/admin/users/${id}`);
@@ -155,8 +187,6 @@ export default function UserManagement() {
         description: data.message || "Tu empresa y todos sus datos han sido eliminados permanentemente",
       });
       
-      // If session cleanup failed, force hard redirect to ensure clean browser state
-      // Otherwise use SPA navigation
       if (!data.sessionCleared) {
         window.location.href = "/login";
       } else {
@@ -193,6 +223,10 @@ export default function UserManagement() {
   const handleChangePassword = () => {
     if (!selectedUser || !changePassword.trim()) return;
     changePasswordMutation.mutate({ id: selectedUser.id, password: changePassword });
+  };
+
+  const handleAssignWorker = (userId: string, workerId: string | null) => {
+    assignWorkerMutation.mutate({ userId, workerId });
   };
 
   const handleDeleteUser = (user: UserData) => {
@@ -239,8 +273,15 @@ export default function UserManagement() {
     setIsDeleteCompanyDialogOpen(false);
   };
 
+  const getWorkerName = (workerId: string | null) => {
+    if (!workerId) return null;
+    const worker = workers.find(w => w.id === workerId);
+    return worker ? worker.name : null;
+  };
+
   const nonAdminUsers = users.filter(u => !u.isAdmin);
   const adminUsers = users.filter(u => u.isAdmin);
+  const activeWorkers = workers.filter(w => w.isActive);
 
   return (
     <div className="p-6 space-y-6">
@@ -248,7 +289,7 @@ export default function UserManagement() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6" />
-            Gestión de Usuarios
+            Gestion de Usuarios
           </h1>
           <p className="text-muted-foreground">
             Crear y administrar cuentas de trabajadores
@@ -276,7 +317,7 @@ export default function UserManagement() {
                   id="displayName"
                   value={newDisplayName}
                   onChange={(e) => setNewDisplayName(e.target.value)}
-                  placeholder="ej: Juan García"
+                  placeholder="ej: Juan Garcia"
                   data-testid="input-new-displayname"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -284,7 +325,7 @@ export default function UserManagement() {
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Nombre de usuario (único)</Label>
+                <Label htmlFor="username">Nombre de usuario (unico)</Label>
                 <Input
                   id="username"
                   value={newUsername}
@@ -293,7 +334,7 @@ export default function UserManagement() {
                   data-testid="input-new-username"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Debe ser único en toda la aplicación
+                  Debe ser unico en toda la aplicacion
                 </p>
               </div>
               <div className="space-y-2">
@@ -371,7 +412,7 @@ export default function UserManagement() {
                 Trabajadores
               </CardTitle>
               <CardDescription>
-                Usuarios con acceso limitado para gestionar sus servicios
+                Usuarios con acceso limitado para gestionar sus servicios. Vincula cada usuario a un trabajador para que sus albaranes se asocien correctamente.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -379,50 +420,83 @@ export default function UserManagement() {
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No hay usuarios trabajadores</p>
-                  <p className="text-sm">Crea uno usando el botón "Nuevo Usuario"</p>
+                  <p className="text-sm">Crea uno usando el boton "Nuevo Usuario"</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {nonAdminUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                      data-testid={`user-row-${user.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
-                          <User className="h-4 w-4" />
+                <div className="space-y-3">
+                  {nonAdminUsers.map((user) => {
+                    const workerName = getWorkerName(user.workerId);
+                    return (
+                      <div
+                        key={user.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-muted/50 gap-3"
+                        data-testid={`user-row-${user.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{user.displayName || user.username}</p>
+                            <p className="text-xs text-muted-foreground">
+                              @{user.username}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{user.displayName || user.username}</p>
-                          <p className="text-xs text-muted-foreground">
-                            @{user.username}
-                          </p>
+                        
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <Select
+                              value={user.workerId || "none"}
+                              onValueChange={(value) => handleAssignWorker(user.id, value === "none" ? null : value)}
+                              disabled={assignWorkerMutation.isPending}
+                            >
+                              <SelectTrigger className="w-full sm:w-[180px]" data-testid={`select-worker-${user.id}`}>
+                                <SelectValue placeholder="Asignar trabajador" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Sin trabajador</SelectItem>
+                                {activeWorkers.map((worker) => (
+                                  <SelectItem key={worker.id} value={worker.id}>
+                                    {worker.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {workerName && (
+                            <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                              {workerName}
+                            </Badge>
+                          )}
+                          
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setIsPasswordDialogOpen(true);
+                              }}
+                              data-testid={`button-change-password-${user.id}`}
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteUser(user)}
+                              data-testid={`button-delete-user-${user.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsPasswordDialogOpen(true);
-                          }}
-                          data-testid={`button-change-password-${user.id}`}
-                        >
-                          <Key className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteUser(user)}
-                          data-testid={`button-delete-user-${user.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -442,9 +516,9 @@ export default function UserManagement() {
               <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
                 <h4 className="font-medium text-destructive mb-2">Eliminar Empresa</h4>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Esta acción eliminará permanentemente tu empresa y todos los datos asociados: 
-                  albaranes, trabajadores, usuarios y cualquier otra información. 
-                  Esta acción no se puede deshacer.
+                  Esta accion eliminara permanentemente tu empresa y todos los datos asociados: 
+                  albaranes, trabajadores, usuarios y cualquier otra informacion. 
+                  Esta accion no se puede deshacer.
                 </p>
                 <Dialog open={isDeleteCompanyDialogOpen} onOpenChange={(open) => {
                   if (!open) resetDeleteCompanyForm();
@@ -463,10 +537,10 @@ export default function UserManagement() {
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
-                        Confirmar Eliminación de Empresa
+                        Confirmar Eliminacion de Empresa
                       </DialogTitle>
                       <DialogDescription>
-                        Esta acción es irreversible. Se eliminarán permanentemente:
+                        Esta accion es irreversible. Se eliminaran permanentemente:
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
