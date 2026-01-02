@@ -16,8 +16,6 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import { jsPDF } from "jspdf";
-import { generateInvoicePdf } from "../invoicePdfService";
-import { generateDeliveryNotePdf } from "../deliveryNotePdfService";
 
 const BACKUP_DIR = path.join(process.cwd(), "backups");
 
@@ -45,15 +43,13 @@ async function createTenantBackup(tenantId: string): Promise<{
       tenantInvoices,
       tenantWorkers,
       tenantVehicleTypes,
-      tenantUsers,
       tenantQuotes,
       tenantInvoiceTemplates,
     ] = await Promise.all([
-      db.select().from(deliveryNotes).where(and(eq(deliveryNotes.tenantId, tenantId), isNull(deliveryNotes.deletedAt))),
-      db.select().from(invoices).where(eq(invoices.tenantId, tenantId)),
+      db.select().from(deliveryNotes).where(and(eq(deliveryNotes.tenantId, tenantId), isNull(deliveryNotes.deletedAt))).orderBy(desc(deliveryNotes.createdAt)),
+      db.select().from(invoices).where(eq(invoices.tenantId, tenantId)).orderBy(desc(invoices.createdAt)),
       db.select().from(workers).where(eq(workers.tenantId, tenantId)),
       db.select().from(vehicleTypes).where(eq(vehicleTypes.tenantId, tenantId)),
-      db.select().from(users).where(eq(users.tenantId, tenantId)),
       db.select().from(quotes).where(eq(quotes.tenantId, tenantId)),
       db.select().from(invoiceTemplates).where(eq(invoiceTemplates.tenantId, tenantId)),
     ]);
@@ -64,8 +60,12 @@ async function createTenantBackup(tenantId: string): Promise<{
       tenantLineItems = await db.select().from(invoiceLineItems).where(inArray(invoiceLineItems.invoiceId, invoiceIds));
     }
 
+    // Crear mapa de trabajadores por ID para búsqueda rápida
+    const workerMap = new Map(tenantWorkers.map(w => [w.id, w]));
+
+    // JSON backup sin usuarios (solo empresa y trabajadores)
     const backupData = {
-      version: "1.1",
+      version: "1.2",
       type: "automated",
       exportedAt: new Date().toISOString(),
       tenantId: tenantId,
@@ -79,10 +79,7 @@ async function createTenantBackup(tenantId: string): Promise<{
         quotes: tenantQuotes,
         workers: tenantWorkers,
         vehicleTypes: tenantVehicleTypes,
-        users: tenantUsers.map(u => ({
-          ...u,
-          password: "[REDACTED]"
-        })),
+        // No incluimos usuarios para evitar mezclas
       },
       counts: {
         deliveryNotes: tenantDeliveryNotes.length,
@@ -90,7 +87,6 @@ async function createTenantBackup(tenantId: string): Promise<{
         quotes: tenantQuotes.length,
         workers: tenantWorkers.length,
         vehicleTypes: tenantVehicleTypes.length,
-        users: tenantUsers.length,
       }
     };
 
@@ -103,78 +99,275 @@ async function createTenantBackup(tenantId: string): Promise<{
     const filePath = path.join(BACKUP_DIR, fileName);
     fs.writeFileSync(filePath, backupJson);
 
-    // PDF Backup
+    // PDF Backup - Más completo y profesional
     let pdfFileName: string | undefined;
     let pdfFileSize: number | undefined;
 
     try {
       const doc = new jsPDF();
-      const margin = 10;
-      let y = 20;
+      const margin = 15;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let y = 25;
 
-      // Header
-      doc.setFontSize(20);
-      doc.text(`Respaldo de Empresa: ${tenantData[0].companyName}`, margin, y);
-      y += 10;
+      // Función helper para salto de página
+      const checkPageBreak = (neededSpace: number) => {
+        if (y + neededSpace > pageHeight - 20) {
+          doc.addPage();
+          y = 25;
+          return true;
+        }
+        return false;
+      };
+
+      // Función para línea separadora
+      const drawSeparator = () => {
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 5;
+      };
+
+      // ========== PORTADA ==========
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      doc.text("RESPALDO DE DATOS", pageWidth / 2, y, { align: "center" });
+      y += 15;
+      
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "normal");
+      doc.text(tenantData[0]?.companyName || "Empresa", pageWidth / 2, y, { align: "center" });
+      y += 20;
+
       doc.setFontSize(12);
-      doc.text(`Fecha de exportación: ${new Date().toLocaleString()}`, margin, y);
-      y += 5;
-      doc.text(`ID de Empresa: ${tenantId}`, margin, y);
+      doc.text(`Fecha de exportación: ${new Date().toLocaleString("es-ES")}`, margin, y);
       y += 15;
 
-      // Summary
-      doc.setFontSize(16);
+      // Resumen ejecutivo
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
       doc.text("Resumen de Datos", margin, y);
       y += 10;
-      doc.setFontSize(12);
-      doc.text(`Albaranes activos: ${tenantDeliveryNotes.length}`, margin, y); y += 7;
-      doc.text(`Facturas totales: ${tenantInvoices.length}`, margin, y); y += 7;
-      doc.text(`Trabajadores: ${tenantWorkers.length}`, margin, y); y += 7;
-      doc.text(`Tipos de vehículos: ${tenantVehicleTypes.length}`, margin, y); y += 7;
-      doc.text(`Usuarios: ${tenantUsers.length}`, margin, y); y += 15;
+      
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      const summaryData = [
+        ["Albaranes activos:", tenantDeliveryNotes.length.toString()],
+        ["Facturas:", tenantInvoices.length.toString()],
+        ["Trabajadores:", tenantWorkers.length.toString()],
+        ["Tipos de vehículos:", tenantVehicleTypes.length.toString()],
+      ];
+      
+      summaryData.forEach(([label, value]) => {
+        doc.text(`• ${label} ${value}`, margin + 5, y);
+        y += 7;
+      });
 
-      // Limit data in PDF for performance
-      const deliveryNotesToPrint = tenantDeliveryNotes.slice(0, 50);
-      const invoicesToPrint = tenantInvoices.slice(0, 30);
-
-      // Delivery Notes Section
-      if (deliveryNotesToPrint.length > 0) {
+      // ========== TRABAJADORES ==========
+      if (tenantWorkers.length > 0) {
         doc.addPage();
-        y = 20;
-        doc.setFontSize(16);
-        doc.text("Últimos 50 Albaranes", margin, y);
-        y += 10;
-        doc.setFontSize(10);
+        y = 25;
         
-        deliveryNotesToPrint.forEach((dn, index) => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
-          const dateStr = dn.createdAt ? new Date(dn.createdAt).toLocaleDateString() : 'N/A';
-          doc.text(`${index + 1}. #${dn.noteNumber} - ${dn.clientName} (${dateStr})`, margin, y);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("TRABAJADORES", margin, y);
+        y += 12;
+        drawSeparator();
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        
+        tenantWorkers.forEach((worker, index) => {
+          checkPageBreak(15);
+          doc.setFont("helvetica", "bold");
+          doc.text(`${index + 1}. ${worker.name}`, margin, y);
+          doc.setFont("helvetica", "normal");
           y += 6;
+          doc.text(`   Email: ${worker.email || 'N/A'}`, margin, y);
+          y += 5;
+          doc.text(`   Teléfono: ${worker.phone || 'N/A'}`, margin, y);
+          y += 5;
+          doc.text(`   Estado: ${worker.isActive ? 'Activo' : 'Inactivo'}`, margin, y);
+          y += 8;
         });
       }
 
-      // Invoices Section
-      if (invoicesToPrint.length > 0) {
+      // ========== ALBARANES (Detallados) ==========
+      if (tenantDeliveryNotes.length > 0) {
         doc.addPage();
-        y = 20;
+        y = 25;
+        
         doc.setFontSize(16);
-        doc.text("Últimas 30 Facturas", margin, y);
-        y += 10;
-        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("ALBARANES", margin, y);
+        y += 12;
+        drawSeparator();
+
+        // Mostrar hasta 100 albaranes con detalles completos
+        const notesToPrint = tenantDeliveryNotes.slice(0, 100);
+        
+        doc.setFontSize(9);
+        
+        notesToPrint.forEach((note, index) => {
+          checkPageBreak(45);
+          
+          // Encabezado del albarán
+          doc.setFont("helvetica", "bold");
+          doc.setFillColor(240, 240, 240);
+          doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
+          doc.text(`Albarán #${note.noteNumber}`, margin + 2, y);
+          
+          // Estado y facturación
+          const estado = note.status === 'signed' ? 'FIRMADO' : note.status === 'pending' ? 'PENDIENTE' : (note.status || 'N/A').toUpperCase();
+          const facturado = note.isInvoiced ? 'SÍ' : 'NO';
+          doc.text(`Estado: ${estado} | Facturado: ${facturado}`, pageWidth - margin - 60, y);
+          y += 10;
+          
+          doc.setFont("helvetica", "normal");
+          
+          // Cliente
+          doc.text(`Cliente: ${note.clientName || 'N/A'}`, margin + 2, y);
+          y += 5;
+          
+          // Fecha y hora
+          const fechaCreacion = note.createdAt ? new Date(note.createdAt).toLocaleDateString('es-ES') : 'N/A';
+          const fechaAlbaran = note.date || 'N/A';
+          const hora = note.time || 'N/A';
+          doc.text(`Fecha: ${fechaAlbaran} | Hora: ${hora} | Creado: ${fechaCreacion}`, margin + 2, y);
+          y += 5;
+          
+          // Trabajador que lo hizo
+          const worker = note.workerId ? workerMap.get(note.workerId) : null;
+          const workerName = worker ? worker.name : 'N/A';
+          doc.text(`Realizado por: ${workerName}`, margin + 2, y);
+          y += 5;
+          
+          // Vehículo
+          doc.text(`Vehículo: ${note.vehicleType || 'N/A'}`, margin + 2, y);
+          y += 5;
+          
+          // Direcciones de recogida y entrega
+          if (note.pickupOrigins && Array.isArray(note.pickupOrigins) && note.pickupOrigins.length > 0) {
+            note.pickupOrigins.forEach((origin: any, idx: number) => {
+              checkPageBreak(12);
+              const originName = origin.name || 'N/A';
+              const originAddress = origin.address || 'N/A';
+              doc.text(`   Tramo ${idx + 1} - Recogida: ${originName}`, margin + 2, y);
+              y += 4;
+              doc.text(`              Entrega: ${originAddress}`, margin + 2, y);
+              y += 5;
+            });
+          } else {
+            doc.text(`   Destino: ${note.destination || 'N/A'}`, margin + 2, y);
+            y += 5;
+          }
+          
+          // Tiempo de espera si existe
+          if (note.waitTime && note.waitTime > 0) {
+            const hours = Math.floor(note.waitTime / 60);
+            const mins = note.waitTime % 60;
+            const waitTimeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+            doc.text(`   Tiempo de espera: ${waitTimeStr}`, margin + 2, y);
+            y += 5;
+          }
+          
+          // Observaciones
+          if (note.observations) {
+            checkPageBreak(10);
+            const obsText = note.observations.length > 80 ? note.observations.substring(0, 80) + '...' : note.observations;
+            doc.text(`   Observaciones: ${obsText}`, margin + 2, y);
+            y += 5;
+          }
+          
+          // Información de firma
+          if (note.signedAt) {
+            const signedDate = new Date(note.signedAt).toLocaleString('es-ES');
+            doc.text(`   Firmado: ${signedDate}`, margin + 2, y);
+            y += 5;
+          }
+          
+          y += 8; // Espacio entre albaranes
+        });
+        
+        if (tenantDeliveryNotes.length > 100) {
+          checkPageBreak(15);
+          doc.setFont("helvetica", "italic");
+          doc.text(`... y ${tenantDeliveryNotes.length - 100} albaranes más (ver archivo JSON para lista completa)`, margin, y);
+          y += 10;
+        }
+      }
+
+      // ========== FACTURAS ==========
+      if (tenantInvoices.length > 0) {
+        doc.addPage();
+        y = 25;
+        
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("FACTURAS", margin, y);
+        y += 12;
+        drawSeparator();
+
+        const invoicesToPrint = tenantInvoices.slice(0, 50);
+        
+        doc.setFontSize(9);
         
         invoicesToPrint.forEach((inv, index) => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
-          doc.text(`${index + 1}. #${inv.invoiceNumber} - ${inv.customerName} - ${inv.totalPrice}€`, margin, y);
-          y += 6;
+          checkPageBreak(25);
+          
+          doc.setFont("helvetica", "bold");
+          doc.setFillColor(240, 240, 240);
+          doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
+          doc.text(`Factura ${inv.invoicePrefix || 'FAC'}-${inv.invoiceNumber}`, margin + 2, y);
+          
+          const estadoFactura = inv.status === 'paid' ? 'PAGADA' : inv.status === 'sent' ? 'ENVIADA' : inv.status === 'cancelled' ? 'CANCELADA' : 'BORRADOR';
+          doc.text(`Estado: ${estadoFactura}`, pageWidth - margin - 40, y);
+          y += 10;
+          
+          doc.setFont("helvetica", "normal");
+          doc.text(`Cliente: ${inv.customerName || 'N/A'}`, margin + 2, y);
+          y += 5;
+          
+          const fechaEmision = inv.issueDate || 'N/A';
+          const fechaVenc = inv.dueDate || 'N/A';
+          doc.text(`Fecha emisión: ${fechaEmision} | Vencimiento: ${fechaVenc}`, margin + 2, y);
+          y += 5;
+          
+          doc.text(`Subtotal: ${(inv.subtotal || 0).toFixed(2)}€ | IVA (${inv.taxRate || 21}%): ${(inv.taxAmount || 0).toFixed(2)}€ | Total: ${(inv.total || 0).toFixed(2)}€`, margin + 2, y);
+          y += 10;
+        });
+        
+        if (tenantInvoices.length > 50) {
+          checkPageBreak(15);
+          doc.setFont("helvetica", "italic");
+          doc.text(`... y ${tenantInvoices.length - 50} facturas más (ver archivo JSON para lista completa)`, margin, y);
+        }
+      }
+
+      // ========== TIPOS DE VEHÍCULOS ==========
+      if (tenantVehicleTypes.length > 0) {
+        doc.addPage();
+        y = 25;
+        
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("TIPOS DE VEHÍCULOS", margin, y);
+        y += 12;
+        drawSeparator();
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        
+        tenantVehicleTypes.forEach((vt, index) => {
+          checkPageBreak(10);
+          doc.text(`${index + 1}. ${vt.name} ${vt.isActive ? '(Activo)' : '(Inactivo)'}`, margin, y);
+          y += 7;
         });
       }
+
+      // Pie de página en última página
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.text(`Generado por eAlbarán - ${new Date().toLocaleString("es-ES")}`, pageWidth / 2, pageHeight - 10, { align: "center" });
 
       const pdfOutput = doc.output('arraybuffer');
       pdfFileName = `${backupData.type}_backup_${tenantId}_${timestamp}.pdf`;
