@@ -638,6 +638,20 @@ export default function DashboardPage() {
     },
   });
 
+  const { data: waitTimeThreshold = 20 } = useQuery({
+    queryKey: ["/api/tenant/wait-time-threshold"],
+    queryFn: async () => {
+      const res = await fetch("/api/tenant/wait-time-threshold", { 
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) return 20;
+      const data = await res.json();
+      return data.waitTimeThreshold ?? 20;
+    },
+    enabled: !!user?.tenantId,
+  });
+
   const handleArrivalDeparture = async (note: any, type: 'arrival' | 'departure') => {
     if (type === 'arrival') {
       const now = new Date().toISOString();
@@ -662,8 +676,8 @@ export default function DashboardPage() {
         departedAt: now 
       });
       
-      // Only add duration to observations if it's greater than 20 minutes
-      if (durationMinutes > 20) {
+      // Only add duration to observations if it's greater than the threshold
+      if (durationMinutes > waitTimeThreshold) {
         let updatedObservations = note.observations || "";
         if (updatedObservations && !updatedObservations.includes("Duración:")) {
           updatedObservations += ` | ${durationText}`;
@@ -677,7 +691,7 @@ export default function DashboardPage() {
         });
         toast({ title: "Hora de salida registrada", description: `Duración registrada: ${hours}h ${minutes}m` });
       } else {
-        toast({ title: "Hora de salida registrada", description: `Duración: ${minutes}m (no se añade a observaciones por ser menor a 20 minutos)` });
+        toast({ title: "Hora de salida registrada", description: `Duración: ${minutes}m (no se añade a observaciones por ser menor a ${waitTimeThreshold} minutos)` });
       }
     }
   };
