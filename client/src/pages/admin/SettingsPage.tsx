@@ -84,6 +84,7 @@ export default function SettingsPage() {
       await apiRequest("PATCH", "/api/tenant/wait-time-threshold", { 
         waitTimeThreshold: parseInt(String(waitTimeThreshold)) 
       });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({ title: "Configuración guardada", description: `Umbral de tiempo de espera actualizado a ${waitTimeThreshold} minutos` });
     } catch (error) {
       console.error("Error saving settings:", error);
@@ -110,6 +111,7 @@ export default function SettingsPage() {
       const newVehicle = await res.json();
       setVehicleTypes([...vehicleTypes, newVehicle]);
       setNewVehicleName("");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({ title: "Éxito", description: "Tipo de vehículo agregado" });
     } catch (error) {
       console.error("Error adding vehicle:", error);
@@ -133,6 +135,7 @@ export default function SettingsPage() {
       setVehicleTypes(vehicleTypes.map(v => v.id === id ? updated : v));
       setEditingId(null);
       setEditingName("");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({ title: "Éxito", description: "Tipo de vehículo actualizado" });
     } catch (error) {
       console.error("Error updating vehicle:", error);
