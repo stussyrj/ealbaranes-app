@@ -9,7 +9,6 @@ import {
   Mail,
   FileText,
   Settings,
-  Trash2,
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import {
@@ -34,7 +33,6 @@ const adminNavItems = [
   { title: "Mensajes", url: "/admin/messages", icon: Mail },
   { title: "Facturas", url: "/admin/invoices", icon: FileText },
   { title: "Gestión de Usuarios", url: "/admin/users", icon: Users },
-  { title: "Albaranes Eliminados", url: "/admin/deleted-notes", icon: Trash2 },
 ];
 
 const adminConfigItems = [
