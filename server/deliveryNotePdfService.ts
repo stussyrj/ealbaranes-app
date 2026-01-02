@@ -117,7 +117,7 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
   yPos = 42;
 
   // Layout Constants
-  const rowHeight = 22;
+  const rowHeight = 20; // Reduced from 22
   const colSpacing = 5;
   const colWidth = (contentWidth - (2 * colSpacing)) / 3;
 
@@ -128,7 +128,7 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
   drawLabel(doc, "CLIENTE", margin + 4, yPos + 6);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(note.clientName || "N/A", margin + 4, yPos + 14);
+  doc.text(note.clientName || "N/A", margin + 4, yPos + 13);
 
   // Vehicle Box
   const vehX = margin + clientBoxWidth + colSpacing;
@@ -137,56 +137,55 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
   drawLabel(doc, "VEHÍCULO / TRANSPORTE", vehX + 4, yPos + 6);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(note.vehicleType || "N/A", vehX + 4, yPos + 14);
+  doc.text(note.vehicleType || "N/A", vehX + 4, yPos + 13);
 
-  yPos += rowHeight + 8;
+  yPos += rowHeight + 4; // Reduced from rowHeight + 8
 
   // Row 2: Pickup Locations
   if (note.pickupOrigins && note.pickupOrigins.length > 0) {
-    const originsHeight = Math.max(note.pickupOrigins.length * 10 + 10, 35);
+    const originsHeight = Math.max(note.pickupOrigins.length * 8 + 8, 25); // Tighter spacing
     drawSectionBox(doc, margin, yPos, contentWidth, originsHeight);
     drawLabel(doc, "LUGARES DE RECOGIDA", margin + 4, yPos + 6);
     
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     
-    let originY = yPos + 15;
+    let originY = yPos + 14;
     note.pickupOrigins.forEach((origin, idx) => {
       const name = origin.name || "";
       const address = origin.address || "";
       let text = (name && address) ? `${name} - ${address}` : (name || address || "N/A");
       doc.text(`${idx + 1}. ${text}`, margin + 8, originY);
-      originY += 10;
+      originY += 8; // Reduced from 10
     });
     
-    yPos += originsHeight + 8;
+    yPos += originsHeight + 4; // Reduced from originsHeight + 8
   }
 
   // Row 3: Destination
-  drawSectionBox(doc, margin, yPos, contentWidth, 22);
+  drawSectionBox(doc, margin, yPos, contentWidth, 18); // Reduced from 22
   drawLabel(doc, "PUNTO DE ENTREGA (DESTINO)", margin + 4, yPos + 6);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(note.destination || "N/A", margin + 8, yPos + 14);
+  doc.text(note.destination || "N/A", margin + 8, yPos + 13);
 
-  yPos += 30;
+  yPos += 22; // Reduced from 30
 
   // Row 4: Carload & Observations
-  const halfWidth = (contentWidth - colSpacing) / 2;
-  
-  // Observations
-  drawSectionBox(doc, margin, yPos, contentWidth, 30);
+  const obsHeight = 25; // Reduced from 30
+  drawSectionBox(doc, margin, yPos, contentWidth, obsHeight);
   drawLabel(doc, "OBSERVACIONES Y DETALLES DE CARGA", margin + 4, yPos + 6);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   const obsText = `${note.carloadDetails || ""} ${note.observations || ""}`.trim() || "Sin observaciones adicionales.";
   const splitObs = doc.splitTextToSize(obsText, contentWidth - 10);
-  doc.text(splitObs, margin + 6, yPos + 14);
+  doc.text(splitObs, margin + 6, yPos + 13);
 
-  yPos += 38;
+  yPos += obsHeight + 4; // Reduced from 38
 
   // Row 5: Time Tracking & Signatures
-  drawSectionBox(doc, margin, yPos, contentWidth, 25);
+  const timeBoxHeight = 22; // Reduced from 25
+  drawSectionBox(doc, margin, yPos, contentWidth, timeBoxHeight);
   
   // Times
   drawLabel(doc, "REGISTRO DE TIEMPOS Y DOCUMENTACIÓN", margin + 4, yPos + 6);
@@ -197,15 +196,15 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     if (note.arrivedAt) timeInfo += `Llegada: ${format(new Date(note.arrivedAt), "HH:mm")}`;
     if (note.departedAt) timeInfo += ` | Salida: ${format(new Date(note.departedAt), "HH:mm")}`;
   }
-  doc.text(timeInfo, margin + 6, yPos + 14);
+  doc.text(timeInfo, margin + 6, yPos + 13);
 
   // Docs
   let docsInfo = "";
   if (note.originSignatureDocument) docsInfo += `DNI Origen: ${note.originSignatureDocument}`;
   if (note.destinationSignatureDocument) docsInfo += `${docsInfo ? ' | ' : ''}DNI Destino: ${note.destinationSignatureDocument}`;
-  if (docsInfo) doc.text(docsInfo, margin + 6, yPos + 20);
+  if (docsInfo) doc.text(docsInfo, margin + 6, yPos + 19);
 
-  yPos += 33;
+  yPos += timeBoxHeight + 4; // Reduced from 33
 
   // Row 6: Photo (Largest Section)
   if (note.photo) {
