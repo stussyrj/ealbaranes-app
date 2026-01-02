@@ -905,21 +905,12 @@ export async function registerRoutes(
         data.departedAt = new Date(data.departedAt);
       }
       
-      // Determine final state after update (photo and signature OR dual signatures)
+      // Determine final state after update
+      // Ahora solo requiere la foto para estar firmado (la firma digital ya no es obligatoria)
       const willHavePhoto = data.photo !== undefined ? data.photo : existingNote.photo;
-      const willHaveSignature = data.signature !== undefined ? data.signature : existingNote.signature;
-      const willHaveLegacySigning = willHavePhoto && willHaveSignature;
+      const willBeFullySigned = Boolean(willHavePhoto);
       
-      // Check for new dual signature system
-      const willHaveOriginSignature = data.originSignature !== undefined ? data.originSignature : existingNote.originSignature;
-      const willHaveOriginDocument = data.originSignatureDocument !== undefined ? data.originSignatureDocument : existingNote.originSignatureDocument;
-      const willHaveDestSignature = data.destinationSignature !== undefined ? data.destinationSignature : existingNote.destinationSignature;
-      const willHaveDestDocument = data.destinationSignatureDocument !== undefined ? data.destinationSignatureDocument : existingNote.destinationSignatureDocument;
-      const willHaveDualSigning = willHaveOriginSignature && willHaveOriginDocument && willHaveDestSignature && willHaveDestDocument;
-      
-      const willBeFullySigned = willHaveLegacySigning || willHaveDualSigning;
-      
-      // Auto-set signedAt and status when fully signed (legacy or dual)
+      // Auto-set signedAt and status when fully signed (solo necesita foto)
       if (willBeFullySigned && !existingNote.signedAt) {
         data.signedAt = new Date();
         data.status = "signed";
@@ -943,11 +934,8 @@ export async function registerRoutes(
         auditAction = 'sign_delivery_note';
       }
       
-      // Check if fully signed (legacy or dual)
-      const hasLegacySigning = !!(note.photo && note.signature);
-      const hasDualSigning = !!(note.originSignature && note.originSignatureDocument && 
-                                note.destinationSignature && note.destinationSignatureDocument);
-      const isFullySigned = hasLegacySigning || hasDualSigning;
+      // Check if fully signed (solo necesita foto ahora)
+      const isFullySigned = Boolean(note.photo);
       
       logAudit({
         tenantId: user.tenantId,
@@ -966,10 +954,8 @@ export async function registerRoutes(
       });
       
       // Create internal message when note becomes fully signed (replaces email)
-      const wasLegacyFullySigned = existingNote.photo && existingNote.signature;
-      const wasDualFullySigned = existingNote.originSignature && existingNote.originSignatureDocument && 
-                                  existingNote.destinationSignature && existingNote.destinationSignatureDocument;
-      const wasFullySigned = wasLegacyFullySigned || wasDualFullySigned;
+      // Solo necesita foto para estar firmado
+      const wasFullySigned = Boolean(existingNote.photo);
       const isNowFullySigned = isFullySigned;
       const justBecameFullySigned = !wasFullySigned && isNowFullySigned;
       

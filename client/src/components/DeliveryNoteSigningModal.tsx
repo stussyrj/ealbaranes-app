@@ -269,10 +269,9 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
       return;
     }
     
-    // Set status to signed only when destination is complete (full dual signature)
-    // AND we have a photo (either new or existing on server)
+    // Set status to signed when we have a photo (ya no requiere firma digital)
     const photoExists = (destinationPhoto.length > 100) || (note?.photo && note.photo.length > 100);
-    if (isDestinationComplete && photoExists) {
+    if (photoExists) {
       payload.status = "signed";
     }
     
