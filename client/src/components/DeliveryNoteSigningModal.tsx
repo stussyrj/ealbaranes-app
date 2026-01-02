@@ -435,6 +435,12 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
           {/* New dual signature form - only show for non-legacy notes */}
           {!isLegacyComplete && (
             <div className="space-y-4">
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground italic text-center">
+                  Nota: Ya no se requiere firma digital, solo el documento DNI/NIE/NIF y foto.
+                </p>
+              </div>
+
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="origin" className="relative" data-testid="tab-sign-origin">
@@ -452,15 +458,7 @@ export function DeliveryNoteSigningModal({ open, onOpenChange, note }: DeliveryN
                     )}
                   </TabsTrigger>
                 </TabsList>
-              </Tabs>
 
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground italic text-center">
-                  Nota: Ya no se requiere firma digital, solo el documento DNI/NIE/NIF.
-                </p>
-              </div>
-
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsContent value="origin" className="space-y-3 mt-3">
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
                 <User className="w-4 h-4 inline mr-1.5" />
