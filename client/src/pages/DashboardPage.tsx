@@ -179,12 +179,9 @@ export default function DashboardPage() {
   };
   
   // Helper function to determine if a note is fully signed
-  // Requires: origin document + destination document + photo (new dual signature system)
-  // OR photo + signature (legacy)
+  // Ahora solo requiere la foto (la firma digital ya no es obligatoria)
   const isFullySigned = (note: any) => {
-    const hasNewDualSignatures = note.originSignatureDocument && note.destinationSignatureDocument && note.photo;
-    const hasLegacySignatures = note.photo && note.signature;
-    return hasNewDualSignatures || hasLegacySignatures;
+    return Boolean(note.photo);
   };
   
   const isValidPhoto = (photo: string | null | undefined) => {
@@ -192,9 +189,7 @@ export default function DashboardPage() {
     return photo.length > 500;
   };
   const getMissingSignatureInfo = (note: any) => {
-    if (!note.photo && !note.signature) return "Falta foto y firma";
     if (!note.photo) return "Falta foto";
-    if (!note.signature) return "Falta firma digital";
     return null;
   };
   
@@ -300,11 +295,8 @@ export default function DashboardPage() {
       const response = await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPhoto.id}`, { photo: capturedPhoto });
       
       if (response.ok) {
-        const willBeComplete = hasSignature;
-        const message = willBeComplete 
-          ? "Albarán completamente firmado" 
-          : "Foto guardada. Falta firma digital para completar.";
-        toast({ title: willBeComplete ? "Firmado" : "Foto guardada", description: message });
+        const message = "Albarán completamente firmado";
+        toast({ title: "Firmado", description: message });
         
         await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
         

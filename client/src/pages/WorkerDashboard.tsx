@@ -207,21 +207,15 @@ export default function WorkerDashboard() {
     });
   };
 
-  // Helper function to determine if a note is fully signed (has dual signatures from origin and destination)
+  // Helper function to determine if a note is fully signed
+  // Ahora solo requiere la foto (la firma digital ya no es obligatoria)
   const isFullySigned = (note: DeliveryNote): boolean => {
-    // New dual signature system: requires both origin and destination signatures with documents
-    const hasNewDualSignatures = Boolean(note.originSignature && note.originSignatureDocument && 
-                                  note.destinationSignature && note.destinationSignatureDocument);
-    // Legacy: old notes may still use photo + signature
-    const hasLegacySignatures = Boolean(note.photo && note.signature);
-    return hasNewDualSignatures || hasLegacySignatures;
+    return Boolean(note.photo);
   };
   
   // Helper to get missing signature info
   const getMissingSignatureInfo = (note: DeliveryNote) => {
-    if (!note.photo && !note.signature) return "Falta foto y firma";
     if (!note.photo) return "Falta foto";
-    if (!note.signature) return "Falta firma digital";
     return null;
   };
 
