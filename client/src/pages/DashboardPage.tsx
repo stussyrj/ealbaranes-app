@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Link } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search } from "lucide-react";
+import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search, Eye } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +27,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +102,100 @@ export default function DashboardPage() {
   // Dual signature signing modal state
   const [signingModalOpen, setSigningModalOpen] = useState(false);
   const [selectedNoteForSigning, setSelectedNoteForSigning] = useState<any>(null);
+  const [deletedNotesModalOpen, setDeletedNotesModalOpen] = useState(false);
+
+  const [selectedDeletedNote, setSelectedDeletedNote] = useState<any>(null);
+  const [isDeletedNoteDetailsOpen, setIsDeletedNoteDetailsOpen] = useState(false);
+  const [noteToRestore, setNoteToRestore] = useState<any>(null);
+  const [noteToDeletePermanently, setNoteToDeletePermanently] = useState<any>(null);
+
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/admin/delivery-notes/${id}/restore`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al restaurar albarán");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes/deleted"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+      setNoteToRestore(null);
+      toast({
+        title: "Albarán restaurado",
+        description: "El albarán se ha restaurado correctamente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo restaurar el albarán",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const permanentDeleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/delivery-notes/${id}/permanent`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al eliminar albarán");
+      }
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes/deleted"] });
+      setNoteToDeletePermanently(null);
+      toast({
+        title: "Albarán eliminado",
+        description: "El albarán se ha eliminado permanentemente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar el albarán",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Sin fecha";
+    try {
+      return new Date(dateString).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatDeletedAt = (date: Date | string | null | undefined) => {
+    if (!date) return "Fecha desconocida";
+    try {
+      return new Date(date).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Fecha inválida";
+    }
+  };
+
+  const getOriginText = (note: any) => {
+    if (note.pickupOrigins && Array.isArray(note.pickupOrigins) && note.pickupOrigins.length > 0) {
+      return note.pickupOrigins.map((o: any) => o.name || o.address).join(", ");
+    }
+    return "Sin origen";
+  };
   
   // Onboarding tutorial state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -630,7 +735,7 @@ export default function DashboardPage() {
   });
 
   // Deleted notes modal state
-  const [deletedNotesModalOpen, setDeletedNotesModalOpen] = useState(false);
+
 
   // Refetch data when user changes
   useEffect(() => {
@@ -835,15 +940,14 @@ export default function DashboardPage() {
           <h1 className="text-lg sm:text-xl font-semibold">Panel de Empresa</h1>
           <div className="flex items-center gap-1.5">
             {user?.isAdmin && (
-              <Link href="/admin/deleted-notes">
-                <button
-                  className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm hover-elevate flex-shrink-0"
-                  title="Albaranes Eliminados"
-                  data-testid="button-deleted-notes"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </button>
-              </Link>
+              <button
+                onClick={() => setDeletedNotesModalOpen(true)}
+                className="rounded-lg border border-muted-foreground/10 bg-slate-50 dark:bg-slate-900/30 p-2.5 shadow-sm hover-elevate flex-shrink-0"
+                title="Albaranes Eliminados"
+                data-testid="button-deleted-notes"
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </button>
             )}
             <button
               onClick={() => {
@@ -2378,6 +2482,189 @@ export default function DashboardPage() {
       )}
 
       {/* Modal Crear Albarán */}
+      {/* Modal de Albaranes Eliminados */}
+      <Dialog open={deletedNotesModalOpen} onOpenChange={setDeletedNotesModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Albaranes Eliminados
+            </DialogTitle>
+            <DialogDescription>
+              Gestiona los albaranes eliminados. Puedes restaurarlos o eliminarlos definitivamente.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isDeletionLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : deletedNotes.length === 0 ? (
+            <div className="text-center py-12">
+              <Trash2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-medium">No hay albaranes eliminados</h3>
+            </div>
+          ) : (
+            <div className="grid gap-4 mt-4">
+              {deletedNotes.map((note: any) => (
+                <Card key={note.id} className="hover-elevate">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline">
+                            <FileText className="h-3 w-3 mr-1" />
+                            #{note.noteNumber}
+                          </Badge>
+                          <span className="text-sm font-medium truncate">{note.clientName}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(note.date)}
+                          </span>
+                          {note.workerName && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {note.workerName}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-destructive">
+                          Eliminado: {formatDeletedAt(note.deletedAt)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDeletedNote(note);
+                            setIsDeletedNoteDetailsOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setNoteToRestore(note)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setNoteToDeletePermanently(note)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Detalles de Albarán Eliminado */}
+      <Dialog open={isDeletedNoteDetailsOpen} onOpenChange={setIsDeletedNoteDetailsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalles del Albarán #{selectedDeletedNote?.noteNumber}</DialogTitle>
+          </DialogHeader>
+          {selectedDeletedNote && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground text-xs">Cliente:</span>
+                  <p className="font-medium">{selectedDeletedNote.clientName || "Sin cliente"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-xs">Fecha:</span>
+                  <p className="font-medium">{formatDate(selectedDeletedNote.date)}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground text-xs">Origen:</span>
+                  <p className="font-medium">{getOriginText(selectedDeletedNote)}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground text-xs">Destino:</span>
+                  <p className="font-medium">{selectedDeletedNote.destination || "Sin destino"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNoteToRestore(selectedDeletedNote);
+                setIsDeletedNoteDetailsOpen(false);
+              }}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Restaurar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setNoteToDeletePermanently(selectedDeletedNote);
+                setIsDeletedNoteDetailsOpen(false);
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmación Restaurar */}
+      <AlertDialog open={!!noteToRestore} onOpenChange={() => setNoteToRestore(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restaurar albarán</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Quieres restaurar el albarán #{noteToRestore?.noteNumber}? 
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => noteToRestore && restoreMutation.mutate(noteToRestore.id)}
+              disabled={restoreMutation.isPending}
+            >
+              {restoreMutation.isPending ? "Restaurando..." : "Restaurar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmación Eliminar Permanente */}
+      <AlertDialog open={!!noteToDeletePermanently} onOpenChange={() => setNoteToDeletePermanently(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar permanentemente</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => noteToDeletePermanently && permanentDeleteMutation.mutate(noteToDeletePermanently.id)}
+              disabled={permanentDeleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {permanentDeleteMutation.isPending ? "Eliminando..." : "Eliminar permanentemente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={createDeliveryOpen} onOpenChange={setCreateDeliveryOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
