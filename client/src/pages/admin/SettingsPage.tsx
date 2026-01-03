@@ -52,16 +52,20 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [settingsRes, vehiclesRes] = await Promise.all([
+        const [settingsRes, vehiclesRes, backupsRes] = await Promise.all([
           apiRequest("GET", "/api/tenant/wait-time-threshold"),
-          apiRequest("GET", "/api/tenant/vehicle-types")
+          apiRequest("GET", "/api/tenant/vehicle-types"),
+          apiRequest("GET", "/api/admin/backups")
         ]);
         const settingsData = await settingsRes.json();
         const vehiclesData = await vehiclesRes.json();
+        const backupsData = await backupsRes.json();
+
         setWaitTimeThreshold(settingsData.waitTimeThreshold || 20);
         // Ensure vehiclesData is an array and filter by isActive
         const types = Array.isArray(vehiclesData) ? vehiclesData.filter((v: any) => v.isActive) : [];
         setVehicleTypes(types);
+        setBackups(Array.isArray(backupsData) ? backupsData : []);
       } catch (error) {
         console.error("Error loading settings:", error);
         toast({ title: "Error", description: "No se pudieron cargar las configuraciones", variant: "destructive" });
