@@ -9,15 +9,34 @@ function getScaledImageDimensions(
   maxHeight: number
 ): { width: number; height: number } | null {
   try {
+    if (!base64Data || base64Data.length < 100) {
+      console.error("Invalid base64 data: too short or empty");
+      return null;
+    }
+    
     let data = base64Data;
+    // Handle data URLs (data:image/jpeg;base64,...)
     if (data.includes(",")) {
       data = data.split(",")[1];
     }
     
+    // Validate base64 string
+    if (!data || data.length < 50) {
+      console.error("Invalid base64 content after splitting");
+      return null;
+    }
+    
     const buffer = Buffer.from(data, "base64");
+    
+    if (buffer.length < 100) {
+      console.error("Decoded buffer too small:", buffer.length);
+      return null;
+    }
+    
     const dimensions = imageSize(buffer);
     
     if (!dimensions.width || !dimensions.height) {
+      console.error("Could not determine image dimensions");
       return null;
     }
     
@@ -233,9 +252,22 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
         
         const format = photoData.includes('png') ? 'PNG' : 'JPEG';
         doc.addImage(photoData, format, photoX, yPos, scaledDims.width, scaledDims.height);
+      } else {
+        // Could not determine image dimensions - show placeholder
+        console.error("Could not get image dimensions for photo, photo length:", note.photo?.length);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(150, 150, 150);
+        doc.text("(No se pudo procesar la imagen)", margin + 6, yPos + 10);
+        doc.setTextColor(0, 0, 0);
       }
     } catch (e) {
       console.error("Error adding photo to PDF:", e);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(150, 150, 150);
+      doc.text("(Error al cargar la imagen)", margin + 6, yPos + 10);
+      doc.setTextColor(0, 0, 0);
     }
   }
 
