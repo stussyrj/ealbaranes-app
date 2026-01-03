@@ -36,7 +36,7 @@ interface BackupLog {
 export default function SettingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [waitTimeThreshold, setWaitTimeThreshold] = useState(20);
+  const [waitTimeThreshold, setWaitTimeThreshold] = useState<string | number>(20);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
@@ -74,7 +74,9 @@ export default function SettingsPage() {
   }, [toast]);
 
   const handleSaveThreshold = async () => {
-    if (waitTimeThreshold < 1 || waitTimeThreshold > 240) {
+    const thresholdNum = typeof waitTimeThreshold === "string" ? parseInt(waitTimeThreshold) : waitTimeThreshold;
+    
+    if (isNaN(thresholdNum as number) || (thresholdNum as number) < 1 || (thresholdNum as number) > 240) {
       toast({ title: "Error", description: "El umbral debe estar entre 1 y 240 minutos", variant: "destructive" });
       return;
     }
@@ -82,7 +84,7 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       await apiRequest("PATCH", "/api/tenant/wait-time-threshold", { 
-        waitTimeThreshold: parseInt(String(waitTimeThreshold)) 
+        waitTimeThreshold: thresholdNum 
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({ title: "Configuración guardada", description: `Umbral de tiempo de espera actualizado a ${waitTimeThreshold} minutos` });
@@ -470,7 +472,14 @@ export default function SettingsPage() {
                   min="1"
                   max="240"
                   value={waitTimeThreshold}
-                  onChange={(e) => setWaitTimeThreshold(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      setWaitTimeThreshold("");
+                    } else {
+                      setWaitTimeThreshold(Number(val));
+                    }
+                  }}
                   className="h-10"
                   data-testid="input-wait-time-threshold"
                   disabled={isSaving}
