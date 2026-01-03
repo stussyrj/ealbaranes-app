@@ -80,7 +80,7 @@ export default function DashboardPage() {
   const deliveryNoteRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   const [dateFilterStart, setDateFilterStart] = useState<string>("");
   const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
-  const [workerSearchFilter, setWorkerSearchFilter] = useState<string>("");
+  const [albaranesSearchFilter, setAlbaranesSearchFilter] = useState<string>("");
   
   // Period filter for summary counters (today/month/total)
   const [periodFilter, setPeriodFilter] = useState<"today" | "month" | "total" | null>(null);
@@ -1978,7 +1978,7 @@ export default function DashboardPage() {
         if (!open) {
           setDateFilterStart("");
           setDateFilterEnd("");
-          setWorkerSearchFilter("");
+          setAlbaranesSearchFilter("");
         }
       }}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[95vw] p-4 rounded-lg top-[5vh] translate-y-0">
@@ -2028,40 +2028,36 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Filtro por nombre de trabajador - solo visible en sección Trabajadores */}
-            {albaranesCreatorType === "worker" && (
-              <>
-                <div className="border-t border-muted-foreground/10"></div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase">
-                    <Search className="w-2.5 h-2.5" />
-                    Trabajador
-                  </div>
-                  <div className="relative flex gap-1.5">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-                    <Input
-                      type="text"
-                      placeholder="Buscar..."
-                      value={workerSearchFilter}
-                      onChange={(e) => setWorkerSearchFilter(e.target.value)}
-                      className="h-7 text-xs pl-8 flex-1"
-                      data-testid="input-worker-search"
-                    />
-                    {workerSearchFilter && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs h-7 px-2 flex-shrink-0"
-                        onClick={() => setWorkerSearchFilter("")}
-                        data-testid="button-clear-worker-filter"
-                      >
-                        <X className="w-3 h-3 text-red-600 dark:text-red-400" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
+            {/* Filtro por nombre de trabajador o cliente */}
+            <div className="border-t border-muted-foreground/10"></div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase">
+                <Search className="w-2.5 h-2.5" />
+                Trabajador / Cliente
+              </div>
+              <div className="relative flex gap-1.5">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="text"
+                  placeholder="Buscar por trabajador o cliente..."
+                  value={albaranesSearchFilter}
+                  onChange={(e) => setAlbaranesSearchFilter(e.target.value)}
+                  className="h-7 text-xs pl-8 flex-1"
+                  data-testid="input-albaranes-search"
+                />
+                {albaranesSearchFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7 px-2 flex-shrink-0"
+                    onClick={() => setAlbaranesSearchFilter("")}
+                    data-testid="button-clear-search-filter"
+                  >
+                    <X className="w-3 h-3 text-red-600 dark:text-red-400" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2 overflow-hidden mt-3">
@@ -2073,10 +2069,12 @@ export default function DashboardPage() {
                 notes = albaranesModalType === "pending" ? trabajadoresPendingNotes : trabajadoresSignedNotes;
               }
               
-              // Aplicar filtro de búsqueda por trabajador
-              if (workerSearchFilter && albaranesCreatorType === "worker") {
+              // Aplicar filtro de búsqueda por trabajador o cliente
+              if (albaranesSearchFilter) {
+                const searchLower = albaranesSearchFilter.toLowerCase();
                 notes = notes.filter((note: any) => 
-                  (note.workerName || "").toLowerCase().includes(workerSearchFilter.toLowerCase())
+                  (note.workerName || "").toLowerCase().includes(searchLower) ||
+                  (note.clientName || "").toLowerCase().includes(searchLower)
                 );
               }
               
@@ -2099,8 +2097,8 @@ export default function DashboardPage() {
               
               return notes.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  {workerSearchFilter && albaranesCreatorType === "worker"
-                    ? "No hay albaranes de ese trabajador"
+                  {albaranesSearchFilter
+                    ? "No hay albaranes con ese trabajador o cliente"
                     : (dateFilterStart || dateFilterEnd) 
                     ? "No hay albaranes en el rango de fechas seleccionado"
                     : "No hay albaranes en esta categoría"
