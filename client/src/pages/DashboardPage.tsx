@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Link } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search, Eye } from "lucide-react";
+import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search, Eye, Info } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,6 +108,8 @@ export default function DashboardPage() {
   const [isDeletedNoteDetailsOpen, setIsDeletedNoteDetailsOpen] = useState(false);
   const [noteToRestore, setNoteToRestore] = useState<any>(null);
   const [noteToDeletePermanently, setNoteToDeletePermanently] = useState<any>(null);
+  const [noteInfoModalOpen, setNoteInfoModalOpen] = useState(false);
+  const [selectedNoteForInfo, setSelectedNoteForInfo] = useState<any>(null);
 
   const restoreMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -2263,6 +2265,17 @@ export default function DashboardPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedNoteForInfo(note);
+                              setNoteInfoModalOpen(true);
+                            }}
+                            data-testid={`menu-info-${note.id}`}
+                          >
+                            <Info className="w-3 h-3 mr-2" />
+                            Ver información
+                          </DropdownMenuItem>
+
                           {!isFullySigned(note) && (
                             <DropdownMenuItem
                               onClick={() => {
@@ -3421,6 +3434,119 @@ export default function DashboardPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de información del albarán */}
+      <Dialog open={noteInfoModalOpen} onOpenChange={(open) => {
+        setNoteInfoModalOpen(open);
+        if (!open) setSelectedNoteForInfo(null);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-blue-600" />
+              Información del Albarán #{selectedNoteForInfo?.noteNumber || '—'}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedNoteForInfo && (
+            <div className="space-y-4">
+              {/* Datos generales */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Cliente:</span>
+                  <span className="text-sm">{selectedNoteForInfo.clientName || 'No especificado'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Trabajador:</span>
+                  <span className="text-sm">{selectedNoteForInfo.workerName || 'No asignado'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Fecha:</span>
+                  <span className="text-sm">
+                    {selectedNoteForInfo.date ? new Date(selectedNoteForInfo.date).toLocaleDateString('es-ES') : 'No especificada'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Documentos de firma */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Documentos de Firma
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase">DNI Origen (Entrega)</span>
+                    </div>
+                    <p className="text-sm font-semibold mt-1">
+                      {selectedNoteForInfo.originSignatureDocument || '—'}
+                    </p>
+                    {selectedNoteForInfo.originSignedAt && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Firmado: {new Date(selectedNoteForInfo.originSignedAt).toLocaleString('es-ES')}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-green-700 dark:text-green-300 uppercase">DNI Destino (Recibe)</span>
+                    </div>
+                    <p className="text-sm font-semibold mt-1">
+                      {selectedNoteForInfo.destinationSignatureDocument || '—'}
+                    </p>
+                    {selectedNoteForInfo.destinationSignedAt && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Firmado: {new Date(selectedNoteForInfo.destinationSignedAt).toLocaleString('es-ES')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tiempos de llegada/salida */}
+              {(selectedNoteForInfo.arrivedAt || selectedNoteForInfo.departedAt) && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Tiempos Registrados
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedNoteForInfo.arrivedAt && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <span className="text-xs font-medium text-muted-foreground uppercase">Llegada</span>
+                        <p className="text-sm font-semibold">
+                          {new Date(selectedNoteForInfo.arrivedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    )}
+                    {selectedNoteForInfo.departedAt && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <span className="text-xs font-medium text-muted-foreground uppercase">Salida</span>
+                        <p className="text-sm font-semibold">
+                          {new Date(selectedNoteForInfo.departedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <Button 
+                variant="outline" 
+                className="w-full mt-2"
+                onClick={() => setNoteInfoModalOpen(false)}
+                data-testid="button-close-info-modal"
+              >
+                Cerrar
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
