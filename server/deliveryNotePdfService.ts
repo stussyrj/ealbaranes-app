@@ -7,11 +7,11 @@ function getScaledImageDimensions(
   base64Data: string,
   maxWidth: number,
   maxHeight: number
-): { width: number; height: number } | null {
+): { width: number; height: number } {
   try {
     if (!base64Data || base64Data.length < 100) {
-      console.error("Invalid base64 data: too short or empty");
-      return null;
+      console.log("Base64 data too short, using default dimensions");
+      return getDefaultDimensions(maxWidth, maxHeight);
     }
     
     let data = base64Data;
@@ -22,22 +22,22 @@ function getScaledImageDimensions(
     
     // Validate base64 string
     if (!data || data.length < 50) {
-      console.error("Invalid base64 content after splitting");
-      return null;
+      console.log("Invalid base64 content, using default dimensions");
+      return getDefaultDimensions(maxWidth, maxHeight);
     }
     
     const buffer = Buffer.from(data, "base64");
     
     if (buffer.length < 100) {
-      console.error("Decoded buffer too small:", buffer.length);
-      return null;
+      console.log("Decoded buffer too small, using default dimensions");
+      return getDefaultDimensions(maxWidth, maxHeight);
     }
     
     const dimensions = imageSize(buffer);
     
     if (!dimensions.width || !dimensions.height) {
-      console.error("Could not determine image dimensions");
-      return null;
+      console.log("Could not determine image dimensions, using defaults");
+      return getDefaultDimensions(maxWidth, maxHeight);
     }
     
     const originalWidth = dimensions.width;
@@ -54,9 +54,23 @@ function getScaledImageDimensions(
     
     return { width: scaledWidth, height: scaledHeight };
   } catch (e) {
-    console.error("Error getting image dimensions:", e);
-    return null;
+    console.log("Error getting image dimensions, using defaults:", e);
+    return getDefaultDimensions(maxWidth, maxHeight);
   }
+}
+
+function getDefaultDimensions(maxWidth: number, maxHeight: number): { width: number; height: number } {
+  // Use 4:3 aspect ratio as default (common photo aspect ratio)
+  const aspectRatio = 4 / 3;
+  let width = maxWidth;
+  let height = width / aspectRatio;
+  
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * aspectRatio;
+  }
+  
+  return { width, height };
 }
 
 interface DeliveryNoteWithDetails {
@@ -238,29 +252,20 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     yPos += 6;
 
     try {
-      if (scaledDims) {
-        const photoX = margin + (contentWidth - scaledDims.width) / 2;
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(photoX - 1, yPos - 1, scaledDims.width + 2, scaledDims.height + 2);
-        
-        // Ensure photo is a valid base64 image string for jspdf
-        let photoData = note.photo;
-        if (!photoData.startsWith('data:image/')) {
-          // If it's just raw base64, assume JPEG
-          photoData = `data:image/jpeg;base64,${photoData}`;
-        }
-        
-        const format = photoData.includes('png') ? 'PNG' : 'JPEG';
-        doc.addImage(photoData, format, photoX, yPos, scaledDims.width, scaledDims.height);
-      } else {
-        // Could not determine image dimensions - show placeholder
-        console.error("Could not get image dimensions for photo, photo length:", note.photo?.length);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "italic");
-        doc.setTextColor(150, 150, 150);
-        doc.text("(No se pudo procesar la imagen)", margin + 6, yPos + 10);
-        doc.setTextColor(0, 0, 0);
+      const photoX = margin + (contentWidth - scaledDims.width) / 2;
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(photoX - 1, yPos - 1, scaledDims.width + 2, scaledDims.height + 2);
+      
+      // Ensure photo is a valid base64 image string for jspdf
+      let photoData = note.photo;
+      if (!photoData.startsWith('data:image/')) {
+        // If it's just raw base64, assume PNG if it starts with PNG signature, otherwise JPEG
+        const isPng = photoData.startsWith('iVBORw0KGgo');
+        photoData = `data:image/${isPng ? 'png' : 'jpeg'};base64,${photoData}`;
       }
+      
+      const imageFormat = photoData.includes('png') ? 'PNG' : 'JPEG';
+      doc.addImage(photoData, imageFormat, photoX, yPos, scaledDims.width, scaledDims.height);
     } catch (e) {
       console.error("Error adding photo to PDF:", e);
       doc.setFontSize(10);
