@@ -634,23 +634,22 @@ export default function WorkerDashboard() {
           <div className="bg-muted/20 rounded-md p-2 space-y-1">
             {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
               <>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="flex-1 min-w-0 truncate">{formatOrigin(note.pickupOrigins[0])}</span>
-                  <ArrowRight className="w-3 h-3 text-primary flex-shrink-0" />
-                  <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
-                </div>
-                
-                {note.pickupOrigins.length > 1 && expandedOrigins.has(note.id) && (
-                  <div className="space-y-1 pt-1 border-t border-muted-foreground/10">
-                    {note.pickupOrigins.slice(1).map((origin, idx) => (
-                      <div key={idx + 1} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="flex-1 min-w-0 truncate">{formatOrigin(origin)}</span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                        <span className="flex-1 min-w-0 truncate text-right">{note.destination || 'N/A'}</span>
+                <div className="space-y-1">
+                  {note.pickupOrigins.map((origin, idx) => {
+                    if (idx > 0 && !expandedOrigins.has(note.id)) return null;
+                    return (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        <MapPin className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                        <span className="flex-1 min-w-0 truncate font-medium">{origin.name || origin.address}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-2 mt-1 pt-1 border-t border-muted-foreground/10 text-sm">
+                  <Navigation className="w-3 h-3 text-green-500 flex-shrink-0" />
+                  <span className="font-semibold text-primary">{note.destination || 'Sin destino'}</span>
+                </div>
                 
                 {note.pickupOrigins.length > 1 && (
                   <button
@@ -659,17 +658,16 @@ export default function WorkerDashboard() {
                     data-testid={`button-toggle-origins-${note.id}`}
                   >
                     {expandedOrigins.has(note.id) ? (
-                      <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} recogidas</>
+                      <><ChevronUp className="w-3 h-3" /> Ocultar orígenes</>
                     ) : (
-                      <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} recogidas más</>
+                      <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} orígenes más</>
                     )}
                   </button>
                 )}
               </>
             ) : (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>N/A</span>
-                <ArrowRight className="w-3 h-3" />
+                <Navigation className="w-3 h-3" />
                 <span>{note.destination || 'N/A'}</span>
               </div>
             )}

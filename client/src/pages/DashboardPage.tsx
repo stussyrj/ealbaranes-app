@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Link } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search, Eye, Info } from "lucide-react";
+import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search, Eye, Info, Navigation } from "lucide-react";
 import type { PickupOrigin } from "@shared/schema";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -3560,6 +3560,21 @@ export default function DashboardPage() {
           if (!open) setSelectedNoteForPickups(null);
         }}
         deliveryNote={selectedNoteForPickups}
+        onPickupSigned={async (index, data) => {
+          if (!selectedNoteForPickups) return;
+          try {
+            const updatedOrigins = [...(selectedNoteForPickups.pickupOrigins || [])];
+            updatedOrigins[index] = { ...updatedOrigins[index], ...data };
+            await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPickups.id}`, {
+              pickupOrigins: updatedOrigins
+            });
+            await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+            setSelectedNoteForPickups(prev => prev ? { ...prev, pickupOrigins: updatedOrigins } : null);
+            toast({ title: "Recogida confirmada" });
+          } catch (error) {
+            toast({ title: "Error al confirmar recogida", variant: "destructive" });
+          }
+        }}
       />
     </div>
   );
