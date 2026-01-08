@@ -452,3 +452,31 @@ export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
 
 export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
 export type BackupLog = typeof backupLogs.$inferSelect;
+
+// Billing clients for invoice management
+export const billingClients = pgTable("billing_clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  commercialName: text("commercial_name").notNull(),
+  legalName: text("legal_name"),
+  taxId: text("tax_id"),
+  address: text("address"),
+  city: text("city"),
+  postalCode: text("postal_code"),
+  country: text("country").default("España"),
+  email: text("email"),
+  phone: text("phone"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertBillingClientSchema = createInsertSchema(billingClients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertBillingClient = z.infer<typeof insertBillingClientSchema>;
+export type BillingClient = typeof billingClients.$inferSelect;

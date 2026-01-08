@@ -19,6 +19,7 @@ import {
   insertInvoiceSchema,
   insertInvoiceTemplateSchema,
   insertInvoiceLineItemSchema,
+  insertBillingClientSchema,
   tenants,
   users,
   backupLogs,
@@ -1826,6 +1827,125 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting invoice:", error);
       res.status(500).json({ error: "Error al eliminar factura" });
+    }
+  });
+
+  // =============== BILLING CLIENTS ===============
+  
+  // Get all billing clients for tenant
+  app.get("/api/billing-clients", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden ver clientes" });
+    }
+    try {
+      const clients = await storage.getBillingClients(user.tenantId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching billing clients:", error);
+      res.status(500).json({ error: "Error al obtener clientes" });
+    }
+  });
+  
+  // Get single billing client
+  app.get("/api/billing-clients/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden ver clientes" });
+    }
+    try {
+      const client = await storage.getBillingClient(req.params.id, user.tenantId);
+      if (!client) {
+        return res.status(404).json({ error: "Cliente no encontrado" });
+      }
+      res.json(client);
+    } catch (error) {
+      console.error("Error fetching billing client:", error);
+      res.status(500).json({ error: "Error al obtener cliente" });
+    }
+  });
+  
+  // Create billing client
+  app.post("/api/billing-clients", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden crear clientes" });
+    }
+    try {
+      // Validate input using Zod schema (omit tenantId since it's set server-side)
+      const createSchema = insertBillingClientSchema.omit({ tenantId: true });
+      const validationResult = createSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
+        return res.status(400).json({ error: `Datos inválidos: ${errorMessages}` });
+      }
+      // Force tenantId from authenticated user (ignore any tenantId in request body)
+      const clientData = { ...validationResult.data, tenantId: user.tenantId };
+      const client = await storage.createBillingClient(clientData);
+      res.status(201).json(client);
+    } catch (error) {
+      console.error("Error creating billing client:", error);
+      res.status(400).json({ error: "Error al crear cliente" });
+    }
+  });
+  
+  // Update billing client
+  app.patch("/api/billing-clients/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden actualizar clientes" });
+    }
+    try {
+      // Validate input using partial Zod schema
+      const partialSchema = insertBillingClientSchema.partial();
+      const validationResult = partialSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
+        return res.status(400).json({ error: `Datos inválidos: ${errorMessages}` });
+      }
+      // Strip immutable fields from update payload for security
+      const { tenantId, id, createdAt, updatedAt, ...safeData } = validationResult.data as any;
+      const client = await storage.updateBillingClient(req.params.id, user.tenantId, safeData);
+      if (!client) {
+        return res.status(404).json({ error: "Cliente no encontrado" });
+      }
+      res.json(client);
+    } catch (error) {
+      console.error("Error updating billing client:", error);
+      res.status(400).json({ error: "Error al actualizar cliente" });
+    }
+  });
+  
+  // Delete billing client
+  app.delete("/api/billing-clients/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "No autenticado" });
+    }
+    const user = req.user as any;
+    if (!user.tenantId || !user.isAdmin) {
+      return res.status(403).json({ error: "Solo empresas pueden eliminar clientes" });
+    }
+    try {
+      const deleted = await storage.deleteBillingClient(req.params.id, user.tenantId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Cliente no encontrado" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting billing client:", error);
+      res.status(500).json({ error: "Error al eliminar cliente" });
     }
   });
 

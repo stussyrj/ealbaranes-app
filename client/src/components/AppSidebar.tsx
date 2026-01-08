@@ -9,6 +9,7 @@ import {
   Mail,
   FileText,
   Settings,
+  Building2,
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import {
@@ -32,6 +33,7 @@ const adminNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Mensajes", url: "/admin/messages", icon: Mail },
   { title: "Facturas", url: "/admin/invoices", icon: FileText },
+  { title: "Clientes", url: "/admin/billing-clients", icon: Building2 },
   { title: "Gestión de Usuarios", url: "/admin/users", icon: Users },
 ];
 

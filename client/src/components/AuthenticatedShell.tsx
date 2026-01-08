@@ -11,6 +11,7 @@ const WorkerDashboard = lazy(() => import("@/pages/WorkerDashboard"));
 const UserManagement = lazy(() => import("@/pages/admin/UserManagement"));
 const MessagesPage = lazy(() => import("@/pages/MessagesPage"));
 const InvoicesPage = lazy(() => import("@/pages/admin/InvoicesPage"));
+const BillingClientsPage = lazy(() => import("@/pages/admin/BillingClientsPage"));
 const SettingsPage = lazy(() => import("@/pages/admin/SettingsPage"));
 const DeletedNotesPage = lazy(() => import("@/pages/admin/DeletedNotesPage"));
 
@@ -29,6 +30,7 @@ function AdminRoutes() {
         <Route path="/" component={DashboardPage} />
         <Route path="/admin/messages" component={MessagesPage} />
         <Route path="/admin/invoices" component={InvoicesPage} />
+        <Route path="/admin/billing-clients" component={BillingClientsPage} />
         <Route path="/admin/users" component={UserManagement} />
         <Route path="/admin/deleted-notes" component={DeletedNotesPage} />
         <Route path="/admin/settings" component={SettingsPage} />

@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
-import type { InvoiceTemplate, Invoice, DeliveryNote } from "@shared/schema";
+import type { InvoiceTemplate, Invoice, DeliveryNote, BillingClient } from "@shared/schema";
 
 function InvoiceTemplateSkeleton() {
   return (
@@ -127,6 +127,11 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
 
   const { data: template } = useQuery<InvoiceTemplate>({
     queryKey: ["/api/invoice-template"],
+    enabled: open,
+  });
+
+  const { data: billingClients = [] } = useQuery<BillingClient[]>({
+    queryKey: ["/api/billing-clients"],
     enabled: open,
   });
 
@@ -440,6 +445,47 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                 <CardTitle className="text-base">Datos del Cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {billingClients.length > 0 && (
+                  <div className="space-y-1">
+                    <Label>Seleccionar cliente guardado</Label>
+                    <Select
+                      value=""
+                      onValueChange={(clientId) => {
+                        const client = billingClients.find(c => c.id === clientId);
+                        if (client) {
+                          setCustomerName(client.legalName || client.commercialName);
+                          setCustomerTaxId(client.taxId || "");
+                          const addressParts = [
+                            client.address,
+                            client.postalCode,
+                            client.city
+                          ].filter(Boolean);
+                          setCustomerAddress(addressParts.join(", "));
+                          setCustomerEmail(client.email || "");
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-billing-client">
+                        <SelectValue placeholder="Seleccionar cliente..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {billingClients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            <div className="flex flex-col">
+                              <span>{client.commercialName}</span>
+                              {client.taxId && (
+                                <span className="text-xs text-muted-foreground">{client.taxId}</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Selecciona un cliente para rellenar automáticamente los datos
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="customerName">Nombre/Razón Social *</Label>

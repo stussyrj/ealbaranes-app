@@ -19,6 +19,8 @@ import {
   type InsertInvoiceLineItem,
   type InvoiceTemplate,
   type InsertInvoiceTemplate,
+  type BillingClient,
+  type InsertBillingClient,
   deliveryNotes as deliveryNotesTable,
   users as usersTable,
   tenants as tenantsTable,
@@ -32,6 +34,7 @@ import {
   invoices as invoicesTable,
   invoiceLineItems as invoiceLineItemsTable,
   invoiceTemplates as invoiceTemplatesTable,
+  billingClients as billingClientsTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -118,6 +121,13 @@ export interface IStorage {
   getInvoiceLineItems(invoiceId: string): Promise<InvoiceLineItem[]>;
   createInvoiceLineItem(item: InsertInvoiceLineItem): Promise<InvoiceLineItem>;
   deleteInvoiceLineItems(invoiceId: string): Promise<boolean>;
+  
+  // Billing clients
+  getBillingClients(tenantId: string): Promise<BillingClient[]>;
+  getBillingClient(id: string, tenantId: string): Promise<BillingClient | undefined>;
+  createBillingClient(client: InsertBillingClient): Promise<BillingClient>;
+  updateBillingClient(id: string, tenantId: string, updates: Partial<InsertBillingClient>): Promise<BillingClient | undefined>;
+  deleteBillingClient(id: string, tenantId: string): Promise<boolean>;
 }
 
 const defaultVehicleTypes: VehicleType[] = [
@@ -1203,6 +1213,72 @@ export class MemStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting invoice line items:", error);
+      return false;
+    }
+  }
+  
+  // Billing clients methods
+  async getBillingClients(tenantId: string): Promise<BillingClient[]> {
+    try {
+      return await db.select().from(billingClientsTable)
+        .where(eq(billingClientsTable.tenantId, tenantId))
+        .orderBy(billingClientsTable.commercialName);
+    } catch (error) {
+      console.error("Error fetching billing clients:", error);
+      return [];
+    }
+  }
+  
+  async getBillingClient(id: string, tenantId: string): Promise<BillingClient | undefined> {
+    try {
+      const [client] = await db.select().from(billingClientsTable)
+        .where(and(
+          eq(billingClientsTable.id, id),
+          eq(billingClientsTable.tenantId, tenantId)
+        ));
+      return client;
+    } catch (error) {
+      console.error("Error fetching billing client:", error);
+      return undefined;
+    }
+  }
+  
+  async createBillingClient(client: InsertBillingClient): Promise<BillingClient> {
+    try {
+      const [created] = await db.insert(billingClientsTable).values(client).returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating billing client:", error);
+      throw error;
+    }
+  }
+  
+  async updateBillingClient(id: string, tenantId: string, updates: Partial<InsertBillingClient>): Promise<BillingClient | undefined> {
+    try {
+      const [updated] = await db.update(billingClientsTable)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(
+          eq(billingClientsTable.id, id),
+          eq(billingClientsTable.tenantId, tenantId)
+        ))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating billing client:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteBillingClient(id: string, tenantId: string): Promise<boolean> {
+    try {
+      await db.delete(billingClientsTable)
+        .where(and(
+          eq(billingClientsTable.id, id),
+          eq(billingClientsTable.tenantId, tenantId)
+        ));
+      return true;
+    } catch (error) {
+      console.error("Error deleting billing client:", error);
       return false;
     }
   }
