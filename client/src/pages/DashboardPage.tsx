@@ -308,21 +308,19 @@ export default function DashboardPage() {
   // Helper to format a single origin display as JSX with styled labels
   const RouteDisplay = ({ origin }: { origin: PickupOrigin }) => {
     const from = origin.name || 'N/A';
-    const to = origin.address || 'N/A';
     return (
-      <span>
-        <span className="text-muted-foreground">Recogida:</span> {from} <span className="text-muted-foreground">→</span> <span className="text-muted-foreground">Entrega:</span> {to}
-      </span>
+      <div className="flex items-center gap-2">
+        <MapPin className="w-3 h-3 text-blue-500 flex-shrink-0" />
+        <span className="flex-1 min-w-0 truncate">{from}</span>
+      </div>
     );
   };
-  
+
   // Keep string version for PDF generation
   const formatOriginString = (origin: PickupOrigin): string => {
-    const from = origin.name || 'N/A';
-    const to = origin.address || 'N/A';
-    return `Recogida: ${from} → Entrega: ${to}`;
+    return origin.name || 'N/A';
   };
-  
+
   // Helper to format multiple origins compactly
   const formatOrigins = (origins: PickupOrigin[] | null | undefined, maxDisplay: number = 2): string => {
     if (!origins || origins.length === 0) return 'N/A';
@@ -330,18 +328,10 @@ export default function DashboardPage() {
     if (origins.length <= maxDisplay) return origins.map(o => formatOriginString(o)).join(', ');
     return `${origins.slice(0, maxDisplay).map(o => formatOriginString(o)).join(', ')} (+${origins.length - maxDisplay})`;
   };
-  
-  // Helper to format a single origin for structured display
-  const formatOriginDisplay = (origin: PickupOrigin): { name: string; address: string } => {
-    return {
-      name: origin.name || '',
-      address: origin.address || ''
-    };
-  };
-  
+
   const formatOriginsForPdf = (origins: PickupOrigin[] | null | undefined): string => {
     if (!origins || origins.length === 0) return 'N/A';
-    return origins.map(o => formatOriginString(o)).join('\n');
+    return origins.map(o => formatOriginString(o)).join(', ');
   };
 
   const previewDeliveryNote = (photo: string) => {
@@ -2168,31 +2158,31 @@ export default function DashboardPage() {
                       {note.pickupOrigins && note.pickupOrigins.length > 0 ? (
                         <>
                           <div className="space-y-1">
-                            <div className="text-sm">
-                              <RouteDisplay origin={note.pickupOrigins[0]} />
-                            </div>
-                          </div>
-                          
-                          {note.pickupOrigins.length > 1 && expandedOrigins.has(note.id) && (
-                            <div className="space-y-1 pt-1">
-                              {note.pickupOrigins.slice(1).map((origin: PickupOrigin, idx: number) => (
-                                <div key={idx + 1} className="text-sm">
+                            {note.pickupOrigins.map((origin: PickupOrigin, idx: number) => {
+                              if (idx > 0 && !expandedOrigins.has(note.id)) return null;
+                              return (
+                                <div key={idx} className="text-sm">
                                   <RouteDisplay origin={origin} />
                                 </div>
-                              ))}
-                            </div>
-                          )}
+                              );
+                            })}
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-1 pt-1 border-t border-muted-foreground/10 text-sm">
+                            <Navigation className="w-3 h-3 text-green-500 flex-shrink-0" />
+                            <span className="font-semibold text-primary">{note.destination || 'Sin destino'}</span>
+                          </div>
                           
                           {note.pickupOrigins.length > 1 && (
                             <button
                               onClick={() => toggleExpandedOrigins(note.id)}
-                              className="flex items-center gap-1 text-xs text-primary hover:underline"
+                              className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
                               data-testid={`button-toggle-origins-${note.id}`}
                             >
                               {expandedOrigins.has(note.id) ? (
-                                <><ChevronUp className="w-3 h-3" /> Ocultar {note.pickupOrigins.length - 1} tramos</>
+                                <><ChevronUp className="w-3 h-3" /> Ocultar orígenes</>
                               ) : (
-                                <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} tramos más</>
+                                <><ChevronDown className="w-3 h-3" /> Ver {note.pickupOrigins.length - 1} orígenes más</>
                               )}
                             </button>
                           )}
@@ -3470,25 +3460,20 @@ export default function DashboardPage() {
           </DialogHeader>
           {selectedNoteForInfo && (
             <div className="space-y-4">
-              {/* Datos generales */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Cliente:</span>
-                  <span className="text-sm">{selectedNoteForInfo.clientName || 'No especificado'}</span>
+              <div className="border-t pt-4">
+                <p className="text-xs text-muted-foreground mb-2">
+                  {selectedNoteForInfo.pickupOrigins && selectedNoteForInfo.pickupOrigins.length > 1 ? `Orígenes (${selectedNoteForInfo.pickupOrigins.length})` : 'Origen'}
+                </p>
+                <div className="space-y-1">
+                  {selectedNoteForInfo.pickupOrigins?.map((o: any, i: number) => (
+                    <p key={i} className="text-sm font-medium">• {o.name || o.address}</p>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Trabajador:</span>
-                  <span className="text-sm">{selectedNoteForInfo.workerName || 'No asignado'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Fecha:</span>
-                  <span className="text-sm">
-                    {selectedNoteForInfo.date ? new Date(selectedNoteForInfo.date).toLocaleDateString('es-ES') : 'No especificada'}
-                  </span>
-                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-xs text-muted-foreground mb-2">Destino Final</p>
+                <p className="text-sm font-bold text-primary">{selectedNoteForInfo.destination || 'No especificado'}</p>
               </div>
 
               {/* Documentos de firma */}

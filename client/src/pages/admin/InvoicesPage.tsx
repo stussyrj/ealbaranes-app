@@ -272,7 +272,7 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       const destinationText = note.destination || "Sin destino";
       
       // Build description with optional observations
-      let description = `Albarán #${note.noteNumber} | Recogida: ${pickupText} | Entrega: ${destinationText}`;
+      let description = `Albarán #${note.noteNumber} | Orígenes: ${pickupText} | Destino Final: ${destinationText}`;
       if (note.vehicleType) {
         description += ` | Vehículo: ${note.vehicleType}`;
       }
