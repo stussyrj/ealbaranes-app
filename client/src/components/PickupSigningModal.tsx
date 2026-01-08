@@ -323,17 +323,7 @@ export function PickupSigningModal({
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Confirmación de Recogida</Label>
-              <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg bg-muted/30">
-                <div className="text-center">
-                  <Check className="h-10 w-10 text-primary mx-auto mb-2 opacity-50" />
-                  <p className="text-sm text-muted-foreground font-medium">Pulsa el botón de abajo para confirmar</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -348,7 +338,7 @@ export function PickupSigningModal({
               <Button
                 className="flex-1"
                 onClick={handleConfirmSignature}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !signerName.trim()}
                 data-testid="button-confirm-pickup-signature"
               >
                 {isSubmitting ? (
