@@ -232,39 +232,20 @@ export function PickupSigningModal({
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="bg-primary/10 border-4 border-primary rounded-xl p-8 shadow-2xl transition-all duration-500 hover:shadow-primary/20 scale-105 my-4">
-              <div className="flex items-center gap-6 mb-6">
-                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground font-black text-3xl shadow-xl transform rotate-3">
+            <div className="bg-muted/30 border rounded-lg p-4 transition-all">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-semibold text-lg">
                   {selectedPickupIndex + 1}
                 </div>
-                <div>
-                  <p className="text-sm uppercase tracking-[0.2em] font-black text-primary mb-2 animate-bounce">Recogida actual</p>
-                  <p className="font-black text-4xl leading-none text-foreground tracking-tight">{selectedPickup?.name}</p>
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Recogida actual</p>
+                  <p className="font-bold text-xl truncate">{selectedPickup?.name}</p>
                 </div>
               </div>
               
-              <div className="flex items-start gap-4 text-xl text-foreground pl-2 mb-8 bg-background p-5 rounded-xl border-2 border-primary/30 shadow-inner">
-                <MapPin className="h-8 w-8 flex-shrink-0 text-primary animate-pulse" />
-                <span className="font-black leading-tight">{selectedPickup?.address || "Sin dirección"}</span>
-              </div>
-
-              <div className="mt-4 pt-6 border-t-8 border-primary/30">
-                <div className="bg-amber-200 dark:bg-amber-800/60 p-6 rounded-2xl border-4 border-amber-500 dark:border-amber-400 flex items-start gap-5 shadow-xl transform -rotate-1">
-                  <div className="bg-amber-600 text-white p-2 rounded-full mt-0.5 shadow-lg border-2 border-white">
-                    <Check className="h-6 w-6 stroke-[4]" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-lg font-black text-amber-950 dark:text-white uppercase tracking-tighter mb-2 flex items-center gap-2">
-                      <FileText className="h-6 w-6" />
-                      ¡AVISO MUY IMPORTANTE!
-                    </p>
-                    <p className="text-xl italic text-amber-950 dark:text-white leading-tight font-black">
-                      La firma digital <span className="underline decoration-amber-600 decoration-4 underline-offset-4">YA NO ES NECESARIA</span>. 
-                      <br/>
-                      <span className="text-base not-italic opacity-90 mt-2 block">Solo escribe el nombre y pulsa el botón verde.</span>
-                    </p>
-                  </div>
-                </div>
+              <div className="flex items-start gap-3 text-sm text-foreground bg-background/50 p-3 rounded-md border shadow-sm">
+                <MapPin className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
+                <span className="font-medium">{selectedPickup?.address || "Sin dirección"}</span>
               </div>
             </div>
 
