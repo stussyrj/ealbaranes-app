@@ -232,34 +232,36 @@ export function PickupSigningModal({
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="bg-primary/10 border-2 border-primary rounded-lg p-6 shadow-md transition-all duration-300 hover:shadow-lg">
-              <div className="flex items-center gap-5 mb-4">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground font-bold text-xl shadow-lg transform transition-transform hover:scale-105">
+            <div className="bg-primary/10 border-4 border-primary rounded-xl p-8 shadow-2xl transition-all duration-500 hover:shadow-primary/20 scale-105 my-4">
+              <div className="flex items-center gap-6 mb-6">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground font-black text-3xl shadow-xl transform rotate-3">
                   {selectedPickupIndex + 1}
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-widest font-extrabold text-primary/90 mb-1">Recogida actual</p>
-                  <p className="font-extrabold text-2xl leading-none text-foreground">{selectedPickup?.name}</p>
+                  <p className="text-sm uppercase tracking-[0.2em] font-black text-primary mb-2 animate-bounce">Recogida actual</p>
+                  <p className="font-black text-4xl leading-none text-foreground tracking-tight">{selectedPickup?.name}</p>
                 </div>
               </div>
               
-              <div className="flex items-start gap-3 text-base text-foreground/90 pl-1 mb-6 bg-background/50 p-3 rounded-md border border-primary/10">
-                <MapPin className="h-6 w-6 flex-shrink-0 text-primary animate-pulse" />
-                <span className="font-bold">{selectedPickup?.address || "Sin dirección"}</span>
+              <div className="flex items-start gap-4 text-xl text-foreground pl-2 mb-8 bg-background p-5 rounded-xl border-2 border-primary/30 shadow-inner">
+                <MapPin className="h-8 w-8 flex-shrink-0 text-primary animate-pulse" />
+                <span className="font-black leading-tight">{selectedPickup?.address || "Sin dirección"}</span>
               </div>
 
-              <div className="mt-2 pt-5 border-t-4 border-primary/20">
-                <div className="bg-amber-100 dark:bg-amber-900/40 p-4 rounded-xl border-2 border-amber-300 dark:border-amber-700 flex items-start gap-4 shadow-sm">
-                  <div className="bg-amber-500 text-white p-1.5 rounded-full mt-0.5 shadow-md">
-                    <Check className="h-4 w-4" />
+              <div className="mt-4 pt-6 border-t-8 border-primary/30">
+                <div className="bg-amber-200 dark:bg-amber-800/60 p-6 rounded-2xl border-4 border-amber-500 dark:border-amber-400 flex items-start gap-5 shadow-xl transform -rotate-1">
+                  <div className="bg-amber-600 text-white p-2 rounded-full mt-0.5 shadow-lg border-2 border-white">
+                    <Check className="h-6 w-6 stroke-[4]" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight mb-1 flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Información Importante
+                    <p className="text-lg font-black text-amber-950 dark:text-white uppercase tracking-tighter mb-2 flex items-center gap-2">
+                      <FileText className="h-6 w-6" />
+                      ¡AVISO MUY IMPORTANTE!
                     </p>
-                    <p className="text-base italic text-amber-900 dark:text-amber-100 leading-tight font-bold">
-                      La firma digital <span className="underline decoration-amber-500 decoration-2">ya no es necesaria</span>. Solo introduce el nombre y confirma.
+                    <p className="text-xl italic text-amber-950 dark:text-white leading-tight font-black">
+                      La firma digital <span className="underline decoration-amber-600 decoration-4 underline-offset-4">YA NO ES NECESARIA</span>. 
+                      <br/>
+                      <span className="text-base not-italic opacity-90 mt-2 block">Solo escribe el nombre y pulsa el botón verde.</span>
                     </p>
                   </div>
                 </div>
