@@ -2196,6 +2196,20 @@ export default function DashboardPage() {
                               )}
                             </button>
                           )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => {
+                              setSelectedNoteForPickups(note);
+                              setPickupSigningOpen(true);
+                            }}
+                            data-testid={`button-manage-pickups-${note.id}`}
+                          >
+                            <MapPin className="w-3 h-3 mr-1" />
+                            Gestionar Recogidas
+                          </Button>
                         </>
                       ) : (
                         <div className="text-sm text-muted-foreground">
@@ -3554,6 +3568,14 @@ export default function DashboardPage() {
           )}
         </DialogContent>
       </Dialog>
+      <PickupSigningModal
+        open={pickupSigningOpen}
+        onOpenChange={(open) => {
+          setPickupSigningOpen(open);
+          if (!open) setSelectedNoteForPickups(null);
+        }}
+        deliveryNote={selectedNoteForPickups}
+      />
     </div>
   );
 }
