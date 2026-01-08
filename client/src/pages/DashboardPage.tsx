@@ -16,6 +16,7 @@ const WorkerAssignmentModal = lazy(() => import("@/components/WorkerAssignmentMo
 const SignaturePad = lazy(() => import("@/components/SignaturePad").then(m => ({ default: m.SignaturePad })));
 const OnboardingTutorial = lazy(() => import("@/components/OnboardingTutorial").then(m => ({ default: m.OnboardingTutorial })));
 import { DeliveryNoteSigningModal } from "@/components/DeliveryNoteSigningModal";
+import { PickupSigningModal } from "@/components/PickupSigningModal";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,6 +104,10 @@ export default function DashboardPage() {
   const [signingModalOpen, setSigningModalOpen] = useState(false);
   const [selectedNoteForSigning, setSelectedNoteForSigning] = useState<any>(null);
   const [deletedNotesModalOpen, setDeletedNotesModalOpen] = useState(false);
+  
+  // Pickup signing modal state (for managing individual pickups)
+  const [pickupSigningOpen, setPickupSigningOpen] = useState(false);
+  const [selectedNoteForPickups, setSelectedNoteForPickups] = useState<any>(null);
 
   const [selectedDeletedNote, setSelectedDeletedNote] = useState<any>(null);
   const [isDeletedNoteDetailsOpen, setIsDeletedNoteDetailsOpen] = useState(false);
