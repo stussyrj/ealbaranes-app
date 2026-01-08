@@ -232,26 +232,36 @@ export function PickupSigningModal({
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="bg-primary/10 border-2 border-primary rounded-lg p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+            <div className="bg-primary/10 border-2 border-primary rounded-lg p-6 shadow-md transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center gap-5 mb-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground font-bold text-xl shadow-lg transform transition-transform hover:scale-105">
                   {selectedPickupIndex + 1}
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Recogida seleccionada</p>
-                  <p className="font-semibold text-base">{selectedPickup?.name}</p>
+                  <p className="text-xs uppercase tracking-widest font-extrabold text-primary/90 mb-1">Recogida actual</p>
+                  <p className="font-extrabold text-2xl leading-none text-foreground">{selectedPickup?.name}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2 text-sm text-muted-foreground pl-11">
-                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
-                <span className="font-medium">{selectedPickup?.address || "Sin dirección"}</span>
+              
+              <div className="flex items-start gap-3 text-base text-foreground/90 pl-1 mb-6 bg-background/50 p-3 rounded-md border border-primary/10">
+                <MapPin className="h-6 w-6 flex-shrink-0 text-primary animate-pulse" />
+                <span className="font-bold">{selectedPickup?.address || "Sin dirección"}</span>
               </div>
-              <div className="mt-4 pt-4 border-t border-primary/20">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-primary mb-1">Nota Importante</p>
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-xs italic text-yellow-800 dark:text-yellow-200 leading-relaxed font-medium">
-                    Ya no se requiere firma digital, solo el nombre del firmante y la confirmación de la recogida.
-                  </p>
+
+              <div className="mt-2 pt-5 border-t-4 border-primary/20">
+                <div className="bg-amber-100 dark:bg-amber-900/40 p-4 rounded-xl border-2 border-amber-300 dark:border-amber-700 flex items-start gap-4 shadow-sm">
+                  <div className="bg-amber-500 text-white p-1.5 rounded-full mt-0.5 shadow-md">
+                    <Check className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight mb-1 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Información Importante
+                    </p>
+                    <p className="text-base italic text-amber-900 dark:text-amber-100 leading-tight font-bold">
+                      La firma digital <span className="underline decoration-amber-500 decoration-2">ya no es necesaria</span>. Solo introduce el nombre y confirma.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
