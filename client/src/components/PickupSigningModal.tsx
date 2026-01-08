@@ -23,6 +23,7 @@ export function PickupSigningModal({
 }: PickupSigningModalProps) {
   const [selectedPickupIndex, setSelectedPickupIndex] = useState<number | null>(null);
   const [signerName, setSignerName] = useState("");
+  const [signerDocument, setSignerDocument] = useState("");
   const [quantity, setQuantity] = useState("");
   const [observations, setObservations] = useState("");
   const [incidence, setIncidence] = useState("");
@@ -44,6 +45,7 @@ export function PickupSigningModal({
     if (open) {
       setSelectedPickupIndex(null);
       setSignerName("");
+      setSignerDocument("");
       setQuantity("");
       setObservations("");
       setIncidence("");
@@ -188,6 +190,7 @@ export function PickupSigningModal({
       };
       
       if (signerName.trim()) pickupData.signerName = signerName.trim();
+      if (signerDocument.trim()) pickupData.signerDocument = signerDocument.trim();
       if (quantity.trim()) pickupData.quantity = quantity.trim();
       if (observations.trim()) pickupData.observations = observations.trim();
       if (hasIncidence && incidence.trim()) pickupData.incidence = incidence.trim();
@@ -257,6 +260,18 @@ export function PickupSigningModal({
                 onChange={(e) => setSignerName(e.target.value)}
                 placeholder="Nombre completo"
                 data-testid="input-pickup-signer-name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="signerDocument">DNI / NIE / NIF del firmante</Label>
+              <Input
+                id="signerDocument"
+                value={signerDocument}
+                onChange={(e) => setSignerDocument(e.target.value.toUpperCase())}
+                placeholder="Ej: 12345678A"
+                maxLength={15}
+                data-testid="input-pickup-signer-document"
               />
             </div>
 
@@ -338,7 +353,7 @@ export function PickupSigningModal({
               <Button
                 className="flex-1"
                 onClick={handleConfirmSignature}
-                disabled={isSubmitting || !signerName.trim()}
+                disabled={isSubmitting || !signerName.trim() || signerDocument.trim().length < 8}
                 data-testid="button-confirm-pickup-signature"
               >
                 {isSubmitting ? (
