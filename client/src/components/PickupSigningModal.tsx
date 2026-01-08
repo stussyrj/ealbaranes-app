@@ -175,19 +175,14 @@ export function PickupSigningModal({
   }, []);
 
   const handleConfirmSignature = async () => {
-    if (selectedPickupIndex === null || !hasSignatureRef.current) return;
+    if (selectedPickupIndex === null) return;
     
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
     setIsSubmitting(true);
     
     try {
-      const signatureData = canvas.toDataURL("image/png");
       const now = new Date().toISOString();
       
       const pickupData: Partial<PickupOrigin> = {
-        signature: signatureData,
         signedAt: now,
         status: hasIncidence ? "problem" : "completed",
       };
@@ -250,6 +245,12 @@ export function PickupSigningModal({
               <div className="flex items-start gap-2 text-sm text-muted-foreground pl-11">
                 <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
                 <span>{selectedPickup?.address || "Sin dirección"}</span>
+              </div>
+              <div className="mt-4 pt-4 border-t border-primary/20">
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-primary/70 mb-1">Nota Importante</p>
+                <p className="text-xs italic text-muted-foreground leading-relaxed">
+                  Ya no se requiere firma digital, solo el nombre del firmante y la confirmación de la recogida.
+                </p>
               </div>
             </div>
 
@@ -328,31 +329,12 @@ export function PickupSigningModal({
             )}
 
             <div className="space-y-2">
-              <Label>Firma de quien entrega *</Label>
-              <div className="relative border rounded-lg bg-white overflow-hidden" style={{ touchAction: 'none' }}>
-                <canvas
-                  ref={canvasRef}
-                  className="w-full cursor-crosshair"
-                  style={{ height: '150px' }}
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                  data-testid="canvas-pickup-signature"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute bottom-2 right-2"
-                  onClick={clearCanvas}
-                  data-testid="button-clear-pickup-signature"
-                >
-                  <Eraser className="h-4 w-4" />
-                </Button>
+              <Label>Confirmación de Recogida</Label>
+              <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg bg-muted/30">
+                <div className="text-center">
+                  <Check className="h-10 w-10 text-primary mx-auto mb-2 opacity-50" />
+                  <p className="text-sm text-muted-foreground font-medium">Pulsa el botón de abajo para confirmar</p>
+                </div>
               </div>
             </div>
 
@@ -371,13 +353,13 @@ export function PickupSigningModal({
               <Button
                 className="flex-1"
                 onClick={handleConfirmSignature}
-                disabled={!hasSignature || isSubmitting}
+                disabled={isSubmitting}
                 data-testid="button-confirm-pickup-signature"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    Guardando...
+                    Confirmando...
                   </span>
                 ) : (
                   <>
