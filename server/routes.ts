@@ -691,15 +691,16 @@ export async function registerRoutes(
       // Create internal message notification (replaces email)
       if (user?.tenantId) {
         const createdBy = user.isAdmin ? 'Empresa' : (user.displayName || user.username || 'Trabajador');
-        const routeLines = (note.pickupOrigins || []).map((o: any) => 
-          `Recogida: ${o.name || 'N/A'} → Entrega: ${o.address || 'N/A'}`
-        ).join('\n');
+        const routeLines = (note.pickupOrigins || []).map((o: any, idx: number) => 
+          `${idx + 1}. ${o.name || o.address}`
+        ).join(', ');
+        const fullRoute = `Orígenes: ${routeLines} → Destino Final: ${note.destination || 'N/A'}`;
         
         storage.createMessage({
           tenantId: user.tenantId,
           type: 'delivery_note_created',
           title: `Nuevo Albarán #${note.noteNumber}`,
-          body: `Cliente: ${note.clientName || 'No especificado'}\n${routeLines}\nCreado por: ${createdBy}`,
+          body: `Cliente: ${note.clientName || 'No especificado'}\n${fullRoute}\nCreado por: ${createdBy}`,
           read: false,
           entityType: 'delivery_note',
           entityId: note.id,

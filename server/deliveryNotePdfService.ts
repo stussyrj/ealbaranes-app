@@ -176,7 +176,7 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
 
   // Row 2: Pickup Locations with signatures
   if (note.pickupOrigins && note.pickupOrigins.length > 0) {
-    drawLabel(doc, "RECOGIDAS", margin, yPos);
+    drawLabel(doc, "RECOGIDAS (ORÍGENES)", margin, yPos);
     yPos += 6;
     
     let originY = yPos;
@@ -190,12 +190,12 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       let text = `${idx + 1}. ${statusText} ${name}`;
-      if (address) text += ` - ${address}`;
+      if (address) text += ` (${address})`;
       doc.text(text, margin + 8, originY);
       originY += 6;
       
       // Additional info if signed
-      if (origin.signedAt || origin.quantity || origin.signerName) {
+      if (origin.signedAt || origin.quantity || origin.signerName || origin.signerDocument) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(100, 116, 139);
@@ -209,16 +209,11 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
           }
         }
         if (origin.signerName) infoLine += `${infoLine ? " | " : ""}Firmado por: ${origin.signerName}`;
+        if (origin.signerDocument) infoLine += ` (${origin.signerDocument})`;
         if (origin.quantity) infoLine += `${infoLine ? " | " : ""}Cantidad: ${origin.quantity}`;
         
         if (infoLine) {
           doc.text(infoLine, margin + 12, originY);
-          originY += 5;
-        }
-        
-        // Observations for this pickup
-        if (origin.observations) {
-          doc.text(`Obs: ${origin.observations}`, margin + 12, originY);
           originY += 5;
         }
         
@@ -235,12 +230,9 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
       // Signature image if present
       if (origin.signature && origin.signature.length > 100) {
         try {
-          const sigWidth = 50;
-          const sigHeight = 25;
+          const sigWidth = 40;
+          const sigHeight = 20;
           const sigX = margin + 12;
-          
-          doc.setDrawColor(200, 200, 200);
-          doc.rect(sigX - 1, originY - 1, sigWidth + 2, sigHeight + 2);
           
           let sigData = origin.signature;
           if (!sigData.startsWith('data:image/')) {
@@ -248,17 +240,16 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
           }
           
           doc.addImage(sigData, 'PNG', sigX, originY, sigWidth, sigHeight);
-          originY += sigHeight + 5;
+          originY += sigHeight + 4;
         } catch (e) {
           console.error("Error adding pickup signature to PDF:", e);
-          originY += 5;
         }
       }
       
-      originY += 3; // Spacing between pickups
+      originY += 2; // Spacing between pickups
       
       // Check for page break needed for next pickup
-      if (originY > pageHeight - 50) {
+      if (originY > pageHeight - 60) {
         doc.addPage();
         originY = 25;
       }
@@ -267,14 +258,16 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     yPos = originY + 4;
   }
 
-  // Row 3: Destination
-  drawSectionBox(doc, margin, yPos, contentWidth, 18); // Reduced from 22
-  drawLabel(doc, "PUNTO DE ENTREGA (DESTINO)", margin + 4, yPos + 6);
-  doc.setFontSize(10);
+  // Row 3: Destination (Single Final Destination)
+  drawSectionBox(doc, margin, yPos, contentWidth, 18);
+  drawLabel(doc, "DESTINO FINAL (ENTREGA)", margin + 4, yPos + 6);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 41, 59);
   doc.text(note.destination || "N/A", margin + 8, yPos + 13);
+  doc.setTextColor(0, 0, 0);
 
-  yPos += 22; // Reduced from 30
+  yPos += 22;
 
   // Row 4: Carload & Observations
   const obsHeight = 25; // Reduced from 30

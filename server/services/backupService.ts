@@ -245,20 +245,37 @@ async function createTenantBackup(tenantId: string): Promise<{
           doc.text(`Vehículo: ${note.vehicleType || 'N/A'}`, margin + 2, y);
           y += 5;
           
-          // Direcciones de recogida y entrega
+          // Direcciones de recogida y entrega (Orígenes -> Destino Final)
           if (note.pickupOrigins && Array.isArray(note.pickupOrigins) && note.pickupOrigins.length > 0) {
+            doc.setFont("helvetica", "bold");
+            doc.text(`   ORÍGENES DE RECOGIDA:`, margin + 2, y);
+            y += 5;
+            doc.setFont("helvetica", "normal");
             note.pickupOrigins.forEach((origin: any, idx: number) => {
               checkPageBreak(12);
               const originName = origin.name || 'N/A';
-              const originAddress = origin.address || 'N/A';
-              doc.text(`   Tramo ${idx + 1} - Recogida: ${originName}`, margin + 2, y);
-              y += 4;
-              doc.text(`              Entrega: ${originAddress}`, margin + 2, y);
+              const originStatus = origin.status === 'completed' ? '[✓]' : origin.status === 'problem' ? '[!]' : '[ ]';
+              doc.text(`      ${originStatus} ${idx + 1}. ${originName}`, margin + 2, y);
               y += 5;
+              if (origin.signerName || origin.incidence) {
+                let info = `         - `;
+                if (origin.signerName) info += `Firmante: ${origin.signerName} ${origin.signerDocument ? '(' + origin.signerDocument + ')' : ''}`;
+                if (origin.incidence) info += ` | Incidencia: ${origin.incidence}`;
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text(info, margin + 2, y);
+                doc.setFontSize(9);
+                doc.setTextColor(0, 0, 0);
+                y += 5;
+              }
             });
+            checkPageBreak(10);
+            doc.setFont("helvetica", "bold");
+            doc.text(`   DESTINO FINAL: ${note.destination || 'N/A'}`, margin + 2, y);
+            y += 7;
           } else {
-            doc.text(`   Destino: ${note.destination || 'N/A'}`, margin + 2, y);
-            y += 5;
+            doc.text(`   Destino Final: ${note.destination || 'N/A'}`, margin + 2, y);
+            y += 7;
           }
           
           // Tiempo de espera si existe
