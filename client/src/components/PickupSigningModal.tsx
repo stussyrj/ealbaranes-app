@@ -232,14 +232,25 @@ export function PickupSigningModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pen className="h-5 w-5" />
-              Firmar Recogida #{selectedPickupIndex + 1}
+              Firmar Recogida
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <p className="font-medium text-sm">{selectedPickup?.name}</p>
-              <p className="text-xs text-muted-foreground">{selectedPickup?.address}</p>
+            <div className="bg-primary/10 border-2 border-primary rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                  {selectedPickupIndex + 1}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Recogida seleccionada</p>
+                  <p className="font-semibold">{selectedPickup?.name}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-muted-foreground pl-11">
+                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{selectedPickup?.address || "Sin dirección"}</span>
+              </div>
             </div>
 
             <div className="space-y-2">
