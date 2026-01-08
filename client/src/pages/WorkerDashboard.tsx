@@ -12,7 +12,8 @@ const DeliveryNoteGenerator = lazy(() => import("@/components/DeliveryNoteGenera
 const SignaturePad = lazy(() => import("@/components/SignaturePad").then(m => ({ default: m.SignaturePad })));
 const OnboardingTutorial = lazy(() => import("@/components/OnboardingTutorial").then(m => ({ default: m.OnboardingTutorial })));
 import { DeliveryNoteSigningModal } from "@/components/DeliveryNoteSigningModal";
-import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw, Filter, Archive } from "lucide-react";
+import { PickupSigningModal } from "@/components/PickupSigningModal";
+import { FileText, Truck, Clock, Calendar, CheckCircle, Edit2, Camera, Plus, X, Pen, ArrowRight, ChevronDown, ChevronUp, RefreshCcw, Filter, Archive, Package } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -54,6 +55,10 @@ export default function WorkerDashboard() {
   // Dual signature signing modal state
   const [signingModalOpen, setSigningModalOpen] = useState(false);
   const [selectedNoteForSigning, setSelectedNoteForSigning] = useState<DeliveryNote | null>(null);
+  
+  // Pickup signing modal state
+  const [pickupSigningOpen, setPickupSigningOpen] = useState(false);
+  const [selectedNoteForPickups, setSelectedNoteForPickups] = useState<DeliveryNote | null>(null);
   
   // Period filter for clickable counters
   const [periodFilter, setPeriodFilter] = useState<"today" | "month" | "total" | null>(null);
@@ -704,6 +709,31 @@ export default function WorkerDashboard() {
               </div>
               <img src={note.signature} alt="Firma digital" className="w-full rounded-md max-h-24 object-contain bg-white" />
             </div>
+          )}
+
+          {/* Button to manage pickups if there are multiple */}
+          {note.pickupOrigins && note.pickupOrigins.length > 0 && (
+            (() => {
+              const pendingPickups = note.pickupOrigins.filter(p => p.status !== "completed" && p.status !== "problem").length;
+              const totalPickups = note.pickupOrigins.length;
+              return (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setSelectedNoteForPickups(note);
+                    setPickupSigningOpen(true);
+                  }}
+                  data-testid={`button-manage-pickups-${note.id}`}
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  {pendingPickups > 0 
+                    ? `Gestionar Recogidas (${pendingPickups}/${totalPickups} pendientes)`
+                    : `Ver Recogidas (${totalPickups})`
+                  }
+                </Button>
+              );
+            })()
           )}
 
           {/* Button to open dual signature modal */}
@@ -1615,7 +1645,13 @@ export default function WorkerDashboard() {
                   setIsCreatingDelivery(true);
                   
                   try {
-                    const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
+                    const validRoutes = formData.pickupOrigins
+                      .filter(o => o.name.trim() !== "" && o.address.trim() !== "")
+                      .map((route, index) => ({
+                        ...route,
+                        orderIndex: index,
+                        status: "pending" as const,
+                      }));
                     const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
                     const deliveryNoteData = {
                       quoteId: `custom-${Date.now()}`,
@@ -1978,6 +2014,39 @@ export default function WorkerDashboard() {
           if (!open) setSelectedNoteForSigning(null);
         }}
         note={selectedNoteForSigning}
+      />
+      
+      {/* Pickup Signing Modal */}
+      <PickupSigningModal
+        open={pickupSigningOpen}
+        onOpenChange={(open) => {
+          setPickupSigningOpen(open);
+          if (!open) setSelectedNoteForPickups(null);
+        }}
+        deliveryNote={selectedNoteForPickups}
+        onPickupSigned={async (pickupIndex, pickupData) => {
+          if (!selectedNoteForPickups) return;
+          try {
+            await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPickups.id}/pickups/${pickupIndex}`, pickupData);
+            await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+            // Refresh the selected note
+            const response = await apiRequest("GET", `/api/delivery-notes/${selectedNoteForPickups.id}`);
+            const updatedNote = await response.json();
+            setSelectedNoteForPickups(updatedNote);
+            toast({
+              title: "Recogida firmada",
+              description: `Recogida #${pickupIndex + 1} completada correctamente`,
+            });
+          } catch (error) {
+            console.error("Error signing pickup:", error);
+            toast({
+              title: "Error",
+              description: "No se pudo guardar la firma de recogida",
+              variant: "destructive",
+            });
+            throw error;
+          }
+        }}
       />
     </div>
   );

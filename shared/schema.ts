@@ -174,6 +174,18 @@ export type Quote = typeof quotes.$inferSelect;
 export const pickupOriginSchema = z.object({
   name: z.string(),
   address: z.string(),
+  orderIndex: z.number().optional(),
+  status: z.enum(["pending", "completed", "problem"]).optional(),
+  quantity: z.string().optional(),
+  observations: z.string().optional(),
+  incidence: z.string().optional(),
+  signature: z.string().optional(),
+  signerName: z.string().optional(),
+  signedAt: z.string().optional(),
+  geoLocation: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).optional(),
 });
 
 export type PickupOrigin = z.infer<typeof pickupOriginSchema>;
@@ -203,6 +215,7 @@ export const deliveryNotes = pgTable("delivery_notes", {
   destinationSignature: text("destination_signature"),
   destinationSignatureDocument: text("destination_signature_document"),
   destinationSignedAt: timestamp("destination_signed_at"),
+  destinationSignerName: text("destination_signer_name"),
   notes: text("notes"),
   isInvoiced: boolean("is_invoiced").default(false),
   invoicedAt: timestamp("invoiced_at"),

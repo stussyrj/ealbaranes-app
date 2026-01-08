@@ -174,25 +174,97 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
 
   yPos += rowHeight + 4; // Reduced from rowHeight + 8
 
-  // Row 2: Pickup Locations
+  // Row 2: Pickup Locations with signatures
   if (note.pickupOrigins && note.pickupOrigins.length > 0) {
-    const originsHeight = Math.max(note.pickupOrigins.length * 8 + 8, 25); // Tighter spacing
-    drawSectionBox(doc, margin, yPos, contentWidth, originsHeight);
-    drawLabel(doc, "LUGARES DE RECOGIDA", margin + 4, yPos + 6);
+    drawLabel(doc, "RECOGIDAS", margin, yPos);
+    yPos += 6;
     
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    
-    let originY = yPos + 14;
+    let originY = yPos;
     note.pickupOrigins.forEach((origin, idx) => {
       const name = origin.name || "";
       const address = origin.address || "";
-      let text = (name && address) ? `${name} - ${address}` : (name || address || "N/A");
-      doc.text(`${idx + 1}. ${text}`, margin + 8, originY);
-      originY += 8; // Reduced from 10
+      const status = origin.status || "pending";
+      const statusText = status === "completed" ? "✓" : status === "problem" ? "⚠" : "○";
+      
+      // Location line
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      let text = `${idx + 1}. ${statusText} ${name}`;
+      if (address) text += ` - ${address}`;
+      doc.text(text, margin + 8, originY);
+      originY += 6;
+      
+      // Additional info if signed
+      if (origin.signedAt || origin.quantity || origin.signerName) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100, 116, 139);
+        
+        let infoLine = "";
+        if (origin.signedAt) {
+          try {
+            infoLine += `Hora: ${format(new Date(origin.signedAt), "HH:mm")}`;
+          } catch (e) {
+            infoLine += `Hora: ${origin.signedAt}`;
+          }
+        }
+        if (origin.signerName) infoLine += `${infoLine ? " | " : ""}Firmado por: ${origin.signerName}`;
+        if (origin.quantity) infoLine += `${infoLine ? " | " : ""}Cantidad: ${origin.quantity}`;
+        
+        if (infoLine) {
+          doc.text(infoLine, margin + 12, originY);
+          originY += 5;
+        }
+        
+        // Observations for this pickup
+        if (origin.observations) {
+          doc.text(`Obs: ${origin.observations}`, margin + 12, originY);
+          originY += 5;
+        }
+        
+        // Incidence warning
+        if (origin.incidence) {
+          doc.setTextColor(180, 83, 9); // Orange for incidence
+          doc.text(`⚠ Incidencia: ${origin.incidence}`, margin + 12, originY);
+          originY += 5;
+        }
+        
+        doc.setTextColor(0, 0, 0);
+      }
+      
+      // Signature image if present
+      if (origin.signature && origin.signature.length > 100) {
+        try {
+          const sigWidth = 50;
+          const sigHeight = 25;
+          const sigX = margin + 12;
+          
+          doc.setDrawColor(200, 200, 200);
+          doc.rect(sigX - 1, originY - 1, sigWidth + 2, sigHeight + 2);
+          
+          let sigData = origin.signature;
+          if (!sigData.startsWith('data:image/')) {
+            sigData = `data:image/png;base64,${sigData}`;
+          }
+          
+          doc.addImage(sigData, 'PNG', sigX, originY, sigWidth, sigHeight);
+          originY += sigHeight + 5;
+        } catch (e) {
+          console.error("Error adding pickup signature to PDF:", e);
+          originY += 5;
+        }
+      }
+      
+      originY += 3; // Spacing between pickups
+      
+      // Check for page break needed for next pickup
+      if (originY > pageHeight - 50) {
+        doc.addPage();
+        originY = 25;
+      }
     });
     
-    yPos += originsHeight + 4; // Reduced from originsHeight + 8
+    yPos = originY + 4;
   }
 
   // Row 3: Destination

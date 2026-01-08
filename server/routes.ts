@@ -988,6 +988,98 @@ export async function registerRoutes(
     }
   });
 
+  // Update a specific pickup within a delivery note
+  app.patch("/api/delivery-notes/:id/pickups/:pickupIndex", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+      
+      const { id, pickupIndex } = req.params;
+      const index = parseInt(pickupIndex, 10);
+      
+      if (isNaN(index) || index < 0) {
+        return res.status(400).json({ error: "Índice de recogida inválido" });
+      }
+      
+      const existingNote = await storage.getDeliveryNote(id);
+      if (!existingNote) {
+        return res.status(404).json({ error: "Albarán no encontrado" });
+      }
+      
+      const tenantId = (req.user as any).tenantId;
+      if (existingNote.tenantId && existingNote.tenantId !== tenantId) {
+        return res.status(403).json({ error: "No tienes acceso a este albarán" });
+      }
+      
+      const pickupOrigins = existingNote.pickupOrigins || [];
+      if (index >= pickupOrigins.length) {
+        return res.status(404).json({ error: "Recogida no encontrada" });
+      }
+      
+      // Validate and sanitize pickup update data - only allow specific fields
+      const allowedFields = ['signature', 'signerName', 'signedAt', 'observations', 'quantity', 'status', 'incidence', 'geoLocation'];
+      const rawData = req.body;
+      const sanitizedData: Record<string, any> = {};
+      
+      for (const field of allowedFields) {
+        if (rawData[field] !== undefined) {
+          // Validate status enum
+          if (field === 'status' && !['pending', 'completed', 'problem'].includes(rawData[field])) {
+            return res.status(400).json({ error: "Estado de recogida inválido" });
+          }
+          // Validate geoLocation structure
+          if (field === 'geoLocation' && rawData[field]) {
+            if (typeof rawData[field].lat !== 'number' || typeof rawData[field].lng !== 'number') {
+              return res.status(400).json({ error: "Geolocalización inválida" });
+            }
+          }
+          // Clean empty strings
+          if (typeof rawData[field] === 'string' && rawData[field].trim() === '') {
+            continue; // Skip empty strings
+          }
+          sanitizedData[field] = rawData[field];
+        }
+      }
+      
+      // Update the specific pickup preserving existing fields
+      const updatedPickups = [...pickupOrigins];
+      updatedPickups[index] = {
+        ...updatedPickups[index],
+        ...sanitizedData,
+      };
+      
+      const note = await storage.updateDeliveryNote(id, { pickupOrigins: updatedPickups });
+      if (!note) {
+        return res.status(404).json({ error: "Error al actualizar albarán" });
+      }
+      
+      // Log audit entry
+      const user = req.user as any;
+      const clientInfo = getClientInfo(req);
+      logAudit({
+        tenantId: user.tenantId,
+        userId: user.id,
+        action: 'sign_delivery_note',
+        entityType: 'delivery_note',
+        entityId: note.id,
+        details: { 
+          noteNumber: note.noteNumber,
+          pickupIndex: index,
+          pickupSigned: !!sanitizedData.signature,
+          pickupStatus: sanitizedData.status,
+        },
+        ipAddress: clientInfo.ipAddress,
+        userAgent: clientInfo.userAgent,
+      });
+      
+      res.json(note);
+    } catch (error) {
+      console.error("Error updating pickup:", error);
+      res.status(400).json({ error: "Error al actualizar recogida" });
+    }
+  });
+
   app.get("/api/delivery-notes", async (req, res) => {
     try {
       // Require authentication for tenant isolation
