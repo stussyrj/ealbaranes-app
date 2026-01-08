@@ -177,7 +177,7 @@ export const pickupOriginSchema = z.object({
   orderIndex: z.number().optional(),
   status: z.enum(["pending", "completed", "problem"]).optional(),
   quantity: z.string().optional(),
-  observations: z.string().optional(),
+  signerDocument: z.string().optional(),
   incidence: z.string().optional(),
   signature: z.string().optional(),
   signerName: z.string().optional(),

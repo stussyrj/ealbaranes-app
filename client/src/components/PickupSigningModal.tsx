@@ -25,7 +25,6 @@ export function PickupSigningModal({
   const [signerName, setSignerName] = useState("");
   const [signerDocument, setSignerDocument] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [observations, setObservations] = useState("");
   const [incidence, setIncidence] = useState("");
   const [hasIncidence, setHasIncidence] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
@@ -47,7 +46,6 @@ export function PickupSigningModal({
       setSignerName("");
       setSignerDocument("");
       setQuantity("");
-      setObservations("");
       setIncidence("");
       setHasIncidence(false);
       setIsSigning(false);
@@ -192,7 +190,6 @@ export function PickupSigningModal({
       if (signerName.trim()) pickupData.signerName = signerName.trim();
       if (signerDocument.trim()) pickupData.signerDocument = signerDocument.trim();
       if (quantity.trim()) pickupData.quantity = quantity.trim();
-      if (observations.trim()) pickupData.observations = observations.trim();
       if (hasIncidence && incidence.trim()) pickupData.incidence = incidence.trim();
       if (geoLocation) pickupData.geoLocation = geoLocation;
 
@@ -201,8 +198,8 @@ export function PickupSigningModal({
       setSelectedPickupIndex(null);
       setIsSigning(false);
       setSignerName("");
+      setSignerDocument("");
       setQuantity("");
-      setObservations("");
       setIncidence("");
       setHasIncidence(false);
     } catch (error) {
@@ -283,18 +280,6 @@ export function PickupSigningModal({
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="Ej: 3 pallets, 5 cajas"
                 data-testid="input-pickup-quantity"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="observations">Observaciones</Label>
-              <Textarea
-                id="observations"
-                value={observations}
-                onChange={(e) => setObservations(e.target.value)}
-                placeholder="Notas sobre la recogida..."
-                rows={2}
-                data-testid="input-pickup-observations"
               />
             </div>
 
