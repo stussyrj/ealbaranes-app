@@ -64,8 +64,9 @@ async function createTenantBackup(tenantId: string): Promise<{
     const workerMap = new Map(tenantWorkers.map(w => [w.id, w]));
 
     // JSON backup sin usuarios (solo empresa y trabajadores)
+    // v1.3: Soporte para stops (paradas) en delivery notes
     const backupData = {
-      version: "1.2",
+      version: "1.3",
       type: "automated",
       exportedAt: new Date().toISOString(),
       tenantId: tenantId,

@@ -73,10 +73,26 @@ function getDefaultDimensions(maxWidth: number, maxHeight: number): { width: num
   return { width, height };
 }
 
+interface Stop {
+  address: string;
+  name?: string;
+  type: 'recogida' | 'entrega' | 'recogida+entrega';
+  orderIndex?: number;
+  status?: string;
+  signature?: string | null;
+  signerName?: string | null;
+  signerDocument?: string | null;
+  signedAt?: string | null;
+  quantity?: string | null;
+  incidence?: string | null;
+  geoLocation?: { lat: number; lng: number } | null;
+}
+
 interface DeliveryNoteWithDetails {
   id: string;
   noteNumber?: number;
   clientName?: string | null;
+  stops?: Stop[] | null;
   pickupOrigins?: any[] | null;
   destination?: string | null;
   vehicleType?: string | null;
@@ -172,55 +188,94 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
   doc.setFont("helvetica", "normal");
   doc.text(note.vehicleType || "N/A", vehX + 4, yPos + 13);
 
-  yPos += rowHeight + 4; // Reduced from rowHeight + 8
+  yPos += rowHeight + 4;
 
-  // Row 2: Pickup Locations with signatures
-  if (note.pickupOrigins && note.pickupOrigins.length > 0) {
-    drawLabel(doc, "RECOGIDAS (ORÍGENES)", margin, yPos);
+  // Row 2: Stops (paradas) - Uses new stops format with fallback to pickupOrigins
+  const stopsData: Stop[] = note.stops && note.stops.length > 0 
+    ? note.stops 
+    : (note.pickupOrigins || []).map((origin, idx, arr) => ({
+        address: origin.address || "",
+        name: origin.name || "",
+        type: idx === arr.length - 1 ? "entrega" as const : "recogida" as const,
+        status: origin.status,
+        signature: origin.signature,
+        signerName: origin.signerName,
+        signerDocument: origin.signerDocument,
+        signedAt: origin.signedAt,
+        quantity: origin.quantity,
+        incidence: origin.incidence,
+        geoLocation: origin.geoLocation,
+      }));
+
+  if (stopsData.length > 0) {
+    drawLabel(doc, "PARADAS DE RUTA", margin, yPos);
     yPos += 6;
     
     let originY = yPos;
-    note.pickupOrigins.forEach((origin, idx) => {
-      const name = origin.name || "";
-      const address = origin.address || "";
-      const status = origin.status || "pending";
+    stopsData.forEach((stop, idx) => {
+      const name = stop.name || stop.address;
+      const address = stop.address || "";
+      const status = stop.status || "pending";
       const statusText = status === "completed" ? "✓" : status === "problem" ? "⚠" : "○";
       
-      // Location line
+      // Type label with color
+      const typeLabels: Record<string, string> = {
+        'recogida': '📦 RECOGIDA',
+        'entrega': '🚚 ENTREGA',
+        'recogida+entrega': '🔄 RECOGIDA + ENTREGA'
+      };
+      const typeLabel = typeLabels[stop.type] || stop.type.toUpperCase();
+      
+      // Location line with type
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      let text = `${idx + 1}. ${statusText} ${name}`;
-      if (address) text += ` (${address})`;
-      doc.text(text, margin + 8, originY);
-      originY += 6;
+      const text = `${idx + 1}. ${statusText} ${typeLabel}: ${name}`;
+      doc.text(text, margin + 4, originY);
+      originY += 5;
+      
+      // Address if different from name
+      if (address && address !== name) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100, 116, 139);
+        doc.text(`📍 ${address}`, margin + 12, originY);
+        doc.setTextColor(0, 0, 0);
+        originY += 5;
+      }
       
       // Additional info if signed
-      if (origin.signedAt || origin.quantity || origin.signerName || origin.signerDocument) {
+      if (stop.signedAt || stop.quantity || stop.signerName || stop.signerDocument) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(100, 116, 139);
         
         let infoLine = "";
-        if (origin.signedAt) {
+        if (stop.signedAt) {
           try {
-            infoLine += `Hora: ${format(new Date(origin.signedAt), "HH:mm")}`;
+            infoLine += `Hora: ${format(new Date(stop.signedAt), "HH:mm")}`;
           } catch (e) {
-            infoLine += `Hora: ${origin.signedAt}`;
+            infoLine += `Hora: ${stop.signedAt}`;
           }
         }
-        if (origin.signerName) infoLine += `${infoLine ? " | " : ""}Firmado por: ${origin.signerName}`;
-        if (origin.signerDocument) infoLine += ` (${origin.signerDocument})`;
-        if (origin.quantity) infoLine += `${infoLine ? " | " : ""}Cantidad: ${origin.quantity}`;
+        if (stop.signerName) infoLine += `${infoLine ? " | " : ""}Firmado por: ${stop.signerName}`;
+        if (stop.signerDocument) infoLine += ` (${stop.signerDocument})`;
+        if (stop.quantity) infoLine += `${infoLine ? " | " : ""}Cantidad: ${stop.quantity}`;
         
         if (infoLine) {
           doc.text(infoLine, margin + 12, originY);
           originY += 5;
         }
         
+        // Geo location if available
+        if (stop.geoLocation) {
+          doc.text(`📍 GPS: ${stop.geoLocation.lat.toFixed(6)}, ${stop.geoLocation.lng.toFixed(6)}`, margin + 12, originY);
+          originY += 5;
+        }
+        
         // Incidence warning
-        if (origin.incidence) {
-          doc.setTextColor(180, 83, 9); // Orange for incidence
-          doc.text(`⚠ Incidencia: ${origin.incidence}`, margin + 12, originY);
+        if (stop.incidence) {
+          doc.setTextColor(180, 83, 9);
+          doc.text(`⚠ Incidencia: ${stop.incidence}`, margin + 12, originY);
           originY += 5;
         }
         
@@ -228,13 +283,13 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
       }
       
       // Signature image if present
-      if (origin.signature && origin.signature.length > 100) {
+      if (stop.signature && stop.signature.length > 100) {
         try {
           const sigWidth = 40;
           const sigHeight = 20;
           const sigX = margin + 12;
           
-          let sigData = origin.signature;
+          let sigData = stop.signature;
           if (!sigData.startsWith('data:image/')) {
             sigData = `data:image/png;base64,${sigData}`;
           }
@@ -242,13 +297,13 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
           doc.addImage(sigData, 'PNG', sigX, originY, sigWidth, sigHeight);
           originY += sigHeight + 4;
         } catch (e) {
-          console.error("Error adding pickup signature to PDF:", e);
+          console.error("Error adding stop signature to PDF:", e);
         }
       }
       
-      originY += 2; // Spacing between pickups
+      originY += 3;
       
-      // Check for page break needed for next pickup
+      // Check for page break needed for next stop
       if (originY > pageHeight - 60) {
         doc.addPage();
         originY = 25;
@@ -258,16 +313,17 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
     yPos = originY + 4;
   }
 
-  // Row 3: Destination (Single Final Destination)
-  drawSectionBox(doc, margin, yPos, contentWidth, 18);
-  drawLabel(doc, "DESTINO FINAL (ENTREGA)", margin + 4, yPos + 6);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 41, 59);
-  doc.text(note.destination || "N/A", margin + 8, yPos + 13);
-  doc.setTextColor(0, 0, 0);
-
-  yPos += 22;
+  // Show legacy destination if no stops format
+  if (!note.stops || note.stops.length === 0) {
+    drawSectionBox(doc, margin, yPos, contentWidth, 18);
+    drawLabel(doc, "DESTINO FINAL (ENTREGA)", margin + 4, yPos + 6);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text(note.destination || "N/A", margin + 8, yPos + 13);
+    doc.setTextColor(0, 0, 0);
+    yPos += 22;
+  }
 
   // Row 4: Carload & Observations
   const obsHeight = 25; // Reduced from 30

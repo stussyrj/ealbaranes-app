@@ -3648,6 +3648,22 @@ export default function DashboardPage() {
           if (!open) setSelectedNoteForPickups(null);
         }}
         deliveryNote={selectedNoteForPickups}
+        onStopSigned={async (index, data) => {
+          if (!selectedNoteForPickups) return;
+          try {
+            const currentStops = (selectedNoteForPickups as any).stops || [];
+            const updatedStops = [...currentStops];
+            updatedStops[index] = { ...updatedStops[index], ...data };
+            await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPickups.id}`, {
+              stops: updatedStops
+            });
+            await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
+            setSelectedNoteForPickups((prev: any) => prev ? { ...prev, stops: updatedStops } : null);
+            toast({ title: "Parada confirmada" });
+          } catch (error) {
+            toast({ title: "Error al confirmar parada", variant: "destructive" });
+          }
+        }}
         onPickupSigned={async (index, data) => {
           if (!selectedNoteForPickups) return;
           try {
@@ -3656,11 +3672,8 @@ export default function DashboardPage() {
             await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPickups.id}`, {
               pickupOrigins: updatedOrigins
             });
-            await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-            setSelectedNoteForPickups((prev: any) => prev ? { ...prev, pickupOrigins: updatedOrigins } : null);
-            toast({ title: "Recogida confirmada" });
           } catch (error) {
-            toast({ title: "Error al confirmar recogida", variant: "destructive" });
+            console.error("Error syncing pickup origin:", error);
           }
         }}
       />

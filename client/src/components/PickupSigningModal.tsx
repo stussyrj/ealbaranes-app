@@ -6,22 +6,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Check, Eraser, MapPin, Package, AlertTriangle, Clock, ChevronRight, Pen, FileText } from "lucide-react";
-import type { PickupOrigin, DeliveryNote } from "@shared/schema";
+import type { PickupOrigin, DeliveryNote, Stop } from "@shared/schema";
+import { Navigation } from "lucide-react";
 
 interface PickupSigningModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   deliveryNote: DeliveryNote | null;
-  onPickupSigned: (pickupIndex: number, pickupData: Partial<PickupOrigin>) => Promise<void>;
+  onStopSigned?: (stopIndex: number, stopData: Partial<Stop>) => Promise<void>;
+  onPickupSigned?: (pickupIndex: number, pickupData: Partial<PickupOrigin>) => Promise<void>;
 }
 
 export function PickupSigningModal({
   open,
   onOpenChange,
   deliveryNote,
+  onStopSigned,
   onPickupSigned,
 }: PickupSigningModalProps) {
-  const [selectedPickupIndex, setSelectedPickupIndex] = useState<number | null>(null);
+  const [selectedStopIndex, setSelectedStopIndex] = useState<number | null>(null);
   const [signerName, setSignerName] = useState("");
   const [signerDocument, setSignerDocument] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -38,11 +41,32 @@ export function PickupSigningModal({
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const [hasSignature, setHasSignature] = useState(false);
 
+  // Fallback robusto: si hay stops, usarlos; si no, convertir pickupOrigins legacy
+  const rawStops: Stop[] = (deliveryNote as any)?.stops || [];
   const pickups = deliveryNote?.pickupOrigins || [];
+  const usingLegacyMode = rawStops.length === 0 && pickups.length > 0;
+  
+  // Convertir pickupOrigins legacy a formato stops si es necesario
+  const stops: Stop[] = usingLegacyMode
+    ? pickups.map((p, idx, arr) => ({
+        address: p.address || "",
+        name: p.name || "",
+        type: (idx === arr.length - 1 ? "entrega" : "recogida") as "recogida" | "entrega" | "recogida+entrega",
+        orderIndex: idx,
+        status: p.status || "pending",
+        signature: p.signature,
+        signerName: p.signerName,
+        signerDocument: p.signerDocument,
+        signedAt: p.signedAt,
+        quantity: p.quantity,
+        incidence: p.incidence,
+        geoLocation: p.geoLocation,
+      }))
+    : rawStops;
 
   useEffect(() => {
     if (open) {
-      setSelectedPickupIndex(null);
+      setSelectedStopIndex(null);
       setSignerName("");
       setSignerDocument("");
       setQuantity("");
@@ -175,27 +199,47 @@ export function PickupSigningModal({
   }, []);
 
   const handleConfirmSignature = async () => {
-    if (selectedPickupIndex === null) return;
+    if (selectedStopIndex === null) return;
     
     setIsSubmitting(true);
     
     try {
       const now = new Date().toISOString();
       
-      const pickupData: Partial<PickupOrigin> = {
+      const stopData: Partial<Stop> = {
         signedAt: now,
         status: hasIncidence ? "problem" : "completed",
       };
       
-      if (signerName.trim()) pickupData.signerName = signerName.trim();
-      if (signerDocument.trim()) pickupData.signerDocument = signerDocument.trim();
-      if (quantity.trim()) pickupData.quantity = quantity.trim();
-      if (hasIncidence && incidence.trim()) pickupData.incidence = incidence.trim();
-      if (geoLocation) pickupData.geoLocation = geoLocation;
+      if (signerName.trim()) stopData.signerName = signerName.trim();
+      if (signerDocument.trim()) stopData.signerDocument = signerDocument.trim();
+      if (quantity.trim()) stopData.quantity = quantity.trim();
+      if (hasIncidence && incidence.trim()) stopData.incidence = incidence.trim();
+      if (geoLocation) stopData.geoLocation = geoLocation;
 
-      await onPickupSigned(selectedPickupIndex, pickupData);
+      // Siempre llamar a onStopSigned si está disponible (para llamadores nuevos)
+      if (onStopSigned) {
+        await onStopSigned(selectedStopIndex, stopData);
+      }
       
-      setSelectedPickupIndex(null);
+      // También llamar a onPickupSigned para compatibilidad legacy
+      if (onPickupSigned) {
+        if (usingLegacyMode) {
+          // En modo legacy, el índice es directo
+          await onPickupSigned(selectedStopIndex, stopData as Partial<PickupOrigin>);
+        } else {
+          // En modo nuevo, buscar el pickup correspondiente por nombre/dirección
+          const selectedStop = stops[selectedStopIndex];
+          const pickupIndex = pickups.findIndex(p => 
+            p.name === selectedStop?.name || p.address === selectedStop?.address
+          );
+          if (pickupIndex >= 0) {
+            await onPickupSigned(pickupIndex, stopData as Partial<PickupOrigin>);
+          }
+        }
+      }
+      
+      setSelectedStopIndex(null);
       setIsSigning(false);
       setSignerName("");
       setSignerDocument("");
@@ -203,23 +247,33 @@ export function PickupSigningModal({
       setIncidence("");
       setHasIncidence(false);
     } catch (error) {
-      console.error("Error signing pickup:", error);
+      console.error("Error signing stop:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const getPickupStatus = (pickup: PickupOrigin) => {
-    if (pickup.status === "completed") return { label: "Completado", color: "bg-green-500" };
-    if (pickup.status === "problem") return { label: "Con incidencia", color: "bg-yellow-500" };
+  const getStopStatus = (stop: Stop) => {
+    if (stop.status === "completed") return { label: "Completado", color: "bg-green-500" };
+    if (stop.status === "problem") return { label: "Con incidencia", color: "bg-yellow-500" };
     return { label: "Pendiente", color: "bg-gray-400" };
   };
 
-  const pendingPickups = pickups.filter(p => p.status !== "completed" && p.status !== "problem");
-  const completedPickups = pickups.filter(p => p.status === "completed" || p.status === "problem");
+  const getStopTypeLabel = (type: string) => {
+    switch (type) {
+      case "recogida": return { label: "Recogida", color: "text-blue-600", icon: MapPin };
+      case "entrega": return { label: "Entrega", color: "text-green-600", icon: Navigation };
+      case "recogida+entrega": return { label: "Recogida + Entrega", color: "text-purple-600", icon: Package };
+      default: return { label: type, color: "text-gray-600", icon: MapPin };
+    }
+  };
 
-  if (isSigning && selectedPickupIndex !== null) {
-    const selectedPickup = pickups[selectedPickupIndex];
+  const pendingStops = stops.filter(s => s.status !== "completed" && s.status !== "problem");
+  const completedStops = stops.filter(s => s.status === "completed" || s.status === "problem");
+
+  if (isSigning && selectedStopIndex !== null) {
+    const selectedStop = stops[selectedStopIndex];
+    const stopTypeInfo = getStopTypeLabel(selectedStop?.type || "recogida");
     
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -227,7 +281,7 @@ export function PickupSigningModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pen className="h-5 w-5" />
-              Firmar Recogida
+              Firmar Parada
             </DialogTitle>
           </DialogHeader>
           
@@ -235,17 +289,20 @@ export function PickupSigningModal({
             <div className="bg-muted/30 border rounded-lg p-4 transition-all">
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-semibold text-lg">
-                  {selectedPickupIndex + 1}
+                  {selectedStopIndex + 1}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Recogida actual</p>
-                  <p className="font-bold text-xl truncate">{selectedPickup?.name}</p>
+                  <div className={`flex items-center gap-1 text-xs uppercase tracking-wider font-semibold mb-0.5 ${stopTypeInfo.color}`}>
+                    <stopTypeInfo.icon className="h-3 w-3" />
+                    {stopTypeInfo.label}
+                  </div>
+                  <p className="font-bold text-xl truncate">{selectedStop?.name || selectedStop?.address}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3 text-sm text-foreground bg-background/50 p-3 rounded-md border shadow-sm">
                 <MapPin className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
-                <span className="font-medium">{selectedPickup?.address || "Sin dirección"}</span>
+                <span className="font-medium">{selectedStop?.address || "Sin dirección"}</span>
               </div>
             </div>
 
@@ -329,9 +386,9 @@ export function PickupSigningModal({
                 className="flex-1"
                 onClick={() => {
                   setIsSigning(false);
-                  setSelectedPickupIndex(null);
+                  setSelectedStopIndex(null);
                 }}
-                data-testid="button-cancel-pickup-signing"
+                data-testid="button-cancel-stop-signing"
               >
                 Cancelar
               </Button>
@@ -339,7 +396,7 @@ export function PickupSigningModal({
                 className="flex-1"
                 onClick={handleConfirmSignature}
                 disabled={isSubmitting || !signerName.trim() || signerDocument.trim().length < 8}
-                data-testid="button-confirm-pickup-signature"
+                data-testid="button-confirm-stop-signature"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -349,7 +406,7 @@ export function PickupSigningModal({
                 ) : (
                   <>
                     <Check className="h-4 w-4 mr-2" />
-                    Confirmar Recogida
+                    Confirmar Parada
                   </>
                 )}
               </Button>
@@ -366,7 +423,7 @@ export function PickupSigningModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Gestión de Recogidas
+            Gestión de Paradas
           </DialogTitle>
         </DialogHeader>
 
@@ -376,37 +433,43 @@ export function PickupSigningModal({
             <p className="text-xs text-muted-foreground">{deliveryNote?.clientName}</p>
           </div>
 
-          {pendingPickups.length > 0 && (
+          {pendingStops.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium flex items-center gap-2">
                 <Clock className="h-4 w-4 text-orange-500" />
-                Recogidas Pendientes ({pendingPickups.length})
+                Paradas Pendientes ({pendingStops.length})
               </h3>
               <div className="space-y-2">
-                {pickups.map((pickup, index) => {
-                  if (pickup.status === "completed" || pickup.status === "problem") return null;
-                  const status = getPickupStatus(pickup);
+                {stops.map((stop, index) => {
+                  if (stop.status === "completed" || stop.status === "problem") return null;
+                  const status = getStopStatus(stop);
+                  const typeInfo = getStopTypeLabel(stop.type);
+                  const TypeIcon = typeInfo.icon;
                   
                   return (
                     <button
                       key={index}
                       onClick={() => {
-                        setSelectedPickupIndex(index);
+                        setSelectedStopIndex(index);
                         setIsSigning(true);
                       }}
                       className="w-full p-3 rounded-lg border bg-card hover-elevate text-left flex items-center justify-between gap-3"
-                      data-testid={`button-pickup-${index}`}
+                      data-testid={`button-stop-${index}`}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-medium text-muted-foreground">#{index + 1}</span>
+                          <Badge variant="outline" className={`text-[10px] ${typeInfo.color}`}>
+                            <TypeIcon className="h-3 w-3 mr-1" />
+                            {typeInfo.label}
+                          </Badge>
                           <Badge variant="outline" className="text-[10px]">
                             <span className={`w-1.5 h-1.5 rounded-full ${status.color} mr-1`} />
                             {status.label}
                           </Badge>
                         </div>
-                        <p className="font-medium text-sm truncate">{pickup.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{pickup.address}</p>
+                        <p className="font-medium text-sm truncate">{stop.name || stop.address}</p>
+                        <p className="text-xs text-muted-foreground truncate">{stop.address}</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     </button>
@@ -416,51 +479,57 @@ export function PickupSigningModal({
             </div>
           )}
 
-          {completedPickups.length > 0 && (
+          {completedStops.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500" />
-                Recogidas Completadas ({completedPickups.length})
+                Paradas Completadas ({completedStops.length})
               </h3>
               <div className="space-y-2">
-                {pickups.map((pickup, index) => {
-                  if (pickup.status !== "completed" && pickup.status !== "problem") return null;
-                  const status = getPickupStatus(pickup);
+                {stops.map((stop, index) => {
+                  if (stop.status !== "completed" && stop.status !== "problem") return null;
+                  const status = getStopStatus(stop);
+                  const typeInfo = getStopTypeLabel(stop.type);
+                  const TypeIcon = typeInfo.icon;
                   
                   return (
                     <div
                       key={index}
                       className="p-3 rounded-lg border bg-muted/30"
-                      data-testid={`pickup-completed-${index}`}
+                      data-testid={`stop-completed-${index}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-medium text-muted-foreground">#{index + 1}</span>
+                        <Badge variant="outline" className={`text-[10px] ${typeInfo.color}`}>
+                          <TypeIcon className="h-3 w-3 mr-1" />
+                          {typeInfo.label}
+                        </Badge>
                         <Badge variant="outline" className="text-[10px]">
                           <span className={`w-1.5 h-1.5 rounded-full ${status.color} mr-1`} />
                           {status.label}
                         </Badge>
-                        {pickup.signedAt && (
+                        {stop.signedAt && (
                           <span className="text-[10px] text-muted-foreground">
-                            {new Date(pickup.signedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(stop.signedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                           </span>
                         )}
                       </div>
-                      <p className="font-medium text-sm">{pickup.name}</p>
-                      <p className="text-xs text-muted-foreground">{pickup.address}</p>
-                      {pickup.signerName && (
+                      <p className="font-medium text-sm">{stop.name || stop.address}</p>
+                      <p className="text-xs text-muted-foreground">{stop.address}</p>
+                      {stop.signerName && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Firmado por: {pickup.signerName}
+                          Firmado por: {stop.signerName}
                         </p>
                       )}
-                      {pickup.quantity && (
+                      {stop.quantity && (
                         <p className="text-xs text-muted-foreground">
-                          Cantidad: {pickup.quantity}
+                          Cantidad: {stop.quantity}
                         </p>
                       )}
-                      {pickup.incidence && (
+                      {stop.incidence && (
                         <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-xs text-yellow-700 dark:text-yellow-300">
                           <AlertTriangle className="h-3 w-3 inline mr-1" />
-                          {pickup.incidence}
+                          {stop.incidence}
                         </div>
                       )}
                     </div>
@@ -470,9 +539,9 @@ export function PickupSigningModal({
             </div>
           )}
 
-          {pickups.length === 0 && (
+          {stops.length === 0 && (
             <p className="text-center text-muted-foreground py-4">
-              No hay recogidas registradas
+              No hay paradas registradas
             </p>
           )}
         </div>

@@ -2110,24 +2110,28 @@ export default function WorkerDashboard() {
           if (!open) setSelectedNoteForPickups(null);
         }}
         deliveryNote={selectedNoteForPickups}
-        onPickupSigned={async (pickupIndex, pickupData) => {
+        onStopSigned={async (stopIndex, stopData) => {
           if (!selectedNoteForPickups) return;
           try {
-            await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPickups.id}/pickups/${pickupIndex}`, pickupData);
+            const currentStops = (selectedNoteForPickups as any).stops || [];
+            const updatedStops = [...currentStops];
+            updatedStops[stopIndex] = { ...updatedStops[stopIndex], ...stopData };
+            await apiRequest("PATCH", `/api/delivery-notes/${selectedNoteForPickups.id}`, {
+              stops: updatedStops
+            });
             await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-            // Refresh the selected note
             const response = await apiRequest("GET", `/api/delivery-notes/${selectedNoteForPickups.id}`);
             const updatedNote = await response.json();
             setSelectedNoteForPickups(updatedNote);
             toast({
-              title: "Recogida firmada",
-              description: `Recogida #${pickupIndex + 1} completada correctamente`,
+              title: "Parada firmada",
+              description: `Parada #${stopIndex + 1} completada correctamente`,
             });
           } catch (error) {
-            console.error("Error signing pickup:", error);
+            console.error("Error signing stop:", error);
             toast({
               title: "Error",
-              description: "No se pudo guardar la firma de recogida",
+              description: "No se pudo guardar la firma de parada",
               variant: "destructive",
             });
             throw error;
