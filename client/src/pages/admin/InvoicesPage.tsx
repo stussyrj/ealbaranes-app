@@ -46,10 +46,11 @@ import {
   X,
   Trash2,
   Edit,
+  AlertTriangle,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
-import type { InvoiceTemplate, Invoice, DeliveryNote, BillingClient } from "@shared/schema";
+import type { InvoiceTemplate, Invoice, DeliveryNote, BillingClient, PickupOrigin } from "@shared/schema";
 
 function InvoiceTemplateSkeleton() {
   return (
@@ -248,13 +249,24 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
     }
     const items: LineItemPrice[] = selected.map((note) => {
       // Format pickup origins
-      const pickupOrigins = note.pickupOrigins as { name: string; address: string }[] | null;
+      const pickupOrigins = note.pickupOrigins as PickupOrigin[] | null;
       let pickupText = "Sin origen";
+      let incidencesText = "";
+
       if (pickupOrigins && pickupOrigins.length > 0) {
         pickupText = pickupOrigins
           .map((o) => o.name || o.address || "")
           .filter(Boolean)
           .join(", ");
+        
+        // Collect incidences
+        const incidences = pickupOrigins
+          .filter(o => o.status === "problem" && o.incidence)
+          .map(o => `${o.name}: ${o.incidence}`);
+        
+        if (incidences.length > 0) {
+          incidencesText = ` | INCIDENCIAS: ${incidences.join(" | ")}`;
+        }
       }
       
       const destinationText = note.destination || "Sin destino";
@@ -264,6 +276,12 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
       if (note.vehicleType) {
         description += ` | Vehículo: ${note.vehicleType}`;
       }
+      
+      // Add incidences to description automatically if they exist
+      if (incidencesText) {
+        description += incidencesText;
+      }
+
       if (includeObservations && note.observations) {
         description += ` | Obs: ${note.observations}`;
       }
@@ -548,12 +566,28 @@ function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalProps) {
                   return (
                   <div key={item.deliveryNoteId} className="p-3 bg-muted/50 rounded-lg space-y-2">
                     <div className="space-y-1">
-                      <Label>Descripción</Label>
+                      <div className="flex justify-between items-center">
+                        <Label>Descripción</Label>
+                        {currentNote?.pickupOrigins && (currentNote.pickupOrigins as PickupOrigin[]).some(p => p.status === "problem") && (
+                          <Badge variant="outline" className="text-[10px] bg-yellow-100 text-yellow-800 border-yellow-200 flex gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Incidencia detectada
+                          </Badge>
+                        )}
+                      </div>
                       <Input
                         value={item.description}
                         onChange={(e) => updateLineItemDescription(index, e.target.value)}
                         data-testid={`input-description-${index}`}
                       />
+                      {currentNote?.pickupOrigins && (currentNote.pickupOrigins as PickupOrigin[])
+                        .filter(p => p.status === "problem" && p.incidence)
+                        .map((p, idx) => (
+                          <p key={idx} className="text-[11px] text-yellow-700 dark:text-yellow-400 font-medium">
+                            • Incidencia en {p.name}: {p.incidence}
+                          </p>
+                        ))
+                      }
                     </div>
                     <div className="flex gap-3 items-end">
                       <div className="flex-1 space-y-1">
