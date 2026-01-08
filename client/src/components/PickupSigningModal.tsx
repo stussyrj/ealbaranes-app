@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Check, Eraser, MapPin, Package, AlertTriangle, Clock, ChevronRight, Pen } from "lucide-react";
+import { Check, Eraser, MapPin, Package, AlertTriangle, Clock, ChevronRight, Pen, FileText } from "lucide-react";
 import type { PickupOrigin, DeliveryNote } from "@shared/schema";
 
 interface PickupSigningModalProps {
