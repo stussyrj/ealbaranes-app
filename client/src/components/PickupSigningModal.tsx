@@ -239,18 +239,20 @@ export function PickupSigningModal({
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Recogida seleccionada</p>
-                  <p className="font-semibold">{selectedPickup?.name}</p>
+                  <p className="font-semibold text-base">{selectedPickup?.name}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2 text-sm text-muted-foreground pl-11">
-                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>{selectedPickup?.address || "Sin dirección"}</span>
+                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
+                <span className="font-medium">{selectedPickup?.address || "Sin dirección"}</span>
               </div>
               <div className="mt-4 pt-4 border-t border-primary/20">
-                <p className="text-[10px] uppercase tracking-wider font-semibold text-primary/70 mb-1">Nota Importante</p>
-                <p className="text-xs italic text-muted-foreground leading-relaxed">
-                  Ya no se requiere firma digital, solo el nombre del firmante y la confirmación de la recogida.
-                </p>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-primary mb-1">Nota Importante</p>
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-xs italic text-yellow-800 dark:text-yellow-200 leading-relaxed font-medium">
+                    Ya no se requiere firma digital, solo el nombre del firmante y la confirmación de la recogida.
+                  </p>
+                </div>
               </div>
             </div>
 
