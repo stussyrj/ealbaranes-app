@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
 import { Link } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { TrendingUp, Truck, X, Download, Share2, FileDown, CheckCircle, Clock, FileText, Plus, Calendar, Filter, Receipt, Banknote, User, Hourglass, RefreshCw, Loader2, Camera, Upload, Archive, Pen, Image, ArrowRight, ChevronDown, ChevronUp, MapPin, CircleDot, Trash2, RotateCcw, Search, Eye, Info, Navigation } from "lucide-react";
-import type { PickupOrigin } from "@shared/schema";
+import type { PickupOrigin, Stop, StopType } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,8 @@ export default function DashboardPage() {
   const [isCreatingDelivery, setIsCreatingDelivery] = useState(false);
   const [formData, setFormData] = useState({
     clientName: "",
+    stops: [{ address: "", name: "", type: "recogida" as StopType }] as Stop[],
+    // Legacy fields (mantener por compatibilidad)
     pickupOrigins: [{ name: "", address: "" }] as PickupOrigin[],
     destination: "",
     vehicleType: "Furgoneta",
@@ -332,6 +335,51 @@ export default function DashboardPage() {
   const formatOriginsForPdf = (origins: PickupOrigin[] | null | undefined): string => {
     if (!origins || origins.length === 0) return 'N/A';
     return origins.map(o => formatOriginString(o)).join(', ');
+  };
+  
+  // Helper to format stops (nuevo modelo)
+  const formatStops = (stops: Stop[] | null | undefined, maxDisplay: number = 3): string => {
+    if (!stops || stops.length === 0) return 'N/A';
+    const formatStop = (s: Stop) => {
+      const typeIcon = s.type === 'recogida' ? '[R]' : s.type === 'entrega' ? '[E]' : '[R+E]';
+      return `${typeIcon} ${s.address}`;
+    };
+    if (stops.length <= maxDisplay) return stops.map(formatStop).join(' → ');
+    return `${stops.slice(0, maxDisplay).map(formatStop).join(' → ')} (+${stops.length - maxDisplay})`;
+  };
+  
+  // Helper to get route description (uses stops if available, otherwise legacy format)
+  const getRouteDescription = (note: any): string => {
+    if (note.stops && Array.isArray(note.stops) && note.stops.length > 0) {
+      return formatStops(note.stops);
+    }
+    // Fallback to legacy format
+    if (note.pickupOrigins?.length && note.destination) {
+      return `${formatOrigins(note.pickupOrigins)} → ${note.destination}`;
+    }
+    return note.quoteId || 'N/A';
+  };
+  
+  // Helper component to display stops visually
+  const StopsDisplay = ({ stops }: { stops: Stop[] }) => {
+    return (
+      <div className="space-y-1">
+        {stops.map((stop, idx) => (
+          <div key={idx} className="flex items-center gap-2 text-sm">
+            {stop.type === "recogida" && <MapPin className="w-3 h-3 text-blue-500 shrink-0" />}
+            {stop.type === "entrega" && <Navigation className="w-3 h-3 text-green-500 shrink-0" />}
+            {stop.type === "recogida+entrega" && (
+              <div className="flex shrink-0">
+                <MapPin className="w-2.5 h-2.5 text-blue-500" />
+                <Navigation className="w-2.5 h-2.5 text-green-500 -ml-0.5" />
+              </div>
+            )}
+            <span className="truncate flex-1">{stop.address}</span>
+            {stop.signature && <CheckCircle className="w-3 h-3 text-green-500 shrink-0" />}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const previewDeliveryNote = (photo: string) => {
@@ -2808,10 +2856,49 @@ export default function DashboardPage() {
                     const validRoutes = formData.pickupOrigins.filter(o => o.name.trim() !== "" && o.address.trim() !== "");
                     const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
                     
+                    // Generar stops a partir de pickupOrigins sin duplicados
+                    // Ejemplo: [{name: "A", address: "B"}, {name: "B", address: "C"}]
+                    // Genera: [A=recogida, B=recogida+entrega, C=entrega]
+                    const generatedStops: Stop[] = [];
+                    const seenAddresses = new Set<string>();
+                    
+                    validRoutes.forEach((route, idx) => {
+                      const isLast = idx === validRoutes.length - 1;
+                      
+                      // Origen del tramo (recogida)
+                      if (route.name && !seenAddresses.has(route.name.toLowerCase())) {
+                        seenAddresses.add(route.name.toLowerCase());
+                        generatedStops.push({
+                          address: route.name,
+                          name: "",
+                          type: "recogida" as StopType,
+                        });
+                      }
+                      
+                      // Destino del tramo
+                      if (route.address && !seenAddresses.has(route.address.toLowerCase())) {
+                        seenAddresses.add(route.address.toLowerCase());
+                        generatedStops.push({
+                          address: route.address,
+                          name: "",
+                          type: isLast ? "entrega" as StopType : "recogida+entrega" as StopType,
+                        });
+                      } else if (route.address && isLast) {
+                        // El destino final ya existe pero necesita marcarse como entrega
+                        const existingStop = generatedStops.find(
+                          s => s.address.toLowerCase() === route.address.toLowerCase()
+                        );
+                        if (existingStop && existingStop.type === "recogida") {
+                          existingStop.type = "recogida+entrega" as StopType;
+                        }
+                      }
+                    });
+                    
                     const deliveryNoteData = {
                       quoteId: `custom-${Date.now()}`,
                       workerId: user?.id,
                       clientName: formData.clientName.trim(),
+                      stops: generatedStops,
                       pickupOrigins: validRoutes,
                       destination: lastDestination.trim(),
                       vehicleType: formData.vehicleType,
@@ -2839,6 +2926,7 @@ export default function DashboardPage() {
                       const now = new Date();
                       setFormData({
                         clientName: "",
+                        stops: [{ address: "", name: "", type: "recogida" as StopType }],
                         pickupOrigins: [{ name: "", address: "" }],
                         destination: "",
                         vehicleType: "Furgoneta",
@@ -3569,7 +3657,7 @@ export default function DashboardPage() {
               pickupOrigins: updatedOrigins
             });
             await queryClient.invalidateQueries({ queryKey: ["/api/delivery-notes"] });
-            setSelectedNoteForPickups(prev => prev ? { ...prev, pickupOrigins: updatedOrigins } : null);
+            setSelectedNoteForPickups((prev: any) => prev ? { ...prev, pickupOrigins: updatedOrigins } : null);
             toast({ title: "Recogida confirmada" });
           } catch (error) {
             toast({ title: "Error al confirmar recogida", variant: "destructive" });

@@ -190,6 +190,31 @@ export const pickupOriginSchema = z.object({
 
 export type PickupOrigin = z.infer<typeof pickupOriginSchema>;
 
+// Nuevo modelo de paradas estilo talonario
+export const stopTypeEnum = z.enum(["recogida", "entrega", "recogida+entrega"]);
+
+export const stopSchema = z.object({
+  address: z.string(),
+  name: z.string().optional(),
+  type: stopTypeEnum,
+  orderIndex: z.number().optional(),
+  status: z.enum(["pending", "completed", "problem"]).optional(),
+  quantity: z.string().optional(),
+  signature: z.string().optional(),
+  signerName: z.string().optional(),
+  signerDocument: z.string().optional(),
+  signedAt: z.string().optional(),
+  incidence: z.string().optional(),
+  observations: z.string().optional(),
+  geoLocation: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).optional(),
+});
+
+export type Stop = z.infer<typeof stopSchema>;
+export type StopType = z.infer<typeof stopTypeEnum>;
+
 export const deliveryNotes = pgTable("delivery_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   noteNumber: integer("note_number").notNull(),
@@ -197,6 +222,9 @@ export const deliveryNotes = pgTable("delivery_notes", {
   workerId: varchar("worker_id").notNull(),
   creatorType: text("creator_type").default("worker"),
   clientName: text("client_name"),
+  // Nuevo modelo: lista de paradas (recogida/entrega/ambas)
+  stops: jsonb("stops").$type<Stop[]>(),
+  // Legacy fields (mantener por compatibilidad durante migración)
   pickupOrigins: jsonb("pickup_origins").$type<PickupOrigin[]>(),
   destination: text("destination"),
   vehicleType: text("vehicle_type"),

@@ -25,7 +25,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient as qc } from "@/lib/queryClient";
-import type { Quote, DeliveryNote, PickupOrigin } from "@shared/schema";
+import type { Quote, DeliveryNote, PickupOrigin, Stop, StopType } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Navigation } from "lucide-react";
 
 export default function WorkerDashboard() {
   const { user } = useAuth();
@@ -70,6 +72,8 @@ export default function WorkerDashboard() {
   const isSubmittingRef = useRef(false);
   const [formData, setFormData] = useState({
     clientName: "",
+    stops: [{ address: "", name: "", type: "recogida" as StopType }] as Stop[],
+    // Legacy fields (mantener por compatibilidad)
     pickupOrigins: [{ name: "", address: "" }] as PickupOrigin[],
     destination: "",
     vehicleType: "Furgoneta",
@@ -152,12 +156,36 @@ export default function WorkerDashboard() {
     return `Recogida: ${from} → Entrega: ${to}`;
   };
   
-  // Helper to format multiple origins compactly
+  // Helper to format multiple origins compactly (legacy)
   const formatOrigins = (origins: PickupOrigin[] | null | undefined, maxDisplay: number = 2): string => {
     if (!origins || origins.length === 0) return 'N/A';
     if (origins.length === 1) return formatOrigin(origins[0]);
     if (origins.length <= maxDisplay) return origins.map(o => formatOrigin(o)).join(', ');
     return `${origins.slice(0, maxDisplay).map(o => formatOrigin(o)).join(', ')} (+${origins.length - maxDisplay})`;
+  };
+  
+  // Helper to format stops (nuevo modelo)
+  const formatStops = (stops: Stop[] | null | undefined, maxDisplay: number = 3): string => {
+    if (!stops || stops.length === 0) return 'N/A';
+    const formatStop = (s: Stop) => {
+      const typeIcon = s.type === 'recogida' ? '[R]' : s.type === 'entrega' ? '[E]' : '[R+E]';
+      return `${typeIcon} ${s.address}`;
+    };
+    if (stops.length <= maxDisplay) return stops.map(formatStop).join(' → ');
+    return `${stops.slice(0, maxDisplay).map(formatStop).join(' → ')} (+${stops.length - maxDisplay})`;
+  };
+  
+  // Helper to get route description (uses stops if available, otherwise legacy format)
+  const getRouteDescription = (note: DeliveryNote): string => {
+    const noteWithStops = note as any;
+    if (noteWithStops.stops && Array.isArray(noteWithStops.stops) && noteWithStops.stops.length > 0) {
+      return formatStops(noteWithStops.stops);
+    }
+    // Fallback to legacy format
+    if (note.pickupOrigins?.length && note.destination) {
+      return `${formatOrigins(note.pickupOrigins)} → ${note.destination}`;
+    }
+    return note.quoteId || 'N/A';
   };
   
   // State for tracking which notes have their origins expanded
@@ -595,7 +623,7 @@ export default function WorkerDashboard() {
                 </Badge>
               </div>
               <CardTitle className="text-lg line-clamp-2">
-                {note.pickupOrigins?.length && note.destination ? `${formatOrigins(note.pickupOrigins)} → ${note.destination}` : (note.quoteId || 'N/A')}
+                {getRouteDescription(note)}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 {note.clientName && `Cliente: ${note.clientName}`}
@@ -1200,6 +1228,7 @@ export default function WorkerDashboard() {
                             setSelectedNoteToEdit(note); 
                             setFormData({ 
                               clientName: note.clientName || "", 
+                              stops: (note as any).stops || [{ address: "", name: "", type: "recogida" as StopType }],
                               pickupOrigins: note.pickupOrigins || [{ name: "", address: "" }], 
                               destination: note.destination || "", 
                               vehicleType: note.vehicleType || "Furgoneta", 
@@ -1505,41 +1534,56 @@ export default function WorkerDashboard() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Ruta <span className="text-destructive">*</span></label>
+              <label className="text-sm font-medium">Paradas <span className="text-destructive">*</span></label>
+              <p className="text-xs text-muted-foreground">Añade las direcciones y marca si es recogida, entrega o ambas</p>
               
-              {formData.pickupOrigins.map((origin, index) => (
+              {formData.stops.map((stop, index) => (
                 <div key={index} className="flex items-center gap-2 p-2 border rounded-md bg-muted/30">
-                  <div className="flex-1 grid grid-cols-[1fr_auto_1fr] gap-1 items-center">
+                  <div className="flex items-center gap-1 min-w-0 flex-1">
+                    {stop.type === "recogida" && <MapPin className="w-4 h-4 text-blue-500 shrink-0" />}
+                    {stop.type === "entrega" && <Navigation className="w-4 h-4 text-green-500 shrink-0" />}
+                    {stop.type === "recogida+entrega" && (
+                      <div className="flex shrink-0">
+                        <MapPin className="w-3 h-3 text-blue-500" />
+                        <Navigation className="w-3 h-3 text-green-500 -ml-1" />
+                      </div>
+                    )}
                     <Input
-                      placeholder="De..."
-                      value={origin.name}
+                      placeholder="Dirección..."
+                      value={stop.address}
                       onChange={(e) => {
-                        const newOrigins = [...formData.pickupOrigins];
-                        newOrigins[index] = { ...newOrigins[index], name: e.target.value };
-                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                        const newStops = [...formData.stops];
+                        newStops[index] = { ...newStops[index], address: e.target.value };
+                        setFormData({ ...formData, stops: newStops });
                       }}
-                      className="text-sm"
-                    />
-                    <span className="text-muted-foreground text-sm px-1">→</span>
-                    <Input
-                      placeholder="A..."
-                      value={origin.address}
-                      onChange={(e) => {
-                        const newOrigins = [...formData.pickupOrigins];
-                        newOrigins[index] = { ...newOrigins[index], address: e.target.value };
-                        setFormData({ ...formData, pickupOrigins: newOrigins });
-                      }}
-                      className="text-sm"
+                      className="text-sm flex-1"
                     />
                   </div>
-                  {formData.pickupOrigins.length > 1 && (
+                  <Select
+                    value={stop.type}
+                    onValueChange={(value: StopType) => {
+                      const newStops = [...formData.stops];
+                      newStops[index] = { ...newStops[index], type: value };
+                      setFormData({ ...formData, stops: newStops });
+                    }}
+                  >
+                    <SelectTrigger className="w-[130px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="recogida">Recogida</SelectItem>
+                      <SelectItem value="entrega">Entrega</SelectItem>
+                      <SelectItem value="recogida+entrega">Ambas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.stops.length > 1 && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        const newOrigins = formData.pickupOrigins.filter((_, i) => i !== index);
-                        setFormData({ ...formData, pickupOrigins: newOrigins });
+                        const newStops = formData.stops.filter((_, i) => i !== index);
+                        setFormData({ ...formData, stops: newStops });
                       }}
                       className="h-8 w-8 shrink-0"
                     >
@@ -1554,16 +1598,15 @@ export default function WorkerDashboard() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const lastDestination = formData.pickupOrigins[formData.pickupOrigins.length - 1]?.address || "";
                   setFormData({ 
                     ...formData, 
-                    pickupOrigins: [...formData.pickupOrigins, { name: lastDestination, address: "" }] 
+                    stops: [...formData.stops, { address: "", name: "", type: "recogida" as StopType }] 
                   });
                 }}
                 className="w-full text-xs"
               >
                 <Plus className="w-3 h-3 mr-1" />
-                Añadir tramo
+                Añadir parada
               </Button>
             </div>
             
@@ -1633,7 +1676,7 @@ export default function WorkerDashboard() {
                 Cancelar
               </Button>
               <Button
-                disabled={!formData.clientName.trim() || !formData.pickupOrigins[0]?.name?.trim() || !formData.pickupOrigins[0]?.address?.trim() || isCreatingDelivery}
+                disabled={!formData.clientName.trim() || !formData.stops[0]?.address?.trim() || isCreatingDelivery}
                 onClick={async () => {
                   if (!effectiveWorkerId) {
                     toast({ title: "Error", description: "Usuario no identificado", variant: "destructive" });
@@ -1643,20 +1686,35 @@ export default function WorkerDashboard() {
                   setIsCreatingDelivery(true);
                   
                   try {
-                    const validRoutes = formData.pickupOrigins
-                      .filter(o => o.name.trim() !== "" && o.address.trim() !== "")
-                      .map((route, index) => ({
-                        ...route,
+                    const validStops = formData.stops
+                      .filter(s => s.address.trim() !== "")
+                      .map((stop, index) => ({
+                        ...stop,
                         orderIndex: index,
                         status: "pending" as const,
                       }));
-                    const lastDestination = validRoutes[validRoutes.length - 1]?.address || "";
+                    
+                    // Calcular destination como la última parada de entrega (para compatibilidad legacy)
+                    const deliveryStops = validStops.filter(s => s.type === "entrega" || s.type === "recogida+entrega");
+                    const lastDelivery = deliveryStops[deliveryStops.length - 1]?.address || validStops[validStops.length - 1]?.address || "";
+                    
+                    // Crear pickupOrigins legacy desde las paradas de recogida
+                    const pickupStops = validStops.filter(s => s.type === "recogida" || s.type === "recogida+entrega");
+                    const legacyPickupOrigins = pickupStops.map((s, i) => ({
+                      name: s.name || "",
+                      address: s.address,
+                      orderIndex: i,
+                      status: "pending" as const,
+                    }));
+                    
                     const deliveryNoteData = {
                       quoteId: `custom-${Date.now()}`,
                       workerId: effectiveWorkerId,
                       clientName: formData.clientName.trim(),
-                      pickupOrigins: validRoutes,
-                      destination: lastDestination.trim(),
+                      stops: validStops,
+                      // Legacy fields para compatibilidad
+                      pickupOrigins: legacyPickupOrigins.length > 0 ? legacyPickupOrigins : [{ name: "", address: validStops[0]?.address || "" }],
+                      destination: lastDelivery.trim(),
                       vehicleType: formData.vehicleType,
                       date: formData.date,
                       time: formData.time,
@@ -1685,6 +1743,7 @@ export default function WorkerDashboard() {
                       const now = new Date();
                       setFormData({
                         clientName: "",
+                        stops: [{ address: "", name: "", type: "recogida" as StopType }],
                         pickupOrigins: [{ name: "", address: "" }],
                         destination: "",
                         vehicleType: "Furgoneta",
@@ -1741,14 +1800,43 @@ export default function WorkerDashboard() {
 
               <div className="border-t pt-4">
                 <p className="text-xs text-muted-foreground mb-2">
-                  {selectedNoteDetail.pickupOrigins && selectedNoteDetail.pickupOrigins.length > 1 ? `Recogidas (${selectedNoteDetail.pickupOrigins.length})` : 'Recogida'}
+                  {(selectedNoteDetail as any).stops?.length > 0 
+                    ? `Paradas (${(selectedNoteDetail as any).stops.length})` 
+                    : selectedNoteDetail.pickupOrigins && selectedNoteDetail.pickupOrigins.length > 1 
+                      ? `Recogidas (${selectedNoteDetail.pickupOrigins.length})` 
+                      : 'Recogida'}
                 </p>
-                <p className="text-sm">{formatOrigins(selectedNoteDetail.pickupOrigins) || '-'}</p>
-              </div>
-
-              <div className="border-t pt-4">
-                <p className="text-xs text-muted-foreground mb-2">Entrega</p>
-                <p className="text-sm">{selectedNoteDetail.destination || '-'}</p>
+                {(selectedNoteDetail as any).stops?.length > 0 ? (
+                  <div className="space-y-1">
+                    {(selectedNoteDetail as any).stops.map((stop: Stop, idx: number) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm bg-muted/30 rounded px-2 py-1">
+                        {stop.type === "recogida" && <MapPin className="w-4 h-4 text-blue-500 shrink-0" />}
+                        {stop.type === "entrega" && <Navigation className="w-4 h-4 text-green-500 shrink-0" />}
+                        {stop.type === "recogida+entrega" && (
+                          <div className="flex shrink-0">
+                            <MapPin className="w-3 h-3 text-blue-500" />
+                            <Navigation className="w-3 h-3 text-green-500 -ml-1" />
+                          </div>
+                        )}
+                        <span>{stop.address}</span>
+                        <Badge variant="outline" className="text-xs ml-auto">
+                          {stop.type === "recogida" ? "Recogida" : stop.type === "entrega" ? "Entrega" : "Ambas"}
+                        </Badge>
+                        {stop.signature && <CheckCircle className="w-4 h-4 text-green-500" />}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm">{formatOrigins(selectedNoteDetail.pickupOrigins) || '-'}</p>
+                    {selectedNoteDetail.destination && (
+                      <div className="mt-2 pt-2 border-t">
+                        <p className="text-xs text-muted-foreground mb-1">Entrega</p>
+                        <p className="text-sm">{selectedNoteDetail.destination}</p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {selectedNoteDetail.observations && (

@@ -655,6 +655,9 @@ export async function registerRoutes(
         creatorType: creatorType,
         tenantId: user.tenantId,
         clientName: data.clientName || null,
+        // Nuevo modelo de paradas
+        stops: data.stops || null,
+        // Legacy fields (mantener por compatibilidad)
         pickupOrigins: data.pickupOrigins || (data.pickupOrigin ? [data.pickupOrigin] : null),
         destination: data.destination || null,
         vehicleType: data.vehicleType || null,
@@ -691,16 +694,27 @@ export async function registerRoutes(
       // Create internal message notification (replaces email)
       if (user?.tenantId) {
         const createdBy = user.isAdmin ? 'Empresa' : (user.displayName || user.username || 'Trabajador');
-        const routeLines = (note.pickupOrigins || []).map((o: any, idx: number) => 
-          `${idx + 1}. ${o.name || o.address}`
-        ).join(', ');
-        const fullRoute = `Orígenes: ${routeLines} → Destino Final: ${note.destination || 'N/A'}`;
+        
+        // Usar stops si está disponible, sino legacy pickupOrigins
+        let routeDescription = '';
+        if (note.stops && Array.isArray(note.stops) && note.stops.length > 0) {
+          const stopLines = note.stops.map((s: any, idx: number) => {
+            const typeLabel = s.type === 'recogida' ? 'R' : s.type === 'entrega' ? 'E' : 'R+E';
+            return `${idx + 1}. [${typeLabel}] ${s.address}`;
+          }).join(', ');
+          routeDescription = `Paradas: ${stopLines}`;
+        } else {
+          const routeLines = (note.pickupOrigins || []).map((o: any, idx: number) => 
+            `${idx + 1}. ${o.name || o.address}`
+          ).join(', ');
+          routeDescription = `Orígenes: ${routeLines} → Destino: ${note.destination || 'N/A'}`;
+        }
         
         storage.createMessage({
           tenantId: user.tenantId,
           type: 'delivery_note_created',
           title: `Nuevo Albarán #${note.noteNumber}`,
-          body: `Cliente: ${note.clientName || 'No especificado'}\n${fullRoute}\nCreado por: ${createdBy}`,
+          body: `Cliente: ${note.clientName || 'No especificado'}\n${routeDescription}\nCreado por: ${createdBy}`,
           read: false,
           entityType: 'delivery_note',
           entityId: note.id,
