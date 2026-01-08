@@ -26,7 +26,7 @@ The application is built with a multi-tenant architecture, ensuring complete dat
 - **Backend**: Express + TypeScript.
 - **Database**: PostgreSQL via Neon with Drizzle ORM.
 - **Authentication**: JWT-based authentication system with email verification, password recovery, rate limiting, and Google OAuth 2.0 integration.
-- **Data Handling**: JSONB format for complex data structures like `pickupOrigins`.
+- **Data Handling**: JSONB format for complex data structures like `stops` (nuevo modelo de paradas) y `pickupOrigins` (legacy con soporte retrocompatible).
 - **File Downloads**: Secure file downloads for invoices using JWT tokens in headers.
 - **Error Handling**: Robust validation for registration and user management.
 - **Data Backup**: 
@@ -38,6 +38,7 @@ The application is built with a multi-tenant architecture, ensuring complete dat
 
 ### Feature Specifications
 - **Digital Delivery Notes**: Workers create digital delivery notes with photo and signature capabilities. A delivery note is considered "signed" only when both a photo and a digital signature are present.
+- **Stop-Based Model**: Each delivery note contains multiple stops ("paradas") with types: "recogida" (pickup), "entrega" (delivery), or "recogida+entrega" (both). Each stop supports individual GPS tracking, quantity recording, signatures with signer name/document, and incidence reporting. Visual icons distinguish types: MapPin (blue/recogida), Navigation (green/entrega), Package (purple/both).
 - **Multi-Tenant Management**: Companies register and manage their workers, viewing only their own delivery notes and configurations.
 - **Vehicle Type Management**: Admins can create, edit, and delete vehicle types specific to their tenant. These types are then used by workers when creating delivery notes.
 - **Invoice Management**: Comprehensive invoicing system including template management, a wizard for creation, PDF generation, and sequential numbering. Invoices can include "wait time" pricing, both manually entered and automatically calculated from tracked arrival/departure times.
