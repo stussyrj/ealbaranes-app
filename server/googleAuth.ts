@@ -65,7 +65,20 @@ async function handleGoogleLogin(profile: GoogleProfile) {
 export function setupGoogleAuth(app: Express) {
   const clientID = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const callbackURL = process.env.GOOGLE_CALLBACK_URL || "http://localhost:5000/api/auth/callback";
+  
+  // Determine callback URL based on environment
+  let callbackURL = process.env.GOOGLE_CALLBACK_URL;
+  if (!callbackURL) {
+    // Use REPLIT_DOMAINS for production, REPLIT_DEV_DOMAIN for development
+    const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || process.env.REPLIT_DEV_DOMAIN;
+    if (domain) {
+      callbackURL = `https://${domain}/api/auth/callback`;
+    } else {
+      callbackURL = "http://localhost:5000/api/auth/callback";
+    }
+  }
+  
+  console.log("[googleAuth] Callback URL:", callbackURL);
   
   if (!clientID || !clientSecret) {
     console.log("[googleAuth] Credentials not configured - Google Auth disabled");
