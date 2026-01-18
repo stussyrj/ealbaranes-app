@@ -216,13 +216,13 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
       const name = stop.name || stop.address;
       const address = stop.address || "";
       const status = stop.status || "pending";
-      const statusText = status === "completed" ? "✓" : status === "problem" ? "⚠" : "○";
+      const statusText = status === "completed" ? "[OK]" : status === "problem" ? "[!]" : "[ ]";
       
-      // Type label with color
+      // Type label - use simple text compatible with Helvetica font
       const typeLabels: Record<string, string> = {
-        'recogida': '📦 RECOGIDA',
-        'entrega': '🚚 ENTREGA',
-        'recogida+entrega': '🔄 RECOGIDA + ENTREGA'
+        'recogida': 'RECOGIDA',
+        'entrega': 'ENTREGA',
+        'recogida+entrega': 'RECOGIDA + ENTREGA'
       };
       const typeLabel = typeLabels[stop.type] || stop.type.toUpperCase();
       
@@ -238,7 +238,7 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(100, 116, 139);
-        doc.text(`📍 ${address}`, margin + 12, originY);
+        doc.text(`Dir: ${address}`, margin + 12, originY);
         doc.setTextColor(0, 0, 0);
         originY += 5;
       }
@@ -268,14 +268,14 @@ export function generateDeliveryNotePdf(note: DeliveryNoteWithDetails): Buffer {
         
         // Geo location if available
         if (stop.geoLocation) {
-          doc.text(`📍 GPS: ${stop.geoLocation.lat.toFixed(6)}, ${stop.geoLocation.lng.toFixed(6)}`, margin + 12, originY);
+          doc.text(`GPS: ${stop.geoLocation.lat.toFixed(6)}, ${stop.geoLocation.lng.toFixed(6)}`, margin + 12, originY);
           originY += 5;
         }
         
         // Incidence warning
         if (stop.incidence) {
           doc.setTextColor(180, 83, 9);
-          doc.text(`⚠ Incidencia: ${stop.incidence}`, margin + 12, originY);
+          doc.text(`[!] Incidencia: ${stop.incidence}`, margin + 12, originY);
           originY += 5;
         }
         
