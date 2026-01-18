@@ -104,12 +104,28 @@ export function setupGoogleAuth(app: Express) {
       )
     );
 
-    // OAuth initiation
+    // OAuth initiation - destroy any existing session first
     app.get("/api/auth/google", (req, res, next) => {
-      passport.authenticate("google", { 
-        scope: ["profile", "email"],
-        prompt: "select_account"
-      })(req, res, next);
+      // Clear any existing session before starting Google OAuth
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error("[googleAuth] Error destroying session:", err);
+          }
+          // Clear the session cookie
+          res.clearCookie('connect.sid');
+          // Proceed with Google authentication
+          passport.authenticate("google", { 
+            scope: ["profile", "email"],
+            prompt: "select_account"
+          })(req, res, next);
+        });
+      } else {
+        passport.authenticate("google", { 
+          scope: ["profile", "email"],
+          prompt: "select_account"
+        })(req, res, next);
+      }
     });
 
     // OAuth callback
