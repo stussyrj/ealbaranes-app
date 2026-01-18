@@ -388,15 +388,21 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async getAllUsers(): Promise<User[]> {
+  async getAllUsers(tenantId?: string): Promise<User[]> {
     try {
-      const dbUsers = await db.select().from(usersTable);
+      let query = db.select().from(usersTable);
+      if (tenantId) {
+        // @ts-ignore - drizzle-orm type safety
+        query = query.where(eq(usersTable.tenantId, tenantId));
+      }
+      const dbUsers = await query;
       // Update cache
       dbUsers.forEach(user => this.users.set(user.id, user));
       return dbUsers;
     } catch (error) {
       console.error("Error fetching all users from DB:", error);
-      return Array.from(this.users.values());
+      const allUsers = Array.from(this.users.values());
+      return tenantId ? allUsers.filter(u => u.tenantId === tenantId) : allUsers;
     }
   }
 

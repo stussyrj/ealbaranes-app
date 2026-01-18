@@ -2106,7 +2106,7 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Solo empresa puede ver usuarios" });
     }
     try {
-      const allUsers = await db.select().from(users).where(eq(users.tenantId, user.tenantId));
+      const allUsers = await storage.getAllUsers(user.tenantId);
       const mappedUsers = allUsers.map(u => ({
         id: u.id,
         username: u.username,
