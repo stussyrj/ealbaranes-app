@@ -721,12 +721,19 @@ export class MemStorage implements IStorage {
   }
 
   async createDeliveryNote(note: InsertDeliveryNote): Promise<DeliveryNote> {
+    if (!note.tenantId) {
+      throw new Error("tenantId is required to create a delivery note");
+    }
+    
     const maxRetries = 3;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        // CRITICAL: Filter by tenantId for proper multi-tenant isolation
+        // Each tenant's delivery notes start from 1 independently
         const maxResult = await db
           .select({ maxNumber: max(deliveryNotesTable.noteNumber) })
-          .from(deliveryNotesTable);
+          .from(deliveryNotesTable)
+          .where(eq(deliveryNotesTable.tenantId, note.tenantId));
         const nextNumber = (maxResult[0]?.maxNumber ?? 0) + 1;
         
         const result = await db
