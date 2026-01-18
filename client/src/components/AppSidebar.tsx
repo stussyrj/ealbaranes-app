@@ -10,6 +10,7 @@ import {
   FileText,
   Settings,
   Building2,
+  UserCircle2,
 } from "lucide-react";
 import logoImage from "@assets/83168E40-AC3E-46AD-81C7-83386F999799_1764880592366.png";
 import {
@@ -103,6 +104,11 @@ export function AppSidebar() {
     logout();
   };
 
+  const handleSwitchUser = () => {
+    logout();
+    // Redirect happens automatically when user becomes null in AuthContext
+  };
+
   const handleCloseSidebar = () => {
     setOpenMobile(false);
   };
@@ -189,17 +195,30 @@ export function AppSidebar() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full justify-center text-xs"
-          onClick={handleLogout}
-          disabled={isLogoutPending}
-          data-testid="button-logout"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          {isLogoutPending ? "Cerrando..." : "Cerrar Sesión"}
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 justify-center text-xs"
+            onClick={handleSwitchUser}
+            disabled={isLogoutPending}
+            data-testid="button-switch-user"
+          >
+            <UserCircle2 className="h-4 w-4 mr-2" />
+            Cambiar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 justify-center text-xs text-destructive hover:text-destructive"
+            onClick={handleLogout}
+            disabled={isLogoutPending}
+            data-testid="button-logout"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            {isLogoutPending ? "..." : "Salir"}
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
